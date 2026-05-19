@@ -2,7 +2,6 @@
 import { BTreeSet, Option, u64, Vec } from '@polkadot/types';
 import {
   PolymeshPrimitivesAssetAssetHolder,
-  PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesSettlementAffirmationCount,
   PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementAssetCount,
@@ -41,7 +40,7 @@ import {
   TransactionSpec,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { isOffChainLeg } from '~/utils';
+import { isOffChainLeg, isPortfolioAssetHolder } from '~/utils';
 import {
   assetCountToRaw,
   assetHolderIdsToBtreeSet,
@@ -362,22 +361,12 @@ function reject(
 
 type ModifyInstructionType =
   | PolymeshTx<
-      [
-        u64,
-        (
-          | BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>
-          | BTreeSet<PolymeshPrimitivesAssetAssetHolder>
-        ),
-        PolymeshPrimitivesSettlementAssetCount
-      ]
+      [u64, BTreeSet<PolymeshPrimitivesAssetAssetHolder>, PolymeshPrimitivesSettlementAssetCount]
     >
   | PolymeshTx<
       [
         u64,
-        (
-          | BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>
-          | BTreeSet<PolymeshPrimitivesAssetAssetHolder>
-        ),
+        BTreeSet<PolymeshPrimitivesAssetAssetHolder>,
         PolymeshPrimitivesSettlementAffirmationCount
       ]
     >
@@ -387,10 +376,7 @@ type ModifyInstructionType =
       [
         u64,
         Vec<PolymeshPrimitivesSettlementReceiptDetails>,
-        (
-          | BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>
-          | BTreeSet<PolymeshPrimitivesAssetAssetHolder>
-        ),
+        BTreeSet<PolymeshPrimitivesAssetAssetHolder>,
         Option<PolymeshPrimitivesSettlementAffirmationCount>
       ]
     >
@@ -526,10 +512,10 @@ export async function prepareModifyInstructionAffirmation(
       errorMessage = 'The Instruction is already affirmed';
       const { receipts } = rest as AffirmInstructionParams;
       if (receipts?.length) {
-        transaction = settlementTx.affirmWithReceiptsWithCount as ModifyInstructionType;
+        transaction = settlementTx.affirmWithReceiptsWithCount;
         rawReceiptDetails = await assertReceipts(receipts, offChainLegIndices, id, context);
       } else {
-        transaction = settlementTx.affirmInstructionWithCount as ModifyInstructionType;
+        transaction = settlementTx.affirmInstructionWithCount;
       }
       break;
     }
@@ -546,7 +532,7 @@ export async function prepareModifyInstructionAffirmation(
       excludeCriteria.push(AffirmationStatus.Pending);
       errorMessage = 'The instruction is not affirmed';
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transaction = (settlementTx as any).withdrawAffirmationWithCount as ModifyInstructionType;
+      transaction = (settlementTx as any).withdrawAffirmationWithCount;
 
       break;
     }
@@ -641,10 +627,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      portfolios: assetHolders.filter(p => !(p instanceof Account)) as (
-        | DefaultPortfolio
-        | NumberedPortfolio
-      )[],
+      portfolios: assetHolders.filter(isPortfolioAssetHolder),
       transactions,
       assets: [],
     },

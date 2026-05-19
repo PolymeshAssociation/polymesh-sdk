@@ -63,8 +63,7 @@ describe('ChildIdentity class', () => {
       const rawIdentity = dsMockUtils.createMockIdentityId(did);
       when(stringToIdentityIdSpy).calledWith(did, context).mockReturnValue(rawIdentity);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dsMockUtils.createQueryMock('identity' as any, 'parentDid', {
+      dsMockUtils.createQueryMock('identity', 'parentDid', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -77,14 +76,20 @@ describe('ChildIdentity class', () => {
       const rawParentDid = dsMockUtils.createMockIdentityId(parentDid);
       when(identityIdToStringSpy).calledWith(rawParentDid).mockReturnValue(parentDid);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dsMockUtils.createQueryMock('identity' as any, 'parentDid', {
+      dsMockUtils.createQueryMock('identity', 'parentDid', {
         returnValue: dsMockUtils.createMockOption(rawParentDid),
       });
 
       result = await childIdentity.getParentDid();
 
       expect(result?.did).toBe(parentDid);
+    });
+
+    it('should throw an error if the chain version is v8', async () => {
+      context.isV7 = false;
+      await expect(
+        childIdentity.getParentDid() // NOSONAR
+      ).rejects.toThrow('getParentDid is not supported in v8');
     });
   });
 

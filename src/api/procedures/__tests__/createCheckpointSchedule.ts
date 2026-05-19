@@ -68,14 +68,14 @@ describe('createCheckpointSchedule procedure', () => {
     return expect(() =>
       prepareCreateCheckpointSchedule.call(proc, {
         asset,
-        points: [new Date(new Date().getTime() - 10000)],
+        points: [new Date(Date.now() - 10000)],
       })
     ).toThrow('Schedule points must be in the future');
   });
 
   it('should throw an error if the points are not unique', () => {
     const proc = procedureMockUtils.getInstance<Params, CheckpointSchedule>(mockContext);
-    const point = new Date(new Date().getTime() + 10000);
+    const point = new Date(Date.now() + 10000);
 
     return expect(() =>
       prepareCreateCheckpointSchedule.call(proc, {
@@ -90,7 +90,7 @@ describe('createCheckpointSchedule procedure', () => {
 
     const transaction = dsMockUtils.createTxMock('checkpoint', 'createSchedule');
 
-    const start = new Date(new Date().getTime() + 10000);
+    const start = new Date(Date.now() + 10000);
 
     const rawSchedule = dsMockUtils.createMockScheduleSpec({
       start: dsMockUtils.createMockOption(

@@ -224,7 +224,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
  */
 export class FungibleSettlements extends BaseSettlements<FungibleAsset> {
   /**
-   * Check whether it is possible to create a settlement instruction to transfer a certain amount of this asset between two Portfolios. Returns a breakdown of
+   * Check whether it is possible to create a settlement instruction to transfer a certain amount of this asset between two Asset Holders. Returns a breakdown of
    *   the transaction containing general errors (such as insufficient balance or invalid receiver), any broken transfer restrictions, and any compliance
    *   failures
    *
@@ -233,8 +233,8 @@ export class FungibleSettlements extends BaseSettlements<FungibleAsset> {
    *   they would become locked. From that point, further calls to this function would return failed results because of the funds being locked, even though they haven't been
    *   transferred yet
    *
-   * @param args.from - sender Portfolio (optional, defaults to the signing Identity's Default Portfolio)
-   * @param args.to - receiver Portfolio
+   * @param args.from - sender (Portfolio or Account) (optional, defaults to the signing Identity's Default Portfolio)
+   * @param args.to - receiver (Portfolio or Account)
    * @param args.amount - amount of tokens to transfer
    *
    */
@@ -252,7 +252,7 @@ export class FungibleSettlements extends BaseSettlements<FungibleAsset> {
  */
 export class NonFungibleSettlements extends BaseSettlements<NftCollection> {
   /**
-   * Check whether it is possible to create a settlement instruction to transfer an NFT between two Portfolios. Returns a breakdown of
+   * Check whether it is possible to create a settlement instruction to transfer an NFT between two Asset Holders. Returns a breakdown of
    *   the transaction containing general errors (such as insufficient balance or invalid receiver), any broken transfer restrictions, and any compliance
    *   failures
    *
@@ -261,8 +261,8 @@ export class NonFungibleSettlements extends BaseSettlements<NftCollection> {
    *   they would become locked. From that point, further calls to this function would return failed results because of the funds being locked, even though it hasn't been
    *   transferred yet
    *
-   * @param args.from - sender Portfolio (optional, defaults to the signing Identity's Default Portfolio)
-   * @param args.to - receiver Portfolio
+   * @param args.from - sender (Portfolio or Account) (optional, defaults to the signing Identity's Default Portfolio)
+   * @param args.to - receiver (Portfolio or Account)
    * @param args.nfts - the NFTs to transfer
    *
    */

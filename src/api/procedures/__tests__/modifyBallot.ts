@@ -103,8 +103,8 @@ describe('modifyBallot procedure', () => {
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 
     ballotDetails = {
-      startDate: new Date(new Date().getTime() + 500000),
-      endDate: new Date(new Date().getTime() + 1000000),
+      startDate: new Date(Date.now() + 500000),
+      endDate: new Date(Date.now() + 1000000),
       meta: {
         title: 'title',
         motions: [],

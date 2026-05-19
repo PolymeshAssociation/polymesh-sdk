@@ -474,7 +474,7 @@ function createMockEntityClass<Options extends EntityOptions>(
 
     private static options = {} as Required<Options>;
 
-    public static isMockEntity = true;
+    public static readonly isMockEntity = true;
 
     /**
      * @hidden
@@ -1161,7 +1161,7 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
       schedule: getCheckpointScheduleInstance(),
       details: {
         remainingCheckpoints: new BigNumber(3),
-        nextCheckpointDate: new Date(new Date().getTime() + 1000 * 60 * 60),
+        nextCheckpointDate: new Date(Date.now() + 1000 * 60 * 60),
       },
     },
     getNextLocalId: new BigNumber(0),
@@ -1588,7 +1588,7 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
     id: new BigNumber(1),
     details: {
       status: InstructionStatus.Pending,
-      createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
       tradeDate: null,
       valueDate: null,
       venue: getVenueInstance(),
@@ -1596,7 +1596,7 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
     },
     detailsFromChain: {
       status: InstructionStatus.Pending,
-      createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
       tradeDate: null,
       valueDate: null,
       venue: getVenueInstance(),
@@ -1880,7 +1880,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     }
   },
   () => {
-    const start = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+    const start = new Date(Date.now() + 24 * 60 * 60 * 1000);
     return {
       id: new BigNumber(1),
       assetId: '12341234-1234-1234-1234-123412341234',
@@ -2048,7 +2048,7 @@ const MockDividendDistributionClass = createMockEntityClass<DividendDistribution
     perShare: new BigNumber(100),
     maxAmount: new BigNumber(1000000),
     expiryDate: null,
-    paymentDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+    paymentDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
     details: {
       remainingFunds: new BigNumber(100),
       fundsReclaimed: false,

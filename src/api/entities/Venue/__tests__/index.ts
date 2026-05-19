@@ -292,7 +292,7 @@ describe('Venue class', () => {
         },
       ];
 
-      const tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+      const tradeDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const endBlock = new BigNumber(10000);
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
@@ -335,7 +335,7 @@ describe('Venue class', () => {
         },
       ];
 
-      const tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+      const tradeDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const endBlock = new BigNumber(10000);
 
       const instructions = [

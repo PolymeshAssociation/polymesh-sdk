@@ -155,18 +155,14 @@ describe('MultiSig class', () => {
           dsMockUtils.createMockOption(
             dsMockUtils.createMockProposalState({
               Active: {
-                until: createMockOption(
-                  createMockMoment(new BigNumber(new Date().getTime() + 10000))
-                ),
+                until: createMockOption(createMockMoment(new BigNumber(Date.now() + 10000))),
               },
             })
           ),
           dsMockUtils.createMockOption(
             dsMockUtils.createMockProposalState({
               Active: {
-                until: createMockOption(
-                  createMockMoment(new BigNumber(new Date().getTime() + 10000))
-                ),
+                until: createMockOption(createMockMoment(new BigNumber(Date.now() + 10000))),
               },
             })
           ),

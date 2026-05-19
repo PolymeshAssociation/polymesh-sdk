@@ -86,7 +86,7 @@ describe('reserveTicker procedure', () => {
   });
 
   it('should throw an error if the ticker is already reserved', async () => {
-    const expiryDate = new Date(new Date().getTime() + 1000);
+    const expiryDate = new Date(Date.now() + 1000);
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
         details: {

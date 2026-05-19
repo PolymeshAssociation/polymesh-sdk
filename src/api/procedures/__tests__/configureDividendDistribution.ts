@@ -104,7 +104,7 @@ describe('configureDividendDistribution procedure', () => {
     assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     declarationDate = new Date('10/14/1987');
-    checkpoint = new Date(new Date().getTime() + 60 * 60 * 1000);
+    checkpoint = new Date(Date.now() + 60 * 60 * 1000);
     description = 'someDescription';
     targets = {
       identities: ['someDid'],
@@ -304,7 +304,7 @@ describe('configureDividendDistribution procedure', () => {
     try {
       await prepareConfigureDividendDistribution.call(proc, {
         asset,
-        declarationDate: new Date(new Date().getTime() + 500000),
+        declarationDate: new Date(Date.now() + 500000),
         checkpoint,
         description,
         targets,
@@ -345,7 +345,7 @@ describe('configureDividendDistribution procedure', () => {
         currency,
         perShare,
         maxAmount,
-        paymentDate: new Date(new Date().getTime() + 1000 * 60 * 20),
+        paymentDate: new Date(Date.now() + 1000 * 60 * 20),
         expiryDate,
       });
     } catch (error) {
@@ -367,7 +367,7 @@ describe('configureDividendDistribution procedure', () => {
         currency,
         perShare,
         maxAmount,
-        paymentDate: new Date(new Date().getTime() + 1000 * 60 * 20),
+        paymentDate: new Date(Date.now() + 1000 * 60 * 20),
         expiryDate,
       });
     } catch (error) {

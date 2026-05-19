@@ -258,7 +258,7 @@ describe('CorporateAction class', () => {
 
     it('should return a Checkpoint if the CA has a record date', async () => {
       schedulePointsQueryMock.mockResolvedValue([
-        dsMockUtils.createMockU64(new BigNumber(new Date().getTime())),
+        dsMockUtils.createMockU64(new BigNumber(Date.now())),
         [dsMockUtils.createMockU64(new BigNumber(1))],
       ]);
       let result = (await corporateAction.checkpoint()) as Checkpoint;

@@ -32,7 +32,7 @@ describe('CheckpointSchedule class', () => {
     id = new BigNumber(1);
     assetId = '12341234-1234-1234-1234-123412341234';
     start = new Date('10/14/1987 UTC');
-    nextCheckpointDate = new Date(new Date().getTime() + 60 * 60 * 1000 * 24 * 365 * 60);
+    nextCheckpointDate = new Date(Date.now() + 60 * 60 * 1000 * 24 * 365 * 60);
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });

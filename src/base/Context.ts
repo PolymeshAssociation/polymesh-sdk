@@ -498,7 +498,10 @@ export class Context {
    *
    * Retrieve all pending subsidies for approval
    */
-  public async getPendingSubsidies(account?: string | Account): Promise<SubsidyWithAllowance[]> {
+  public async getPendingSubsidies(
+    beneficiaryAccount?: string | Account,
+    payingAccounts?: (string | Account)[]
+  ): Promise<SubsidyWithAllowance[]> {
     const {
       polymeshApi: {
         query: { relayer },
@@ -506,13 +509,37 @@ export class Context {
     } = this;
     let address: string;
 
-    if (account) {
-      address = signerToString(account);
+    if (beneficiaryAccount) {
+      address = signerToString(beneficiaryAccount);
     } else {
       ({ address } = this.getSigningAccount());
     }
 
     const rawAddress = stringToAccountId(address, this);
+
+    if (payingAccounts?.length) {
+      const payingAddresses = payingAccounts.map(account => signerToString(account));
+      const rawKeys = payingAddresses.map(account => [
+        rawAddress,
+        stringToAccountId(account, this),
+      ]);
+
+      const entries = await relayer.pendingSubsidies.multi(rawKeys);
+
+      return entries.map((rawAllowance, idx) => {
+        const subsidy = new Subsidy(
+          { beneficiary: address, subsidizer: payingAddresses[idx]! },
+          this
+        );
+
+        if (rawAllowance.isEmpty) {
+          return { subsidy, allowance: new BigNumber(0) };
+        }
+
+        const allowance = balanceToBigNumber(rawAllowance.unwrap());
+        return { subsidy, allowance };
+      });
+    }
 
     const rawEntries = await relayer.pendingSubsidies.entries(rawAddress);
 

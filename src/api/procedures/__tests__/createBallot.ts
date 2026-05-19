@@ -71,7 +71,7 @@ describe('createBallot procedure', () => {
 
     assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
-    declarationDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
+    declarationDate = new Date(Date.now() - 1000 * 60 * 60 * 24);
     description = 'someDescription';
     meta = {
       title: 'someTitle',
@@ -84,7 +84,7 @@ describe('createBallot procedure', () => {
       ],
     };
     startDate = new Date();
-    endDate = new Date(new Date().getTime() + 500000);
+    endDate = new Date(Date.now() + 500000);
     rcv = true;
     rawCorporateActionArgs = dsMockUtils.createMockInitiateCorporateActionArgs({
       assetId,
@@ -215,7 +215,7 @@ describe('createBallot procedure', () => {
     try {
       await prepareCreateBallot.call(proc, {
         asset,
-        declarationDate: new Date(new Date().getTime() + 500000),
+        declarationDate: new Date(Date.now() + 500000),
         description,
         meta,
         startDate,

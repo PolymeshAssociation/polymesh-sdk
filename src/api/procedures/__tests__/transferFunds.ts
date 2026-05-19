@@ -7,7 +7,7 @@ import {
   Storage,
 } from '~/api/procedures/transferFunds';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Context } from '~/internal';
+import { Account, Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, TransferFundsParams, TxTags } from '~/types';
@@ -79,6 +79,8 @@ describe('transferFunds procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
+    assetHolderIdToMeshAssetHolderSpy.mockResolvedValue('someMeshAssetHolder');
+    assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someAssetHolderId');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isFungibleLegBuilderSpy.mockResolvedValue((leg: any) => 'amount' in leg);
   });
@@ -95,213 +97,214 @@ describe('transferFunds procedure', () => {
   });
 
   describe('prepareMoveFunds', () => {
-    it('should throw an error if from and to asset holders are the same', async () => {
-      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
+    let fromAccountHolder: Mocked<Account>;
+    let fromPortfolioHolder: Mocked<NumberedPortfolio>;
+    let toPortfolioHolder: Mocked<NumberedPortfolio>;
+
+    beforeEach(() => {
+      fromPortfolioHolder = entityMockUtils.getNumberedPortfolioInstance({
         did: 'someDid',
         id: new BigNumber(1),
       });
-      const toHolder = entityMockUtils.getNumberedPortfolioInstance({
+      fromAccountHolder = entityMockUtils.getAccountInstance({ address: 'someAccount' });
+      toPortfolioHolder = entityMockUtils.getNumberedPortfolioInstance({
         did: 'someDid',
-        id: new BigNumber(1),
+        id: new BigNumber(2),
       });
 
-      fromHolder.isEqual.mockReturnValue(true);
+      fromPortfolioHolder.isEqual.mockReturnValue(false);
+      fromAccountHolder.isEqual.mockReturnValue(false);
+      getAssetHolderDidSpy.mockResolvedValue('someDid');
+    });
+
+    it('should throw an error if from and to asset holders are the same', async () => {
+      fromPortfolioHolder.isEqual.mockReturnValue(true);
 
       const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
-        fromHolder,
-        toHolder,
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
 
       await expect(
         prepareTransferFunds.call(proc, {
-          from: fromHolder,
-          to: toHolder,
-          asset: 'someAsset',
+          from: fromPortfolioHolder,
+          to: toPortfolioHolder,
+          asset: 'SOME_ASSET',
           amount: new BigNumber(100),
-        } as unknown as TransferFundsParams)
+        })
       ).rejects.toThrow('from and to asset holders cannot be the same');
     });
 
     it('should throw an error if DID cannot be retrieved from one or both asset holders', async () => {
-      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(1),
-      });
-      const toHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(2),
-      });
-
-      fromHolder.isEqual.mockReturnValue(false);
+      getAssetHolderDidSpy.mockReset();
       getAssetHolderDidSpy.mockResolvedValueOnce('someDid').mockResolvedValueOnce(undefined);
 
       const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
-        fromHolder,
-        toHolder,
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
 
       await expect(
         prepareTransferFunds.call(proc, {
-          from: fromHolder,
-          to: toHolder,
-          asset: 'someAsset',
+          from: fromPortfolioHolder,
+          to: toPortfolioHolder,
+          asset: 'SOME_ASSET',
           amount: new BigNumber(100),
-        } as unknown as TransferFundsParams)
+        })
       ).rejects.toThrow('Unable to retrieve the DID from one or both asset holders');
     });
 
     it('should throw an error if DIDs are different', async () => {
-      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(1),
-      });
-      const toHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'otherDid',
-        id: new BigNumber(2),
-      });
-
-      fromHolder.isEqual.mockReturnValue(false);
+      getAssetHolderDidSpy.mockReset();
       getAssetHolderDidSpy.mockResolvedValueOnce('someDid').mockResolvedValueOnce('otherDid');
 
       const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
-        fromHolder,
-        toHolder,
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
 
       await expect(
         prepareTransferFunds.call(proc, {
-          from: fromHolder,
-          to: toHolder,
-          asset: 'someAsset',
+          from: fromPortfolioHolder,
+          to: toPortfolioHolder,
+          asset: 'SOME_ASSET',
           amount: new BigNumber(100),
-        } as unknown as TransferFundsParams)
+        })
       ).rejects.toThrow(
-        'For transferring funds between different DIDs, use `addInstruction` method instead.'
+        'For transferring funds between different DIDs, use `Settlements.addInstruction` method instead.'
       );
     });
 
     it('should throw an error if amount is less than or equal to 0 for a fungible leg', async () => {
-      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(1),
-      });
-      const toHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(2),
-      });
-
-      fromHolder.isEqual.mockReturnValue(false);
-      getAssetHolderDidSpy.mockResolvedValue('someDid');
-
       const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
-        fromHolder,
-        toHolder,
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
 
       await expect(
         prepareTransferFunds.call(proc, {
-          from: fromHolder,
-          to: toHolder,
-          asset: 'someAsset',
+          from: fromPortfolioHolder,
+          to: toPortfolioHolder,
+          asset: 'SOME_ASSET',
           amount: new BigNumber(0),
-        } as unknown as TransferFundsParams)
+        })
       ).rejects.toThrow('Amount should be greater than 0');
     });
 
     it('should throw an error if sender has insufficient balance for a fungible leg', async () => {
-      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(1),
-      });
-      const toHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(2),
-      });
-
-      fromHolder.isEqual.mockReturnValue(false);
-      fromHolder.getAssetBalances.mockResolvedValue([
-        { free: new BigNumber(50) } as unknown as PortfolioBalance,
+      fromPortfolioHolder.getAssetBalances.mockResolvedValue([
+        { free: new BigNumber(50) } as PortfolioBalance,
       ]);
-      getAssetHolderDidSpy.mockResolvedValue('someDid');
 
       const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
-        fromHolder,
-        toHolder,
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
 
       await expect(
         prepareTransferFunds.call(proc, {
-          from: fromHolder,
-          to: toHolder,
-          asset: 'someAsset',
+          from: fromPortfolioHolder,
+          to: toPortfolioHolder,
+          asset: 'SOME_ASSET',
           amount: new BigNumber(100),
-        } as unknown as TransferFundsParams)
+        })
+      ).rejects.toThrow('Sender has insufficient balance to cover the transfer');
+    });
+
+    it('should throw an error if sender has no balance record for a fungible leg', async () => {
+      fromPortfolioHolder.getAssetBalances.mockResolvedValue([]);
+
+      const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
+        signingDid: 'someDid',
+        signingAccount: 'someAccount',
+      });
+
+      await expect(
+        prepareTransferFunds.call(proc, {
+          from: fromPortfolioHolder,
+          to: toPortfolioHolder,
+          asset: 'SOME_ASSET',
+          amount: new BigNumber(100),
+        })
       ).rejects.toThrow('Sender has insufficient balance to cover the transfer');
     });
 
     it('should throw an error if spender has insufficient allowance for a fungible leg', async () => {
-      const fromHolder = entityMockUtils.getAccountInstance({ address: 'someAccount' });
-      const toHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(2),
-      });
       const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
-
       asset.getAllowance.mockResolvedValue(new BigNumber(50));
-      fromHolder.isEqual.mockReturnValue(false);
-      getAssetHolderDidSpy.mockResolvedValue('someDid');
 
       const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
-        fromHolder,
-        toHolder,
+        fromHolder: fromAccountHolder,
+        toHolder: toPortfolioHolder,
         signingDid: 'otherDid',
         signingAccount: 'someOtherAccount',
       });
 
       await expect(
         prepareTransferFunds.call(proc, {
-          from: fromHolder,
-          to: toHolder,
+          from: fromAccountHolder,
+          to: toPortfolioHolder,
           asset,
           amount: new BigNumber(100),
-        } as unknown as TransferFundsParams)
+        })
       ).rejects.toThrow('Spender has insufficient allowance to cover the transfer');
     });
 
+    it('should return a transfer funds transaction spec when fromHolder is an Account with sufficient allowance', async () => {
+      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
+      asset.getAllowance.mockResolvedValue(new BigNumber(150));
+
+      fungibleMovementToPortfolioFundSpy.mockResolvedValue('rawFund');
+
+      const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
+        fromHolder: fromAccountHolder,
+        toHolder: toPortfolioHolder,
+        signingDid: 'otherDid',
+        signingAccount: 'someOtherAccount',
+      });
+
+      const transaction = dsMockUtils.createTxMock('settlement', 'transferFunds');
+
+      const result = await prepareTransferFunds.call(proc, {
+        from: fromAccountHolder,
+        to: toPortfolioHolder,
+        asset,
+        amount: new BigNumber(100),
+      });
+
+      expect(result).toEqual({
+        transaction,
+        args: ['someMeshAssetHolder', 'someMeshAssetHolder', 'rawFund'],
+        resolver: undefined,
+      });
+    });
+
     it('should return a transfer funds transaction spec for fungible assets', async () => {
-      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(1),
-      });
-      const toHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(2),
-      });
       const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
 
-      fromHolder.isEqual.mockReturnValue(false);
-      fromHolder.getAssetBalances.mockResolvedValue([
+      fromPortfolioHolder.getAssetBalances.mockResolvedValue([
         { free: new BigNumber(150) } as unknown as PortfolioBalance,
       ]);
-      getAssetHolderDidSpy.mockResolvedValue('someDid');
 
       fungibleMovementToPortfolioFundSpy.mockResolvedValue('rawFund');
       assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someHolderId');
       assetHolderIdToMeshAssetHolderSpy.mockResolvedValue('rawHolder');
 
       const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
-        fromHolder,
-        toHolder,
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -309,11 +312,11 @@ describe('transferFunds procedure', () => {
       const transaction = dsMockUtils.createTxMock('settlement', 'transferFunds');
 
       const result = await prepareTransferFunds.call(proc, {
-        from: fromHolder,
-        to: toHolder,
+        from: fromPortfolioHolder,
+        to: toPortfolioHolder,
         asset,
         amount: new BigNumber(100),
-      } as unknown as TransferFundsParams);
+      });
 
       expect(result).toEqual({
         transaction,
@@ -323,27 +326,16 @@ describe('transferFunds procedure', () => {
     });
 
     it('should return a transfer funds transaction spec for NFT assets', async () => {
-      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(1),
-      });
-      const toHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(2),
-      });
-      const asset = entityMockUtils.getNftCollectionInstance({ ticker: 'TICKER' });
-
-      fromHolder.isEqual.mockReturnValue(false);
-      getAssetHolderDidSpy.mockResolvedValue('someDid');
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const asset = entityMockUtils.getNftCollectionInstance({ assetId });
 
       nftMovementToPortfolioFundSpy.mockResolvedValue('rawNftFund');
       assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someHolderId');
       assetHolderIdToMeshAssetHolderSpy.mockResolvedValue('rawHolder');
-      isFungibleLegBuilderSpy.mockResolvedValue(() => false);
 
       const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
-        fromHolder,
-        toHolder,
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -351,11 +343,11 @@ describe('transferFunds procedure', () => {
       const transaction = dsMockUtils.createTxMock('settlement', 'transferFunds');
 
       const result = await prepareTransferFunds.call(proc, {
-        from: fromHolder,
-        to: toHolder,
+        from: fromPortfolioHolder,
+        to: toPortfolioHolder,
         asset,
         nfts: [new BigNumber(1)],
-      } as unknown as TransferFundsParams);
+      });
 
       expect(result).toEqual({
         transaction,
@@ -383,9 +375,9 @@ describe('transferFunds procedure', () => {
       const result = await prepareStorage.call(proc, {
         from,
         to,
-        asset: 'someAsset',
+        asset: 'SOME_ASSET',
         amount: new BigNumber(100),
-      } as unknown as TransferFundsParams);
+      });
 
       expect(result).toEqual({
         fromHolder: from,

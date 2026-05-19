@@ -9,10 +9,10 @@ import {
   Params,
   prepareApproveAllowance,
 } from '~/api/procedures/approveAllowance';
-import { Context, FungibleAsset, Procedure } from '~/internal';
+import { Context, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -61,20 +61,22 @@ describe('approveAllowance procedure', () => {
   });
 
   describe('prepareApproveAllowance', () => {
-    it('should throw an error if the amount is less than 0', async () => {
+    it('should throw an error if the amount is less than 0', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-      let error;
-      try {
-        await prepareApproveAllowance.call(proc, {
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message:
+          'Allowance amount cannot be less than 0. Pass 0 to revoke the allowance or greater than 0 to set the new allowance',
+      });
+
+      expect(() =>
+        prepareApproveAllowance.call(proc, {
           asset,
           spender: 'someSpender',
           amount: new BigNumber(-10),
-        });
-      } catch (err: any) {
-        error = err;
-      }
-      expect(error.message).toBe('Amount must be greater than 0');
+        })
+      ).toThrow(expectedError);
     });
 
     it('should return an approve transaction spec', async () => {

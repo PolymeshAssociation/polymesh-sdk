@@ -99,7 +99,7 @@ describe('TickerReservation class', () => {
 
     it('should return details for a reserved ticker', async () => {
       const ownerDid = 'someDid';
-      const expiryDate = new Date(new Date().getTime() + 100000);
+      const expiryDate = new Date(Date.now() + 100000);
 
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -151,7 +151,7 @@ describe('TickerReservation class', () => {
 
     it('should return details for a ticker for which a reservation expired', async () => {
       const ownerDid = 'someDid';
-      const expiryDate = new Date(new Date().getTime() - 100000);
+      const expiryDate = new Date(Date.now() - 100000);
 
       const tickerReservation = new TickerReservation({ ticker }, context);
 

@@ -518,7 +518,9 @@ export class Assets {
   }
 
   /**
-   * Transfer funds between two asset holders owned by same identity.
+   * Transfer funds between two asset holders (Account or Portfolio) owned by same identity.
+   *
+   * @note When `from` account is of type account and the caller is the subsidizer of `from` account, there should be allowance available for transfer and for each transfer said amount is decremented.
    *
    * @note To transfer between asset holders owned by separate DID use settlement instructions
    */

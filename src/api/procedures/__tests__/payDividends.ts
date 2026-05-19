@@ -14,7 +14,7 @@ describe('payDividends procedure', () => {
   const did = 'someDid';
   const id = new BigNumber(1);
   const paymentDate = new Date('10/14/1987');
-  const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
+  const expiryDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365);
 
   const rawCaId = dsMockUtils.createMockCaId({ assetId, localId: id });
 
@@ -91,7 +91,7 @@ describe('payDividends procedure', () => {
 
   it('should throw an error if the Distribution is expired', async () => {
     const targets = ['someDid'];
-    const date = new Date(new Date().getTime() + 1000 * 60 * 60);
+    const date = new Date(Date.now() + 1000 * 60 * 60);
     distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate: date,
       expiryDate,
@@ -115,7 +115,7 @@ describe('payDividends procedure', () => {
 
   it('should throw an error if the Distribution is expired', async () => {
     const targets = ['someDid'];
-    const date = new Date(new Date().getTime() - 1000);
+    const date = new Date(Date.now() - 1000);
     distribution = entityMockUtils.getDividendDistributionInstance({
       expiryDate: date,
       paymentDate,

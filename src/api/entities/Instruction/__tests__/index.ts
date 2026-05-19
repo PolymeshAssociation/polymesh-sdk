@@ -8,6 +8,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
+  Account,
   Context,
   DefaultPortfolio,
   Entity,
@@ -995,6 +996,37 @@ describe('Instruction class', () => {
       expect(data[0]!.status).toEqual(status);
     });
 
+    it('should return a list of Affirmation Statuses with Account parties when querying from chain', async () => {
+      const accountAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+      const mockStorageKeyForAccount = [
+        tuple(dsMockUtils.createMockU64(), dsMockUtils.createMockAccountId(accountAddress)),
+      ];
+      const authsReceivedEntries = mockStorageKeyForAccount.map(([instructionId, accountId]) =>
+        tuple(
+          {
+            args: [
+              instructionId,
+              {
+                isPortfolio: false,
+                isAccount: true,
+                asAccount: accountId,
+              },
+            ],
+          } as unknown as StorageKey,
+          dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
+        )
+      );
+      jest
+        .spyOn(utilsInternalModule, 'requestPaginated')
+        .mockResolvedValueOnce({ entries: authsReceivedEntries, lastKey: null });
+
+      const { data } = await instruction.getAffirmations();
+
+      expect(data).toHaveLength(1);
+      expect((data[0]!.party as Account).address).toEqual(accountAddress);
+      expect(data[0]!.status).toEqual(status);
+    });
+
     describe('querying from middleware', () => {
       beforeEach(() => {
         dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: true } });
@@ -1049,6 +1081,34 @@ describe('Instruction class', () => {
         expect(data).toEqual([]);
         expect(next).toBeNull();
         expect(count).toEqual(new BigNumber(0));
+      });
+
+      it('should return a list of Affirmation Statuses with Account parties', async () => {
+        const start = new BigNumber(0);
+        const size = new BigNumber(1);
+        const accountAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+        dsMockUtils.createApolloQueryMock(
+          instructionAffirmationsQuery(false, { instructionId: id.toString() }, size, start),
+          {
+            instructionAffirmations: {
+              nodes: [
+                {
+                  account: accountAddress,
+                  status: AffirmStatusEnum.Affirmed,
+                },
+              ],
+              totalCount: new BigNumber(1),
+            },
+          }
+        );
+        const { data } = await instruction.getAffirmations({
+          start,
+          size,
+        });
+
+        expect(data).toHaveLength(1);
+        expect((data[0]!.party as Account).address).toEqual(accountAddress);
+        expect(data[0]!.status).toEqual(status);
       });
     });
   });
@@ -2350,6 +2410,26 @@ describe('Instruction class', () => {
         }),
       ]);
     });
+
+    it('should ignore accounts in legs when returning involved portfolios', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
+      const account = entityMockUtils.getAccountInstance();
+      const portfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: 'someDid',
+        isCustodiedBy: true,
+        exists: true,
+      });
+      const amount = new BigNumber(1);
+      const asset = entityMockUtils.getFungibleAssetInstance({ assetId: 'SOME_ASSET' });
+
+      jest.spyOn(instruction, 'getLegs').mockResolvedValue({
+        data: [{ from: account, to: portfolio, amount, asset }],
+        next: null,
+      });
+
+      const result = await instruction.getInvolvedPortfolios({ did: 'someDid' });
+      expect(result).toEqual([portfolio]);
+    });
   });
 
   describe('method: getMediators', () => {
@@ -2726,6 +2806,68 @@ describe('Instruction class', () => {
       expect(context.getSignature).toHaveBeenCalledWith({
         rawPayload: expect.stringMatching(/0x3c42797465733e(.*)3c2f42797465733e/),
         signer,
+      });
+    });
+
+    it('should throw an error if expiresAt is not provided and chain is v8', () => {
+      return expect(
+        instruction.generateOffChainAffirmationReceipt({
+          legId,
+          uid,
+        })
+      ).rejects.toThrow('`expiresAt` is mandatory from chain 8.x');
+    });
+
+    it('should return the affirmation receipt for offchain leg on v7 chain', async () => {
+      const v7Context = dsMockUtils.getContextInstance({
+        isV7: true,
+      });
+      const v7Instruction = new Instruction({ id }, v7Context);
+      when(bigNumberToU64Spy).calledWith(id, v7Context).mockReturnValue(rawId);
+      when(bigNumberToU64Spy).calledWith(uid, v7Context).mockReturnValue(rawUid);
+      when(bigNumberToU64Spy).calledWith(legId, v7Context).mockReturnValue(rawLegId);
+
+      const senderIdentity = 'senderDid';
+      const rawSenderIdentity = dsMockUtils.createMockIdentityId(senderIdentity);
+      const receiverIdentity = 'receiverDid';
+      const rawReceiverIdentity = dsMockUtils.createMockIdentityId(receiverIdentity);
+
+      const ticker = 'ABCDEF';
+      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      rawTicker.toHex = jest.fn().mockReturnValue('0xABCDEF0000');
+
+      const amount = new BigNumber(10);
+      const rawAmount = dsMockUtils.createMockU128(amount.shiftedBy(6));
+
+      dsMockUtils.createQueryMock('settlement', 'instructionLegs', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockInstructionLeg({
+            OffChain: {
+              senderIdentity: rawSenderIdentity,
+              receiverIdentity: rawReceiverIdentity,
+              amount: rawAmount,
+              ticker: rawTicker,
+            },
+          })
+        ),
+      });
+
+      const result = await v7Instruction.generateOffChainAffirmationReceipt({
+        legId,
+        uid,
+      });
+
+      expect(result).toEqual({
+        uid,
+        legId,
+        signer: expect.objectContaining({
+          address: '0xdummy',
+        }),
+        signature: {
+          type: SignerKeyRingType.Sr25519,
+          value: '0xsignature',
+        },
+        metadata: undefined,
       });
     });
   });

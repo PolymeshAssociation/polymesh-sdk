@@ -13,10 +13,11 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { FungibleSettlements, NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
-import { Context, Namespace, PolymeshTransaction } from '~/internal';
+import * as proceduresUtilsModule from '~/api/procedures/utils';
+import { Context, Namespace, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { FungibleAsset, NftCollection, PortfolioId, TransferBreakdown } from '~/types';
+import { ErrorCode, FungibleAsset, NftCollection, PortfolioId, TransferBreakdown } from '~/types';
 import { uuidToHex } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -35,6 +36,7 @@ describe('Settlements class', () => {
   let assetHolderIdToMeshAssetHolderSpy: jest.SpyInstance;
   let assetHolderLikeToAssetHolderIdSpy: jest.SpyInstance;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let getAssetHolderDidSpy: jest.SpyInstance;
   let rawAccountId: AccountId;
   let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawToDid: PolymeshPrimitivesIdentityId;
@@ -70,7 +72,6 @@ describe('Settlements class', () => {
       utilsConversionModule,
       'assetHolderLikeToAssetHolderId'
     );
-    // assetHolderIdToAssetHolderSpy = jest.spyOn(utilsConversionModule, 'assetHolderLikeToAssetHolder');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     rawAmount = dsMockUtils.createMockBalance(amount);
     fromDid = 'fromDid';
@@ -87,6 +88,7 @@ describe('Settlements class', () => {
       utilsConversionModule,
       'transferReportToTransferBreakdown'
     );
+    getAssetHolderDidSpy = jest.spyOn(proceduresUtilsModule, 'getAssetHolderDid');
   });
 
   beforeEach(() => {
@@ -160,14 +162,6 @@ describe('Settlements class', () => {
         when(assetHolderIdToMeshAssetHolderSpy)
           .calledWith(currentDefaultPortfolioId, mockContext)
           .mockReturnValue(rawFromPortfolioHolder);
-        // when(assetHolderIdToAssetHolderSpy)
-        //   .calledWith(currentDefaultPortfolioId, mockContext)
-        //   .mockReturnValue(
-        //     entityMockUtils.getDefaultPortfolioInstance({
-        //       did: signingDid,
-        //       getCustodian: entityMockUtils.getIdentityInstance({ did: signingDid }),
-        //     })
-        //   );
 
         const transferReportResponse = 'transferReportResponse' as unknown as Vec<DispatchError>;
 
@@ -207,6 +201,32 @@ describe('Settlements class', () => {
         const result = await settlements.canTransfer({ to: toDid, amount });
 
         expect(result).toEqual(expected);
+      });
+
+      it('should throw an error if from did is not found', async () => {
+        getAssetHolderDidSpy.mockResolvedValueOnce(undefined);
+
+        const expectedError = new PolymeshError({
+          code: ErrorCode.UnmetPrerequisite,
+          message: 'No DID associated with `from` account holder',
+        });
+
+        await expect(settlements.canTransfer({ from: fromDid, to: toDid, amount })).rejects.toThrow(
+          expectedError
+        );
+      });
+
+      it('should throw an error if to did is not found', async () => {
+        getAssetHolderDidSpy.mockResolvedValueOnce('someDid').mockResolvedValueOnce(undefined);
+
+        const expectedError = new PolymeshError({
+          code: ErrorCode.UnmetPrerequisite,
+          message: 'No DID associated with `to` account holder',
+        });
+
+        await expect(settlements.canTransfer({ from: fromDid, to: toDid, amount })).rejects.toThrow(
+          expectedError
+        );
       });
     });
 

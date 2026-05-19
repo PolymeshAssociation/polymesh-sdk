@@ -199,7 +199,13 @@ export class AccountManagement {
   /**
    * Approves a subsidy request
    *
-   * @note to be used from chain v8 onwards
+   * This is to be called in by the paying key to approve allowance with respect to a beneficiary key.
+   *
+   * @note this will create a pending subsidies entry, which has to be accepted by the `beneficiary` Account. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies.getPendingSubsidies | subsides.getPendingSubsidies}.
+   *
+   * @throws
+   *  - if called for a v7 chain
+   *  - if same allowance amount is pending for acceptance with respect to same beneficiary
    */
   public approveSubsidy: ProcedureMethod<SubsidizeAccountParams, void>;
 

@@ -54,9 +54,10 @@ export async function prepareConsumeAddRelayerPayingKeyAuthorization(
   } = authRequest;
 
   if (
-    ![AuthorizationType.AddRelayerPayingKey, AuthorizationType.OldAddRelayerPayingKey].includes(
-      type
-    )
+    ![
+      AuthorizationType.AddRelayerPayingKey, // NOSONAR
+      AuthorizationType.OldAddRelayerPayingKey,
+    ].includes(type)
   ) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,

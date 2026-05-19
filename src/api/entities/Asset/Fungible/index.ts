@@ -216,7 +216,7 @@ export class FungibleAsset extends BaseAsset {
 
     const data: HistoricAssetTransaction[] = [];
 
-    const getAccount = (address: string) => new Account({ address }, context);
+    const getAccount = (address: string): Account => new Account({ address }, context);
 
     for (const {
       asset,
@@ -291,7 +291,12 @@ export class FungibleAsset extends BaseAsset {
   }
 
   /**
-   * Approval spender allowance
+   * Approve spender account allowance for transferring this Asset
+   *
+   * @note Replaces any existing allowance for this if an allowance already exists for spender account for this Asset.
+   * Setting `amount` to 0 revokes the allowance.
+   *
+   * On every spend transaction, the spender account's allowance will be decremented by the amount transferred.
    */
   public approveAllowance: ProcedureMethod<ApproveAllowanceParams, void>;
 

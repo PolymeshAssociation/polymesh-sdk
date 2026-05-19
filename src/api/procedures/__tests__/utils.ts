@@ -18,6 +18,7 @@ import {
   assertValidCdd,
   createAuthorizationResolver,
   createCreateGroupResolver,
+  getAssetHolderDid,
   getGroupFromPermissions,
   UnreachableCaseError,
 } from '~/api/procedures/utils';
@@ -525,7 +526,7 @@ describe('assertCaCheckpointValid', () => {
   });
 
   it('should throw an error if date is in the past', async () => {
-    let checkpoint = new Date(new Date().getTime() - 100000);
+    let checkpoint = new Date(Date.now() - 100000);
 
     let error;
     try {
@@ -536,7 +537,7 @@ describe('assertCaCheckpointValid', () => {
 
     expect(error.message).toBe('Checkpoint date must be in the future');
 
-    checkpoint = new Date(new Date().getTime() + 100000);
+    checkpoint = new Date(Date.now() + 100000);
 
     return expect(assertCaCheckpointValid(checkpoint)).resolves.not.toThrow();
   });
@@ -592,10 +593,10 @@ describe('assertCaCheckpointValid', () => {
   });
 
   it('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
-    const date = new Date(new Date().getTime() + 10000);
+    const date = new Date(Date.now() + 10000);
 
     let checkpoint: CheckpointSchedule | Date = date;
-    const paymentDate = new Date(new Date().getTime() - 100000);
+    const paymentDate = new Date(Date.now() - 100000);
     const expiryDate = new Date();
 
     let error;
@@ -622,11 +623,11 @@ describe('assertCaCheckpointValid', () => {
   });
 
   it('should throw an error if the expiry date is earlier than the Checkpoint date', async () => {
-    const date = new Date(new Date().getTime() + 10000);
+    const date = new Date(Date.now() + 10000);
 
     let checkpoint: CheckpointSchedule | Date = date;
-    const paymentDate = new Date(new Date().getTime() + 20000);
-    const expiryDate = new Date(new Date().getTime() - 200000);
+    const paymentDate = new Date(Date.now() + 20000);
+    const expiryDate = new Date(Date.now() - 200000);
 
     let error;
     try {
@@ -653,7 +654,7 @@ describe('assertCaCheckpointValid', () => {
 
     checkpoint = entityMockUtils.getCheckpointScheduleInstance({
       details: {
-        nextCheckpointDate: new Date(new Date().getTime() - 300000),
+        nextCheckpointDate: new Date(Date.now() - 300000),
       },
     });
 
@@ -778,7 +779,7 @@ describe('authorization request validations', () => {
     mockContext = dsMockUtils.getContextInstance();
     issuer = entityMockUtils.getIdentityInstance();
     target = entityMockUtils.getIdentityInstance();
-    expiry = new Date(new Date().getTime() + 10000000);
+    expiry = new Date(Date.now() + 10000000);
     dsMockUtils.createQueryMock('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
@@ -1253,7 +1254,7 @@ describe('authorization request validations', () => {
         remaining: allowance,
       };
       const data: Authorization = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
         value: subsidy,
       };
       const auth = new AuthorizationRequest(
@@ -1296,7 +1297,7 @@ describe('authorization request validations', () => {
         remaining: allowance,
       };
       const data: Authorization = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
         value: subsidy,
       };
       const auth = new AuthorizationRequest(
@@ -1334,7 +1335,7 @@ describe('authorization request validations', () => {
         remaining: allowance,
       };
       const data: Authorization = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
         value: subsidy,
       };
       const auth = new AuthorizationRequest(
@@ -1374,7 +1375,7 @@ describe('authorization request validations', () => {
         remaining: allowance,
       };
       const data: Authorization = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
         value: subsidy,
       };
       const auth = new AuthorizationRequest(
@@ -1901,5 +1902,52 @@ describe('getGroupFromPermissions', () => {
     });
 
     expect(result).toBeUndefined();
+  });
+});
+
+describe('getAssetHolderDid', () => {
+  beforeAll(() => {
+    entityMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    entityMockUtils.reset();
+    dsMockUtils.reset();
+  });
+
+  it('should return did if assetHolderId is an Account string and has an Identity', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const mockIdentity = entityMockUtils.getIdentityInstance({ did: 'someDid' });
+    entityMockUtils.configureMocks({
+      accountOptions: {
+        getIdentity: mockIdentity,
+      },
+    });
+
+    const result = await getAssetHolderDid('someAccountAddress', context);
+    expect(result).toBe('someDid');
+  });
+
+  it('should return undefined if assetHolderId is an Account string and has no Identity', async () => {
+    const context = dsMockUtils.getContextInstance();
+    entityMockUtils.configureMocks({
+      accountOptions: {
+        getIdentity: null,
+      },
+    });
+
+    const result = await getAssetHolderDid('someAccountAddress', context);
+    expect(result).toBeUndefined();
+  });
+
+  it('should return did if assetHolderId is a Portfolio', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const portfolio = entityMockUtils.getNumberedPortfolioInstance({
+      did: 'portfolioDid',
+    });
+
+    const result = await getAssetHolderDid(portfolio, context);
+    expect(result).toBe('portfolioDid');
   });
 });

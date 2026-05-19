@@ -49,7 +49,7 @@ describe('removeAssetDocuments procedure', () => {
     asset = entityMockUtils.getBaseAssetInstance({ assetId });
     documentIds = [new BigNumber(1), new BigNumber(2), new BigNumber(3)];
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
-    rawDocumentIds = documentIds.map(id => dsMockUtils.createMockU32(id));
+    rawDocumentIds = [];
     args = {
       asset,
       documentIds,
@@ -65,7 +65,8 @@ describe('removeAssetDocuments procedure', () => {
 
     when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     documentIds.forEach((id, index) => {
-      when(bigNumberToU32Spy).calledWith(id, mockContext).mockReturnValue(rawDocumentIds[index]!);
+      rawDocumentIds[index] = dsMockUtils.createMockU32(id);
+      when(bigNumberToU32Spy).calledWith(id, mockContext).mockReturnValue(rawDocumentIds[index]);
     });
   });
 

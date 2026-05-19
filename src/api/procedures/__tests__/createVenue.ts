@@ -117,6 +117,27 @@ describe('createVenue procedure', () => {
       resolver: expect.any(Function),
     });
   });
+
+  it('should use stringToAccountId per signer when chain is v7', async () => {
+    dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
+
+    const proc = procedureMockUtils.getInstance<CreateVenueParams, Venue>(mockContext);
+
+    const rawSigner = dsMockUtils.createMockAccountId('newSigner');
+    const stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    stringToAccountIdSpy.mockReturnValue(rawSigner);
+
+    when(stringToBytes).calledWith(description, mockContext).mockReturnValue(rawDetails);
+    when(venueTypeToMeshVenueTypeSpy).calledWith(type, mockContext).mockReturnValue(rawType);
+
+    const result = await prepareCreateVenue.call(proc, { ...args, signers: ['newSigner'] });
+
+    expect(result).toEqual({
+      transaction: createVenueTransaction,
+      args: [rawDetails, [rawSigner], rawType],
+      resolver: expect.any(Function),
+    });
+  });
 });
 
 describe('createCreateVenueResolver', () => {

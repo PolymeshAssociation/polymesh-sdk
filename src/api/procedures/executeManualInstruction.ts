@@ -1,14 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { assertInstructionValidForManualExecution } from '~/api/procedures/utils';
-import {
-  Account,
-  DefaultPortfolio,
-  Instruction,
-  NumberedPortfolio,
-  PolymeshError,
-  Procedure,
-} from '~/internal';
+import { Account, Instruction, PolymeshError, Procedure } from '~/internal';
 import {
   AssetHolder,
   ErrorCode,
@@ -18,7 +11,7 @@ import {
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { isOffChainLeg } from '~/utils';
+import { isOffChainLeg, isPortfolioAssetHolder } from '~/utils';
 import {
   assetHolderIdToMeshAssetHolder,
   assetHolderLikeToAssetHolder,
@@ -136,10 +129,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      portfolios: allowedAssetHolders.filter(assetHolder => !(assetHolder instanceof Account)) as (
-        | DefaultPortfolio
-        | NumberedPortfolio
-      )[],
+      portfolios: allowedAssetHolders.filter(isPortfolioAssetHolder),
       transactions: [TxTags.settlement.ExecuteManualInstruction],
       assets: [],
     },

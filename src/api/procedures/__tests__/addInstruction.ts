@@ -23,6 +23,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/addInstruction';
+import * as procedureUtilsModule from '~/api/procedures/utils';
 import {
   BaseAsset,
   Context,
@@ -99,6 +100,9 @@ describe('addInstruction procedure', () => {
   let legToOffChainLegSpy: jest.SpyInstance;
   let identityToBtreeSetSpy: jest.SpyInstance;
   let assetHolderIdsToBtreeSetSpy: jest.SpyInstance;
+  let getAssetHolderDidSpy: jest.SpyInstance;
+  let assertValidCddSpy: jest.SpyInstance;
+  let assertAssetHolderExistsSpy: jest.SpyInstance;
   let venueId: BigNumber;
   let amount: BigNumber;
   let from: PortfolioLike;
@@ -185,6 +189,9 @@ describe('addInstruction procedure', () => {
     legToOffChainLegSpy = jest.spyOn(utilsConversionModule, 'legToOffChainLeg');
     identityToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
     assetHolderIdsToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'assetHolderIdsToBtreeSet');
+    getAssetHolderDidSpy = jest.spyOn(procedureUtilsModule, 'getAssetHolderDid');
+    assertValidCddSpy = jest.spyOn(procedureUtilsModule, 'assertValidCdd');
+    assertAssetHolderExistsSpy = jest.spyOn(procedureUtilsModule, 'assertAssetHolderExists');
 
     venueId = new BigNumber(1);
     amount = new BigNumber(100);
@@ -304,6 +311,9 @@ describe('addInstruction procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
+    assertValidCddSpy.mockResolvedValue(undefined);
+    assertAssetHolderExistsSpy.mockResolvedValue(undefined);
+
     when(assetHolderLikeToAssetHolderIdSpy).calledWith(from).mockReturnValue({ did: fromDid });
     when(assetHolderLikeToAssetHolderIdSpy).calledWith(to).mockReturnValue({ did: toDid });
     when(assetHolderLikeToAssetHolderIdSpy)
@@ -375,6 +385,9 @@ describe('addInstruction procedure', () => {
     when(assetHolderIdsToBtreeSetSpy)
       .calledWith([rawFromHolder, rawToHolder], mockContext)
       .mockReturnValue(rawAssetHolderIds);
+
+    when(getAssetHolderDidSpy).calledWith(from, mockContext).mockResolvedValue(fromDid);
+    when(getAssetHolderDidSpy).calledWith(to, mockContext).mockResolvedValue(toDid);
 
     args = {
       venueId,
@@ -486,7 +499,7 @@ describe('addInstruction procedure', () => {
     });
 
     let error;
-    const legs = Array(2).fill({
+    const legs = new Array(2).fill({
       from,
       to,
       amount: new BigNumber(10),
@@ -986,6 +999,80 @@ describe('addInstruction procedure', () => {
         instructions: [{ legs: [{ from, to, asset, amount: new BigNumber(1) }] }],
       })
     ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if from asset holder does not exist on v7 chain', async () => {
+    mockContext = dsMockUtils.getContextInstance({ isV7: true });
+
+    when(getAssetHolderDidSpy).calledWith(from, mockContext).mockResolvedValue(null);
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      assetHoldersToAffirm: [[]],
+    });
+
+    let error;
+    try {
+      await prepareAddInstruction.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('From Asset Holder does not exist');
+    expect(error.code).toBe(ErrorCode.UnmetPrerequisite);
+  });
+
+  it('should throw an error if to asset holder does not exist on v7 chain', async () => {
+    mockContext = dsMockUtils.getContextInstance({ isV7: true });
+
+    when(getAssetHolderDidSpy).calledWith(to, mockContext).mockResolvedValue(null);
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      assetHoldersToAffirm: [[]],
+    });
+
+    let error;
+    try {
+      await prepareAddInstruction.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('To Asset Holder does not exist');
+    expect(error.code).toBe(ErrorCode.UnmetPrerequisite);
+  });
+
+  it('should call assertValidCdd for both leg parties on v7 when holders exist', async () => {
+    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
+    (mockContext as { isV7: boolean }).isV7 = true;
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+      nftCollectionOptions: {
+        exists: false,
+      },
+    });
+    getCustodianMock.mockReturnValue({ did: fromDid });
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      assetHoldersToAffirm: [[fromPortfolio, toPortfolio]],
+    });
+
+    await prepareAddInstruction.call(proc, args);
+
+    expect(assertValidCddSpy).toHaveBeenCalledWith(fromDid, mockContext);
+    expect(assertValidCddSpy).toHaveBeenCalledWith(toDid, mockContext);
   });
 
   it('should handle NFT legs', async () => {

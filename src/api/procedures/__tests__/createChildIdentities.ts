@@ -114,7 +114,7 @@ describe('createChildIdentities procedure', () => {
   it('should throw an error if expiry date is not valid', () => {
     const proc = procedureMockUtils.getInstance<
       CreateChildIdentitiesParams,
-      ChildIdentity[],
+      ChildIdentity[], // NOSONAR
       Storage
     >(mockContext, { identity, actingAccount });
 
@@ -126,6 +126,20 @@ describe('createChildIdentities procedure', () => {
     ).rejects.toThrow('Expiry date must be in the future');
   });
 
+  it('should throw NotSupported when the chain is not v7', () => {
+    mockContext = dsMockUtils.getContextInstance({ isV7: false });
+
+    const proc = procedureMockUtils.getInstance<
+      CreateChildIdentitiesParams,
+      ChildIdentity[], // NOSONAR
+      Storage
+    >(mockContext, { identity, actingAccount });
+
+    return expect(prepareCreateChildIdentities.call(proc, args)).rejects.toThrow(
+      'Child identities are no longer supported in chain v8'
+    );
+  });
+
   it('should throw an error if the signing Identity is already a child Identity', () => {
     entityMockUtils.configureMocks({
       childIdentityOptions: {
@@ -135,7 +149,7 @@ describe('createChildIdentities procedure', () => {
 
     const proc = procedureMockUtils.getInstance<
       CreateChildIdentitiesParams,
-      ChildIdentity[],
+      ChildIdentity[], // NOSONAR
       Storage
     >(mockContext, { identity, actingAccount });
 
@@ -147,7 +161,7 @@ describe('createChildIdentities procedure', () => {
   it('should throw an error if the one or more accounts are already linked to an Identity', () => {
     const proc = procedureMockUtils.getInstance<
       CreateChildIdentitiesParams,
-      ChildIdentity[],
+      ChildIdentity[], // NOSONAR
       Storage
     >(mockContext, { identity, actingAccount });
 
@@ -170,13 +184,12 @@ describe('createChildIdentities procedure', () => {
   it('should add a createChildIdentities transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<
       CreateChildIdentitiesParams,
-      ChildIdentity[],
+      ChildIdentity[], // NOSONAR
       Storage
     >(mockContext, { identity, actingAccount });
 
     const createChildIdentitiesTransaction = dsMockUtils.createTxMock(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      'identity' as any,
+      'identity',
       'createChildIdentities'
     );
 
@@ -193,7 +206,7 @@ describe('createChildIdentities procedure', () => {
     it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<
         CreateChildIdentitiesParams,
-        ChildIdentity[],
+        ChildIdentity[], // NOSONAR
         Storage
       >(mockContext, { identity, actingAccount });
       let boundFunc = getAuthorization.bind(proc);
@@ -215,7 +228,11 @@ describe('createChildIdentities procedure', () => {
         },
       });
 
-      proc = procedureMockUtils.getInstance<CreateChildIdentitiesParams, ChildIdentity[], Storage>(
+      proc = procedureMockUtils.getInstance<
+        CreateChildIdentitiesParams,
+        ChildIdentity[], // NOSONAR
+        Storage
+      >(
         dsMockUtils.getContextInstance({
           signingAccountIsEqual: false,
         }),
@@ -235,7 +252,7 @@ describe('createChildIdentities procedure', () => {
     it('should return the signing Identity', async () => {
       const proc = procedureMockUtils.getInstance<
         CreateChildIdentitiesParams,
-        ChildIdentity[],
+        ChildIdentity[], // NOSONAR
         Storage
       >(mockContext);
       const boundFunc = prepareStorage.bind(proc);

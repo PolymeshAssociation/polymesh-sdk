@@ -1,13 +1,8 @@
 import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
-import { ApproveAllowanceParams, AssetHolder, ErrorCode, TxTags } from '~/types';
+import { ApproveAllowanceParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { assetToMeshAssetId, bigNumberToBalance, stringToAccountId } from '~/utils/conversion';
 import { asAccount } from '~/utils/internal';
-
-export interface Storage {
-  did: string;
-  destinationAssetHolder: AssetHolder;
-}
 
 /**
  * @hidden
@@ -37,7 +32,8 @@ export function prepareApproveAllowance(
   if (amount.lt(0)) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Amount must be greater than 0',
+      message:
+        'Allowance amount cannot be less than 0. Pass 0 to revoke the allowance or greater than 0 to set the new allowance',
     });
   }
 

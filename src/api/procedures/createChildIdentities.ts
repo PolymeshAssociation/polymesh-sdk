@@ -29,7 +29,7 @@ export const createChildIdentityResolver =
 
     return childDids.map(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ data }) => new ChildIdentity({ did: identityIdToString(data[1] as any) }, context)
+      ({ data }) => new ChildIdentity({ did: identityIdToString(data[1] as any) }, context) // NOSONAR
     );
   };
 
@@ -37,10 +37,15 @@ export const createChildIdentityResolver =
  * @hidden
  */
 export async function prepareCreateChildIdentities(
-  this: Procedure<CreateChildIdentitiesParams, ChildIdentity[], Storage>,
+  this: Procedure<CreateChildIdentitiesParams, ChildIdentity[], Storage>, // NOSONAR
   args: CreateChildIdentitiesParams
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<TransactionSpec<ChildIdentity[], ExtrinsicParams<'identity', any>>> {
+): Promise<
+  TransactionSpec<
+    ChildIdentity[], // NOSONAR
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ExtrinsicParams<'identity', any>
+  >
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -106,7 +111,7 @@ export async function prepareCreateChildIdentities(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<CreateChildIdentitiesParams, ChildIdentity[], Storage>
+  this: Procedure<CreateChildIdentitiesParams, ChildIdentity[], Storage> // NOSONAR
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { identity, actingAccount },
@@ -133,7 +138,7 @@ export async function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<CreateChildIdentitiesParams, ChildIdentity[], Storage>
+  this: Procedure<CreateChildIdentitiesParams, ChildIdentity[], Storage> // NOSONAR
 ): Promise<Storage> {
   const { context } = this;
 
@@ -153,6 +158,6 @@ export async function prepareStorage(
  */
 export const createChildIdentities = (): Procedure<
   CreateChildIdentitiesParams,
-  ChildIdentity[],
+  ChildIdentity[], // NOSONAR
   Storage
 > => new Procedure(prepareCreateChildIdentities, getAuthorization, prepareStorage);

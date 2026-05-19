@@ -89,6 +89,31 @@ describe('quitSubsidy procedure', () => {
     });
   });
 
+  it('should return a removePayingKey transaction spec when chain is v7', async () => {
+    dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
+
+    const rawBeneficiaryAccountId = dsMockUtils.createMockAccountId('beneficiary');
+    const rawSubsidizerAccountId = dsMockUtils.createMockAccountId('subsidizer');
+    when(stringToAccountIdSpy)
+      .calledWith('beneficiary', mockContext)
+      .mockReturnValue(rawBeneficiaryAccountId);
+    when(stringToAccountIdSpy)
+      .calledWith('subsidizer', mockContext)
+      .mockReturnValue(rawSubsidizerAccountId);
+
+    const removePayingKeyTransaction = dsMockUtils.createTxMock('relayer', 'removePayingKey');
+
+    const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);
+
+    const result = await prepareQuitSubsidy.call(proc, args);
+
+    expect(result).toEqual({
+      transaction: removePayingKeyTransaction,
+      args: [rawBeneficiaryAccountId, rawSubsidizerAccountId],
+      resolver: undefined,
+    });
+  });
+
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', async () => {
       const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);

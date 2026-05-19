@@ -24,6 +24,7 @@ import {
   ErrorCode,
   ModuleName,
   MultiSigTx,
+  NftOwnerStatus,
   Permissions,
   PermissionType,
   ResultSet,
@@ -1032,6 +1033,224 @@ describe('Account class', () => {
 
       const result = await account.getNextAssetId();
       expect(result).toEqual('a45321d7-a653-836d-8b83-d1152cab085a');
+    });
+  });
+
+  describe('method: getAssetBalances', () => {
+    it('should return the balances for specific assets', async () => {
+      const assetId1 = '11111111-1111-1111-1111-111111111111';
+      const assetId2 = '22222222-2222-2222-2222-222222222222';
+      const asset1 = entityMockUtils.getFungibleAssetInstance({ assetId: assetId1 });
+      const asset2 = entityMockUtils.getFungibleAssetInstance({ assetId: assetId2 });
+
+      const asFungibleAssetSpy = jest.spyOn(utilsInternalModule, 'asFungibleAsset');
+
+      when(asFungibleAssetSpy).calledWith(asset1, context).mockResolvedValue(asset1);
+      when(asFungibleAssetSpy).calledWith('TICKER1', context).mockResolvedValue(asset1);
+      when(asFungibleAssetSpy).calledWith(asset2, context).mockResolvedValue(asset2);
+
+      const rawAccountId = dsMockUtils.createMockAccountId(address);
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccountId);
+
+      const rawAssetId1 = dsMockUtils.createMockAssetId(assetId1);
+      const rawAssetId2 = dsMockUtils.createMockAssetId(assetId2);
+      const stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
+      when(stringToAssetIdSpy).calledWith(assetId1, context).mockReturnValue(rawAssetId1);
+      when(stringToAssetIdSpy).calledWith(assetId2, context).mockReturnValue(rawAssetId2);
+
+      const totalBalance1 = dsMockUtils.createMockBalance(new BigNumber(100));
+      const totalBalance2 = dsMockUtils.createMockBalance(new BigNumber(200));
+      const lockedBalance1 = dsMockUtils.createMockBalance(new BigNumber(10));
+      const lockedBalance2 = dsMockUtils.createMockBalance(new BigNumber(20));
+
+      const balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
+      when(balanceToBigNumberSpy).calledWith(totalBalance1).mockReturnValue(new BigNumber(100));
+      when(balanceToBigNumberSpy).calledWith(totalBalance2).mockReturnValue(new BigNumber(200));
+      when(balanceToBigNumberSpy).calledWith(lockedBalance1).mockReturnValue(new BigNumber(10));
+      when(balanceToBigNumberSpy).calledWith(lockedBalance2).mockReturnValue(new BigNumber(20));
+
+      jest.fn().mockResolvedValue([totalBalance1, totalBalance2]);
+      jest.fn().mockResolvedValue([lockedBalance1, lockedBalance2]);
+
+      dsMockUtils.createQueryMock('asset', 'assetBalance', {
+        multi: [totalBalance1, totalBalance2],
+      });
+      dsMockUtils.createQueryMock('asset', 'lockedBalance', {
+        multi: [lockedBalance1, lockedBalance2],
+      });
+
+      const result = await account.getAssetBalances({ assets: ['TICKER1', asset2] });
+
+      expect(result).toEqual([
+        {
+          asset: asset1,
+          total: new BigNumber(100),
+          locked: new BigNumber(10),
+          free: new BigNumber(90),
+        },
+        {
+          asset: asset2,
+          total: new BigNumber(200),
+          locked: new BigNumber(20),
+          free: new BigNumber(180),
+        },
+      ]);
+    });
+
+    it('should return all asset balances', async () => {
+      const assetId1 = '11111111-1111-1111-1111-111111111111';
+      const assetId2 = '22222222-2222-2222-2222-222222222222';
+      const rawAccountId = dsMockUtils.createMockAccountId(address);
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccountId);
+
+      const rawAssetId1 = dsMockUtils.createMockAssetId(assetId1);
+      const rawAssetId2 = dsMockUtils.createMockAssetId(assetId2);
+
+      const totalBalance1 = dsMockUtils.createMockBalance(new BigNumber(100));
+      const totalBalance2 = dsMockUtils.createMockBalance(new BigNumber(200));
+      const lockedBalance1 = dsMockUtils.createMockBalance(new BigNumber(10));
+      const lockedBalance2 = dsMockUtils.createMockBalance(new BigNumber(0));
+
+      const balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
+      when(balanceToBigNumberSpy).calledWith(totalBalance1).mockReturnValue(new BigNumber(100));
+      when(balanceToBigNumberSpy).calledWith(totalBalance2).mockReturnValue(new BigNumber(200));
+      when(balanceToBigNumberSpy).calledWith(lockedBalance1).mockReturnValue(new BigNumber(10));
+      when(balanceToBigNumberSpy).calledWith(lockedBalance2).mockReturnValue(new BigNumber(0));
+
+      const assetIdToStringSpy = jest.spyOn(utilsConversionModule, 'assetIdToString');
+      when(assetIdToStringSpy).calledWith(rawAssetId1).mockReturnValue(assetId1);
+      when(assetIdToStringSpy).calledWith(rawAssetId2).mockReturnValue(assetId2);
+
+      const totalEntries = [
+        tuple([rawAccountId, rawAssetId1], totalBalance1),
+        tuple([rawAccountId, rawAssetId2], totalBalance2),
+      ];
+
+      const lockedEntries = [
+        tuple([rawAccountId, rawAssetId1], lockedBalance1),
+        tuple([rawAccountId, rawAssetId2], lockedBalance2),
+      ];
+
+      dsMockUtils.createQueryMock('asset', 'assetBalance', {
+        entries: totalEntries,
+      });
+      dsMockUtils.createQueryMock('asset', 'lockedBalance', {
+        entries: lockedEntries,
+      });
+
+      const result = await account.getAssetBalances();
+
+      expect(result[0]!.asset.id).toEqual(assetId1);
+      expect(result[0]!.total).toEqual(new BigNumber(100));
+      expect(result[0]!.locked).toEqual(new BigNumber(10));
+      expect(result[0]!.free).toEqual(new BigNumber(90));
+
+      expect(result[1]!.asset.id).toEqual(assetId2);
+      expect(result[1]!.total).toEqual(new BigNumber(200));
+      expect(result[1]!.locked).toEqual(new BigNumber(0));
+      expect(result[1]!.free).toEqual(new BigNumber(200));
+    });
+  });
+
+  describe('method: getCollections', () => {
+    it('should throw an error if the chain version is v7', async () => {
+      context.isV7 = true;
+      await expect(account.getCollections()).rejects.toThrow(
+        'Account.getCollections is not supported for chain 7.x'
+      );
+    });
+
+    it('should return collections held by the Account', async () => {
+      context.isV7 = false;
+
+      const rawAccountId = dsMockUtils.createMockAccountId(address);
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccountId);
+
+      const assetId1 = '11111111-1111-1111-1111-111111111111';
+      const assetId2 = '22222222-2222-2222-2222-222222222222';
+      const rawAssetId1 = dsMockUtils.createMockAssetId(assetId1);
+      const rawAssetId2 = dsMockUtils.createMockAssetId(assetId2);
+      const rawNftId1 = dsMockUtils.createMockU64(new BigNumber(1));
+      const rawStatus1 = 'someStatus1';
+      const rawNftId2 = dsMockUtils.createMockU64(new BigNumber(2));
+      const rawStatus2 = 'someStatus2';
+      const rawNftId3 = dsMockUtils.createMockU64(new BigNumber(3));
+      const rawNftId4 = dsMockUtils.createMockU64(new BigNumber(4));
+
+      const asAssetIdSpy = jest.spyOn(utilsInternalModule, 'asAssetId');
+      when(asAssetIdSpy).calledWith(assetId1, context).mockResolvedValue(assetId1);
+      when(asAssetIdSpy).calledWith(assetId2, context).mockResolvedValue(assetId2);
+
+      const meshNftOwnerStatusToNftOwnerStatusSpy = jest.spyOn(
+        utilsConversionModule,
+        'meshNftOwnerStatusToNftOwnerStatus'
+      );
+      when(meshNftOwnerStatusToNftOwnerStatusSpy)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .calledWith(rawStatus1 as any)
+        .mockReturnValue(NftOwnerStatus.Owner);
+      when(meshNftOwnerStatusToNftOwnerStatusSpy)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .calledWith(rawStatus2 as any)
+        .mockReturnValue(NftOwnerStatus.OwnerLocked);
+
+      const assetIdToStringSpy = jest.spyOn(utilsConversionModule, 'assetIdToString');
+      when(assetIdToStringSpy).calledWith(rawAssetId1).mockReturnValue(assetId1);
+      when(assetIdToStringSpy).calledWith(rawAssetId2).mockReturnValue(assetId2);
+
+      const u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+      when(u64ToBigNumberSpy).calledWith(rawNftId1).mockReturnValue(new BigNumber(1));
+      when(u64ToBigNumberSpy).calledWith(rawNftId2).mockReturnValue(new BigNumber(2));
+      when(u64ToBigNumberSpy).calledWith(rawNftId3).mockReturnValue(new BigNumber(3));
+      when(u64ToBigNumberSpy).calledWith(rawNftId4).mockReturnValue(new BigNumber(4));
+
+      const nftHolderQueryMock = dsMockUtils.createQueryMock('nft', 'nftHolder');
+      const entriesSpy = nftHolderQueryMock.entries;
+
+      const allEntries = [
+        tuple([rawAccountId, rawAssetId1, rawNftId1], rawStatus1),
+        tuple([rawAccountId, rawAssetId1, rawNftId2], rawStatus2),
+        tuple([rawAccountId, rawAssetId1, rawNftId3], rawStatus1),
+        tuple([rawAccountId, rawAssetId2, rawNftId4], rawStatus1),
+      ];
+
+      const allEntryResults = allEntries.map(([keys, value], index) => [
+        { args: keys, toHex: (): string => `key${index}` },
+        value,
+      ]);
+
+      const assetId1EntryResults = allEntryResults.slice(0, 3);
+
+      when(entriesSpy)
+        .calledWith(rawAccountId)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockResolvedValue(allEntryResults as any);
+      when(entriesSpy)
+        .calledWith(rawAccountId, assetId1)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockResolvedValue(assetId1EntryResults as any);
+
+      // 1. Without passing specific collections
+      let result = await account.getCollections();
+      expect(result).toHaveLength(2);
+      expect(result[0]!.collection.id).toEqual(assetId1);
+      expect(result[0]!.free).toHaveLength(2);
+      expect(result[0]!.free[0]!.id).toEqual(new BigNumber(1));
+      expect(result[0]!.free[1]!.id).toEqual(new BigNumber(3));
+      expect(result[0]!.locked).toHaveLength(1);
+      expect(result[0]!.locked[0]!.id).toEqual(new BigNumber(2));
+      expect(result[0]!.total).toEqual(new BigNumber(2));
+
+      expect(result[1]!.collection.id).toEqual(assetId2);
+      expect(result[1]!.free).toHaveLength(1);
+      expect(result[1]!.free[0]!.id).toEqual(new BigNumber(4));
+      expect(result[1]!.locked).toHaveLength(0);
+      expect(result[1]!.total).toEqual(new BigNumber(1));
+
+      // 2. Passing specific collections
+      result = await account.getCollections({ collections: [assetId1] });
+      expect(result).toHaveLength(1);
+      expect(result[0]!.collection.id).toEqual(assetId1);
     });
   });
 });

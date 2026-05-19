@@ -9,10 +9,10 @@ import {
   Storage,
 } from '~/api/procedures/acceptPrimaryKeyRotation';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { AuthorizationRequest, Context } from '~/internal';
+import { AuthorizationRequest, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AcceptPrimaryKeyRotationParams, Account, AuthorizationType } from '~/types';
+import { AcceptPrimaryKeyRotationParams, Account, AuthorizationType, ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('acceptPrimaryKeyRotation procedure', () => {
@@ -82,7 +82,7 @@ describe('acceptPrimaryKeyRotation procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should return an acceptPrimaryKey transaction spec', async () => {
+  it('should return an acceptPrimaryKey transaction spec for v7 chain', async () => {
     const transaction = dsMockUtils.createTxMock('identity', 'acceptPrimaryKey');
 
     let proc = procedureMockUtils.getInstance<AcceptPrimaryKeyRotationParams, void, Storage>(
@@ -118,6 +118,30 @@ describe('acceptPrimaryKeyRotation procedure', () => {
       transaction,
       paidForBy: ownerAuthRequest.issuer,
       args: [rawOwnerAuthId, rawCddAuthId],
+      resolver: undefined,
+    });
+  });
+
+  it('should return an acceptPrimaryKey transaction spec', async () => {
+    const transaction = dsMockUtils.createTxMock('identity', 'acceptPrimaryKey');
+    const v8MockContext = dsMockUtils.getContextInstance({ isV7: false });
+    when(bigNumberToU64Spy).calledWith(ownerAuthId, v8MockContext).mockReturnValue(rawOwnerAuthId);
+
+    const proc = procedureMockUtils.getInstance<AcceptPrimaryKeyRotationParams, void, Storage>(
+      v8MockContext,
+      {
+        calledByTarget: true,
+        ownerAuthRequest,
+        cddAuthRequest: undefined,
+      }
+    );
+
+    const result = await prepareAcceptPrimaryKeyRotation.call(proc);
+
+    expect(result).toEqual({
+      transaction,
+      paidForBy: ownerAuthRequest.issuer,
+      args: [rawOwnerAuthId],
       resolver: undefined,
     });
   });
@@ -172,6 +196,31 @@ describe('acceptPrimaryKeyRotation procedure', () => {
         ownerAuthRequest,
         cddAuthRequest: undefined,
       });
+    });
+
+    it('should throw an error if cddAuth is provided on v8 chain', async () => {
+      const v8MockContext = dsMockUtils.getContextInstance({
+        signingAddress: targetAddress,
+        signingAccountIsEqual: true,
+        isV7: false,
+      });
+
+      const proc = procedureMockUtils.getInstance<AcceptPrimaryKeyRotationParams, void, Storage>(
+        v8MockContext
+      );
+      const boundFunc = prepareStorage.bind(proc);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'CDD is discontinued since v8',
+      });
+
+      await expect(
+        boundFunc({
+          ownerAuth: ownerAuthId,
+          cddAuth: cddAuthId,
+        })
+      ).rejects.toThrow(expectedError);
     });
   });
 

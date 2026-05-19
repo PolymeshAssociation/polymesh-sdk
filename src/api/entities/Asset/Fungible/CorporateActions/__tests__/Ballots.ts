@@ -22,7 +22,7 @@ jest.mock(
 
 describe('Ballots class', () => {
   const start = new Date();
-  const end = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30);
+  const end = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -162,7 +162,7 @@ describe('Ballots class', () => {
     it('should return all existing Ballots for the Asset', async () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const params = {
-        declDate: new BigNumber(new Date().getTime()),
+        declDate: new BigNumber(Date.now()),
         recordDate: null,
         targets: {
           identities: [],

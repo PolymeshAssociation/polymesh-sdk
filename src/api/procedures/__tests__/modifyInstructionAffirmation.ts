@@ -14,12 +14,13 @@ import { when } from 'jest-when';
 import {
   getAuthorization,
   isParam,
+  modifyInstructionAffirmation,
   prepareModifyInstructionAffirmation,
   prepareStorage,
   Storage,
 } from '~/api/procedures/modifyInstructionAffirmation';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Context, DefaultPortfolio, Instruction, PolymeshError } from '~/internal';
+import { Context, DefaultPortfolio, Instruction, PolymeshError, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetCount,
@@ -209,6 +210,64 @@ describe('modifyInstructionAffirmation procedure', () => {
         operation: InstructionAffirmationOperation.Affirm,
       })
     ).rejects.toThrow('Some of the asset holders are not a involved in this instruction');
+  });
+
+  it('should throw an error if the operation is Withdraw and the chain is v8 (isV7 = false)', () => {
+    const v8MockContext = dsMockUtils.getContextInstance({ isV7: false });
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(v8MockContext, {
+      allowedAssetHolders: [portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
+      signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Withdrawal of affirmed instructions has been discontinued from v8 chain',
+    });
+
+    return expect(
+      prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if the operation is WithdrawAsMediator and the chain is v8 (isV7 = false)', () => {
+    const v8MockContext = dsMockUtils.getContextInstance({ isV7: false });
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(v8MockContext, {
+      allowedAssetHolders: [portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
+      signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.NotSupported,
+      message: 'Withdrawal of affirmed instructions has been discontinued from v8 chain',
+    });
+
+    return expect(
+      prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.WithdrawAsMediator, // NOSONAR
+      })
+    ).rejects.toThrow(expectedError);
   });
 
   it('should throw an error if the signing Identity is not the custodian of any of the involved portfolios', () => {
@@ -726,7 +785,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     return expect(
       prepareModifyInstructionAffirmation.call(proc, {
         id,
-        operation: InstructionAffirmationOperation.Withdraw,
+        operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
       })
     ).rejects.toThrow('The instruction is not affirmed');
   });
@@ -774,7 +833,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     await expect(
       prepareModifyInstructionAffirmation.call(proc, {
         id,
-        operation: InstructionAffirmationOperation.Withdraw,
+        operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
       })
     ).rejects.toThrow('The instruction is locked for execution');
 
@@ -822,7 +881,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
-      operation: InstructionAffirmationOperation.Withdraw,
+      operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
     });
 
     expect(result).toEqual({
@@ -869,7 +928,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     return expect(
       prepareModifyInstructionAffirmation.call(proc, {
         id,
-        operation: InstructionAffirmationOperation.WithdrawAsMediator,
+        operation: InstructionAffirmationOperation.WithdrawAsMediator, // NOSONAR
       })
     ).rejects.toThrow(expectedError);
   });
@@ -912,7 +971,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
-      operation: InstructionAffirmationOperation.WithdrawAsMediator,
+      operation: InstructionAffirmationOperation.WithdrawAsMediator, // NOSONAR
     });
 
     expect(result).toEqual({
@@ -1159,7 +1218,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       result = boundFunc({
         ...args,
-        operation: InstructionAffirmationOperation.WithdrawAsMediator,
+        operation: InstructionAffirmationOperation.WithdrawAsMediator, // NOSONAR
       });
 
       expect(result).toEqual({
@@ -1285,6 +1344,29 @@ describe('modifyInstructionAffirmation procedure', () => {
         offChainLegIndices: [2],
         instructionInfo: mockExecuteInfo,
       });
+
+      result = await boundFunc({
+        id: new BigNumber(1),
+        operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
+        holders: [fromDid],
+      });
+
+      expect(result).toEqual({
+        allowedAssetHolders: [],
+        assetHolderParams: [fromDid],
+        senderLegCount: new BigNumber(0),
+        totalLegCount: new BigNumber(3),
+        signer: expect.objectContaining({ did: signer.did }),
+        offChainLegIndices: [2],
+        instructionInfo: mockExecuteInfo,
+      });
+
+      result = await boundFunc({
+        id: new BigNumber(1),
+        operation: InstructionAffirmationOperation.Reject,
+      });
+
+      expect(result.assetHolderParams).toEqual([]);
     });
 
     it('should return the portfolios for which to modify affirmation status when there is no sender legs', async () => {
@@ -1318,6 +1400,43 @@ describe('modifyInstructionAffirmation procedure', () => {
         offChainLegIndices: [],
         instructionInfo: mockExecuteInfo,
       });
+    });
+
+    it('should handle Account as asset holder in checkCustody, and include it if address matches signer address', async () => {
+      const proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext);
+
+      const boundFunc = prepareStorage.bind(proc);
+      const myAccount = entityMockUtils.getAccountInstance({
+        address: 'signerAddress',
+        exists: true,
+      });
+      const otherAccount = entityMockUtils.getAccountInstance({
+        address: 'otherAddress',
+        exists: true,
+      });
+
+      mockContext.getSigningAccount().address = 'signerAddress';
+
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          getLegsFromChain: {
+            data: [{ from: myAccount, to: otherAccount, amount, asset }],
+            next: null,
+          },
+        },
+      });
+
+      const result = await boundFunc({
+        id: new BigNumber(1),
+        operation: InstructionAffirmationOperation.Affirm,
+      });
+
+      expect(result.allowedAssetHolders).toEqual([myAccount]);
+      expect(result.senderLegCount).toEqual(new BigNumber(1));
     });
   });
 });
@@ -1397,5 +1516,25 @@ describe('isParam', () => {
     ];
     const nonMatchingResult = isParam(numberedPortfolio, nonMatchingParams);
     expect(nonMatchingResult).toBe(false);
+  });
+
+  it('should return true when both are string and equal, or false when one is string and the other is not', () => {
+    const account = entityMockUtils.getAccountInstance({ address: 'someAddress' });
+    when(assetHolderLikeToAssetHolderIdSpy).calledWith(account).mockReturnValue('someAddress');
+
+    const resultEqual = isParam(account, ['someAddress']);
+    expect(resultEqual).toBe(true);
+
+    const resultNotEqual = isParam(account, ['otherAddress']);
+    expect(resultNotEqual).toBe(false);
+
+    const resultMixed = isParam(account, [{ did: 'someDid' }]);
+    expect(resultMixed).toBe(false);
+  });
+});
+
+describe('modifyInstructionAffirmation', () => {
+  it('should be instance of Procedure', () => {
+    expect(modifyInstructionAffirmation()).toBeInstanceOf(Procedure);
   });
 });

@@ -51,7 +51,6 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    */
   public collection: NftCollection;
 
-  // TODO @prashantasdeveloper add support for burning from account
   /**
    * Redeem (or "burns") the NFT, removing it from circulation
    */

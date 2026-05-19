@@ -169,12 +169,19 @@ export interface BaseHistoricAssetTransaction extends EventIdentifier {
    */
   from: DefaultPortfolio | NumberedPortfolio | null;
 
+  /**
+   * Origin account involved in the transaction. This value will be null when the `event` value is `Issued` or when the origin asset holder is a Portfolio
+   */
   fromAccount: Account | null;
+
   /**
    * Destination portfolio involved in the transaction . This value will be null when the `event` value is `Redeemed`
    */
   to: DefaultPortfolio | NumberedPortfolio | null;
 
+  /**
+   * Destination account involved in this transcation. This value will be null when the `event` value is `Redeemed` or when the destination asset holder is a Portfolio
+   */
   toAccount: Account | null;
 
   /**

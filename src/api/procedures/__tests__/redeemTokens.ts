@@ -8,9 +8,10 @@ import {
   Params,
   prepareRedeemTokens,
   prepareStorage,
+  redeemTokens,
   Storage,
 } from '~/api/procedures/redeemTokens';
-import { Context, NumberedPortfolio } from '~/internal';
+import { Context, NumberedPortfolio, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { FungibleAsset, PortfolioBalance, TxTags } from '~/types';
@@ -35,6 +36,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
     '~/api/entities/NumberedPortfolio'
   )
+);
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 
 describe('redeemTokens procedure', () => {
@@ -140,6 +145,41 @@ describe('redeemTokens procedure', () => {
     });
   });
 
+  it('should return a redeem transaction spec when from is an Account (fromAssetHolder instanceof Account)', async () => {
+    const fromAccount = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+    });
+    fromAccount.getAssetBalances = jest.fn().mockResolvedValue([
+      {
+        free: amount,
+      },
+    ]);
+
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      fromAssetHolder: fromAccount,
+    });
+
+    const transaction = dsMockUtils.createTxMock('asset', 'redeem');
+
+    const rawAssetHolderKind = dsMockUtils.createMockAssetHolderKind('Account');
+
+    when(jest.spyOn(utilsConversionModule, 'assetHolderToAssetHolderKind'))
+      .calledWith(fromAccount, mockContext)
+      .mockReturnValue(rawAssetHolderKind);
+
+    const result = await prepareRedeemTokens.call(proc, {
+      asset,
+      amount,
+      fromAccount,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      args: [rawAssetId, rawAmount, rawAssetHolderKind],
+      resolver: undefined,
+    });
+  });
+
   it('should throw an error if the portfolio has not sufficient balance to redeem', () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       fromAssetHolder: entityMockUtils.getNumberedPortfolioInstance({
@@ -187,6 +227,24 @@ describe('redeemTokens procedure', () => {
           transactions: [TxTags.asset.Redeem],
           assets: [expect.objectContaining({ id: assetId })],
           portfolios: [fromAssetHolder],
+        },
+      });
+
+      const fromAccount = entityMockUtils.getAccountInstance({ address: 'someAddress' });
+
+      proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        fromAssetHolder: fromAccount,
+      });
+
+      boundFunc = getAuthorization.bind(proc);
+
+      result = boundFunc({ ...params, fromAccount });
+
+      expect(result).toEqual({
+        permissions: {
+          transactions: [TxTags.asset.Redeem],
+          assets: [expect.objectContaining({ id: assetId })],
+          portfolios: [],
         },
       });
 
@@ -246,5 +304,31 @@ describe('redeemTokens procedure', () => {
         fromAssetHolder: from,
       });
     });
+
+    it('should throw if both from and fromAccount are provided', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      return expect(
+        boundFunc({ from: new BigNumber(1), fromAccount: '0xdummy' } as Params)
+      ).rejects.toThrow('Only one of `from` or `fromAccount` can be provided to redeem');
+    });
+
+    it('should return an Account-based asset holder when fromAccount is provided', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc({ fromAccount: '0xdummy' } as Params);
+
+      expect(result).toEqual({
+        fromAssetHolder: expect.objectContaining({ address: '0xdummy' }),
+      });
+    });
+  });
+});
+
+describe('redeemTokens', () => {
+  it('should be instance of Procedure', () => {
+    expect(redeemTokens()).toBeInstanceOf(Procedure);
   });
 });

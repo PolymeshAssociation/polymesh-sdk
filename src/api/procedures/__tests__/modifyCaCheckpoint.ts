@@ -51,7 +51,7 @@ describe('modifyCaCheckpoint procedure', () => {
       corporateAction: entityMockUtils.getDividendDistributionInstance({
         paymentDate: new Date('10/14/1987'),
       }),
-      checkpoint: new Date(new Date().getTime() + 60 * 60 * 1000),
+      checkpoint: new Date(Date.now() + 60 * 60 * 1000),
     };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -68,7 +68,7 @@ describe('modifyCaCheckpoint procedure', () => {
   });
 
   it('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
-    const checkpoint = new Date(new Date().getTime() + 1000);
+    const checkpoint = new Date(Date.now() + 1000);
     const args = {
       corporateAction: entityMockUtils.getDividendDistributionInstance({
         paymentDate: new Date(checkpoint.getTime() - 100),
@@ -90,7 +90,7 @@ describe('modifyCaCheckpoint procedure', () => {
   });
 
   it('should throw an error if the checkpoint date is after the expiry date', () => {
-    const checkpoint = new Date(new Date().getTime() + 1000);
+    const checkpoint = new Date(Date.now() + 1000);
     const paymentDate = new Date(checkpoint.getTime() + 2000);
     const args = {
       corporateAction: entityMockUtils.getDividendDistributionInstance({
@@ -153,7 +153,7 @@ describe('modifyCaCheckpoint procedure', () => {
   it('should throw an error if date is in the past', async () => {
     const args = {
       corporateAction: entityMockUtils.getCorporateActionInstance(),
-      checkpoint: new Date(new Date().getTime() - 100000),
+      checkpoint: new Date(Date.now() - 100000),
     };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -194,7 +194,7 @@ describe('modifyCaCheckpoint procedure', () => {
 
     const args = {
       corporateAction: mockCorporateBallot,
-      checkpoint: new Date(new Date().getTime() + 100),
+      checkpoint: new Date(Date.now() + 100),
     };
 
     dsMockUtils.createQueryMock('corporateBallot', 'timeRanges', {
@@ -233,15 +233,15 @@ describe('modifyCaCheckpoint procedure', () => {
     );
     const args = {
       corporateAction: mockCorporateBallot,
-      checkpoint: new Date(new Date().getTime() + 100),
+      checkpoint: new Date(Date.now() + 100),
     };
 
     dsMockUtils.createQueryMock('corporateBallot', 'timeRanges', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockCodec(
           {
-            start: dsMockUtils.createMockMoment(new BigNumber(new Date().getTime() - 100000)),
-            end: dsMockUtils.createMockMoment(new BigNumber(new Date().getTime() + 200000)),
+            start: dsMockUtils.createMockMoment(new BigNumber(Date.now() - 100000)),
+            end: dsMockUtils.createMockMoment(new BigNumber(Date.now() + 200000)),
           },
           false
         )
@@ -280,15 +280,15 @@ describe('modifyCaCheckpoint procedure', () => {
     );
     const args = {
       corporateAction: mockCorporateBallot,
-      checkpoint: new Date(new Date().getTime() + 20000),
+      checkpoint: new Date(Date.now() + 20000),
     };
 
     dsMockUtils.createQueryMock('corporateBallot', 'timeRanges', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockCodec(
           {
-            start: dsMockUtils.createMockMoment(new BigNumber(new Date().getTime() + 10000)),
-            end: dsMockUtils.createMockMoment(new BigNumber(new Date().getTime() + 300000)),
+            start: dsMockUtils.createMockMoment(new BigNumber(Date.now() + 10000)),
+            end: dsMockUtils.createMockMoment(new BigNumber(Date.now() + 300000)),
           },
           false
         )
@@ -325,7 +325,7 @@ describe('modifyCaCheckpoint procedure', () => {
       },
       mockContext
     );
-    const checkpoint = new Date(new Date().getTime() + 20000);
+    const checkpoint = new Date(Date.now() + 20000);
     const args = {
       corporateAction: mockCorporateBallot,
       checkpoint: entityMockUtils.getCheckpointScheduleInstance({
@@ -339,8 +339,8 @@ describe('modifyCaCheckpoint procedure', () => {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockCodec(
           {
-            start: dsMockUtils.createMockMoment(new BigNumber(new Date().getTime() + 10000)),
-            end: dsMockUtils.createMockMoment(new BigNumber(new Date().getTime() + 300000)),
+            start: dsMockUtils.createMockMoment(new BigNumber(Date.now() + 10000)),
+            end: dsMockUtils.createMockMoment(new BigNumber(Date.now() + 300000)),
           },
           false
         )
@@ -369,7 +369,7 @@ describe('modifyCaCheckpoint procedure', () => {
     jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
 
     const rawRecordDateSpec = dsMockUtils.createMockRecordDateSpec({
-      Scheduled: dsMockUtils.createMockMoment(new BigNumber(new Date().getTime())),
+      Scheduled: dsMockUtils.createMockMoment(new BigNumber(Date.now())),
     });
 
     jest
@@ -410,7 +410,7 @@ describe('modifyCaCheckpoint procedure', () => {
       corporateAction: entityMockUtils.getCorporateActionInstance({
         id,
       }),
-      checkpoint: new Date(new Date().getTime() + 100000),
+      checkpoint: new Date(Date.now() + 100000),
     });
 
     expect(result).toEqual({

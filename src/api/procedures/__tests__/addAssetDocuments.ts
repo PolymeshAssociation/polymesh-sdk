@@ -63,19 +63,7 @@ describe('addAssetDocuments procedure', () => {
       },
     ];
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
-    rawDocuments = documents.map(({ name, uri, contentHash, type, filedAt }) =>
-      dsMockUtils.createMockDocument({
-        name: dsMockUtils.createMockBytes(name),
-        uri: dsMockUtils.createMockBytes(uri),
-        contentHash: dsMockUtils.createMockDocumentHash({
-          H128: dsMockUtils.createMockU8aFixed(contentHash, true),
-        }),
-        docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
-        filingDate: dsMockUtils.createMockOption(
-          filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
-        ),
-      })
-    );
+    rawDocuments = [];
     args = {
       asset,
       documents,
@@ -93,9 +81,21 @@ describe('addAssetDocuments procedure', () => {
 
     when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     documents.forEach((doc, index) => {
+      const { name, uri, contentHash, type, filedAt } = doc;
+      rawDocuments[index] = dsMockUtils.createMockDocument({
+        name: dsMockUtils.createMockBytes(name),
+        uri: dsMockUtils.createMockBytes(uri),
+        contentHash: dsMockUtils.createMockDocumentHash({
+          H128: dsMockUtils.createMockU8aFixed(contentHash, true),
+        }),
+        docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
+        filingDate: dsMockUtils.createMockOption(
+          filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
+        ),
+      });
       when(assetDocumentToDocumentSpy)
         .calledWith(doc, mockContext)
-        .mockReturnValue(rawDocuments[index]!);
+        .mockReturnValue(rawDocuments[index]);
     });
   });
 

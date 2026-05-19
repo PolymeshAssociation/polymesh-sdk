@@ -710,7 +710,7 @@ export interface AcceptPrimaryKeyRotationParams {
   ownerAuth: BigNumber | AuthorizationRequest;
   /**
    * (optional) Authorization from a CDD service provider attesting the rotation of primary key
-   * @deprecated since v8.0.0
+   * @deprecated this value will be ignored from chain v8
    */
   cddAuth?: BigNumber | AuthorizationRequest;
 }
@@ -1203,9 +1203,9 @@ export interface OffChainAffirmationReceipt {
 
 export type AffirmInstructionParams = {
   /**
-   * (optional) Portfolios that the signer controls and wants to affirm the instruction
+   * (optional) Asset holders that the signer controls and wants to affirm the instruction
    *
-   * @note if empty, all the legs containing any custodied Portfolios of the signer will be affirmed
+   * @note if empty, all the legs containing any custodied portfolios or accounts of of the signer will be affirmed
    */
   holders?: AssetHolderLike[];
 

@@ -151,6 +151,65 @@ describe('Authorizations class', () => {
 
       expect(JSON.stringify(result)).toBe(JSON.stringify(expectedAuthorizations));
     });
+
+    it('should map AddRelayerPayingKey to OldAddRelayerPayingKey', async () => {
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance({ did, isV7: false });
+      const identity = entityMockUtils.getIdentityInstance({ did });
+      const authsNamespace = new Authorizations(identity, context);
+      const rawSignatory = dsMockUtils.createMockSignatory();
+      const rawAuthorizationType = dsMockUtils.createMockAuthorizationType();
+
+      when(signerValueToSignatorySpy).mockReturnValue(rawSignatory);
+      when(booleanToBoolSpy)
+        .calledWith(true, context)
+        .mockReturnValue(dsMockUtils.createMockBool(true));
+      when(authorizationTypeToMeshAuthorizationTypeSpy)
+        .calledWith(AuthorizationType.OldAddRelayerPayingKey, context)
+        .mockReturnValue(rawAuthorizationType);
+
+      dsMockUtils.createCallMock('identityApi', 'getFilteredAuthorizations').mockResolvedValue([]);
+
+      await authsNamespace.getReceived({
+        type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
+      });
+
+      expect(authorizationTypeToMeshAuthorizationTypeSpy).toHaveBeenCalledWith(
+        AuthorizationType.OldAddRelayerPayingKey,
+        context
+      );
+    });
+
+    it('should map OldAddRelayerPayingKey to AddRelayerPayingKey on v7 chain', async () => {
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance({ did, isV7: true });
+      const identity = entityMockUtils.getIdentityInstance({ did });
+      const authsNamespace = new Authorizations(identity, context);
+      const rawSignatory = dsMockUtils.createMockSignatory();
+      const rawAuthorizationType = dsMockUtils.createMockAuthorizationType();
+
+      when(signerValueToSignatorySpy).mockReturnValue(rawSignatory);
+      when(booleanToBoolSpy)
+        .calledWith(true, context)
+        .mockReturnValue(dsMockUtils.createMockBool(true));
+      when(authorizationTypeToMeshAuthorizationTypeSpy)
+        .calledWith(
+          AuthorizationType.AddRelayerPayingKey, // NOSONAR
+          context
+        )
+        .mockReturnValue(rawAuthorizationType);
+
+      dsMockUtils.createCallMock('identityApi', 'getFilteredAuthorizations').mockResolvedValue([]);
+
+      await authsNamespace.getReceived({
+        type: AuthorizationType.OldAddRelayerPayingKey,
+      });
+
+      expect(authorizationTypeToMeshAuthorizationTypeSpy).toHaveBeenCalledWith(
+        AuthorizationType.AddRelayerPayingKey, // NOSONAR
+        context
+      );
+    });
   });
 
   describe('method: getOne', () => {
