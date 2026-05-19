@@ -877,6 +877,12 @@ function configureContext(opts: ContextOptions): void {
         getTransactionHistory: jest.fn().mockResolvedValue(opts.transactionHistory),
         hasPermissions: jest.fn().mockResolvedValue(opts.hasPermissions),
         checkPermissions: jest.fn().mockResolvedValue(opts.checkPermissions),
+        getPermissions: jest.fn().mockResolvedValue({
+          assets: null,
+          transactions: null,
+          transactionGroups: [],
+          portfolios: null,
+        }),
         isFrozen: jest.fn().mockResolvedValue(opts.isFrozen),
         isEqual: jest.fn().mockReturnValue(opts.signingAccountIsEqual),
         getMultiSig: jest.fn().mockResolvedValue(null),
