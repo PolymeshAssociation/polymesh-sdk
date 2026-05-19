@@ -129,6 +129,7 @@ import {
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementAffirmationRequirement,
   PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstruction,
@@ -3443,6 +3444,16 @@ export const createMockSettlementType = (
     | { SettleManual: u32 }
 ): MockCodec<PolymeshPrimitivesSettlementSettlementType> => {
   return createMockEnum<PolymeshPrimitivesSettlementSettlementType>(settlementType);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAffirmationRequirement = (
+  requirement?: 'Automatic' | 'Required'
+): MockCodec<PolymeshPrimitivesSettlementAffirmationRequirement> => {
+  return createMockEnum<PolymeshPrimitivesSettlementAffirmationRequirement>(requirement);
 };
 
 /**

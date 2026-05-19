@@ -73,6 +73,7 @@ import {
   PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementAffirmationRequirement,
   PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstructionStatus,
@@ -278,6 +279,7 @@ import {
   PortfolioId,
   PortfolioLike,
   ProposalStatus,
+  ReceiverAffirmationRequirement,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -3381,6 +3383,16 @@ export function meshInstructionStatusToInstructionStatus(
   }
 
   return InternalInstructionStatus.Unknown;
+}
+
+/**
+ * @hidden
+ */
+export function affirmationRequirementToMesh(
+  requirement: ReceiverAffirmationRequirement,
+  context: Context
+): PolymeshPrimitivesSettlementAffirmationRequirement {
+  return context.createType('PolymeshPrimitivesSettlementAffirmationRequirement', requirement);
 }
 
 /**

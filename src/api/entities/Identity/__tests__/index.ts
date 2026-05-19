@@ -34,6 +34,7 @@ import {
   PermissionedAccount,
   Permissions,
   PortfolioCustodianRole,
+  ReceiverAffirmationRequirement,
   Role,
   RoleType,
   TickerOwnerRole,
@@ -1489,6 +1490,62 @@ describe('Identity class', () => {
       const result = await identity.isAssetPreApproved(assetId);
 
       expect(result).toBeTruthy();
+    });
+  });
+
+  describe('method: isMandatoryReceiverAffirmationEnabled', () => {
+    it('should return true when mandatory receiver affirmation is enabled', async () => {
+      const did = 'someDid';
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawDid);
+
+      dsMockUtils
+        .createQueryMock('settlement', 'mandatoryReceiverAffirmation')
+        .mockResolvedValue(dsMockUtils.createMockBool(true));
+
+      const result = await identity.isMandatoryReceiverAffirmationEnabled();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when mandatory receiver affirmation is disabled', async () => {
+      const did = 'someDid';
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawDid);
+
+      dsMockUtils
+        .createQueryMock('settlement', 'mandatoryReceiverAffirmation')
+        .mockResolvedValue(dsMockUtils.createMockBool(false));
+
+      const result = await identity.isMandatoryReceiverAffirmationEnabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('method: setMandatoryReceiverAffirmation', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const did = 'someDid';
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      const args = { requirement: ReceiverAffirmationRequirement.Required };
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ...args, did }, transformer: undefined }, mockContext, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const result = await identity.setMandatoryReceiverAffirmation(args);
+
+      expect(result).toBe(expectedTransaction);
     });
   });
 

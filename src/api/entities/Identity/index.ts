@@ -24,6 +24,7 @@ import {
   Nft,
   NftCollection,
   PolymeshError,
+  setMandatoryReceiverAffirmation,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -48,6 +49,7 @@ import {
   PaginationOptions,
   PermissionedAccount,
   ProcedureMethod,
+  ReceiverAffirmationRequirement,
   ResultSet,
   Role,
   SubCallback,
@@ -142,6 +144,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     this.unlinkChild = createProcedureMethod(
       {
         getProcedureAndArgs: args => [unlinkChildIdentity, args],
+      },
+      context
+    );
+
+    this.setMandatoryReceiverAffirmation = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [setMandatoryReceiverAffirmation, { ...args, did: this.did }],
       },
       context
     );
@@ -1178,6 +1187,39 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     return boolToBoolean(rawIsApproved);
   }
+
+  /**
+   * Returns whether or not this Identity has opted in to mandatory receiver affirmation.
+   * When `true`, the identity must explicitly affirm incoming asset transfer in settlements
+   * unless an asset level or portfolio level exemption applies.
+   */
+  public async isMandatoryReceiverAffirmationEnabled(): Promise<boolean> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+    } = this;
+
+    const rawDid = stringToIdentityId(this.did, context);
+
+    const rawValue = await settlement.mandatoryReceiverAffirmation(rawDid);
+
+    return boolToBoolean(rawValue);
+  }
+
+  /**
+   * Enable or disable mandatory receiver affirmation for incoming settlement transfers.
+   * When enabled (`ReceiverAffirmationRequirement.Required`), the signing identity must explicitly affirm
+   * any incoming asset transfer unless an asset level or portfolio level exemption applies.
+   * When disabled (`ReceiverAffirmationRequirement.Automatic`), all incoming transfers are auto-affirmed.
+   */
+  public setMandatoryReceiverAffirmation: ProcedureMethod<
+    { requirement: ReceiverAffirmationRequirement },
+    void
+  >;
 
   /**
    * Returns the list of MultiSig accounts along with their signatories this identity has responsibility for.

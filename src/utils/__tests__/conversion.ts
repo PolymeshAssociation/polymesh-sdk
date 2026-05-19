@@ -178,6 +178,7 @@ import {
   PermissionType,
   PortfolioMovement,
   ProposalStatus,
+  ReceiverAffirmationRequirement,
   Scope,
   ScopeType,
   SecurityIdentifierType,
@@ -206,6 +207,7 @@ import {
   accountIdToString,
   activeEraStakingToActiveEraInfo,
   addressToKey,
+  affirmationRequirementToMesh,
   agentGroupToPermissionGroup,
   agentGroupToPermissionGroupIdentifier,
   assetComplianceReportToCompliance,
@@ -6915,6 +6917,51 @@ describe('transactionToTxTag', () => {
 
     const result = transactionToTxTag(tx);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('affirmationRequirementToMesh', () => {
+  let mockContext: Mocked<Context>;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert an ReceiverAffirmationRequirement to a polkadot ReceiverAffirmationRequirement', () => {
+    const automaticResult = dsMockUtils.createMockAffirmationRequirement('Automatic');
+    const requiredResult = dsMockUtils.createMockAffirmationRequirement('Required');
+
+    when(mockContext.createType)
+      .calledWith(
+        'PolymeshPrimitivesSettlementAffirmationRequirement',
+        ReceiverAffirmationRequirement.Automatic
+      )
+      .mockReturnValue(automaticResult);
+    when(mockContext.createType)
+      .calledWith(
+        'PolymeshPrimitivesSettlementAffirmationRequirement',
+        ReceiverAffirmationRequirement.Required
+      )
+      .mockReturnValue(requiredResult);
+
+    expect(
+      affirmationRequirementToMesh(ReceiverAffirmationRequirement.Automatic, mockContext)
+    ).toBe(automaticResult);
+    expect(affirmationRequirementToMesh(ReceiverAffirmationRequirement.Required, mockContext)).toBe(
+      requiredResult
+    );
   });
 });
 
