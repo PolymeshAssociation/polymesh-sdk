@@ -166,7 +166,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
       returnValue: dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Unknown),
     });
-    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
+    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
       multi: [],
     });
 
@@ -213,7 +213,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
   it('should throw an error if the signing Identity is not the custodian of any of the involved portfolios', () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
-    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
+    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
     when(meshAffirmationStatusToAffirmationStatusSpy)
@@ -244,7 +244,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
   it("should throw an error if the operation is Affirm and all of the signing Identity's Portfolios are affirmed", () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
-    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
+    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
     when(meshAffirmationStatusToAffirmationStatusSpy)
@@ -275,7 +275,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
   it('should return an affirm instruction transaction spec', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
-    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
+    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
     when(meshAffirmationStatusToAffirmationStatusSpy)
@@ -307,6 +307,56 @@ describe('modifyInstructionAffirmation procedure', () => {
       transaction,
       feeMultiplier: new BigNumber(2),
       args: [rawInstructionId, rawPortfolioIds, mockAffirmCount],
+      resolver: expect.objectContaining({ id }),
+    });
+  });
+
+  it('should only affirm the non-affirmed holders when some are already affirmed', async () => {
+    const rawAffirmedStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
+    const rawPendingStatus = dsMockUtils.createMockAffirmationStatus('Pending');
+
+    // first holder is already Affirmed, second is still Pending
+    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
+      multi: [rawAffirmedStatus, rawPendingStatus],
+    });
+    when(meshAffirmationStatusToAffirmationStatusSpy)
+      .calledWith(rawAffirmedStatus)
+      .mockReturnValue(AffirmationStatus.Affirmed);
+    when(meshAffirmationStatusToAffirmationStatusSpy)
+      .calledWith(rawPendingStatus)
+      .mockReturnValue(AffirmationStatus.Pending);
+
+    // validAssetHolders will only contain rawPortfolioId (index 1, the Pending one)
+    const rawSinglePortfolioIds = dsMockUtils.createMockBtreeSet([rawPortfolioId]);
+    when(assetHolderIdsToBtreeSetSpy)
+      .calledWith([rawPortfolioId], mockContext)
+      .mockReturnValue(rawSinglePortfolioIds);
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
+      signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
+    });
+
+    const transaction = dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
+
+    const result = await prepareModifyInstructionAffirmation.call(proc, {
+      id,
+      operation: InstructionAffirmationOperation.Affirm,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      feeMultiplier: new BigNumber(2),
+      args: [rawInstructionId, rawSinglePortfolioIds, mockAffirmCount],
       resolver: expect.objectContaining({ id }),
     });
   });
@@ -652,7 +702,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       contextOptions: { isV7: true },
     });
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
-    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
+    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
     when(meshAffirmationStatusToAffirmationStatusSpy)
@@ -686,7 +736,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       contextOptions: { isV7: true },
     });
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
-    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
+    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
     when(meshAffirmationStatusToAffirmationStatusSpy)
@@ -743,7 +793,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       },
     });
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
-    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
+    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
     when(meshAffirmationStatusToAffirmationStatusSpy)
@@ -874,7 +924,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
   it('should return a reject instruction transaction spec', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
-    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
+    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
     when(meshAffirmationStatusToAffirmationStatusSpy)
@@ -1195,10 +1245,6 @@ describe('modifyInstructionAffirmation procedure', () => {
         allowedAssetHolders: [
           expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) }),
           expect.objectContaining({ owner: expect.objectContaining({ did: toDid }) }),
-          expect.objectContaining({
-            owner: expect.objectContaining({ did: 'someDid' }),
-            id: new BigNumber(1),
-          }),
         ],
         assetHolderParams: [],
         senderLegCount: new BigNumber(1),

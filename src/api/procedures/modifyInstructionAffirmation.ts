@@ -15,6 +15,7 @@ import {
 } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 
+import { getMissingPortfolioPermissions } from '~/api/entities/Account/helpers';
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Account, Context, Identity, Instruction, PolymeshError, Procedure } from '~/internal';
 import {
@@ -29,6 +30,7 @@ import {
   ModifyInstructionAffirmationParams,
   NumberedPortfolio,
   OffChainAffirmationReceipt,
+  SectionPermissions,
   TxTag,
   TxTags,
 } from '~/types';
@@ -263,7 +265,7 @@ function validateMediatorStatusForAffirmation(
 /**
  * @hidden
  */
-function validateMediatorStatusForWithdrawl(
+function validateMediatorStatusForWithdrawal(
   mediatorStatus: AffirmationStatus,
   signer: Identity,
   id: BigNumber
@@ -470,11 +472,11 @@ export async function prepareModifyInstructionAffirmation(
   const rawDid = stringToIdentityId(signer.did, context);
 
   const multiArgs = rawAllowedAssetHolders.map(rawAssetHolder =>
-    tuple(rawAssetHolder, rawInstructionId)
+    tuple(rawInstructionId, rawAssetHolder)
   );
 
   const [rawAffirmationStatuses, rawMediatorAffirmation] = await Promise.all([
-    settlement.userAffirmations.multi(multiArgs),
+    settlement.affirmsReceived.multi(multiArgs),
     settlement.instructionMediatorsAffirmations(rawInstructionId, rawDid),
   ]);
 
@@ -499,7 +501,7 @@ export async function prepareModifyInstructionAffirmation(
         });
       }
 
-      validateMediatorStatusForWithdrawl(mediatorStatus, signer, id);
+      validateMediatorStatusForWithdrawal(mediatorStatus, signer, id);
 
       return {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -563,7 +565,7 @@ export async function prepareModifyInstructionAffirmation(
 
   const rawAffirmCount = await call.settlementApi.getAffirmationCount<AffirmationCount>(
     rawInstructionId,
-    rawAllowedAssetHolders
+    validAssetHolders
   );
 
   const portfolioIds = assetHolderIdsToBtreeSet(validAssetHolders, context);
@@ -710,7 +712,11 @@ const assembleAssetHolders = async (
   result: [AssetHolder[], BigNumber],
   from: AssetHolder,
   to: AssetHolder,
-  signingDid: string,
+  signer: {
+    did: string;
+    address: string;
+    portfolioPermissions: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null;
+  },
   assetHolderIdParams: AssetHolderId[]
 ): Promise<[AssetHolder[], BigNumber]> => {
   const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
@@ -724,23 +730,24 @@ const assembleAssetHolders = async (
     let localSenderLegCount = new BigNumber(0);
 
     if (legAssetHolder instanceof Account) {
-      const identity = await legAssetHolder.getIdentity();
-      if (identity?.did === signingDid) {
+      if (legAssetHolder.address === signer.address) {
         localAllowedAssetHolders = [legAssetHolder];
         if (sender) {
           localSenderLegCount = new BigNumber(1);
         }
       }
     } else if (exists) {
-      const isCustodied = await legAssetHolder.isCustodiedBy({ identity: signingDid });
-      if (isCustodied) {
+      const isCustodied = await legAssetHolder.isCustodiedBy({ identity: signer.did });
+      const missingPerms = getMissingPortfolioPermissions(
+        [legAssetHolder],
+        signer.portfolioPermissions
+      );
+      if (isCustodied && missingPerms === undefined) {
         localAllowedAssetHolders = [legAssetHolder];
         if (sender) {
           localSenderLegCount = new BigNumber(1);
         }
       }
-    } else if (legAssetHolder.owner.did === signingDid) {
-      localAllowedAssetHolders = [legAssetHolder];
     }
 
     return [localAllowedAssetHolders, localSenderLegCount];
@@ -792,10 +799,16 @@ export async function prepareStorage(
 
   const instruction = new Instruction({ id }, context);
 
-  const [{ data: legs }, signer, executeInstructionInfo] = await Promise.all([
+  const [
+    { data: legs },
+    signer,
+    executeInstructionInfo,
+    { portfolios: signerPortfolioPermissions },
+  ] = await Promise.all([
     instruction.getLegsFromChain(),
     context.getSigningIdentity(),
     settlementApi.getExecuteInstructionInfo(rawId),
+    context.getSigningAccount().getPermissions(),
   ]);
 
   const legContributions = await Promise.all(
@@ -812,7 +825,11 @@ export async function prepareStorage(
           tuple([], new BigNumber(0)),
           from,
           to,
-          signer.did,
+          {
+            did: signer.did,
+            address: context.getSigningAccount().address,
+            portfolioPermissions: signerPortfolioPermissions,
+          },
           assetHolderIdParams
         );
         return { allowedAssetHolders, senderLegCount, offChainIndex: undefined };
