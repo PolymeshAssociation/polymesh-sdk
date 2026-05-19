@@ -98,8 +98,20 @@ describe('Context class', () => {
         primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId('someDid')),
       }),
     });
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    dsMockUtils.createQueryMock('system', 'lastRuntimeUpgrade', { returnValue: () => {} });
+    const lastRuntimeUpgradeMock = dsMockUtils.createQueryMock('system', 'lastRuntimeUpgrade');
+    lastRuntimeUpgradeMock.mockImplementation(cb => {
+      if (typeof cb === 'function') {
+        const specVersion = polymeshApi.runtimeVersion.specVersion.toNumber();
+        const mockRuntimeUpgrade = dsMockUtils.createMockCodec(
+          {
+            specVersion: dsMockUtils.createMockU32(new BigNumber(specVersion)),
+          },
+          false
+        );
+        cb(dsMockUtils.createMockOption(mockRuntimeUpgrade));
+      }
+      return Promise.resolve(() => {});
+    });
   });
 
   afterEach(() => {
@@ -582,6 +594,155 @@ describe('Context class', () => {
           allowance: utilsConversionModule.balanceToBigNumber(allowance),
         })
       );
+    });
+  });
+
+  describe('method: getPendingSubsidies', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return pending subsidies for the signing account when no account is passed', async () => {
+      const beneficiaryAddress = 'beneficiary';
+      const allowanceBalance = dsMockUtils.createMockBalance(new BigNumber(250));
+      const rawAllowance = dsMockUtils.createMockOption(allowanceBalance);
+      const secondAllowanceBalance = dsMockUtils.createMockBalance(new BigNumber(10));
+
+      dsMockUtils.createQueryMock('relayer', 'pendingSubsidies', {
+        entries: [
+          tuple(
+            [
+              dsMockUtils.createMockAccountId(beneficiaryAddress),
+              dsMockUtils.createMockAccountId('subsidizerOne'),
+            ],
+            rawAllowance
+          ),
+          tuple(
+            [
+              dsMockUtils.createMockAccountId(beneficiaryAddress),
+              dsMockUtils.createMockAccountId('subsidizerTwo'),
+            ],
+            dsMockUtils.createMockOption(secondAllowanceBalance)
+          ),
+        ],
+      });
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: [beneficiaryAddress],
+        }),
+      });
+
+      const result = await context.getPendingSubsidies();
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        subsidy: expect.objectContaining({
+          beneficiary: expect.objectContaining({ address: beneficiaryAddress }),
+          subsidizer: expect.objectContaining({ address: 'subsidizerOne' }),
+        }),
+        allowance: utilsConversionModule.balanceToBigNumber(allowanceBalance),
+      });
+      expect(result[1]).toEqual({
+        subsidy: expect.objectContaining({
+          beneficiary: expect.objectContaining({ address: beneficiaryAddress }),
+          subsidizer: expect.objectContaining({ address: 'subsidizerTwo' }),
+        }),
+        allowance: utilsConversionModule.balanceToBigNumber(secondAllowanceBalance),
+      });
+    });
+
+    it('should return pending subsidies when an address string is passed', async () => {
+      const allowanceBalance = dsMockUtils.createMockBalance(new BigNumber(100));
+      const rawAllowance = dsMockUtils.createMockOption(allowanceBalance);
+
+      dsMockUtils.createQueryMock('relayer', 'pendingSubsidies', {
+        entries: [
+          tuple(
+            [
+              dsMockUtils.createMockAccountId('someAddress'),
+              dsMockUtils.createMockAccountId('payingKey'),
+            ],
+            rawAllowance
+          ),
+        ],
+      });
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const result = await context.getPendingSubsidies('someAddress');
+
+      expect(result).toEqual([
+        {
+          subsidy: expect.objectContaining({
+            beneficiary: expect.objectContaining({ address: 'someAddress' }),
+            subsidizer: expect.objectContaining({ address: 'payingKey' }),
+          }),
+          allowance: utilsConversionModule.balanceToBigNumber(allowanceBalance),
+        },
+      ]);
+    });
+
+    it('should return pending subsidies when an Account is passed', async () => {
+      const signerToStringSpy = jest
+        .spyOn(utilsConversionModule, 'signerToString')
+        .mockReturnValue('resolvedFromAccount');
+      const allowanceBalance = dsMockUtils.createMockBalance(new BigNumber(50));
+      const rawAllowance = dsMockUtils.createMockOption(allowanceBalance);
+
+      dsMockUtils.createQueryMock('relayer', 'pendingSubsidies', {
+        entries: [
+          tuple(
+            [
+              dsMockUtils.createMockAccountId('resolvedFromAccount'),
+              dsMockUtils.createMockAccountId('subsidizer'),
+            ],
+            rawAllowance
+          ),
+        ],
+      });
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const account = entityMockUtils.getAccountInstance({ address: 'ignored' });
+      const result = await context.getPendingSubsidies(account);
+
+      expect(signerToStringSpy).toHaveBeenCalledWith(account);
+      expect(result).toEqual([
+        {
+          subsidy: expect.objectContaining({
+            beneficiary: expect.objectContaining({ address: 'resolvedFromAccount' }),
+            subsidizer: expect.objectContaining({ address: 'subsidizer' }),
+          }),
+          allowance: utilsConversionModule.balanceToBigNumber(allowanceBalance),
+        },
+      ]);
+    });
+
+    it('should return an empty array when there are no pending subsidies', async () => {
+      dsMockUtils.createQueryMock('relayer', 'pendingSubsidies', { entries: [] });
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: ['beneficiary'],
+        }),
+      });
+
+      await expect(context.getPendingSubsidies()).resolves.toEqual([]);
     });
   });
 

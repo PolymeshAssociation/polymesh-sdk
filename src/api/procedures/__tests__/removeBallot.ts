@@ -54,15 +54,15 @@ describe('removeBallot procedure', () => {
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 
     ballotDetails = {
-      startDate: new Date(new Date().getTime() + 500000),
-      endDate: new Date(new Date().getTime() + 1000000),
+      startDate: new Date(Date.now() + 500000),
+      endDate: new Date(Date.now() + 1000000),
       description: 'description',
       meta: {
         title: 'title',
         motions: [],
       },
       rcv: true,
-      declarationDate: new Date(new Date().getTime() + 500000),
+      declarationDate: new Date(Date.now() + 500000),
     };
 
     ballot = entityMockUtils.getCorporateBallotInstance({

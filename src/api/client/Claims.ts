@@ -226,7 +226,9 @@ export class Claims {
       ...claimTypeInputToMiddlewareClaimTypeDetails(claimTypes),
     };
 
-    if (!targets) {
+    if (targets) {
+      targetIssuers = targets.map(target => signerToString(target));
+    } else {
       const {
         data: {
           claims: { groupedAggregates: groupedTargets },
@@ -239,8 +241,6 @@ export class Claims {
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       targetIssuers = flatten(groupedTargets!.map(groupedTarget => groupedTarget.keys!));
-    } else {
-      targetIssuers = targets.map(target => signerToString(target));
     }
 
     // note: pagination count is based on the target issuers and not the claims count
@@ -389,7 +389,7 @@ export class Claims {
   /**
    * Retrieve the list of CDD claims for a target Identity
    *
-   * @deprecated
+   * @deprecated CDD claims are no longer supported with v8 chains
    *
    * @param opts.target - Identity for which to fetch CDD claims (optional, defaults to the signing Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
@@ -409,7 +409,7 @@ export class Claims {
 
     if (!context.isV7) {
       throw new PolymeshError({
-        code: ErrorCode.General,
+        code: ErrorCode.NotSupported,
         message: 'CDD claims are no longer supported in chain v8',
       });
     }
@@ -434,7 +434,7 @@ export class Claims {
     result.forEach(optClaim => {
       const { claimIssuer, issuanceDate, lastUpdateDate, expiry: rawExpiry, claim } = optClaim;
 
-      const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
+      const expiry = rawExpiry.isSome ? momentToDate(rawExpiry.unwrap()) : null;
 
       if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
         data.push({
@@ -527,7 +527,9 @@ export class Claims {
       };
 
       let claimIssuers;
-      if (!trustedClaimIssuers) {
+      if (trustedClaimIssuers) {
+        claimIssuers = trustedClaimIssuers.map(signerToString);
+      } else {
         const {
           data: {
             claims: { groupedAggregates: groupedIssuers },
@@ -538,8 +540,6 @@ export class Claims {
 
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         claimIssuers = flatten(groupedIssuers!.map(groupedAggregate => groupedAggregate.keys!));
-      } else {
-        claimIssuers = trustedClaimIssuers.map(signerToString);
       }
 
       // note: pagination count is based on the claim issuers and not the claims count

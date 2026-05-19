@@ -1,5 +1,5 @@
 import { Bytes, u32 } from '@polkadot/types';
-import { AccountId, EventRecord } from '@polkadot/types/interfaces';
+import { AccountId, EventRecord, Moment } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
@@ -12,15 +12,26 @@ import BigNumber from 'bignumber.js';
 import crossFetch from 'cross-fetch';
 import { when } from 'jest-when';
 
-import { Account, Context, Identity, MultiSig, Nft, PolymeshError, Procedure } from '~/internal';
+import {
+  Account,
+  Context,
+  FungibleAsset,
+  Identity,
+  MultiSig,
+  Nft,
+  NftCollection,
+  PolymeshError,
+  Procedure,
+} from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries/common';
-import { Claim as MiddlewareClaim } from '~/middleware/types';
+import { Claim as MiddlewareClaim, ClaimTypeEnum } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockStatisticsStatClaim,
   getApiInstance,
   getAtMock,
+  getQueryMultiMock,
   getWebSocketInstance,
   MockCodec,
   MockContext,
@@ -32,7 +43,11 @@ import {
   AuthorizationRequest,
   AuthorizationType,
   CaCheckpointType,
+  Claim,
   ClaimType,
+  Condition,
+  ConditionTarget,
+  ConditionType,
   CorporateBallotParams,
   CountryCode,
   ErrorCode,
@@ -48,6 +63,7 @@ import {
   TransferRestrictionType,
   TxTags,
 } from '~/types';
+import { MiddlewarePermissions, PolymeshTx, TxWithArgs } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { hexToUuid, uuidToHex } from '~/utils';
 import {
@@ -64,10 +80,14 @@ import {
   areSameAccounts,
   areSameClaims,
   asAccount,
+  asAsset,
   asBaseAsset,
   asChildIdentity,
+  asDid,
   asFungibleAsset,
   asNftId,
+  assembleAssetQuery,
+  assembleBatchTransactions,
   assertAddressValid,
   assertBallotNotStarted,
   assertDeclarationDate,
@@ -80,12 +100,17 @@ import {
   assertStatIsSet,
   assertTickerValid,
   calculateNextKey,
+  calculateRawStakingPayee,
+  checkTxType,
   compareTransferRestrictionToStat,
+  conditionsAreEqual,
   createClaim,
   createProcedureMethod,
+  defusePromise,
   delay,
   extractProtocol,
   filterEventRecords,
+  getAccount,
   getAllowedMajors,
   getApiAtBlock,
   getAssetIdAndTicker,
@@ -94,6 +119,7 @@ import {
   getAssetIdFromMiddleware,
   getCheckpointValue,
   getCorporateActionWithDescription,
+  getCorporateBallotDetailsOrNull,
   getCorporateBallotDetailsOrThrow,
   getDid,
   getExemptedIds,
@@ -104,6 +130,7 @@ import {
   getTickerForAsset,
   hasSameElements,
   isAllowedCharacters,
+  isMiddlewareV6Extrinsic,
   isModuleOrTagMatch,
   isPrintableAscii,
   isV7Spec,
@@ -111,14 +138,18 @@ import {
   neededStatTypeForRestrictionInput,
   optionize,
   padString,
+  prepareStorageForCustomType,
   removePadding,
   requestAtBlock,
+  requestMulti,
   requestPaginated,
   segmentEventsByTransaction,
   serialize,
   sliceBatchReceipt,
+  toHumanReadable,
   unserialize,
   warnUnexpectedSqVersion,
+  xor,
 } from '~/utils/internal';
 
 jest.mock(
@@ -290,6 +321,26 @@ describe('asAccount', () => {
     const result = asAccount(account, context);
 
     expect(result).toBe(account);
+  });
+});
+
+describe('asDid', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return the DID string unchanged', () => {
+    expect(asDid('0xplainDid')).toBe('0xplainDid');
+  });
+
+  it('should return the did from an Identity instance', () => {
+    const identity = entityMockUtils.getIdentityInstance({ did: 'fromIdentity' });
+    expect(asDid(identity)).toBe('fromIdentity');
   });
 });
 
@@ -1329,6 +1380,7 @@ describe('assertExpectedChainVersion', () => {
   it('should resolve if it receives both expected RPC node and chain spec version', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     await new Promise(resolve => setImmediate(resolve)); // drain microtasks so the dynamic ws import resolves and the client is created
+    client.triggerOpen();
     client.on('open', () => {});
     client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
     client.sendIsPrivateSupported(false);
@@ -1339,6 +1391,7 @@ describe('assertExpectedChainVersion', () => {
   it('should resolve if it receives both expected RPC node and chain spec version for a private node', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     await new Promise(resolve => setImmediate(resolve)); // drain microtasks so the dynamic ws import resolves and the client is created
+    client.triggerOpen();
     client.on('open', () => {});
     client.sendSpecVersion(getSpecVersion(PRIVATE_SUPPORTED_SPEC_SEMVER));
     client.sendIsPrivateSupported(true);
@@ -1360,6 +1413,7 @@ describe('assertExpectedChainVersion', () => {
   it('should throw an error given a major chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     await new Promise(resolve => setImmediate(resolve)); // drain microtasks so the dynamic ws import resolves and the client is created
+    client.triggerOpen();
     const mismatchedSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 0);
     client.sendSpecVersion(getSpecVersion(mismatchedSpecVersion));
     client.sendIsPrivateSupported(false);
@@ -1373,6 +1427,7 @@ describe('assertExpectedChainVersion', () => {
   it('should resolve even with a patch chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     await new Promise(resolve => setImmediate(resolve)); // drain microtasks so the dynamic ws import resolves and the client is created
+    client.triggerOpen();
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 2);
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     client.sendIsPrivateSupported(false);
@@ -1383,12 +1438,113 @@ describe('assertExpectedChainVersion', () => {
   it('should throw an error if the node cannot be reached', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     await new Promise(resolve => setImmediate(resolve)); // drain microtasks so the dynamic ws import resolves and the client is created
+    client.triggerOpen();
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Could not connect to the Polymesh node at ws://example.com',
     });
     client.triggerError(new Error('could not connect'));
     return expect(signal).rejects.toThrow(expectedError);
+  });
+
+  it('should resolve via Node ws when message raw data is JSON strings', async () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    await new Promise(resolve => setImmediate(resolve));
+    const confPayload = JSON.stringify({
+      jsonrpc: '2.0',
+      id: CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id,
+      result: null,
+    });
+    const specPayload = JSON.stringify({
+      jsonrpc: '2.0',
+      id: STATE_RUNTIME_VERSION_CALL.id,
+      result: { specVersion: getSpecVersion(SUPPORTED_SPEC_SEMVER) },
+    });
+    client.emitNodeStyleMessage(confPayload);
+    client.emitNodeStyleMessage(specPayload);
+    await expect(signal).resolves.not.toThrow();
+  });
+
+  it('should resolve via Node ws when message raw data is an ArrayBuffer', async () => {
+    const toAb = (s: string): ArrayBuffer => {
+      const buf = Buffer.from(s, 'utf8');
+      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+    };
+    const signal = assertExpectedChainVersion('ws://example.com');
+    await new Promise(resolve => setImmediate(resolve));
+    client.emitNodeStyleMessage(
+      toAb(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id,
+          result: null,
+        })
+      )
+    );
+    client.emitNodeStyleMessage(
+      toAb(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: STATE_RUNTIME_VERSION_CALL.id,
+          result: { specVersion: getSpecVersion(SUPPORTED_SPEC_SEMVER) },
+        })
+      )
+    );
+    await expect(signal).resolves.not.toThrow();
+  });
+
+  it('should resolve via Node ws when message raw data is a Buffer array', async () => {
+    const split = (s: string): Buffer[] => {
+      const b = Buffer.from(s, 'utf8');
+      const mid = Math.max(1, Math.floor(b.length / 2));
+      return [b.subarray(0, mid), b.subarray(mid)];
+    };
+    const signal = assertExpectedChainVersion('ws://example.com');
+    await new Promise(resolve => setImmediate(resolve));
+    client.emitNodeStyleMessage(
+      split(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id,
+          result: null,
+        })
+      )
+    );
+    client.emitNodeStyleMessage(
+      split(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: STATE_RUNTIME_VERSION_CALL.id,
+          result: { specVersion: getSpecVersion(SUPPORTED_SPEC_SEMVER) },
+        })
+      )
+    );
+    await expect(signal).resolves.not.toThrow();
+  });
+
+  it('should resolve via Node ws when message raw data relies on toString()', async () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    await new Promise(resolve => setImmediate(resolve));
+    const wrap = (json: string): { toString: () => string } => ({ toString: () => json });
+    client.emitNodeStyleMessage(
+      wrap(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id,
+          result: null,
+        })
+      )
+    );
+    client.emitNodeStyleMessage(
+      wrap(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: STATE_RUNTIME_VERSION_CALL.id,
+          result: { specVersion: getSpecVersion(SUPPORTED_SPEC_SEMVER) },
+        })
+      )
+    );
+    await expect(signal).resolves.not.toThrow();
   });
 });
 
@@ -2537,13 +2693,13 @@ describe('assertMetaLength', () => {
 
 describe('assertDeclarationDate', () => {
   it('should throw an error if declaration date is in the future', () => {
-    const futureDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24);
+    const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24);
 
     expect(() => assertDeclarationDate(futureDate)).toThrow('Declaration date must be in the past');
   });
 
   it('should not throw an error if declaration date is in the past', () => {
-    const pastDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
+    const pastDate = new Date(Date.now() - 1000 * 60 * 60 * 24);
 
     expect(() => assertDeclarationDate(pastDate)).not.toThrow();
   });
@@ -2551,7 +2707,7 @@ describe('assertDeclarationDate', () => {
 
 describe('assertBallotNotStarted', () => {
   it('should throw an error if ballot has already started', () => {
-    const pastDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
+    const pastDate = new Date(Date.now() - 1000 * 60 * 60 * 24);
 
     expect(() => assertBallotNotStarted({ startDate: pastDate } as CorporateBallotParams)).toThrow(
       'The ballot has already started'
@@ -2559,7 +2715,7 @@ describe('assertBallotNotStarted', () => {
   });
 
   it('should not throw an error if ballot has not started yet', () => {
-    const futureDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24);
+    const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24);
 
     expect(() =>
       assertBallotNotStarted({ startDate: futureDate } as CorporateBallotParams)
@@ -2751,7 +2907,7 @@ describe('assertStatIsSet', () => {
   it('should throw when restriction type is not supported', () => {
     const stats: AssetStat[] = [{ type: StatType.Count }];
     const restriction = {
-      type: 'UnsupportedType' as unknown as TransferRestrictionType,
+      type: 'UnsupportedType' as unknown as TransferRestrictionType, // NOSONAR
       value: new BigNumber(10),
     } as TransferRestriction; // NOSONAR
 
@@ -2841,5 +2997,739 @@ describe('isV7Spec', () => {
 
   it('should return false for spec versions 8000000 and above', () => {
     expect(isV7Spec(8000000)).toBe(false);
+  });
+});
+
+describe('requestMulti', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should pass callback through to queryMulti when provided', async () => {
+    const unsub = jest.fn();
+    jest.spyOn(context.polymeshApi, 'queryMulti').mockImplementation(((
+      _queries: unknown,
+      cb: (result: unknown) => void
+    ) => {
+      cb([]);
+      return unsub;
+    }) as unknown as typeof context.polymeshApi.queryMulti);
+
+    const cb = jest.fn();
+    const result = await requestMulti(context, [] as never, cb);
+
+    expect(result).toBe(unsub);
+  });
+});
+
+describe('xor', () => {
+  it('should return true when exactly one argument is true', () => {
+    expect(xor(true, false)).toBe(true);
+    expect(xor(false, true)).toBe(true);
+  });
+
+  it('should return false when both arguments match', () => {
+    expect(xor(false, false)).toBe(false);
+    expect(xor(true, true)).toBe(false);
+  });
+});
+
+describe('asAsset', () => {
+  beforeEach(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return an asset with the same id when passed an existing Asset instance', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const fungible = entityMockUtils.getFungibleAssetInstance({ assetId: 'same' });
+    const result = await asAsset(fungible, context);
+    expect(result.id).toEqual(fungible.id);
+  });
+
+  it('should resolve to NFT collection, fungible, or throw based on chain existence checks', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: { exists: false },
+      nftCollectionOptions: { exists: true },
+    });
+    const asCollection = await asAsset(
+      entityMockUtils.getFungibleAssetInstance({ assetId: 'x' }),
+      context
+    );
+    expect(asCollection).toBeInstanceOf(NftCollection);
+
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
+    });
+    const asFungible = await asAsset(
+      entityMockUtils.getFungibleAssetInstance({ assetId: 'y' }),
+      context
+    );
+    expect(asFungible).toBeInstanceOf(FungibleAsset);
+
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: { exists: false },
+      nftCollectionOptions: { exists: false },
+    });
+    await expect(
+      asAsset(entityMockUtils.getFungibleAssetInstance({ assetId: 'z' }), context)
+    ).rejects.toThrow('No asset exists with asset ID: "z"');
+  });
+
+  it('should resolve using asAssetId when passed a string UUID asset id', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const assetUuid = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
+    });
+    const result = await asAsset(assetUuid, context);
+    expect(result).toBeInstanceOf(FungibleAsset);
+    expect(result.id).toBe(assetUuid);
+  });
+});
+
+describe('toHumanReadable', () => {
+  it('should map primitives, dates, BigNumbers, arrays, entities, and plain objects', () => {
+    const identity = entityMockUtils.getIdentityInstance({ did: 'humanDid' });
+    jest.spyOn(identity, 'toHuman').mockReturnValue('humanDid');
+
+    const d = new Date('2020-01-01T00:00:00.000Z');
+    const nested = {
+      n: new BigNumber(2),
+      d,
+      id: identity,
+      arr: [new BigNumber(3)],
+      plain: { x: 1 },
+    };
+
+    const result = toHumanReadable(nested);
+    expect(result).toEqual({
+      n: '2',
+      d: d.toISOString(),
+      id: 'humanDid',
+      arr: ['3'],
+      plain: { x: 1 },
+    });
+  });
+});
+
+describe('conditionsAreEqual', () => {
+  it('should compare IsIdentity and IsExternalAgent condition pairs', () => {
+    const a = entityMockUtils.getIdentityInstance({ did: 'same' });
+    const b = entityMockUtils.getIdentityInstance({ did: 'same' });
+    const c = entityMockUtils.getIdentityInstance({ did: 'other' });
+
+    expect(
+      conditionsAreEqual(
+        {
+          type: ConditionType.IsIdentity,
+          identity: a,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [],
+        },
+        {
+          type: ConditionType.IsIdentity,
+          identity: b,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [],
+        }
+      )
+    ).toBe(true);
+
+    expect(
+      conditionsAreEqual(
+        {
+          type: ConditionType.IsIdentity,
+          identity: a,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [],
+        },
+        {
+          type: ConditionType.IsIdentity,
+          identity: c,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [],
+        }
+      )
+    ).toBe(false);
+
+    expect(
+      conditionsAreEqual(
+        {
+          type: ConditionType.IsExternalAgent,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [],
+        },
+        {
+          type: ConditionType.IsExternalAgent,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [],
+        }
+      )
+    ).toBe(true);
+  });
+
+  it('should compare single-claim, multi-claim, and trusted issuer trustedFor lists', () => {
+    const claim = {
+      type: ClaimType.Accredited,
+      accredited: true,
+      scope: { type: ScopeType.Identity, value: 'x' },
+    } as Claim;
+    expect(
+      conditionsAreEqual(
+        {
+          type: ConditionType.IsPresent,
+          claim,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [],
+        },
+        {
+          type: ConditionType.IsPresent,
+          claim,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [],
+        }
+      )
+    ).toBe(true);
+
+    expect(
+      conditionsAreEqual(
+        {
+          type: ConditionType.IsAnyOf,
+          claims: [claim],
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [],
+        },
+        {
+          type: ConditionType.IsAnyOf,
+          claims: [claim],
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [],
+        }
+      )
+    ).toBe(true);
+
+    const issuerA = entityMockUtils.getIdentityInstance({ did: 'issuer' });
+    expect(
+      conditionsAreEqual(
+        {
+          type: ConditionType.IsPresent,
+          claim,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [
+            { identity: issuerA, trustedFor: [ClaimType.Accredited, ClaimType.Blocked] },
+          ],
+        },
+        {
+          type: ConditionType.IsPresent,
+          claim,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [
+            { identity: issuerA, trustedFor: [ClaimType.Blocked, ClaimType.Accredited] },
+          ],
+        }
+      )
+    ).toBe(true);
+
+    expect(
+      conditionsAreEqual(
+        {
+          type: ConditionType.IsPresent,
+          claim,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [{ identity: issuerA, trustedFor: null }],
+        },
+        {
+          type: ConditionType.IsPresent,
+          claim,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [{ identity: issuerA, trustedFor: [] }],
+        }
+      )
+    ).toBe(true);
+  });
+
+  it('should default omitted trustedClaimIssuers to empty arrays', () => {
+    const claim = {
+      type: ClaimType.Accredited,
+      accredited: true,
+      scope: { type: ScopeType.Identity, value: 'u1' },
+    } as Claim;
+    const a = {
+      type: ConditionType.IsPresent,
+      claim,
+      target: ConditionTarget.Both,
+    } as unknown as Condition;
+    const b = {
+      type: ConditionType.IsPresent,
+      claim,
+      target: ConditionTarget.Both,
+    } as unknown as Condition;
+    expect(conditionsAreEqual(a, b)).toBe(true);
+  });
+});
+
+describe('assembleBatchTransactions', () => {
+  it('should flatten transaction argument arrays', () => {
+    const transaction = {} as PolymeshTx<[string, number]>;
+    const result = assembleBatchTransactions([
+      { transaction, argsArray: [['a', 1] as [string, number], ['b', 2] as [string, number]] },
+    ]);
+
+    expect(result).toEqual([
+      { transaction, args: ['a', 1] },
+      { transaction, args: ['b', 2] },
+    ]);
+  });
+});
+
+describe('checkTxType', () => {
+  it('should return the same reference with widened args type', () => {
+    const tx = { transaction: {} as PolymeshTx<[string]>, args: ['x'] } as TxWithArgs<[string]>;
+    expect(checkTxType(tx)).toBe(tx);
+  });
+});
+
+describe('defusePromise', () => {
+  it('should attach a noop catch handler without changing the promise', async () => {
+    const p = Promise.resolve(1);
+    const catchSpy = jest.spyOn(p, 'catch');
+    const out = defusePromise(p);
+    expect(out).toBe(p);
+    expect(catchSpy).toHaveBeenCalled();
+    await expect(p).resolves.toBe(1);
+  });
+});
+
+describe('optionize edge cases', () => {
+  it('should short-circuit on falsy primitive without calling the converter', () => {
+    const converter = jest.fn();
+    expect(optionize(converter as (x: string) => string)('')).toBe('');
+    expect(converter).not.toHaveBeenCalled();
+  });
+});
+
+describe('assembleAssetQuery', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should map asset details to FungibleAsset or NftCollection based on asset type', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fungibleDetails = dsMockUtils.createMockOption(
+      dsMockUtils.createMockSecurityToken({
+        assetType: dsMockUtils.createMockAssetType('EquityCommon'),
+      } as unknown as Parameters<typeof dsMockUtils.createMockSecurityToken>[0])
+    );
+    const nftDetails = dsMockUtils.createMockOption(
+      dsMockUtils.createMockSecurityToken({
+        assetType: dsMockUtils.createMockAssetType({
+          NonFungible: dsMockUtils.createMockNftType('Derivative'),
+        } as unknown as Parameters<typeof dsMockUtils.createMockAssetType>[0]),
+      } as unknown as Parameters<typeof dsMockUtils.createMockSecurityToken>[0])
+    );
+
+    const [f, n] = assembleAssetQuery([fungibleDetails, nftDetails], ['id1', 'id2'], context);
+
+    expect(f).toBeInstanceOf(FungibleAsset);
+    expect(n).toBeInstanceOf(NftCollection);
+  });
+});
+
+describe('areSameClaims deprecated middleware types', () => {
+  it('should return false for deprecated middleware claim type enums', () => {
+    const claim = { type: ClaimType.Accredited, accredited: true } as unknown as Claim;
+    const middlewareClaim: MiddlewareClaim = {
+      type: ClaimTypeEnum.NoData,
+      scope: null,
+    } as MiddlewareClaim;
+
+    expect(areSameClaims(claim, middlewareClaim)).toBe(false);
+  });
+});
+
+describe('getAccount', () => {
+  beforeEach(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return Account when the address has no multiSig signers', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const multiSigSigners = dsMockUtils.createQueryMock('multiSig', 'multiSigSigners');
+    multiSigSigners.entries.mockResolvedValue([]);
+
+    const account = await getAccount({ address }, context);
+    expect(account).toBeInstanceOf(Account);
+  });
+
+  it('should return MultiSig when the address has signers', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const multiSigSigners = dsMockUtils.createQueryMock('multiSig', 'multiSigSigners');
+    multiSigSigners.entries.mockResolvedValue([{} as [unknown, unknown]]);
+
+    const account = await getAccount({ address }, context);
+    expect(account).toBeInstanceOf(MultiSig);
+  });
+});
+
+describe('prepareStorageForCustomType', () => {
+  beforeEach(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return null for known string types', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const result = await prepareStorageForCustomType(
+      'EquityCommon',
+      ['EquityCommon'],
+      context,
+      'm'
+    );
+    expect(result).toBeNull();
+  });
+
+  it('should return created custom type data when inverse lookup is empty', async () => {
+    const context = dsMockUtils.getContextInstance();
+    dsMockUtils
+      .createQueryMock('asset', 'customTypesInverse')
+      .mockResolvedValue(dsMockUtils.createMockOption(null));
+    dsMockUtils
+      .createQueryMock('asset', 'customTypeIdSequence')
+      .mockResolvedValue(dsMockUtils.createMockU32(new BigNumber(3)));
+
+    const created = await prepareStorageForCustomType('BrandNew', [], context, 'm');
+    expect(created?.isAlreadyCreated).toBe(false);
+  });
+
+  it('should return existing custom type data when inverse lookup finds an id', async () => {
+    const context = dsMockUtils.getContextInstance();
+    dsMockUtils
+      .createQueryMock('asset', 'customTypesInverse')
+      .mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockU32(new BigNumber(9))));
+
+    const existing = await prepareStorageForCustomType('Exists', [], context, 'm');
+    expect(existing?.isAlreadyCreated).toBe(true);
+  });
+
+  it('should return data for BigNumber custom type id when storage is non-empty', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const customTypesMock = dsMockUtils.createQueryMock('asset', 'customTypes');
+    customTypesMock.mockResolvedValue({
+      isEmpty: false,
+      unwrap: () => dsMockUtils.createMockBytes('value'),
+    });
+
+    const fromBn = await prepareStorageForCustomType(new BigNumber(5), [], context, 'testMethod');
+    expect(fromBn?.isAlreadyCreated).toBe(true);
+  });
+
+  it('should throw when BigNumber id maps to empty custom type storage', async () => {
+    const context = dsMockUtils.getContextInstance();
+    dsMockUtils.createQueryMock('asset', 'customTypes').mockResolvedValue({
+      isEmpty: true,
+    });
+
+    await expect(
+      prepareStorageForCustomType(new BigNumber(1), [], context, 'registerMetadata')
+    ).rejects.toThrow(
+      'registerMetadata was given a custom type ID that does not have an corresponding value'
+    );
+  });
+});
+
+describe('isMiddlewareV6Extrinsic', () => {
+  it('should detect legacy pallet-based permission entries', () => {
+    expect(isMiddlewareV6Extrinsic({ whole: true } as unknown as MiddlewarePermissions)).toBe(
+      false
+    );
+    expect(isMiddlewareV6Extrinsic({})).toBe(false);
+    expect(
+      isMiddlewareV6Extrinsic({
+        a: { palletName: 'P', dispatchableNames: {} },
+      } as unknown as MiddlewarePermissions)
+    ).toBe(true);
+    expect(
+      isMiddlewareV6Extrinsic({
+        x: [{ notPallet: true }],
+      } as unknown as MiddlewarePermissions)
+    ).toBe(false);
+  });
+});
+
+describe('calculateRawStakingPayee', () => {
+  beforeEach(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw when payee has no identity', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const payee = entityMockUtils.getAccountInstance({
+      getIdentity: jest.fn().mockResolvedValue(null),
+    });
+    const stash = entityMockUtils.getAccountInstance({});
+    const controller = entityMockUtils.getAccountInstance({});
+
+    await expect(
+      calculateRawStakingPayee(payee, stash, controller, false, context)
+    ).rejects.toThrow('The payee should have an identity');
+  });
+
+  it('should throw when autoStake is true but stash is not the payee', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const payeeIdentity = entityMockUtils.getIdentityInstance({ did: 'payee' });
+    const payee = entityMockUtils.getAccountInstance({
+      getIdentity: jest.fn().mockResolvedValue(payeeIdentity),
+    });
+    const stash = entityMockUtils.getAccountInstance({});
+    payee.isEqual = jest.fn().mockReturnValue(false);
+
+    await expect(calculateRawStakingPayee(payee, stash, payee, true, context)).rejects.toThrow(
+      'autoStake requires the stash to be the payee'
+    );
+  });
+
+  it('should map staking reward destinations for each branch', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const payeeIdentity = entityMockUtils.getIdentityInstance({ did: 'payee' });
+    const payee = entityMockUtils.getAccountInstance({
+      getIdentity: jest.fn().mockResolvedValue(payeeIdentity),
+    });
+    const stash = entityMockUtils.getAccountInstance({});
+    const controller = entityMockUtils.getAccountInstance({});
+    const raw = {} as unknown as import('@polkadot/types/interfaces').RewardDestination;
+    const stakingSpy = jest
+      .spyOn(utilsConversionModule, 'stakingRewardDestinationToRaw')
+      .mockReturnValue(raw);
+
+    payee.isEqual = jest.fn().mockImplementation((other: Account) => other === stash);
+    stash.isEqual = jest.fn().mockImplementation((other: Account) => other === payee);
+    await calculateRawStakingPayee(payee, stash, controller, true, context);
+    expect(stakingSpy).toHaveBeenCalledWith({ staked: true }, context);
+
+    await calculateRawStakingPayee(payee, stash, controller, false, context);
+    expect(stakingSpy).toHaveBeenCalledWith({ stash: true }, context);
+
+    stash.isEqual = jest.fn().mockReturnValue(false);
+    controller.isEqual = jest.fn().mockImplementation((other: Account) => other === payee);
+    await calculateRawStakingPayee(payee, stash, controller, false, context);
+    expect(stakingSpy).toHaveBeenCalledWith({ controller: true }, context);
+
+    stash.isEqual = jest.fn().mockReturnValue(false);
+    controller.isEqual = jest.fn().mockReturnValue(false);
+    await calculateRawStakingPayee(payee, stash, controller, false, context);
+    expect(stakingSpy).toHaveBeenCalledWith({ account: payee }, context);
+  });
+});
+
+describe('getCorporateBallotDetailsOrNull', () => {
+  let mockContext: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return null when ballot metas are empty', async () => {
+    const assetId = '12341234-1234-1234-1234-123412341234';
+    const id = new BigNumber(1);
+    const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+
+    jest
+      .spyOn(utilsConversionModule, 'assetToMeshAssetId')
+      .mockReturnValue(dsMockUtils.createMockAssetId(assetId));
+    jest
+      .spyOn(utilsConversionModule, 'bigNumberToU32')
+      .mockReturnValue(dsMockUtils.createMockU32(id));
+    jest
+      .spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId')
+      .mockReturnValue(dsMockUtils.createMockCaId({ assetId: '0x1', localId: id }));
+
+    dsMockUtils.createQueryMock('corporateBallot', 'metas', {
+      returnValue: dsMockUtils.createMockOption(),
+    });
+
+    const result = await getCorporateBallotDetailsOrNull(asset, id, mockContext);
+    expect(result).toBeNull();
+  });
+
+  it('should return ballot details when metas exist', async () => {
+    const assetId = '12341234-1234-1234-1234-123412341234';
+    const id = new BigNumber(1);
+    const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+
+    jest
+      .spyOn(utilsConversionModule, 'assetToMeshAssetId')
+      .mockReturnValue(dsMockUtils.createMockAssetId(assetId));
+    jest
+      .spyOn(utilsConversionModule, 'bigNumberToU32')
+      .mockReturnValue(dsMockUtils.createMockU32(id));
+    jest
+      .spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId')
+      .mockReturnValue(dsMockUtils.createMockCaId({ assetId: '0x1', localId: id }));
+
+    const rawMeta = dsMockUtils.createMockCorporateBallotMeta({ title: 'Ballot' });
+    dsMockUtils.createQueryMock('corporateBallot', 'metas', {
+      returnValue: dsMockUtils.createMockOption(rawMeta),
+    });
+
+    const start = dsMockUtils.createMockMoment(new BigNumber(1));
+    const end = dsMockUtils.createMockMoment(new BigNumber(2));
+    const timeRange = dsMockUtils.createMockCodec(
+      {
+        unwrap: () => ({ start, end }),
+      },
+      false
+    );
+
+    getQueryMultiMock().mockResolvedValue([dsMockUtils.createMockBool(false), timeRange]);
+
+    jest
+      .spyOn(utilsConversionModule, 'meshCorporateBallotMetaToCorporateBallotMeta')
+      .mockReturnValue({
+        title: 't',
+        motions: [],
+      });
+    jest
+      .spyOn(utilsConversionModule, 'momentToDate')
+      .mockImplementation(m => new Date((m as Moment).toNumber()));
+    jest.spyOn(utilsConversionModule, 'boolToBoolean').mockReturnValue(true);
+
+    const result = await getCorporateBallotDetailsOrNull(asset, id, mockContext);
+
+    expect(result).toMatchObject({
+      meta: { title: 't' },
+      rcv: true,
+    });
+    expect(result?.startDate).toBeInstanceOf(Date);
+    expect(result?.endDate).toBeInstanceOf(Date);
+  });
+});
+
+describe('getCorporateBallotDetailsOrThrow success', () => {
+  let mockContext: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return ballot details when the ballot exists', async () => {
+    const assetId = '12341234-1234-1234-1234-123412341234';
+    const id = new BigNumber(1);
+    const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+
+    jest
+      .spyOn(utilsConversionModule, 'assetToMeshAssetId')
+      .mockReturnValue(dsMockUtils.createMockAssetId(assetId));
+    jest
+      .spyOn(utilsConversionModule, 'bigNumberToU32')
+      .mockReturnValue(dsMockUtils.createMockU32(id));
+    jest
+      .spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId')
+      .mockReturnValue(dsMockUtils.createMockCaId({ assetId: '0x1', localId: id }));
+
+    const rawMeta = dsMockUtils.createMockCorporateBallotMeta({ title: 'Ballot' });
+    dsMockUtils.createQueryMock('corporateBallot', 'metas', {
+      returnValue: dsMockUtils.createMockOption(rawMeta),
+    });
+
+    const start = dsMockUtils.createMockMoment(new BigNumber(1));
+    const end = dsMockUtils.createMockMoment(new BigNumber(2));
+    const timeRange = dsMockUtils.createMockCodec(
+      {
+        unwrap: () => ({ start, end }),
+      },
+      false
+    );
+
+    getQueryMultiMock().mockResolvedValue([dsMockUtils.createMockBool(false), timeRange]);
+
+    jest
+      .spyOn(utilsConversionModule, 'meshCorporateBallotMetaToCorporateBallotMeta')
+      .mockReturnValue({
+        title: 't',
+        motions: [],
+      });
+    jest
+      .spyOn(utilsConversionModule, 'momentToDate')
+      .mockImplementation(m => new Date((m as Moment).toNumber()));
+    jest.spyOn(utilsConversionModule, 'boolToBoolean').mockReturnValue(false);
+
+    const result = await getCorporateBallotDetailsOrThrow(asset, id, mockContext);
+
+    expect(result.meta).toEqual({ title: 't', motions: [] });
+    expect(result.rcv).toBe(false);
   });
 });

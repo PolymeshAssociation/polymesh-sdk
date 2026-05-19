@@ -298,6 +298,57 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     });
   });
 
+  it('should return a rotatePrimaryKeyToSecondary transaction spec with v7 arguments if context.isV7 is true', async () => {
+    const v7MockContext = dsMockUtils.getContextInstance({ isV7: true });
+    when(bigNumberToU64Spy).calledWith(authId, v7MockContext).mockReturnValue(rawAuthId);
+
+    const proc = procedureMockUtils.getInstance<
+      ConsumeJoinOrRotateAuthorizationParams,
+      void,
+      Storage
+    >(v7MockContext, {
+      actingAccount: targetAccount,
+      calledByTarget: true,
+    });
+
+    const transaction = dsMockUtils.createTxMock('identity', 'rotatePrimaryKeyToSecondary');
+
+    const issuer = entityMockUtils.getIdentityInstance();
+    const target = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: null,
+    });
+
+    const result = await prepareConsumeJoinOrRotateAuthorization.call(proc, {
+      authRequest: new AuthorizationRequest(
+        {
+          target,
+          issuer,
+          authId,
+          expiry: null,
+          data: {
+            type: AuthorizationType.RotatePrimaryKeyToSecondary,
+            value: {
+              assets: null,
+              transactions: null,
+              transactionGroups: [],
+              portfolios: null,
+            },
+          },
+        },
+        v7MockContext
+      ),
+      accept: true,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      paidForBy: issuer,
+      args: [rawAuthId, null],
+      resolver: undefined,
+    });
+  });
+
   it('should throw if called with an Authorization that is not JoinIdentity, RotatePrimaryKeyToSecondary or RotatePrimaryKey', async () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,

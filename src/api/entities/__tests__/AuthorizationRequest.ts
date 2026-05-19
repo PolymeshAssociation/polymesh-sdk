@@ -220,7 +220,7 @@ describe('AuthorizationRequest class', () => {
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
           data: {
-            type: AuthorizationType.AddRelayerPayingKey,
+            type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
             value: {
               beneficiary: new Account({ address: 'beneficiary' }, context),
               subsidizer: new Account({ address: 'subsidizer' }, context),
@@ -392,7 +392,7 @@ describe('AuthorizationRequest class', () => {
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
           data: {
-            type: AuthorizationType.AddRelayerPayingKey,
+            type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
             value: {
               beneficiary: new Account({ address: 'beneficiary' }, context),
               subsidizer: new Account({ address: 'subsidizer' }, context),

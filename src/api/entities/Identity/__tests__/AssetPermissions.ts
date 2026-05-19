@@ -311,7 +311,7 @@ describe('AssetPermissions class', () => {
         Except: [dsMockUtils.createMockText('create_asset')],
       });
 
-      const assetTextKey = dsMockUtils.createMockText('asset');
+      const assetTextKey = dsMockUtils.createMockText('Asset');
       const exceptPermissions = dsMockUtils.createMockPalletPermissions({
         extrinsics: mockExtrinsicNames,
       });
@@ -345,6 +345,15 @@ describe('AssetPermissions class', () => {
       expect(result).toEqual({
         result: false,
         missingPermissions: [TxTags.asset.CreateAsset],
+      });
+
+      result = await assetPermissions.checkPermissions({
+        asset,
+        transactions: [TxTags.asset.RegisterUniqueTicker],
+      });
+
+      expect(result).toEqual({
+        result: true,
       });
 
       const exceptAllAssetPerms = new Map();

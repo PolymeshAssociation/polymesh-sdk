@@ -137,4 +137,32 @@ describe('Subsidies Class', () => {
       expect(callback).toBeCalledWith(fakeResult);
     });
   });
+
+  describe('method: getPendingSubsidies', () => {
+    it('should return the pending subsidies for the Account', async () => {
+      const fakeResult: SubsidyWithAllowance[] = [
+        {
+          subsidy: entityMockUtils.getSubsidyInstance({
+            beneficiary: address,
+            subsidizer: 'someSubsidizer',
+          }),
+          allowance: new BigNumber(1000),
+        },
+      ];
+
+      context.getPendingSubsidies.mockResolvedValue(fakeResult);
+
+      const result = await subsidies.getPendingSubsidies();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should throw error for v7 chain', () => {
+      dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
+
+      expect(() => subsidies.getPendingSubsidies()).toThrow(
+        'This method is only supported in chain v8'
+      );
+    });
+  });
 });

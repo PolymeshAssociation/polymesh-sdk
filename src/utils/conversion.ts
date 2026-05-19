@@ -73,6 +73,7 @@ import {
   PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementAffirmationRequirement,
   PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstructionStatus,
@@ -278,6 +279,7 @@ import {
   PortfolioId,
   PortfolioLike,
   ProposalStatus,
+  ReceiverAffirmationRequirement,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -1805,7 +1807,7 @@ export function authorizationDataToAuthorization(
 
     if (context.isV7) {
       return {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
         value,
       };
     }
@@ -3381,6 +3383,16 @@ export function meshInstructionStatusToInstructionStatus(
   }
 
   return InternalInstructionStatus.Unknown;
+}
+
+/**
+ * @hidden
+ */
+export function affirmationRequirementToMesh(
+  requirement: ReceiverAffirmationRequirement,
+  context: Context
+): PolymeshPrimitivesSettlementAffirmationRequirement {
+  return context.createType('PolymeshPrimitivesSettlementAffirmationRequirement', requirement);
 }
 
 /**
@@ -5412,7 +5424,7 @@ export function middlewareAuthorizationDataToAuthorization(
       }
 
       return {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
         value: {
           beneficiary: new Account({ address: beneficiary }, context),
           subsidizer: new Account({ address: subsidizer }, context),
@@ -6546,7 +6558,7 @@ export function fundDetailsToMeshFund(
 ): PolymeshPrimitivesPortfolioFund {
   let rawDescription: PolymeshPrimitivesPortfolioFundDescription;
 
-  if ('assetId' in description) {
+  if ('amount' in description) {
     rawDescription = context.createType('PolymeshPrimitivesPortfolioFundDescription', {
       Fungible: description,
     });

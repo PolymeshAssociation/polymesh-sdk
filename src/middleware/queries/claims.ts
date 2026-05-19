@@ -53,8 +53,7 @@ function createClaimsFilters(variables: ClaimsQueryFilter): {
     filters = [
       `or: [ { ${filters.join()}, type: { in: $claimTypes } }, { ${filters.join()}, customClaimTypeId: { in: $customClaimTypeIds } } ]`,
     ];
-    args.push('$claimTypes: [ClaimTypeEnum!]!');
-    args.push('$customClaimTypeIds: [String!]!');
+    args.push('$claimTypes: [ClaimTypeEnum!]!', '$customClaimTypeIds: [String!]!');
   }
 
   return {
@@ -155,7 +154,7 @@ export function claimsQuery(
     query,
     variables: removeUndefinedValues({
       ...filters,
-      expiryTimestamp: filters.includeExpired ? undefined : new Date().getTime(),
+      expiryTimestamp: filters.includeExpired ? undefined : Date.now(),
       ...getSizeAndOffset(size, start),
     }),
   };

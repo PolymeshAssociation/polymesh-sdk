@@ -53,6 +53,7 @@ export async function prepareAcceptPrimaryKeyRotation(
       resolver: undefined,
     };
   }
+
   return {
     transaction: identity.acceptPrimaryKey,
     paidForBy: issuer,

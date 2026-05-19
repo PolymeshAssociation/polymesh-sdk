@@ -32,17 +32,26 @@ export const createChildIdentityResolver =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const did = identityIdToString(data[1] as any);
 
-    return new ChildIdentity({ did }, context);
+    return new ChildIdentity({ did }, context); // NOSONAR
   };
 
 /**
  * @hidden
  */
 export async function prepareCreateChildIdentity(
-  this: Procedure<CreateChildIdentityParams, ChildIdentity, Storage>,
+  this: Procedure<
+    CreateChildIdentityParams,
+    ChildIdentity, // NOSONAR
+    Storage
+  >,
   args: CreateChildIdentityParams
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<TransactionSpec<ChildIdentity, ExtrinsicParams<'identity', any>>> {
+): Promise<
+  TransactionSpec<
+    ChildIdentity, // NOSONAR
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ExtrinsicParams<'identity', any>
+  >
+> {
   const {
     context: {
       polymeshApi: { tx, query },
@@ -67,12 +76,12 @@ export async function prepareCreateChildIdentity(
   const rawIdentity = stringToIdentityId(signingDid, context);
   const rawChildAccount = stringToAccountId(childAccount.address, context);
 
-  const childIdentity = new ChildIdentity({ did: signingDid }, context);
+  const childIdentity = new ChildIdentity({ did: signingDid }, context); // NOSONAR
 
   const [isSecondaryKey, multiSig, parentDid] = await Promise.all([
     query.identity.didKeys(rawIdentity, rawChildAccount),
     childAccount.getMultiSig(),
-    childIdentity.getParentDid(),
+    childIdentity.getParentDid(), // NOSONAR
   ]);
 
   if (!boolToBoolean(isSecondaryKey)) {
@@ -116,7 +125,11 @@ export async function prepareCreateChildIdentity(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<CreateChildIdentityParams, ChildIdentity, Storage>
+  this: Procedure<
+    CreateChildIdentityParams,
+    ChildIdentity, // NOSONAR
+    Storage
+  >
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { identity, actingAccount },
@@ -143,7 +156,11 @@ export async function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<CreateChildIdentityParams, ChildIdentity, Storage>
+  this: Procedure<
+    CreateChildIdentityParams,
+    ChildIdentity, // NOSONAR
+    Storage
+  >
 ): Promise<Storage> {
   const { context } = this;
 
@@ -163,6 +180,6 @@ export async function prepareStorage(
  */
 export const createChildIdentity = (): Procedure<
   CreateChildIdentityParams,
-  ChildIdentity,
+  ChildIdentity, // NOSONAR
   Storage
 > => new Procedure(prepareCreateChildIdentity, getAuthorization, prepareStorage);

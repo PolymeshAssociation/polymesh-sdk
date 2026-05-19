@@ -1194,7 +1194,7 @@ describe('TransferRestrictions class', () => {
 
       // Mock the assembleAssetMappings method to return jurisdictionMappings with a falsy value
       const assembleAssetMappingsSpy = jest.spyOn(
-        transferRestrictions as unknown as { assembleAssetMappings: () => unknown },
+        transferRestrictions as unknown as { assembleAssetMappings: () => unknown }, // NOSONAR
         'assembleAssetMappings'
       );
 
@@ -1253,9 +1253,8 @@ describe('TransferRestrictions class', () => {
       jurisdictionEntriesMock.entries = jest.fn().mockResolvedValue([]);
 
       // Mock the assembleAssetMappings method to return jurisdictionMappings with undefined values
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const assembleAssetMappingsSpy = jest.spyOn(
-        transferRestrictions as unknown as { assembleAssetMappings: () => void },
+        transferRestrictions as unknown as { assembleAssetMappings: () => void }, // NOSONAR
         'assembleAssetMappings'
       );
 

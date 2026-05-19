@@ -26,7 +26,7 @@ describe('CorporateBallot class', () => {
   let getAssetIdForMiddlewareSpy: jest.SpyInstance;
 
   const startDate = new Date();
-  const endDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30);
+  const endDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
   const declarationDate = new Date();
   const description = 'Test Description';
   const targets = {
@@ -191,10 +191,10 @@ describe('CorporateBallot class', () => {
           dsMockUtils.createMockCodec(
             {
               start: dsMockUtils.createMockMoment(
-                new BigNumber(new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30).getTime())
+                new BigNumber(new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).getTime())
               ),
               end: dsMockUtils.createMockMoment(
-                new BigNumber(new Date(new Date().getTime() + 2000 * 60 * 60 * 24 * 30).getTime())
+                new BigNumber(new Date(Date.now() + 2000 * 60 * 60 * 24 * 30).getTime())
               ),
             },
             false
@@ -211,10 +211,10 @@ describe('CorporateBallot class', () => {
           dsMockUtils.createMockCodec(
             {
               start: dsMockUtils.createMockMoment(
-                new BigNumber(new Date(new Date().getTime() - 2000 * 60 * 60 * 24 * 30).getTime())
+                new BigNumber(new Date(Date.now() - 2000 * 60 * 60 * 24 * 30).getTime())
               ),
               end: dsMockUtils.createMockMoment(
-                new BigNumber(new Date(new Date().getTime() + 2000 * 60 * 60 * 24 * 30).getTime())
+                new BigNumber(new Date(Date.now() + 2000 * 60 * 60 * 24 * 30).getTime())
               ),
             },
             false
@@ -231,10 +231,10 @@ describe('CorporateBallot class', () => {
           dsMockUtils.createMockCodec(
             {
               start: dsMockUtils.createMockMoment(
-                new BigNumber(new Date(new Date().getTime() - 2000 * 60 * 60 * 24 * 30).getTime())
+                new BigNumber(new Date(Date.now() - 2000 * 60 * 60 * 24 * 30).getTime())
               ),
               end: dsMockUtils.createMockMoment(
-                new BigNumber(new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 30).getTime())
+                new BigNumber(new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).getTime())
               ),
             },
             false

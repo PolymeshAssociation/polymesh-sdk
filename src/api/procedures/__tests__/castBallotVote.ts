@@ -59,8 +59,8 @@ describe('castBallotVote procedure', () => {
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 
     ballotDetails = {
-      startDate: new Date(new Date().getTime() - 500000),
-      endDate: new Date(new Date().getTime() + 1000000),
+      startDate: new Date(Date.now() - 500000),
+      endDate: new Date(Date.now() + 1000000),
       description: 'description',
       meta: {
         title: 'title',
@@ -73,7 +73,7 @@ describe('castBallotVote procedure', () => {
         ],
       },
       rcv: true,
-      declarationDate: new Date(new Date().getTime() + 500000),
+      declarationDate: new Date(Date.now() + 500000),
     };
 
     ballot = entityMockUtils.getCorporateBallotInstance({
@@ -192,7 +192,7 @@ describe('castBallotVote procedure', () => {
       jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockResolvedValue({
         ...ballotDetails,
         startDate: new Date('10/14/1987'),
-        endDate: new Date(new Date().getTime() + 1000000),
+        endDate: new Date(Date.now() + 1000000),
       });
     });
 

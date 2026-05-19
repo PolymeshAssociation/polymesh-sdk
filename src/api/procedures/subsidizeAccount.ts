@@ -31,9 +31,9 @@ export async function prepareSubsidizeAccount(
 
   const { beneficiary, allowance } = args;
 
-  const account = asAccount(beneficiary, context);
+  const beneficiaryAccount = asAccount(beneficiary, context);
 
-  const { address: beneficiaryAddress } = account;
+  const { address: beneficiaryAddress } = beneficiaryAccount;
 
   const [identity, subsidizer] = await Promise.all([
     context.getSigningIdentity(),
@@ -42,7 +42,7 @@ export async function prepareSubsidizeAccount(
 
   const authorizationRequests = await identity.authorizations.getSent();
 
-  const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
+  const hasPendingAuth = !!authorizationRequests.data.some(authorizationRequest => {
     const { target, data } = authorizationRequest;
 
     return (
@@ -65,21 +65,27 @@ export async function prepareSubsidizeAccount(
 
   const rawAllowance = bigNumberToBalance(allowance, context);
 
-  const authRequest: AddRelayerPayingKeyAuthorizationData = {
-    type: AuthorizationType.AddRelayerPayingKey,
+  const authRequest = {
+    type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
     value: {
-      beneficiary: account,
+      beneficiary: beneficiaryAccount,
       subsidizer,
       allowance,
     },
-  };
+  } as AddRelayerPayingKeyAuthorizationData; // NOSONAR
 
   if (args.isV7Method) {
     if (context.isV7) {
       return {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         transaction: (tx.relayer as any).setPayingKey,
-        resolver: createAuthorizationResolver(authRequest, identity, account, null, context),
+        resolver: createAuthorizationResolver(
+          authRequest,
+          identity,
+          beneficiaryAccount,
+          null,
+          context
+        ),
         args: [rawBeneficiary, rawAllowance],
       };
     }
@@ -97,7 +103,16 @@ export async function prepareSubsidizeAccount(
     });
   }
 
-  // TODO check if a request is already present with same beneficiary in PendingSubsidies
+  const [existingPendingSubsidy] = await context.getPendingSubsidies(beneficiary, [subsidizer]);
+
+  if (existingPendingSubsidy!.allowance.eq(allowance)) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message:
+        'The Beneficiary Account already has a pending invitation to add this account as a subsidizer with the same allowance',
+    });
+  }
+
   return {
     transaction: tx.relayer.approveSubsidy,
     args: [rawBeneficiary, rawAllowance],

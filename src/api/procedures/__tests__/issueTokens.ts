@@ -10,10 +10,15 @@ import { EntityGetter } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
   require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 
 describe('issueTokens procedure', () => {
@@ -31,6 +36,7 @@ describe('issueTokens procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
+    jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     assetHolderToAssetHolderKindSpy = jest.spyOn(
       utilsConversionModule,
@@ -92,6 +98,35 @@ describe('issueTokens procedure', () => {
     });
   });
 
+  it('should throw an error if both portfolioId and account are provided', () => {
+    const args = {
+      amount,
+      asset: entityMockUtils.getFungibleAssetInstance({ assetId }),
+      portfolioId: new BigNumber(1),
+      account: '0xdummy',
+    };
+
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+
+    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
+      'Only one of portfolioId or account can be provided to issue tokens'
+    );
+  });
+
+  it('should throw an error if account is provided but does not match the signing account', () => {
+    const args = {
+      amount,
+      asset: entityMockUtils.getFungibleAssetInstance({ assetId }),
+      account: 'someOtherAddress',
+    };
+
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+
+    return expect(prepareIssueTokens.call(proc, args)).rejects.toThrow(
+      'Account should be same as the signing account'
+    );
+  });
+
   it('should return a issue transaction spec', async () => {
     const isDivisible = true;
     const args = {
@@ -116,6 +151,39 @@ describe('issueTokens procedure', () => {
     expect(result).toEqual({
       transaction,
       args: [rawAssetId, rawAmount],
+      resolver: expect.objectContaining({ id: assetId }),
+    });
+  });
+
+  it('should issue tokens to an account when account param matches signing account', async () => {
+    const isDivisible = true;
+    const signingAddress = '0xdummy';
+    const accountHolderKind = dsMockUtils.createMockAssetHolderKind('Account');
+    assetHolderToAssetHolderKindSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderToAssetHolderKind'
+    );
+
+    const args = {
+      amount,
+      asset: entityMockUtils.getFungibleAssetInstance({ assetId, details: { isDivisible } }),
+      account: signingAddress,
+    };
+
+    mockContext.getSigningIdentity.mockResolvedValue(entityMockUtils.getIdentityInstance());
+    assetHolderToAssetHolderKindSpy.mockReturnValue(accountHolderKind);
+
+    when(bigNumberToBalance)
+      .calledWith(amount, mockContext, isDivisible)
+      .mockReturnValue(rawAmount);
+
+    const transaction = dsMockUtils.createTxMock('asset', 'issue');
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+
+    const result = await prepareIssueTokens.call(proc, args);
+    expect(result).toEqual({
+      transaction,
+      args: [rawAssetId, rawAmount, accountHolderKind],
       resolver: expect.objectContaining({ id: assetId }),
     });
   });

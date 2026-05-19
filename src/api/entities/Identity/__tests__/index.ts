@@ -34,6 +34,7 @@ import {
   PermissionedAccount,
   Permissions,
   PortfolioCustodianRole,
+  ReceiverAffirmationRequirement,
   Role,
   RoleType,
   TickerOwnerRole,
@@ -257,6 +258,30 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
+    it('should check CDD Provider / DidRegistrar role against cddServiceProviders on v7', async () => {
+      const did = 'someDid';
+      const mockContext = dsMockUtils.getContextInstance({ isV7: true });
+      const identity = new Identity({ did }, mockContext);
+      const role: Role = { type: RoleType.DidRegistrar };
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+
+      dsMockUtils
+        .createQueryMock('cddServiceProviders', 'activeMembers')
+        .mockResolvedValue([rawDid]);
+
+      when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
+
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+    });
+
     it('should check whether the Identity has the Venue Owner role', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
@@ -457,8 +482,7 @@ describe('Identity class', () => {
 
       when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      when(dsMockUtils.createCallMock('identityApi' as any, 'isIdentityHasValidCdd'))
+      when(dsMockUtils.createCallMock('identityApi', 'isIdentityHasValidCdd'))
         .calledWith(rawIdentityId, null)
         .mockResolvedValue(fakeHasValidCdd);
 
@@ -467,9 +491,21 @@ describe('Identity class', () => {
         .mockReturnValue(statusResponse);
 
       const identity = new Identity({ did }, mockContext);
-      const result = await identity.hasValidCdd();
-
+      const result = await identity.hasValidCdd(); // NOSONAR
       expect(result).toEqual(statusResponse);
+    });
+
+    it('should return whether the Identity exists if the chain version is v8', async () => {
+      const did = 'someDid';
+      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
+      const identity = new Identity({ did }, mockContext);
+
+      const existsSpy = jest.spyOn(identity, 'exists').mockResolvedValue(true);
+
+      const result = await identity.hasValidCdd(); // NOSONAR
+
+      expect(result).toBe(true);
+      expect(existsSpy).toHaveBeenCalled();
     });
   });
 
@@ -503,6 +539,23 @@ describe('Identity class', () => {
 
       dsMockUtils
         .createQueryMock('didRegistrars', 'activeMembers')
+        .mockResolvedValue([rawDid, dsMockUtils.createMockIdentityId('otherDid')]);
+
+      const result = await identity.isCddProvider();
+
+      expect(result).toBeTruthy();
+    });
+
+    it('should use cddServiceProviders.activeMembers when chain is v7', async () => {
+      const did = 'someDid';
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance({ isV7: true });
+      const identity = new Identity({ did }, mockContext);
+
+      when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
+
+      dsMockUtils
+        .createQueryMock('cddServiceProviders', 'activeMembers')
         .mockResolvedValue([rawDid, dsMockUtils.createMockIdentityId('otherDid')]);
 
       const result = await identity.isCddProvider();
@@ -1102,7 +1155,7 @@ describe('Identity class', () => {
         {
           distribution: entityMockUtils.getDividendDistributionInstance({
             ...distributionTemplate,
-            paymentDate: new Date(new Date().getTime() + 3 * 60 * 1000),
+            paymentDate: new Date(Date.now() + 3 * 60 * 1000),
           }),
           details: detailsTemplate,
         },
@@ -1382,8 +1435,7 @@ describe('Identity class', () => {
       when(identityIdToStringSpy).calledWith(rawChildren[0]!).mockReturnValue(children[0]!);
       when(identityIdToStringSpy).calledWith(rawChildren[1]!).mockReturnValue(children[1]!);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dsMockUtils.createQueryMock('identity' as any, 'parentDid', {
+      dsMockUtils.createQueryMock('identity', 'parentDid', {
         entries: rawChildren.map(child =>
           tuple([child], dsMockUtils.createMockOption(rawIdentity))
         ),
@@ -1397,6 +1449,17 @@ describe('Identity class', () => {
           expect.objectContaining({ did: children[1] }),
         ])
       );
+    });
+
+    it('should throw an error if the chain version is v8', async () => {
+      const mockContext = dsMockUtils.getContextInstance({
+        isV7: false,
+      });
+      const identity = new Identity({ did: 'someDid' }, mockContext);
+
+      await expect(
+        identity.getChildIdentities() // NOSONAR
+      ).rejects.toThrow('getChildIdentities is not supported in v8');
     });
   });
 
@@ -1489,6 +1552,62 @@ describe('Identity class', () => {
       const result = await identity.isAssetPreApproved(assetId);
 
       expect(result).toBeTruthy();
+    });
+  });
+
+  describe('method: isMandatoryReceiverAffirmationEnabled', () => {
+    it('should return true when mandatory receiver affirmation is enabled', async () => {
+      const did = 'someDid';
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawDid);
+
+      dsMockUtils
+        .createQueryMock('settlement', 'mandatoryReceiverAffirmation')
+        .mockResolvedValue(dsMockUtils.createMockBool(true));
+
+      const result = await identity.isMandatoryReceiverAffirmationEnabled();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when mandatory receiver affirmation is disabled', async () => {
+      const did = 'someDid';
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawDid);
+
+      dsMockUtils
+        .createQueryMock('settlement', 'mandatoryReceiverAffirmation')
+        .mockResolvedValue(dsMockUtils.createMockBool(false));
+
+      const result = await identity.isMandatoryReceiverAffirmationEnabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('method: setMandatoryReceiverAffirmation', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const did = 'someDid';
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      const args = { requirement: ReceiverAffirmationRequirement.Required };
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ...args, did }, transformer: undefined }, mockContext, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const result = await identity.setMandatoryReceiverAffirmation(args);
+
+      expect(result).toBe(expectedTransaction);
     });
   });
 

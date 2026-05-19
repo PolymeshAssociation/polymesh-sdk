@@ -2,8 +2,12 @@ import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Params, prepareSubsidizeAccount } from '~/api/procedures/subsidizeAccount';
-import { Account, AuthorizationRequest, Context } from '~/internal';
+import {
+  Params,
+  prepareSubsidizeAccount,
+  subsidizeAccount,
+} from '~/api/procedures/subsidizeAccount';
+import { Account, AuthorizationRequest, Context, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AuthorizationType, Identity, ResultSet } from '~/types';
@@ -67,7 +71,7 @@ describe('subsidizeAccount procedure', () => {
             authId,
             expiry: null,
             data: {
-              type: AuthorizationType.AddRelayerPayingKey,
+              type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
               value: {
                 beneficiary,
                 subsidizer: entityMockUtils.getAccountInstance(),
@@ -112,7 +116,7 @@ describe('subsidizeAccount procedure', () => {
             authId,
             expiry: null,
             data: {
-              type: AuthorizationType.AddRelayerPayingKey,
+              type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
               value: {
                 beneficiary: mockBeneficiary,
                 subsidizer,
@@ -129,7 +133,7 @@ describe('subsidizeAccount procedure', () => {
             authId,
             expiry: null,
             data: {
-              type: AuthorizationType.AddRelayerPayingKey,
+              type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
               value: {
                 beneficiary,
                 subsidizer,
@@ -171,6 +175,130 @@ describe('subsidizeAccount procedure', () => {
       transaction,
       args: [rawBeneficiaryAccount, rawAllowance],
       resolver: expect.any(Function),
+    });
+  });
+
+  it('should return a setPayingKey transaction spec when isV7Method is true and chain is v7', async () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        isV7: true,
+        sentAuthorizations: { data: [], next: null, count: new BigNumber(0) },
+      },
+    });
+
+    rawBeneficiaryAccount = dsMockUtils.createMockAccountId(address);
+    rawAllowance = dsMockUtils.createMockBalance(allowance);
+
+    when(stringToAccountIdSpy)
+      .calledWith(address, mockContext)
+      .mockReturnValue(rawBeneficiaryAccount);
+    when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const proc = procedureMockUtils.getInstance<Params, any>(mockContext);
+
+    const setPayingKeyTransaction = dsMockUtils.createTxMock('relayer', 'setPayingKey');
+
+    const result = await prepareSubsidizeAccount.call(proc, {
+      ...args,
+      beneficiary,
+      isV7Method: true,
+    });
+
+    expect(result).toEqual({
+      transaction: setPayingKeyTransaction,
+      args: [rawBeneficiaryAccount, rawAllowance],
+      resolver: expect.any(Function),
+    });
+  });
+
+  it('should throw NotSupported when isV7Method is true but chain is v8', () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        isV7: false,
+        sentAuthorizations: { data: [], next: null, count: new BigNumber(0) },
+      },
+    });
+
+    rawBeneficiaryAccount = dsMockUtils.createMockAccountId(address);
+    rawAllowance = dsMockUtils.createMockBalance(allowance);
+
+    when(stringToAccountIdSpy)
+      .calledWith(address, mockContext)
+      .mockReturnValue(rawBeneficiaryAccount);
+    when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const proc = procedureMockUtils.getInstance<Params, any>(mockContext);
+
+    return expect(
+      prepareSubsidizeAccount.call(proc, { ...args, beneficiary, isV7Method: true })
+    ).rejects.toThrow(
+      'This method is no longer supported for chain 8.x. Use approveSubsidy instead'
+    );
+  });
+
+  it('should throw NotSupported when isV7Method is false but chain is v7', () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        isV7: true,
+        sentAuthorizations: { data: [], next: null, count: new BigNumber(0) },
+      },
+    });
+
+    rawBeneficiaryAccount = dsMockUtils.createMockAccountId(address);
+    rawAllowance = dsMockUtils.createMockBalance(allowance);
+
+    when(stringToAccountIdSpy)
+      .calledWith(address, mockContext)
+      .mockReturnValue(rawBeneficiaryAccount);
+    when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const proc = procedureMockUtils.getInstance<Params, any>(mockContext);
+
+    return expect(
+      prepareSubsidizeAccount.call(proc, { ...args, beneficiary, isV7Method: false })
+    ).rejects.toThrow('This method is not supported for chain 7.x. Use subsidizeAccount instead');
+  });
+
+  it('should return an approveSubsidy transaction spec when chain is v8', async () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        isV7: false,
+        sentAuthorizations: { data: [], next: null, count: new BigNumber(0) },
+      },
+    });
+
+    rawBeneficiaryAccount = dsMockUtils.createMockAccountId(address);
+    rawAllowance = dsMockUtils.createMockBalance(allowance);
+
+    when(stringToAccountIdSpy)
+      .calledWith(address, mockContext)
+      .mockReturnValue(rawBeneficiaryAccount);
+    when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const proc = procedureMockUtils.getInstance<Params, any>(mockContext);
+
+    const approveSubsidyTransaction = dsMockUtils.createTxMock('relayer', 'approveSubsidy');
+
+    const result = await prepareSubsidizeAccount.call(proc, {
+      ...args,
+      beneficiary,
+      isV7Method: false,
+    });
+
+    expect(result).toEqual({
+      transaction: approveSubsidyTransaction,
+      args: [rawBeneficiaryAccount, rawAllowance],
+      resolver: expect.any(Function),
+    });
+  });
+
+  describe('subsidizeAccount', () => {
+    it('should be instance of Procedure', () => {
+      expect(subsidizeAccount()).toBeInstanceOf(Procedure);
     });
   });
 });

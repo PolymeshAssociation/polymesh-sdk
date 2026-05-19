@@ -1,5 +1,5 @@
 import { StorageKey, u64 } from '@polkadot/types';
-import { AccountId32 } from '@polkadot/types/interfaces';
+import { AccountId32, Balance } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesNftNftOwnerStatus,
@@ -710,8 +710,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       ]);
 
       return queriedAssets.map((queriedAsset, index) => {
-        const total = balanceToBigNumber(totalBalances[index]!);
-        const locked = balanceToBigNumber(lockedBalances[index]!);
+        const total = balanceToBigNumber(totalBalances[index] as Balance);
+        const locked = balanceToBigNumber(lockedBalances[index] as Balance);
 
         return {
           asset: queriedAsset,
@@ -780,6 +780,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         message: 'Account.getCollections is not supported for chain 7.x',
       });
     }
+
     const rawAccountId = stringToAccountId(address, context);
 
     let queriedCollections: string[] | undefined;
@@ -833,10 +834,10 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       seenAssetIds.add(assetId);
       const heldNft = new Nft({ id: heldId, assetId }, context);
 
-      if (!collectionRecord[assetId]) {
-        collectionRecord[assetId] = [heldNft];
+      if (collectionRecord[assetId]) {
+        collectionRecord[assetId].push(heldNft);
       } else {
-        collectionRecord[assetId]!.push(heldNft);
+        collectionRecord[assetId] = [heldNft];
       }
 
       return collectionRecord;

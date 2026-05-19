@@ -8,9 +8,10 @@ import {
   Params,
   prepareRedeemNft,
   prepareStorage,
+  redeemNft,
   Storage,
 } from '~/api/procedures/redeemNft';
-import { Context, NumberedPortfolio, PolymeshError } from '~/internal';
+import { Context, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, NftCollection, TxTags } from '~/types';
@@ -35,6 +36,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
     '~/api/entities/NumberedPortfolio'
   )
+);
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 
 describe('redeemNft procedure', () => {
@@ -125,6 +130,45 @@ describe('redeemNft procedure', () => {
     });
   });
 
+  it('should return a redeemNft transaction spec when from is an Account (fromAssetHolder instanceof Account)', async () => {
+    const nft = entityMockUtils.getNftInstance({ assetId, id });
+    const fromAccount = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+    });
+    fromAccount.getCollections = jest.fn().mockResolvedValue([
+      {
+        collection,
+        free: [nft],
+        locked: [],
+        total: new BigNumber(1),
+      },
+    ]);
+
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      fromAssetHolder: fromAccount,
+    });
+
+    const transaction = dsMockUtils.createTxMock('nft', 'redeemNft');
+
+    const rawAssetHolderKind = dsMockUtils.createMockAssetHolderKind('Account');
+
+    when(jest.spyOn(utilsConversionModule, 'assetHolderToAssetHolderKind'))
+      .calledWith(fromAccount, mockContext)
+      .mockReturnValue(rawAssetHolderKind);
+
+    const result = await prepareRedeemNft.call(proc, {
+      collection,
+      id,
+      fromAccount,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      args: [rawAssetId, rawId, rawAssetHolderKind, 0],
+      resolver: undefined,
+    });
+  });
+
   it('should throw an error if the portfolio does not have the NFT to redeem', () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       fromAssetHolder: entityMockUtils.getNumberedPortfolioInstance({
@@ -150,6 +194,44 @@ describe('redeemNft procedure', () => {
         id,
       })
     ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw if getCollections is empty (no matching collection entry)', () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      fromAssetHolder: entityMockUtils.getNumberedPortfolioInstance({
+        getCollections: jest.fn().mockResolvedValue([]),
+      }),
+    });
+
+    return expect(
+      prepareRedeemNft.call(proc, {
+        collection,
+        id,
+      })
+    ).rejects.toThrow('Asset Holder does not hold NFT to redeem');
+  });
+
+  it('should throw if the NFT id is not in the free list for the collection', () => {
+    const otherNft = entityMockUtils.getNftInstance({ assetId, id: new BigNumber(99) });
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      fromAssetHolder: entityMockUtils.getNumberedPortfolioInstance({
+        getCollections: [
+          {
+            collection,
+            free: [otherNft],
+            locked: [],
+            total: new BigNumber(1),
+          },
+        ],
+      }),
+    });
+
+    return expect(
+      prepareRedeemNft.call(proc, {
+        collection,
+        id,
+      })
+    ).rejects.toThrow('Asset Holder does not hold NFT to redeem');
   });
 
   describe('getAuthorization', () => {
@@ -179,6 +261,30 @@ describe('redeemNft procedure', () => {
           transactions: [TxTags.nft.RedeemNft],
           assets: [expect.objectContaining({ id: assetId })],
           portfolios: [fromAssetHolder],
+        },
+      });
+    });
+
+    it('should omit portfolios permission when redeeming from an Account', () => {
+      dsMockUtils.getContextInstance({ did: 'someDid' });
+
+      const fromAccount = entityMockUtils.getAccountInstance({
+        address: 'someAddress',
+      });
+
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        fromAssetHolder: fromAccount,
+      });
+
+      const boundFunc = getAuthorization.bind(proc);
+
+      const result = boundFunc({ collection, id });
+
+      expect(result).toEqual({
+        permissions: {
+          transactions: [TxTags.nft.RedeemNft],
+          assets: [expect.objectContaining({ id: assetId })],
+          portfolios: [],
         },
       });
     });
@@ -220,5 +326,31 @@ describe('redeemNft procedure', () => {
         fromAssetHolder: from,
       });
     });
+
+    it('should throw if both from and fromAccount are provided', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      return expect(
+        boundFunc({ from: new BigNumber(1), fromAccount: '0xdummy' } as Params)
+      ).rejects.toThrow('Only one of `from` or `fromAccount` can be provided to redeem');
+    });
+
+    it('should return an Account-based asset holder when fromAccount is provided', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc({ fromAccount: '0xdummy' } as Params);
+
+      expect(result).toEqual({
+        fromAssetHolder: expect.objectContaining({ address: '0xdummy' }),
+      });
+    });
+  });
+});
+
+describe('redeemNft', () => {
+  it('should be instance of Procedure', () => {
+    expect(redeemNft()).toBeInstanceOf(Procedure);
   });
 });

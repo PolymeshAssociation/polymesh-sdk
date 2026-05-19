@@ -1416,7 +1416,7 @@ export function getExemptedIds(identities: (string | Identity)[], context: Conte
 
   const identityEntities = identities.map(identity => asIdentity(identity, context));
 
-  exemptedIds.push(...identityEntities.map(identity => asDid(identity), context));
+  exemptedIds.push(...identityEntities.map(identity => asDid(identity)));
   const hasDuplicates = uniq(exemptedIds).length !== exemptedIds.length;
 
   if (hasDuplicates) {
@@ -1606,10 +1606,10 @@ export async function assertExpectedChainVersion(nodeUrl: string): Promise<numbe
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const NodeWs =
     protocol.startsWith('ws') &&
-    typeof globalThis.WebSocket === 'function' &&
-    (typeof process === 'undefined' || !process.versions?.node)
-      ? null
-      : (await import('ws')).default;
+    (typeof globalThis.WebSocket !== 'function' ||
+      (typeof process !== 'undefined' && !!process.versions?.node))
+      ? (await import('ws')).default
+      : null;
 
   return new Promise<number>((resolve, reject) => {
     let confidentialAssetsSupported: boolean;
@@ -1669,6 +1669,7 @@ export async function assertExpectedChainVersion(nodeUrl: string): Promise<numbe
         };
 
         client.onerror = (): void => {
+          client.close();
           handleError(new Error('WebSocket connection error'));
         };
       } else {

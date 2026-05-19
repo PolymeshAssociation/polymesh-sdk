@@ -320,5 +320,13 @@ describe('issueNft procedure', () => {
       expect(result[0]!.collection).toEqual(expect.objectContaining({ id: assetId }));
       expect(result[0]!.id).toEqual(id);
     });
+
+    it('should use NFTPortfolioUpdated event when chain is v7', () => {
+      const context = dsMockUtils.getContextInstance({ isV7: true });
+      const result = issuedNftsResolver(context)({} as ISubmittableResult);
+
+      expect(result[0]!.collection).toEqual(expect.objectContaining({ id: assetId }));
+      expect(result[0]!.id).toEqual(id);
+    });
   });
 });

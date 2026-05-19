@@ -222,8 +222,6 @@ describe('Fungible class', () => {
 
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (rawToken as any).primaryIssuanceAgent = dsMockUtils.createMockOption();
 
       dsMockUtils.createQueryMock('asset', 'assets').mockImplementation((_, cbFunc) => {
         cbFunc(rawToken);
@@ -973,6 +971,33 @@ describe('Fungible class', () => {
       const queue = await asset.approveAllowance({ spender, amount });
 
       expect(queue).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getAllowance', () => {
+    it('should return spender allowance', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ assetId }, context);
+
+      const owner = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+      const spender = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+      const rawOwner = dsMockUtils.createMockAccountId(owner);
+      const rawSpender = dsMockUtils.createMockAccountId(spender);
+      const allowance = new BigNumber(150);
+      const rawAllowance = dsMockUtils.createMockBalance(allowance.shiftedBy(6));
+
+      const stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+      when(stringToAccountIdSpy).calledWith(owner, context).mockReturnValue(rawOwner);
+      when(stringToAccountIdSpy).calledWith(spender, context).mockReturnValue(rawSpender);
+
+      dsMockUtils.createQueryMock('asset', 'allowances', {
+        returnValue: rawAllowance,
+      });
+
+      const result = await asset.getAllowance({ owner, spender });
+
+      expect(result).toEqual(allowance);
     });
   });
 });

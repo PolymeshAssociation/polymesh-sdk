@@ -179,6 +179,7 @@ export { setMultiSigAdmin } from '~/api/procedures/setMultiSigAdmin';
 export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';
 export { registerCustomClaimType } from '~/api/procedures/registerCustomClaimType';
 export { toggleAssetPreApproval } from '~/api/procedures/toggleAssetPreApproval';
+export { setMandatoryReceiverAffirmation } from '~/api/procedures/setMandatoryReceiverAffirmation';
 export { allowIdentityToCreatePortfolios } from '~/api/procedures/allowIdentityToCreatePortfolios';
 export { revokeIdentityToCreatePortfolios } from '~/api/procedures/revokeIdentityToCreatePortfolios';
 export { rotatePrimaryKeyToSecondary } from '~/api/procedures/rotatePrimaryKeyToSecondary';

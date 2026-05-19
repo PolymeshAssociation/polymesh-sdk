@@ -119,8 +119,10 @@ import {
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalState,
   PolymeshPrimitivesMultisigProposalVoteCount,
+  PolymeshPrimitivesNftNftOwnerStatus,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
+  PolymeshPrimitivesPortfolioFundDescription,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesProtocolFeeProtocolOp,
   PolymeshPrimitivesSecondaryKey,
@@ -129,6 +131,7 @@ import {
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementAffirmationRequirement,
   PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstruction,
@@ -203,6 +206,7 @@ import {
   DistributionWithDetails,
   ExtrinsicData,
   MiddlewareMetadata,
+  NftOwnerStatus,
   PermissionedAccount,
   ProtocolFees,
   ResultSet,
@@ -329,6 +333,23 @@ export class MockWebSocket {
       toString: () => jsonString,
     };
     this.triggerEvent('message', response);
+  }
+
+  /**
+   * @hidden
+   * Emit a Node `ws`-style `message` payload (string, Buffer, ArrayBuffer, Buffer[], or other RawData).
+   * Used to exercise RawData handling in chain version checks.
+   */
+  emitNodeStyleMessage(rawData: unknown): void {
+    this.triggerEvent('message', rawData);
+  }
+
+  /**
+   * @hidden
+   * Invoke all `open` listeners (used to exercise the Node `ws` open handler).
+   */
+  triggerOpen(): void {
+    this.triggerEvent('open', undefined);
   }
 
   /**
@@ -474,6 +495,7 @@ interface ContextOptions {
   getSignature?: `0x${string}`;
   getNextAssetId?: string;
   isV7?: boolean;
+  getPendingSubsidies?: SubsidyWithAllowance[];
 }
 
 interface SigningManagerOptions {
@@ -817,6 +839,7 @@ const defaultContextOptions: ContextOptions = {
   supportsSubscription: true,
   getSignature: '0xsignature',
   getNextAssetId: '0x12341234123412341234123412341234',
+  getPendingSubsidies: [],
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultSigningManagerOptions: SigningManagerOptions = {
@@ -957,6 +980,7 @@ function configureContext(opts: ContextOptions): void {
     assertSupportsSubscription: jest.fn(),
     getSignature: jest.fn().mockReturnValue(opts.getSignature),
     isV7: opts.isV7,
+    getPendingSubsidies: jest.fn().mockResolvedValue(opts.getPendingSubsidies),
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);
@@ -1340,7 +1364,7 @@ export function reset(): void {
  */
 export function createTxMock<
   ModuleName extends keyof Extrinsics,
-  TransactionName extends keyof Extrinsics[ModuleName]
+  TransactionName extends keyof Extrinsics[ModuleName] | string
 >(
   mod: ModuleName,
   tx: TransactionName,
@@ -1487,7 +1511,7 @@ export function createApolloMultipleQueriesMock(
  */
 export function createQueryMock<
   ModuleName extends keyof Queries,
-  QueryName extends keyof Queries[ModuleName]
+  QueryName extends keyof Queries[ModuleName] | string
 >(
   mod: ModuleName,
   query: QueryName,
@@ -1560,7 +1584,7 @@ export function createQueryMock<
  */
 export function createCallMock<
   ModuleName extends keyof Calls,
-  CallName extends keyof Calls[ModuleName]
+  CallName extends keyof Calls[ModuleName] | string // string type has been added to support dual compatibility mocking of runtime APIs
 >(
   mod: ModuleName,
   query: CallName,
@@ -3449,6 +3473,16 @@ export const createMockSettlementType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAffirmationRequirement = (
+  requirement?: 'Automatic' | 'Required'
+): MockCodec<PolymeshPrimitivesSettlementAffirmationRequirement> => {
+  return createMockEnum<PolymeshPrimitivesSettlementAffirmationRequirement>(requirement);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockAffirmationStatus = (
   authorizationStatus?: 'Unknown' | 'Pending' | 'Affirmed'
 ): MockCodec<PolymeshPrimitivesSettlementAffirmationStatus> => {
@@ -5205,4 +5239,56 @@ export const createMockLockInstructionWeight = (
       }
 ): MockCodec<Result<Weight, DispatchError>> => {
   return createMockEnum<Result<Weight, DispatchError>>(result);
+};
+
+/**
+ * @hidden
+ */
+export const createMockNftOwnerStatus = (
+  status: NftOwnerStatus | PolymeshPrimitivesNftNftOwnerStatus
+): MockCodec<PolymeshPrimitivesNftNftOwnerStatus> => {
+  if (isCodec<PolymeshPrimitivesNftNftOwnerStatus>(status)) {
+    return status as MockCodec<PolymeshPrimitivesNftNftOwnerStatus>;
+  }
+  return createMockEnum<PolymeshPrimitivesNftNftOwnerStatus>(status);
+};
+
+/**
+ * @hidden
+ */
+export const createMockPortfolioFundDescription = (
+  fundDescription?:
+    | PolymeshPrimitivesPortfolioFundDescription
+    | {
+        Fungible: {
+          assetId: Parameters<typeof createMockAssetId>[0];
+          amount: Parameters<typeof createMockU128>[0];
+        };
+      }
+    | {
+        NonFungible: {
+          assetId: Parameters<typeof createMockAssetId>[0];
+          ids: Parameters<typeof createMockVec>[0];
+        };
+      }
+): MockCodec<PolymeshPrimitivesPortfolioFundDescription> => {
+  if (isCodec<PolymeshPrimitivesPortfolioFundDescription>(fundDescription)) {
+    return fundDescription as MockCodec<PolymeshPrimitivesPortfolioFundDescription>;
+  }
+
+  return createMockEnum<PolymeshPrimitivesPortfolioFundDescription>(fundDescription);
+};
+
+/**
+ * @hidden
+ */
+export const createMockPortfolioFund = (fund?: {
+  description:
+    | PolymeshPrimitivesPortfolioFundDescription
+    | Parameters<typeof createMockPortfolioFundDescription>[0];
+  memo: Option<Bytes> | Parameters<typeof createMockOption<Bytes>>[0];
+}): MockCodec<PolymeshPrimitivesPortfolioFund> => {
+  const { description, memo } = fund || {};
+
+  return createMockCodec<PolymeshPrimitivesPortfolioFund>({ description, memo }, !fund);
 };

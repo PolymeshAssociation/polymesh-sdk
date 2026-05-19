@@ -134,6 +134,25 @@ describe('controllerTransfer procedure', () => {
     ).rejects.toThrow('The origin Portfolio does not have enough free balance for this transfer');
   });
 
+  it("should throw an error if destinationDid does not match the signing identity's DID", () => {
+    const differentDestination = entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' });
+
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      did: 'someDid',
+      destinationAssetHolder: differentDestination,
+    });
+
+    return expect(
+      prepareControllerTransfer.call(proc, {
+        asset,
+        originPortfolio,
+        amount,
+      })
+    ).rejects.toThrow(
+      "Controller transfer must send to one of the signer's portfolios or accounts"
+    );
+  });
+
   it('should return a controller transfer transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: 'someDid',

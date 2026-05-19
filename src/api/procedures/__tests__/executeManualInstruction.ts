@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
+  executeManualInstruction,
   getAuthorization,
   Params,
   prepareExecuteManualInstruction,
@@ -10,10 +11,11 @@ import {
   Storage,
 } from '~/api/procedures/executeManualInstruction';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Context, DefaultPortfolio, Instruction, Venue } from '~/internal';
+import { Context, DefaultPortfolio, Instruction, Procedure, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
+  AffirmationStatus,
   InstructionAffirmationOperation,
   InstructionDetails,
   InstructionStatus,
@@ -427,5 +429,86 @@ describe('executeManualInstruction procedure', () => {
         mediatorDids: [],
       });
     });
+
+    it('should return Account as allowed asset holder if Account identity did matches signer did, and return mediator DIDs if instruction has mediators', async () => {
+      from.isCustodiedBy = jest.fn().mockResolvedValue(false);
+      const toAccount = entityMockUtils.getAccountInstance({
+        getIdentity: entityMockUtils.getIdentityInstance({ did }),
+      });
+
+      when(assetHolderLikeToAssetHolderSpy)
+        .calledWith(toAccount, mockContext)
+        .mockReturnValue(toAccount);
+
+      const mediatorDid = 'mediatorDid';
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          getLegsFromChain: { data: [{ from, to: toAccount, amount, asset }], next: null },
+          detailsFromChain: instructionDetails,
+          getMediators: [
+            {
+              identity: entityMockUtils.getIdentityInstance({ did: mediatorDid }),
+              status: AffirmationStatus.Unknown,
+            },
+          ],
+        },
+      });
+      const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
+
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc({
+        id: new BigNumber(1),
+        skipAffirmationCheck: false,
+      });
+
+      expect(result).toEqual({
+        allowedAssetHolders: [toAccount],
+        instructionDetails,
+        signerDid: did,
+        offChainParties: new Set<string>(),
+        mediatorDids: [mediatorDid],
+      });
+    });
+
+    it('should treat Account as not allowed when getIdentity resolves to null', async () => {
+      from.isCustodiedBy = jest.fn().mockResolvedValue(false);
+      const toAccount = entityMockUtils.getAccountInstance({
+        getIdentity: jest.fn().mockResolvedValue(null),
+      });
+
+      when(assetHolderLikeToAssetHolderSpy)
+        .calledWith(toAccount, mockContext)
+        .mockReturnValue(toAccount);
+
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          getLegsFromChain: { data: [{ from, to: toAccount, amount, asset }], next: null },
+          detailsFromChain: instructionDetails,
+        },
+      });
+      const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
+
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc({
+        id: new BigNumber(1),
+        skipAffirmationCheck: false,
+      });
+
+      expect(result).toEqual({
+        allowedAssetHolders: [],
+        instructionDetails,
+        signerDid: did,
+        offChainParties: new Set<string>(),
+        mediatorDids: [],
+      });
+    });
+  });
+});
+
+describe('executeManualInstruction', () => {
+  it('should be instance of Procedure', () => {
+    expect(executeManualInstruction()).toBeInstanceOf(Procedure);
   });
 });

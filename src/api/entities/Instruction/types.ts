@@ -100,6 +100,11 @@ export enum AffirmationStatus {
   Rejected = 'Rejected',
 }
 
+export enum ReceiverAffirmationRequirement {
+  Automatic = 'Automatic',
+  Required = 'Required',
+}
+
 export interface InstructionAffirmation {
   party: Identity | Account;
   status: AffirmationStatus;

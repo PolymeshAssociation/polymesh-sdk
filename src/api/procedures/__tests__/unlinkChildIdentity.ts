@@ -93,6 +93,19 @@ describe('unlinkChildIdentity procedure', () => {
     ).rejects.toThrow("The `child` doesn't have a parent identity");
   });
 
+  it('should throw NotSupported when the chain is not v7', () => {
+    mockContext = dsMockUtils.getContextInstance({ isV7: false });
+
+    const proc = procedureMockUtils.getInstance<UnlinkChildParams, void, Storage>(mockContext, {
+      identity,
+      actingAccount,
+    });
+
+    return expect(prepareUnlinkChildIdentity.call(proc, { child: childIdentity })).rejects.toThrow(
+      'Child identities are no longer supported in chain v8'
+    );
+  });
+
   it('should throw an error if the signing Identity is neither the parent nor child', () => {
     const child = entityMockUtils.getChildIdentityInstance({
       did: 'randomChild',
@@ -120,8 +133,7 @@ describe('unlinkChildIdentity procedure', () => {
     });
 
     const unlinkChildIdentityTransaction = dsMockUtils.createTxMock(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      'identity' as any,
+      'identity',
       'unlinkChildIdentity'
     );
 

@@ -29,7 +29,7 @@ export class ChildIdentity extends Identity {
   /**
    * Returns the parent of this Identity (if any)
    *
-   * @deprecated this method will be removed in the next version
+   * @deprecated
    */
   public async getParentDid(): Promise<Identity | null> {
     const {
@@ -65,6 +65,8 @@ export class ChildIdentity extends Identity {
   /**
    * @hidden
    * since a child Identity doesn't has any other children, this method overrides the base implementation to return empty array
+   *
+   * @deprecated
    */
   public override getChildIdentities(): Promise<ChildIdentity[]> {
     return Promise.resolve([]);
@@ -87,6 +89,8 @@ export class ChildIdentity extends Identity {
    * @throws if
    *  - this identity doesn't have a parent
    *  - the transaction signer is not the primary key of the child identity
+   *
+   * @deprecated
    */
   public unlinkFromParent: NoArgsProcedureMethod<void>;
 }

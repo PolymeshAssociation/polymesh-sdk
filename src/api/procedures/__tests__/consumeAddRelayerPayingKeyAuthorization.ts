@@ -10,10 +10,17 @@ import {
   Storage,
 } from '~/api/procedures/consumeAddRelayerPayingKeyAuthorization';
 import * as utilsProcedureModule from '~/api/procedures/utils';
-import { Account, AuthorizationRequest, Context, Identity, KnownPermissionGroup } from '~/internal';
+import {
+  Account,
+  AuthorizationRequest,
+  Context,
+  Identity,
+  KnownPermissionGroup,
+  PolymeshError,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, TxTags } from '~/types';
+import { Authorization, AuthorizationType, ErrorCode, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
@@ -122,8 +129,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transaction = dsMockUtils.createTxMock('relayer' as any, 'acceptPayingKey');
+    const transaction = dsMockUtils.createTxMock('relayer', 'acceptPayingKey');
 
     const result = await prepareConsumeAddRelayerPayingKeyAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
@@ -133,7 +139,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
           authId,
           expiry: null,
           data: {
-            type: AuthorizationType.AddRelayerPayingKey,
+            type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
             value: {
               subsidizer: entityMockUtils.getAccountInstance(),
               beneficiary: targetAccount,
@@ -180,7 +186,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
           authId,
           expiry: null,
           data: {
-            type: AuthorizationType.AddRelayerPayingKey,
+            type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
             value: {
               subsidizer: entityMockUtils.getAccountInstance(),
               beneficiary: targetAccount,
@@ -220,6 +226,47 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
     });
   });
 
+  it('should throw an error if accept is set to true and chain is v8 (isV7 = false)', () => {
+    const v8MockContext = dsMockUtils.getContextInstance({ isV7: false });
+
+    const proc = procedureMockUtils.getInstance<
+      ConsumeAddRelayerPayingKeyAuthorizationParams,
+      void,
+      Storage
+    >(v8MockContext, {
+      actingAccount: targetAccount,
+      calledByTarget: true,
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.NotSupported,
+      message: 'acceptPayingKey type authorization is not supported in chain 8.x',
+    });
+
+    return expect(
+      prepareConsumeAddRelayerPayingKeyAuthorization.call(proc, {
+        authRequest: new AuthorizationRequest(
+          {
+            target: targetAccount,
+            issuer: issuerIdentity,
+            authId,
+            expiry: null,
+            data: {
+              type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
+              value: {
+                subsidizer: entityMockUtils.getAccountInstance(),
+                beneficiary: targetAccount,
+                allowance: new BigNumber(100),
+              },
+            },
+          },
+          v8MockContext
+        ),
+        accept: true,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
   describe('prepareStorage', () => {
     it("should return the signing Account, whether the target is the caller and the target's Identity (if any)", async () => {
       const proc = procedureMockUtils.getInstance<
@@ -256,7 +303,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
         target: targetAccount,
         issuer: issuerIdentity,
         data: {
-          type: AuthorizationType.AddRelayerPayingKey,
+          type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
         } as Authorization,
       };
       const args = {

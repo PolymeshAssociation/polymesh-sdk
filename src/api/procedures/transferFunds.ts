@@ -62,7 +62,7 @@ export async function getFund(
     // when sender and receiver DID are same we need to only check asset balance has for either account or portfolio
     if (fromDid === signingDid) {
       const [balance] = await fromHolder.getAssetBalances({ assets: [asset] });
-      if (balance?.free.lt(amount)) {
+      if (!balance || balance.free.lt(amount)) {
         throw new PolymeshError({
           code: ErrorCode.UnmetPrerequisite,
           message: 'Sender has insufficient balance to cover the transfer',
@@ -134,6 +134,10 @@ export async function prepareTransferFunds(
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
       message: 'Unable to retrieve the DID from one or both asset holders',
+      data: {
+        fromDid,
+        toDid,
+      },
     });
   }
 
@@ -141,7 +145,7 @@ export async function prepareTransferFunds(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message:
-        'For transferring funds between different DIDs, use `addInstruction` method instead.',
+        'For transferring funds between different DIDs, use `Settlements.addInstruction` method instead.',
     });
   }
 

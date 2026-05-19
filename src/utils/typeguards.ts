@@ -30,6 +30,7 @@ import {
 import {
   AccreditedClaim,
   AffiliateClaim,
+  AssetHolder,
   BlockedClaim,
   BuyLockupClaim,
   CddClaim,
@@ -456,4 +457,13 @@ export const isRawPayload = (
   input: TransactionPayload['payload'] | TransactionPayload['rawPayload']
 ): input is TransactionPayload['rawPayload'] => {
   return 'data' in input;
+};
+
+/**
+ * Returns whether asset holder is of type Account
+ */
+export const isPortfolioAssetHolder = (
+  holder: AssetHolder
+): holder is DefaultPortfolio | NumberedPortfolio => {
+  return !(holder instanceof Account);
 };

@@ -19,7 +19,7 @@ jest.mock(
 describe('reclaimDividendDistributionFunds procedure', () => {
   const assetId = '0x12341234123412341234123412341234';
   const id = new BigNumber(1);
-  const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
+  const expiryDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365);
   const did = 'someDid';
 
   const rawCaId = dsMockUtils.createMockCaId({ assetId, localId: id });
@@ -87,7 +87,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
           origin,
           assetId,
           id,
-          expiryDate: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 365),
+          expiryDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365),
           details: {
             fundsReclaimed: true,
           },

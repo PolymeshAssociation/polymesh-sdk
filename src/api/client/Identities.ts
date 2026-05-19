@@ -28,7 +28,7 @@ import {
   RotatePrimaryKeyParams,
   RotatePrimaryKeyToSecondaryParams,
 } from '~/types';
-import { identityIdToString } from '~/utils/conversion';
+import { identityIdToString, stringToIdentityId } from '~/utils/conversion';
 import { asIdentity, assertIdentityExists, createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -213,11 +213,12 @@ export class Identities {
   /**
    * Create a ChildIdentity instance from a DID
    *
-   * @deprecated Child identities are no longer supported in chain v8
-   *
    * @throws if there is no ChildIdentity with the passed DID
+   *
+   * @deprecated Child identities are no longer supported in chain v8
    */
   public getChildIdentity(args: { did: string }): Promise<ChildIdentity> {
+    // NOSONAR
     return this.context.getChildIdentity(args.did);
   }
 
@@ -298,7 +299,9 @@ export class Identities {
 
     await assertIdentityExists(identity);
 
-    const custodians = await query.portfolio.allowedCustodians.entries(did.toString());
+    const custodians = await query.portfolio.allowedCustodians.entries(
+      stringToIdentityId(identity.did, this.context)
+    );
 
     return custodians.map(([storageKey]) => {
       const {

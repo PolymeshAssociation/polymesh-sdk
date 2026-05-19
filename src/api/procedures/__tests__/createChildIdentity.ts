@@ -110,16 +110,31 @@ describe('createChildIdentity procedure', () => {
 
     when(boolToBooleanSpy).calledWith(rawFalse).mockReturnValue(false);
 
-    const proc = procedureMockUtils.getInstance<CreateChildIdentityParams, ChildIdentity, Storage>(
-      mockContext,
-      { identity, actingAccount }
-    );
+    const proc = procedureMockUtils.getInstance<
+      CreateChildIdentityParams,
+      ChildIdentity, // NOSONAR
+      Storage
+    >(mockContext, { identity, actingAccount });
 
     return expect(
       prepareCreateChildIdentity.call(proc, {
         secondaryKey: mockAccount,
       })
     ).rejects.toThrow('The `secondaryKey` provided is not a secondary key of the signing Identity');
+  });
+
+  it('should throw NotSupported when the chain is not v7', () => {
+    mockContext = dsMockUtils.getContextInstance({ isV7: false });
+
+    const proc = procedureMockUtils.getInstance<
+      CreateChildIdentityParams,
+      ChildIdentity, // NOSONAR
+      Storage
+    >(mockContext, { identity, actingAccount });
+
+    return expect(
+      prepareCreateChildIdentity.call(proc, { secondaryKey: childAccount })
+    ).rejects.toThrow('Child identities are no longer supported in v8');
   });
 
   it('should throw an error if the account provided is a part of multisig with some POLYX balance', () => {
@@ -131,10 +146,11 @@ describe('createChildIdentity procedure', () => {
       })
     );
 
-    const proc = procedureMockUtils.getInstance<CreateChildIdentityParams, ChildIdentity, Storage>(
-      mockContext,
-      { identity, actingAccount }
-    );
+    const proc = procedureMockUtils.getInstance<
+      CreateChildIdentityParams,
+      ChildIdentity, // NOSONAR
+      Storage
+    >(mockContext, { identity, actingAccount });
 
     return expect(
       prepareCreateChildIdentity.call(proc, {
@@ -150,10 +166,11 @@ describe('createChildIdentity procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<CreateChildIdentityParams, ChildIdentity, Storage>(
-      mockContext,
-      { identity, actingAccount }
-    );
+    const proc = procedureMockUtils.getInstance<
+      CreateChildIdentityParams,
+      ChildIdentity, // NOSONAR
+      Storage
+    >(mockContext, { identity, actingAccount });
 
     return expect(
       prepareCreateChildIdentity.call(proc, {
@@ -165,14 +182,14 @@ describe('createChildIdentity procedure', () => {
   });
 
   it('should add a create ChildIdentity transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<CreateChildIdentityParams, ChildIdentity, Storage>(
-      mockContext,
-      { identity, actingAccount }
-    );
+    const proc = procedureMockUtils.getInstance<
+      CreateChildIdentityParams,
+      ChildIdentity, // NOSONAR
+      Storage
+    >(mockContext, { identity, actingAccount });
 
     const createChildIdentityTransaction = dsMockUtils.createTxMock(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      'identity' as any,
+      'identity',
       'createChildIdentity'
     );
 

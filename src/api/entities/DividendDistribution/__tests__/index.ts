@@ -87,7 +87,7 @@ describe('DividendDistribution class', () => {
     perShare = new BigNumber(0.234567);
     maxAmount = new BigNumber(10000);
     expiryDate = null;
-    paymentDate = new Date(new Date().getTime() + 60 * 60 * 24 * 365);
+    paymentDate = new Date(Date.now() + 60 * 60 * 24 * 365);
     dividendDistribution = new DividendDistribution(
       {
         id,
@@ -119,7 +119,7 @@ describe('DividendDistribution class', () => {
           perShare: new BigNumber(20000000),
           amount: new BigNumber(50000000000),
           remaining: new BigNumber(40000000000),
-          paymentAt: new BigNumber(new Date(new Date().getTime() + 60 * 60 * 1000).getTime()),
+          paymentAt: new BigNumber(new Date(Date.now() + 60 * 60 * 1000).getTime()),
           expiresAt: dsMockUtils.createMockOption(),
           reclaimed: false,
         })

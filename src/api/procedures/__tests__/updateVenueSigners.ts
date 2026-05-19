@@ -113,7 +113,7 @@ describe('updateVenueSigners procedure', () => {
   it('should return a updateVenueSigners transaction spec', async () => {
     const rawId = dsMockUtils.createMockU64(venueId);
     const rawAddSigners = dsMockUtils.createMockBool(args.addSigners);
-    const rawSigner = dsMockUtils.createMockAccountId(args.signers[0] as string);
+    const rawSigner = dsMockUtils.createMockAccountId(args.signers[0] as string); // NOSONAR
 
     const rawSignerBtreeSet = dsMockUtils.createMockBtreeSet<AccountId>([rawSigner]);
 
@@ -133,6 +133,33 @@ describe('updateVenueSigners procedure', () => {
     expect(result).toEqual({
       transaction: updateVenueSignersTransaction,
       args: [rawId, rawSignerBtreeSet, rawAddSigners],
+      resolver: undefined,
+    });
+  });
+
+  it('should use stringToAccountId per signer when chain is v7', async () => {
+    dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
+
+    const rawId = dsMockUtils.createMockU64(venueId);
+    const rawAddSigners = dsMockUtils.createMockBool(args.addSigners);
+    const rawSigner = dsMockUtils.createMockAccountId(args.signers[0] as string);
+
+    jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
+    jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawSigner);
+    jest.spyOn(utilsConversionModule, 'booleanToBool').mockReturnValue(rawAddSigners);
+
+    const updateVenueSignersTransaction = dsMockUtils.createTxMock(
+      'settlement',
+      'updateVenueSigners'
+    );
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const result = await prepareUpdateVenueSigners.call(proc, args);
+
+    expect(result).toEqual({
+      transaction: updateVenueSignersTransaction,
+      args: [rawId, [rawSigner], rawAddSigners],
       resolver: undefined,
     });
   });

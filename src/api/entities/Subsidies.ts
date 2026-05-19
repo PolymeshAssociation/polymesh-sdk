@@ -1,5 +1,5 @@
-import { Account, Namespace, Subsidy } from '~/internal';
-import { SubCallback, SubsidyWithAllowance, UnsubCallback } from '~/types';
+import { Account, Namespace, PolymeshError, Subsidy } from '~/internal';
+import { ErrorCode, SubCallback, SubsidyWithAllowance, UnsubCallback } from '~/types';
 import { accountIdToString, balanceToBigNumber, stringToAccountId } from '~/utils/conversion';
 
 /**
@@ -88,9 +88,19 @@ export class Subsidies extends Namespace<Account> {
 
   /**
    * Get pending subsidies (for which this Account is the beneficiary) that have been authorised but not yet accepted.
+   *
+   * @note this method is supported only with v8 chains
    */
   public getPendingSubsidies(): Promise<SubsidyWithAllowance[]> {
     const { context } = this;
+
+    if (context.isV7) {
+      throw new PolymeshError({
+        code: ErrorCode.NotSupported,
+        message: 'This method is only supported in chain v8',
+      });
+    }
+
     return context.getPendingSubsidies();
   }
 }

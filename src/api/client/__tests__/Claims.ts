@@ -458,8 +458,7 @@ describe('Claims Class', () => {
       };
 
       jest.spyOn(utilsConversionModule, 'identityIdToString').mockReturnValue(claimIssuer);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dsMockUtils.createCallMock('identityApi' as any, 'validCddClaims', {
+      dsMockUtils.createCallMock<'identityApi', 'validCddClaims'>('identityApi', 'validCddClaims', {
         returnValue: [rawIdentityClaim],
       });
 
@@ -480,8 +479,7 @@ describe('Claims Class', () => {
       expect(result).toEqual([mockResult]);
 
       const expiry = new Date('2030/01/01');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dsMockUtils.createCallMock('identityApi' as any, 'validCddClaims', {
+      dsMockUtils.createCallMock('identityApi', 'validCddClaims', {
         returnValue: [
           {
             ...rawIdentityClaim,
@@ -500,6 +498,25 @@ describe('Claims Class', () => {
           expiry,
         },
       ]);
+    });
+
+    it('should throw an error if the chain version is v8', async () => {
+      context.isV7 = false;
+      await expect(
+        claims.getCddClaims() // NOSONAR
+      ).rejects.toThrow('CDD claims are no longer supported in chain v8');
+    });
+
+    it('should return an empty list if identityApi is not available on call', async () => {
+      context.isV7 = true;
+      const identityApi = context.polymeshApi.call.identityApi;
+      // @ts-expect-error The operand of a 'delete' operator must be optional
+      delete context.polymeshApi.call.identityApi;
+
+      const result = await claims.getCddClaims(); // NOSONAR
+      expect(result).toEqual([]);
+
+      context.polymeshApi.call.identityApi = identityApi;
     });
   });
 

@@ -46,7 +46,12 @@ import {
   Venue,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
+import {
+  isFungibleLegBuilder,
+  isNftLegBuilder,
+  isOffChainLeg,
+  isPortfolioAssetHolder,
+} from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   assetHolderIdsToBtreeSet,
@@ -865,14 +870,7 @@ export function getAuthorization(
 
   assetHoldersToAffirm.forEach(assetHolders => {
     transactions = union(transactions, [assetHolders.length ? addAndAffirmTag : addInstructionTag]);
-    portfolios = unionWith(
-      portfolios,
-      assetHolders.filter(holder => !(holder instanceof Account)) as (
-        | DefaultPortfolio
-        | NumberedPortfolio
-      )[],
-      isEqual
-    );
+    portfolios = unionWith(portfolios, assetHolders.filter(isPortfolioAssetHolder), isEqual);
   });
 
   return {

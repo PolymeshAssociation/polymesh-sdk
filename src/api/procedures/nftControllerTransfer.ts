@@ -129,7 +129,10 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, void, Storage>,
-  { destinationPortfolio, destination }: Params
+  {
+    destinationPortfolio, // NOSONAR
+    destination,
+  }: Params
 ): Promise<Storage> {
   const { context } = this;
 

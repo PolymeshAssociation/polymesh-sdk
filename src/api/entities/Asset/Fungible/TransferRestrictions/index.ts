@@ -396,8 +396,11 @@ export class TransferRestrictions extends Namespace<FungibleAsset> {
     nonJurisdictionResults: u128[],
     resultIndex: number
   ): { result: TransferRestrictionStatValues; newIndex: number } {
-    const withClaimValue = u128ToStatValue(nonJurisdictionResults[resultIndex]!, statType);
-    const withoutClaimValue = u128ToStatValue(nonJurisdictionResults[resultIndex + 1]!, statType);
+    const withClaimValue = u128ToStatValue(nonJurisdictionResults[resultIndex] as u128, statType);
+    const withoutClaimValue = u128ToStatValue(
+      nonJurisdictionResults[resultIndex + 1] as u128,
+      statType
+    );
     const totalValue = withClaimValue.plus(withoutClaimValue);
 
     return {

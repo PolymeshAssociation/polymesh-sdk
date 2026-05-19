@@ -268,7 +268,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       if (queriedCollections && !queriedCollections.includes(assetId)) return;
       seenAssetIds.add(assetId);
       const nft = new Nft({ id: nftId, assetId }, context);
-      record[assetId] ? record[assetId]!.push(nft) : (record[assetId] = [nft]);
+      if (record[assetId]) {
+        record[assetId].push(nft);
+      } else {
+        record[assetId] = [nft];
+      }
     };
 
     for (const [{ args: entryArgs }] of heldCollectionEntries) {
