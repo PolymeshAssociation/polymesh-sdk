@@ -209,8 +209,6 @@ export class AccountManagement {
    */
   public approveSubsidy: ProcedureMethod<SubsidizeAccountParams, void>;
 
-  // TODO add support for accept & revoke subsidy
-
   /**
    * Create a MultiSig Account
    *
