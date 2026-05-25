@@ -10,7 +10,7 @@ import {
   Moment,
   Permill,
 } from '@polkadot/types/interfaces';
-import { H512 } from '@polkadot/types/interfaces/runtime';
+import { AccountId32, H512 } from '@polkadot/types/interfaces/runtime';
 import { DispatchError } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsBallotBallotMeta,
@@ -209,6 +209,7 @@ import * as utilsConversionModule from '~/utils/conversion';
 import {
   accountIdToString,
   activeEraStakingToActiveEraInfo,
+  addressesToBtreeSet,
   addressToKey,
   affirmationRequirementToMesh,
   agentGroupToPermissionGroup,
@@ -334,6 +335,7 @@ import {
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
   middlewareAgentGroupDataToPermissionGroup,
+  middlewareAssetHolderToAssetHolder,
   middlewareAuthorizationDataToAuthorization,
   middlewareClaimToClaimData,
   middlewareEventDetailsToEventIdentifier,
@@ -1662,6 +1664,12 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       result = authorizationDataToAuthorization(authorizationData, context);
       expect(result).toEqual(fakeResult);
+
+      result = authorizationDataToAuthorization(
+        authorizationData,
+        dsMockUtils.getContextInstance({ isV7: true })
+      );
+      expect(result).toEqual({ ...fakeResult, type: AuthorizationType.AddRelayerPayingKey }); // NOSONAR
 
       const type = PermissionGroupType.Full;
       fakeResult = {
@@ -4403,9 +4411,22 @@ describe('assetDispatchErrorToTransferError', () => {
 
     expect(result).toEqual(TransferError.TransferNotAllowed);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockError.asModule as any).registry = {
+      findMetaError: jest.fn().mockReturnValue({ name: 'SomeCustomErrorName' }),
+    };
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual('SomeCustomErrorName');
+
+    // Remove the registry mock so it falls through to the throw
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (mockError.asModule as any).registry;
+
     return expect(() => assetDispatchErrorToTransferError(mockError, context)).toThrow(
       new PolymeshError({
-        code: ErrorCode.General,
+        code: ErrorCode.UnexpectedError,
         message: 'Received unknown Asset can transfer status',
       })
     );
@@ -6012,6 +6033,13 @@ describe('txTagToProtocolOp', () => {
       .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'CapitalDistributionDistribute')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.capitalDistribution.Distribute, context)).toEqual(fakeResult);
+
+    const mockResult = 'mockResult' as unknown as Codec;
+    dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
+    when(context.createType)
+      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'NftIssueNft')
+      .mockReturnValue(mockResult);
+    expect(txTagToProtocolOp(TxTags.nft.IssueNft, context)).toEqual(mockResult);
   });
 
   it('should throw an error if tag does not match any PolymeshPrimitivesProtocolFeeProtocolOp', () => {
@@ -7686,6 +7714,38 @@ describe('middlewarePortfolioToPortfolio', () => {
   });
 });
 
+describe('middlewareAssetHolderToAssetHolder', () => {
+  it('should convert a MiddlewareAssetHolder into an Account if account is present', () => {
+    const context = dsMockUtils.getContextInstance();
+    const middlewareAssetHolder = {
+      account: 'someAccount',
+    };
+
+    const result = middlewareAssetHolderToAssetHolder(middlewareAssetHolder, context);
+    expect(result instanceof Account).toBe(true);
+    expect((result as Account).address).toBe('someAccount');
+  });
+
+  it('should convert a MiddlewareAssetHolder into a Portfolio if account is not present', () => {
+    const context = dsMockUtils.getContextInstance();
+    let middlewareAssetHolder: { identityId?: string; number?: number } = {
+      identityId: 'someDid',
+      number: 0,
+    };
+
+    let result = middlewareAssetHolderToAssetHolder(middlewareAssetHolder, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    middlewareAssetHolder = {
+      identityId: 'someDid',
+      number: 10,
+    };
+
+    result = middlewareAssetHolderToAssetHolder(middlewareAssetHolder, context);
+    expect(result instanceof NumberedPortfolio).toBe(true);
+  });
+});
+
 describe('transferRestrictionToPolymeshTransferCondition', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -9052,6 +9112,27 @@ describe('agentGroupToPermissionGroup', () => {
 
       const result = identitiesToBtreeSet(ids, context);
       expect(result).toEqual(['a', 'b', 'c']);
+    });
+  });
+
+  describe('addressesToBtreeSet', () => {
+    it('should convert BTreeSet<AccountId32>', () => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+      const context = dsMockUtils.getContextInstance();
+      const addresses = ['someAddress', 'someAddress2'];
+      addresses.forEach(address =>
+        when(context.createType)
+          .calledWith('AccountId', address)
+          .mockReturnValue(address as unknown as AccountId)
+      );
+
+      const mockResult = ['rawAddress', 'rawAddress2'];
+      when(context.createType)
+        .calledWith('BTreeSet<AccountId32>', ['someAddress', 'someAddress2'])
+        .mockReturnValue(mockResult as unknown as BTreeSet<AccountId32>);
+
+      const result = addressesToBtreeSet(addresses, context);
+      expect(result).toEqual(mockResult);
     });
   });
 
@@ -12169,9 +12250,20 @@ describe('secondaryAccountWithAuthToSecondaryKeyWithAuth', () => {
       .calledWith('Vec<PolymeshPrimitivesIdentitySecondaryKeyWithAuth>', expect.any(Object))
       .mockReturnValue(fakeResult);
 
-    const result = secondaryAccountWithAuthToSecondaryKeyWithAuth(accounts, context);
+    let result = secondaryAccountWithAuthToSecondaryKeyWithAuth(accounts, context);
 
     expect(result).toEqual(fakeResult);
+
+    dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
+    const mockResult = 'fakeSecondaryKeysWithAuth' as unknown as Vec<Codec>;
+
+    when(context.createType)
+      .calledWith('Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>', expect.any(Object))
+      .mockReturnValue(mockResult);
+
+    result = secondaryAccountWithAuthToSecondaryKeyWithAuth(accounts, context);
+
+    expect(result).toEqual(mockResult);
   });
 });
 
@@ -13513,9 +13605,9 @@ describe('asset holder conversion helpers', () => {
   let context: Mocked<Context>;
 
   const stubMeshAssetHolderCreateTypes = (ctx: Mocked<Context>): void => {
-    (ctx.createType as jest.Mock).mockImplementation((type: string, args?: unknown) => {
+    (ctx.createType as jest.Mock).mockImplementation((type: string, args?: string) => {
       if (type === 'PolymeshPrimitivesIdentityId') {
-        return createMockIdentityId(args as string);
+        return createMockIdentityId(args);
       }
       if (type === 'u64') {
         return dsMockUtils.createMockU64(new BigNumber(String(args)));
@@ -13527,7 +13619,7 @@ describe('asset holder conversion helpers', () => {
         return createMockAssetHolder();
       }
       if (type === 'AccountId') {
-        return dsMockUtils.createMockAccountId(args as string);
+        return dsMockUtils.createMockAccountId(args);
       }
       return {};
     });
@@ -13627,11 +13719,11 @@ describe('asset holder conversion helpers', () => {
 
   describe('assetHolderIdToMeshAssetHolder', () => {
     it('should map a hex DID string for non-v7 chains', async () => {
-      const v6Context = dsMockUtils.getContextInstance({ isV7: false });
-      stubMeshAssetHolderCreateTypes(v6Context);
-      const result = await assetHolderIdToMeshAssetHolder(did, v6Context);
+      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
+      stubMeshAssetHolderCreateTypes(mockContext);
+      const result = await assetHolderIdToMeshAssetHolder(did, mockContext);
       expect(result).toBeDefined();
-      expect(v6Context.createType).toHaveBeenCalledWith(
+      expect(mockContext.createType).toHaveBeenCalledWith(
         'PolymeshPrimitivesAssetAssetHolder',
         expect.objectContaining({ Portfolio: expect.anything() })
       );
@@ -13645,11 +13737,11 @@ describe('asset holder conversion helpers', () => {
     });
 
     it('should map a plain address string for non-v7 chains', async () => {
-      const v6Context = dsMockUtils.getContextInstance({ isV7: false });
-      stubMeshAssetHolderCreateTypes(v6Context);
-      const result = await assetHolderIdToMeshAssetHolder(DUMMY_ACCOUNT_ID, v6Context);
+      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
+      stubMeshAssetHolderCreateTypes(mockContext);
+      const result = await assetHolderIdToMeshAssetHolder(DUMMY_ACCOUNT_ID, mockContext);
       expect(result).toBeDefined();
-      expect(v6Context.createType).toHaveBeenCalledWith(
+      expect(mockContext.createType).toHaveBeenCalledWith(
         'PolymeshPrimitivesAssetAssetHolder',
         expect.objectContaining({ Account: expect.anything() })
       );
@@ -13683,12 +13775,12 @@ describe('asset holder conversion helpers', () => {
     });
 
     it('should map a portfolio id object for non-v7', async () => {
-      const v6Context = dsMockUtils.getContextInstance({ isV7: false });
-      stubMeshAssetHolderCreateTypes(v6Context);
+      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
+      stubMeshAssetHolderCreateTypes(mockContext);
       const portfolioId = { did: 'pid', number: new BigNumber(1) };
-      const result = await assetHolderIdToMeshAssetHolder(portfolioId, v6Context);
+      const result = await assetHolderIdToMeshAssetHolder(portfolioId, mockContext);
       expect(result).toBeDefined();
-      expect(v6Context.createType).toHaveBeenCalledWith(
+      expect(mockContext.createType).toHaveBeenCalledWith(
         'PolymeshPrimitivesAssetAssetHolder',
         expect.objectContaining({ Portfolio: expect.anything() })
       );
@@ -13705,33 +13797,33 @@ describe('asset holder conversion helpers', () => {
 
   describe('assetHolderToAssetHolderKind', () => {
     it('should map Account and portfolio variants for non-v7', () => {
-      const v6Context = dsMockUtils.getContextInstance({ isV7: false });
+      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
       const fakeKind = 'kind' as unknown as PolymeshPrimitivesIdentityIdPortfolioKind;
 
-      when(v6Context.createType)
+      when(mockContext.createType)
         .calledWith('PolymeshPrimitivesAssetAssetHolderKind', 'Account')
         .mockReturnValue(fakeKind);
       expect(
         assetHolderToAssetHolderKind(
-          new Account({ address: DUMMY_ACCOUNT_ID }, v6Context),
-          v6Context
+          new Account({ address: DUMMY_ACCOUNT_ID }, mockContext),
+          mockContext
         )
       ).toBe(fakeKind);
 
-      when(v6Context.createType)
+      when(mockContext.createType)
         .calledWith('PolymeshPrimitivesAssetAssetHolderKind', 'DefaultPortfolio')
         .mockReturnValue(fakeKind);
       expect(
-        assetHolderToAssetHolderKind(new DefaultPortfolio({ did: 'd' }, v6Context), v6Context)
+        assetHolderToAssetHolderKind(new DefaultPortfolio({ did: 'd' }, mockContext), mockContext)
       ).toBe(fakeKind);
 
-      const numbered = new NumberedPortfolio({ did: 'd', id: new BigNumber(4) }, v6Context);
+      const numbered = new NumberedPortfolio({ did: 'd', id: new BigNumber(4) }, mockContext);
       const rawU64 = dsMockUtils.createMockU64(new BigNumber(4));
-      when(v6Context.createType).calledWith('u64', '4').mockReturnValue(rawU64);
-      when(v6Context.createType)
+      when(mockContext.createType).calledWith('u64', '4').mockReturnValue(rawU64);
+      when(mockContext.createType)
         .calledWith('PolymeshPrimitivesAssetAssetHolderKind', { UserPortfolio: rawU64 })
         .mockReturnValue(fakeKind);
-      expect(assetHolderToAssetHolderKind(numbered, v6Context)).toBe(fakeKind);
+      expect(assetHolderToAssetHolderKind(numbered, mockContext)).toBe(fakeKind);
     });
 
     it('should map Account and portfolio variants for v7', () => {
@@ -13771,15 +13863,15 @@ describe('asset holder conversion helpers', () => {
 
   describe('assetHolderIdsToBtreeSet', () => {
     it('should create a BTreeSet of asset holders for non-v7', () => {
-      const v6Context = dsMockUtils.getContextInstance({ isV7: false });
+      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
       const raw = createMockAssetHolder({
         Account: dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID),
       });
       const fakeSet = {} as BTreeSet<PolymeshPrimitivesAssetAssetHolder>;
-      when(v6Context.createType)
+      when(mockContext.createType)
         .calledWith('BTreeSet<PolymeshPrimitivesAssetAssetHolder>', expect.anything())
         .mockReturnValue(fakeSet);
-      expect(assetHolderIdsToBtreeSet([raw, raw], v6Context)).toBe(fakeSet);
+      expect(assetHolderIdsToBtreeSet([raw, raw], mockContext)).toBe(fakeSet);
     });
 
     it('should delegate to portfolio id btree set for v7', () => {
@@ -13790,7 +13882,7 @@ describe('asset holder conversion helpers', () => {
         .calledWith('BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', expect.anything())
         .mockReturnValue(fakeSet);
       const result = assetHolderIdsToBtreeSet(
-        [raw, raw] as unknown as PolymeshPrimitivesAssetAssetHolder[],
+        [raw, raw] as unknown as PolymeshPrimitivesAssetAssetHolder[], // NOSONAR
         v7Context
       );
       expect(result).toBe(fakeSet);
@@ -13814,7 +13906,7 @@ describe('meshNftOwnerStatusToNftOwnerStatus', () => {
   });
 
   it('should throw an error if an unknown status is provided', () => {
-    const rawStatus = dsMockUtils.createMockNftOwnerStatus('Unknown' as NftOwnerStatus);
+    const rawStatus = dsMockUtils.createMockNftOwnerStatus('Unknown' as unknown as NftOwnerStatus); // NOSONAR
 
     expect(() => meshNftOwnerStatusToNftOwnerStatus(rawStatus)).toThrow(
       'Unsupported Nft Owner Status. Please contact the Polymesh team'

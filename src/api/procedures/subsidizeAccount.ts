@@ -39,61 +39,60 @@ export async function prepareSubsidizeAccount(
     context.getSigningIdentity(),
     context.getActingAccount(),
   ]);
-
-  const authorizationRequests = await identity.authorizations.getSent();
-
-  const hasPendingAuth = !!authorizationRequests.data.some(authorizationRequest => {
-    const { target, data } = authorizationRequest;
-
-    return (
-      signerToString(target) === beneficiaryAddress &&
-      !authorizationRequest.isExpired() &&
-      data.type === AuthorizationType.AddRelayerPayingKey &&
-      data.value.allowance.isEqualTo(allowance)
-    );
-  });
-
-  if (hasPendingAuth) {
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message:
-        'The Beneficiary Account already has a pending invitation to add this account as a subsidizer with the same allowance',
-    });
-  }
-
   const rawBeneficiary = stringToAccountId(beneficiaryAddress, context);
 
   const rawAllowance = bigNumberToBalance(allowance, context);
 
-  const authRequest = {
-    type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
-    value: {
-      beneficiary: beneficiaryAccount,
-      subsidizer,
-      allowance,
-    },
-  } as AddRelayerPayingKeyAuthorizationData; // NOSONAR
-
   if (args.isV7Method) {
-    if (context.isV7) {
-      return {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: (tx.relayer as any).setPayingKey,
-        resolver: createAuthorizationResolver(
-          authRequest,
-          identity,
-          beneficiaryAccount,
-          null,
-          context
-        ),
-        args: [rawBeneficiary, rawAllowance],
-      };
+    if (!context.isV7) {
+      throw new PolymeshError({
+        code: ErrorCode.NotSupported,
+        message: 'This method is no longer supported for chain 8.x. Use approveSubsidy instead',
+      });
     }
 
-    throw new PolymeshError({
-      code: ErrorCode.NotSupported,
-      message: 'This method is no longer supported for chain 8.x. Use approveSubsidy instead',
+    const authorizationRequests = await identity.authorizations.getSent();
+
+    const hasPendingAuth = !!authorizationRequests.data.some(authorizationRequest => {
+      const { target, data } = authorizationRequest;
+
+      return (
+        signerToString(target) === beneficiaryAddress &&
+        !authorizationRequest.isExpired() &&
+        data.type === AuthorizationType.AddRelayerPayingKey &&
+        data.value.allowance.isEqualTo(allowance)
+      );
     });
+
+    if (hasPendingAuth) {
+      throw new PolymeshError({
+        code: ErrorCode.NoDataChange,
+        message:
+          'The Beneficiary Account already has a pending invitation to add this account as a subsidizer with the same allowance',
+      });
+    }
+
+    const authRequest = {
+      type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
+      value: {
+        beneficiary: beneficiaryAccount,
+        subsidizer,
+        allowance,
+      },
+    } as AddRelayerPayingKeyAuthorizationData; // NOSONAR
+
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      transaction: (tx.relayer as any).setPayingKey,
+      resolver: createAuthorizationResolver(
+        authRequest,
+        identity,
+        beneficiaryAccount,
+        null,
+        context
+      ),
+      args: [rawBeneficiary, rawAllowance],
+    };
   }
 
   if (context.isV7) {
@@ -109,14 +108,14 @@ export async function prepareSubsidizeAccount(
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message:
-        'The Beneficiary Account already has a pending invitation to add this account as a subsidizer with the same allowance',
+        'The Beneficiary Account already has a pending subsidy for acceptance with the same allowance',
     });
   }
 
   return {
     transaction: tx.relayer.approveSubsidy,
     args: [rawBeneficiary, rawAllowance],
-    resolver: (): void => undefined,
+    resolver: undefined,
   };
 }
 

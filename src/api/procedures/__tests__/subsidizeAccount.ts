@@ -10,7 +10,7 @@ import {
 import { Account, AuthorizationRequest, Context, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AuthorizationType, Identity, ResultSet } from '~/types';
+import { AuthorizationType, Identity, ResultSet, SubsidyWithAllowance } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -48,6 +48,18 @@ describe('subsidizeAccount procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     args = { beneficiary: address, allowance, isV7Method: false };
     beneficiary = entityMockUtils.getAccountInstance({ address });
+
+    when(stringToAccountIdSpy)
+      .calledWith(address, mockContext)
+      .mockReturnValue(rawBeneficiaryAccount);
+
+    rawBeneficiaryAccount = dsMockUtils.createMockAccountId(address);
+    rawAllowance = dsMockUtils.createMockBalance(allowance);
+
+    when(stringToAccountIdSpy)
+      .calledWith(address, mockContext)
+      .mockReturnValue(rawBeneficiaryAccount);
+    when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
   });
 
   afterEach(() => {
@@ -61,7 +73,7 @@ describe('subsidizeAccount procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the subsidizer has already sent a pending authorization to beneficiary Account with the same allowance to accept', () => {
+  it('should throw an error if the subsidizer has already sent a pending authorization to beneficiary Account with the same allowance to accept in v7', () => {
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
         new AuthorizationRequest(
@@ -89,6 +101,7 @@ describe('subsidizeAccount procedure', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         sentAuthorizations,
+        isV7: true,
       },
     });
 
@@ -97,12 +110,14 @@ describe('subsidizeAccount procedure', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const proc = procedureMockUtils.getInstance<Params, any>(mockContext);
 
-    return expect(prepareSubsidizeAccount.call(proc, args)).rejects.toThrow(
+    return expect(
+      prepareSubsidizeAccount.call(proc, { ...args, isV7Method: true })
+    ).rejects.toThrow(
       'The Beneficiary Account already has a pending invitation to add this account as a subsidizer'
     );
   });
 
-  it('should return an add authorization transaction spec', async () => {
+  it('should return an add authorization transaction spec for v7 chain', async () => {
     const mockBeneficiary = entityMockUtils.getAccountInstance({ address: 'mockAddress' });
     const issuer = entityMockUtils.getIdentityInstance();
     const subsidizer = entityMockUtils.getAccountInstance();
@@ -151,53 +166,24 @@ describe('subsidizeAccount procedure', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         sentAuthorizations,
-      },
-    });
-
-    rawBeneficiaryAccount = dsMockUtils.createMockAccountId(address);
-
-    rawAllowance = dsMockUtils.createMockBalance(allowance);
-
-    when(stringToAccountIdSpy)
-      .calledWith(address, mockContext)
-      .mockReturnValue(rawBeneficiaryAccount);
-
-    when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const proc = procedureMockUtils.getInstance<Params, any>(mockContext);
-
-    const transaction = dsMockUtils.createTxMock('relayer', 'approveSubsidy');
-
-    const result = await prepareSubsidizeAccount.call(proc, { ...args, beneficiary });
-
-    expect(result).toEqual({
-      transaction,
-      args: [rawBeneficiaryAccount, rawAllowance],
-      resolver: expect.any(Function),
-    });
-  });
-
-  it('should return a setPayingKey transaction spec when isV7Method is true and chain is v7', async () => {
-    dsMockUtils.configureMocks({
-      contextOptions: {
         isV7: true,
-        sentAuthorizations: { data: [], next: null, count: new BigNumber(0) },
       },
     });
 
     rawBeneficiaryAccount = dsMockUtils.createMockAccountId(address);
+
     rawAllowance = dsMockUtils.createMockBalance(allowance);
 
     when(stringToAccountIdSpy)
       .calledWith(address, mockContext)
       .mockReturnValue(rawBeneficiaryAccount);
+
     when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const proc = procedureMockUtils.getInstance<Params, any>(mockContext);
 
-    const setPayingKeyTransaction = dsMockUtils.createTxMock('relayer', 'setPayingKey');
+    const transaction = dsMockUtils.createTxMock('relayer', 'setPayingKey');
 
     const result = await prepareSubsidizeAccount.call(proc, {
       ...args,
@@ -206,7 +192,7 @@ describe('subsidizeAccount procedure', () => {
     });
 
     expect(result).toEqual({
-      transaction: setPayingKeyTransaction,
+      transaction,
       args: [rawBeneficiaryAccount, rawAllowance],
       resolver: expect.any(Function),
     });
@@ -262,11 +248,37 @@ describe('subsidizeAccount procedure', () => {
     ).rejects.toThrow('This method is not supported for chain 7.x. Use subsidizeAccount instead');
   });
 
+  it('should throw an error if a pending subsidy already exists with same amount', () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        isV7: false,
+        getPendingSubsidies: [
+          {
+            allowance: new BigNumber(1000),
+          } as SubsidyWithAllowance,
+        ],
+      },
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const proc = procedureMockUtils.getInstance<Params, any>(mockContext);
+
+    return expect(
+      prepareSubsidizeAccount.call(proc, { ...args, isV7Method: false })
+    ).rejects.toThrow(
+      'The Beneficiary Account already has a pending subsidy for acceptance with the same allowance'
+    );
+  });
+
   it('should return an approveSubsidy transaction spec when chain is v8', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         isV7: false,
-        sentAuthorizations: { data: [], next: null, count: new BigNumber(0) },
+        getPendingSubsidies: [
+          {
+            allowance: new BigNumber(0),
+          } as SubsidyWithAllowance,
+        ],
       },
     });
 
@@ -292,7 +304,7 @@ describe('subsidizeAccount procedure', () => {
     expect(result).toEqual({
       transaction: approveSubsidyTransaction,
       args: [rawBeneficiaryAccount, rawAllowance],
-      resolver: expect.any(Function),
+      resolver: undefined,
     });
   });
 

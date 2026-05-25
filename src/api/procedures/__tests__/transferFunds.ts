@@ -295,7 +295,7 @@ describe('transferFunds procedure', () => {
       const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
 
       fromPortfolioHolder.getAssetBalances.mockResolvedValue([
-        { free: new BigNumber(150) } as unknown as PortfolioBalance,
+        { free: new BigNumber(150) } as PortfolioBalance,
       ]);
 
       fungibleMovementToPortfolioFundSpy.mockResolvedValue('rawFund');

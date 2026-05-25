@@ -838,7 +838,7 @@ export async function prepareAddInstruction(
 
   const addAndAffirmTx = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transaction: settlement.addAndAffirmWithMediators as any, // TODO @prashantasdeveloper remove this when removing dual version support
+    transaction: settlement.addAndAffirmWithMediators as any,
     argsArray: addAndAffirmInstructionParams,
   };
 

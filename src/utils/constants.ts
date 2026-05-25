@@ -151,7 +151,7 @@ export const DEFAULT_CDD_ID = '0x00000000000000000000000000000000000000000000000
 /**
  * Minimum version of Middleware V2 GraphQL Service (SubQuery) that is compatible with this version of the SDK
  */
-export const MINIMUM_SQ_VERSION = '19.3.0';
+export const MINIMUM_SQ_VERSION = 'v19.6.0-alpha.2 ';
 
 /**
  * The first version of Subquery that pads IDs for proper lexical order

@@ -1218,7 +1218,7 @@ describe('warnUnexpectedSqVersion', () => {
       subqueryVersions: {
         nodes: [
           {
-            version: '19.3.0',
+            version: '19.6.0',
           },
         ],
       },
@@ -1374,6 +1374,195 @@ describe('assertExpectedChainVersion', () => {
       const signal = assertExpectedChainVersion('http://example.com');
 
       return expect(signal).rejects.toThrow();
+    });
+  });
+
+  describe('with browser WebSocket', () => {
+    let originalVersions: NodeJS.ProcessVersions;
+    let originalWebSocket: unknown;
+    let mockBrowserWs: {
+      url: string;
+      send: jest.Mock;
+      close: jest.Mock;
+      onopen?: () => void;
+      onmessage?: (event: { data: unknown }) => void;
+      onerror?: () => void;
+    };
+
+    beforeAll(() => {
+      originalVersions = process.versions;
+      originalWebSocket = (globalThis as unknown as { WebSocket: unknown }).WebSocket;
+
+      Object.defineProperty(process, 'versions', {
+        value: { ...originalVersions, node: undefined },
+        configurable: true,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+      (globalThis as unknown as { WebSocket: unknown }).WebSocket = function (url: string) {
+        mockBrowserWs = {
+          url,
+          send: jest.fn(),
+          close: jest.fn(),
+        };
+        return mockBrowserWs;
+      };
+    });
+
+    afterAll(() => {
+      Object.defineProperty(process, 'versions', {
+        value: originalVersions,
+        configurable: true,
+      });
+      (globalThis as unknown as { WebSocket: unknown }).WebSocket = originalWebSocket;
+    });
+
+    it('should resolve if the versions are correct via browser WebSocket', async () => {
+      const signal = assertExpectedChainVersion('ws://example.com');
+      await new Promise(resolve => setImmediate(resolve)); // allow dynamic import / client setup
+
+      // Simulate onopen
+      mockBrowserWs.onopen!();
+
+      expect(mockBrowserWs.send).toHaveBeenCalledTimes(2);
+
+      // Simulate onmessage
+      const confPayload = JSON.stringify({
+        jsonrpc: '2.0',
+        id: CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id,
+        result: null,
+      });
+      const specPayload = JSON.stringify({
+        jsonrpc: '2.0',
+        id: STATE_RUNTIME_VERSION_CALL.id,
+        result: { specVersion: getSpecVersion(SUPPORTED_SPEC_SEMVER) },
+      });
+
+      mockBrowserWs.onmessage!({ data: confPayload });
+      mockBrowserWs.onmessage!({ data: specPayload });
+
+      await expect(signal).resolves.not.toThrow();
+      expect(mockBrowserWs.close).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw an error if message data type is not string', async () => {
+      const signal = assertExpectedChainVersion('ws://example.com');
+      await new Promise(resolve => setImmediate(resolve));
+
+      mockBrowserWs.onmessage!({ data: 123 }); // Not a string
+
+      await expect(signal).rejects.toThrow(
+        'Could not connect to the Polymesh node at ws://example.com'
+      );
+    });
+
+    it('should handle WebSocket connection error', async () => {
+      const signal = assertExpectedChainVersion('ws://example.com');
+      await new Promise(resolve => setImmediate(resolve));
+
+      mockBrowserWs.onerror!();
+
+      await expect(signal).rejects.toThrow(
+        'Could not connect to the Polymesh node at ws://example.com'
+      );
+      expect(mockBrowserWs.close).toHaveBeenCalledTimes(1);
+    });
+
+    it('should use browser WebSocket if process is undefined', async () => {
+      const originalProcess = global.process;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      global.process = undefined as any;
+
+      const signal = assertExpectedChainVersion('ws://example.com');
+      await new Promise(resolve => setImmediate(resolve));
+
+      mockBrowserWs.onopen!();
+      expect(mockBrowserWs.send).toHaveBeenCalledTimes(2);
+
+      const confPayload = JSON.stringify({
+        jsonrpc: '2.0',
+        id: CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id,
+        result: null,
+      });
+      const specPayload = JSON.stringify({
+        jsonrpc: '2.0',
+        id: STATE_RUNTIME_VERSION_CALL.id,
+        result: { specVersion: getSpecVersion(SUPPORTED_SPEC_SEMVER) },
+      });
+
+      mockBrowserWs.onmessage!({ data: confPayload });
+      mockBrowserWs.onmessage!({ data: specPayload });
+
+      await expect(signal).resolves.not.toThrow();
+
+      global.process = originalProcess;
+    });
+
+    it('should use browser WebSocket if process.versions is undefined', async () => {
+      Object.defineProperty(process, 'versions', {
+        value: undefined,
+        configurable: true,
+      });
+
+      const signal = assertExpectedChainVersion('ws://example.com');
+      await new Promise(resolve => setImmediate(resolve));
+
+      mockBrowserWs.onopen!();
+      expect(mockBrowserWs.send).toHaveBeenCalledTimes(2);
+
+      const confPayload = JSON.stringify({
+        jsonrpc: '2.0',
+        id: CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id,
+        result: null,
+      });
+      const specPayload = JSON.stringify({
+        jsonrpc: '2.0',
+        id: STATE_RUNTIME_VERSION_CALL.id,
+        result: { specVersion: getSpecVersion(SUPPORTED_SPEC_SEMVER) },
+      });
+
+      mockBrowserWs.onmessage!({ data: confPayload });
+      mockBrowserWs.onmessage!({ data: specPayload });
+
+      await expect(signal).resolves.not.toThrow();
+
+      Object.defineProperty(process, 'versions', {
+        value: originalVersions,
+        configurable: true,
+      });
+    });
+
+    it('should use Node ws if globalThis.WebSocket is defined but it is a Node environment', async () => {
+      // Temporarily revert process.versions.node to its original truthy value
+      Object.defineProperty(process, 'versions', {
+        value: originalVersions,
+        configurable: true,
+      });
+
+      mockBrowserWs.send.mockClear();
+      const signal = assertExpectedChainVersion('ws://example.com');
+
+      // Wait for dynamic import and client initialization
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Get the Node mock WS instance
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const nodeWs: any = getWebSocketInstance();
+      nodeWs.triggerOpen();
+
+      nodeWs.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
+      nodeWs.sendIsPrivateSupported(false);
+
+      await expect(signal).resolves.not.toThrow();
+
+      // Verify that the browser WebSocket was NOT used
+      expect(mockBrowserWs.send).not.toHaveBeenCalled();
+
+      // Restore the undefined node version for other tests
+      Object.defineProperty(process, 'versions', {
+        value: { ...originalVersions, node: undefined },
+        configurable: true,
+      });
     });
   });
 
@@ -2907,9 +3096,9 @@ describe('assertStatIsSet', () => {
   it('should throw when restriction type is not supported', () => {
     const stats: AssetStat[] = [{ type: StatType.Count }];
     const restriction = {
-      type: 'UnsupportedType' as unknown as TransferRestrictionType, // NOSONAR
+      type: 'UnsupportedType' as TransferRestrictionType,
       value: new BigNumber(10),
-    } as TransferRestriction; // NOSONAR
+    } as TransferRestriction;
 
     expect(() => assertStatIsSet(stats, restriction)).toThrow(expectedError);
   });
@@ -3270,6 +3459,23 @@ describe('conditionsAreEqual', () => {
           claim,
           target: ConditionTarget.Sender,
           trustedClaimIssuers: [{ identity: issuerA, trustedFor: [] }],
+        }
+      )
+    ).toBe(true);
+
+    expect(
+      conditionsAreEqual(
+        {
+          type: ConditionType.IsPresent,
+          claim,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [{ identity: issuerA, trustedFor: [] }],
+        },
+        {
+          type: ConditionType.IsPresent,
+          claim,
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: [{ identity: issuerA, trustedFor: null }],
         }
       )
     ).toBe(true);

@@ -729,6 +729,43 @@ describe('Context class', () => {
           allowance: utilsConversionModule.balanceToBigNumber(allowanceBalance),
         },
       ]);
+      signerToStringSpy.mockRestore();
+    });
+
+    it('should return pending subsidies when payingAccounts is passed', async () => {
+      const allowanceBalance = dsMockUtils.createMockBalance(new BigNumber(50));
+      const rawAllowance = dsMockUtils.createMockOption(allowanceBalance);
+
+      dsMockUtils.createQueryMock('relayer', 'pendingSubsidies', {
+        multi: [rawAllowance, dsMockUtils.createMockOption()],
+      });
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: ['beneficiary'],
+        }),
+      });
+
+      const subsidizerTwo = entityMockUtils.getAccountInstance({ address: 'subsidizerTwo' });
+      const result = await context.getPendingSubsidies(undefined, ['subsidizerOne', subsidizerTwo]);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        subsidy: expect.objectContaining({
+          beneficiary: expect.objectContaining({ address: 'beneficiary' }),
+          subsidizer: expect.objectContaining({ address: 'subsidizerOne' }),
+        }),
+        allowance: utilsConversionModule.balanceToBigNumber(allowanceBalance),
+      });
+      expect(result[1]).toEqual({
+        subsidy: expect.objectContaining({
+          beneficiary: expect.objectContaining({ address: 'beneficiary' }),
+          subsidizer: expect.objectContaining({ address: 'subsidizerTwo' }),
+        }),
+        allowance: new BigNumber(0),
+      });
     });
 
     it('should return an empty array when there are no pending subsidies', async () => {
