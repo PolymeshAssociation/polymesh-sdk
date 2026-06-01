@@ -3,6 +3,7 @@ import { hexAddPrefix, hexStripPrefix, stringToHex } from '@polkadot/util';
 import { MultiSig } from '~/api/entities/Account/MultiSig';
 import {
   acceptPrimaryKeyRotation,
+  acceptSubsidy,
   Account,
   addSecondaryAccounts,
   AuthorizationRequest,
@@ -13,12 +14,14 @@ import {
   modifySignerPermissions,
   modifySignerPermissionsStorage,
   removeSecondaryAccounts,
+  revokeSubsidy,
   subsidizeAccount,
   Subsidy,
   toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
   AcceptPrimaryKeyRotationParams,
+  AcceptSubsidyParams,
   AccountBalance,
   AddSecondaryAccountsParams,
   CreateMultiSigParams,
@@ -29,6 +32,7 @@ import {
   PermissionType,
   ProcedureMethod,
   RemoveSecondaryAccountsParams,
+  RevokeSubsidyParams,
   SubCallback,
   SubsidizeAccountParams,
   UnsubCallback,
@@ -121,6 +125,14 @@ export class AccountManagement {
       { getProcedureAndArgs: args => [subsidizeAccount, { ...args, isV7Method: true }] },
       context
     );
+    this.acceptSubsidy = createProcedureMethod(
+      { getProcedureAndArgs: args => [acceptSubsidy, args] },
+      context
+    );
+    this.revokeSubsidy = createProcedureMethod(
+      { getProcedureAndArgs: args => [revokeSubsidy, args] },
+      context
+    );
     this.approveSubsidy = createProcedureMethod(
       { getProcedureAndArgs: args => [subsidizeAccount, { ...args, isV7Method: false }] },
       context
@@ -208,6 +220,22 @@ export class AccountManagement {
    *  - if same allowance amount is pending for acceptance with respect to same beneficiary
    */
   public approveSubsidy: ProcedureMethod<SubsidizeAccountParams, void>;
+
+  /**
+   * Accepts a pending subsidy request from subsidizer
+   *
+   * @note Only the beneficiary can accept an already approved subsidy request. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies.getPendingSubsidies | subsides.getPendingSubsidies}.
+   * @note this is only available from chain v8
+   */
+  public acceptSubsidy: ProcedureMethod<AcceptSubsidyParams, void>;
+
+  /**
+   * Revokes an already approved subsidy request
+   *
+   * @note Only the subsidizer can revoke an already approved subsidy request. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies.getPendingSubsidies | subsides.getPendingSubsidies}.
+   * @note this is only available from chain v8
+   */
+  public revokeSubsidy: ProcedureMethod<RevokeSubsidyParams, void>;
 
   /**
    * Create a MultiSig Account
