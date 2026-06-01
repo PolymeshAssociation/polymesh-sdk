@@ -34,6 +34,8 @@ export { createNftCollection } from '~/api/procedures/createNftCollection';
 export { createVenue } from '~/api/procedures/createVenue';
 export { updateVenueSigners } from '~/api/procedures/updateVenueSigners';
 export { inviteAccount } from '~/api/procedures/inviteAccount';
+export { revokeSubsidy } from '~/api/procedures/revokeSubsidy';
+export { acceptSubsidy } from '~/api/procedures/acceptSubsidy';
 export { subsidizeAccount } from '~/api/procedures/subsidizeAccount';
 export { issueTokens } from '~/api/procedures/issueTokens';
 export { issueNft } from '~/api/procedures/issueNft';

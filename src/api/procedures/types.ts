@@ -764,6 +764,20 @@ export interface AddSecondaryAccountsParams {
   accounts: AccountWithSignature[];
 }
 
+export interface AcceptSubsidyParams {
+  /**
+   * Account providing the subsidy
+   */
+  subsidizer: string | Account;
+}
+
+export interface RevokeSubsidyParams {
+  /**
+   * Account whose pending subsidy will be revoked
+   */
+  beneficiary: string | Account;
+}
+
 export interface SubsidizeAccountParams {
   /**
    * Account to subsidize

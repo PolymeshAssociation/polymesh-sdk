@@ -194,7 +194,43 @@ describe('AccountManagement class', () => {
         .calledWith({ args: { ...args, isV7Method: true }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
-      const tx = await accountManagement.subsidizeAccount(args);
+      const tx = await accountManagement.subsidizeAccount(args); // NOSONAR
+
+      expect(tx).toEqual(expectedTransaction);
+    });
+  });
+
+  describe('method: acceptSubsidy', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        subsidizer: 'someAccount',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await accountManagement.acceptSubsidy(args);
+
+      expect(tx).toEqual(expectedTransaction);
+    });
+  });
+
+  describe('method: revokeSubsidy', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        beneficiary: 'someAccount',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await accountManagement.revokeSubsidy(args);
 
       expect(tx).toEqual(expectedTransaction);
     });
