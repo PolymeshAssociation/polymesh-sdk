@@ -103,11 +103,14 @@ export async function preparePayDividends(
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<Params, void>): ProcedureAuthorization {
+export function getAuthorization(
+  this: Procedure<Params, void>,
+  { distribution: { asset } }: Params
+): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.capitalDistribution.PushBenefit],
-      assets: [],
+      assets: [asset],
       portfolios: [],
     },
   };
