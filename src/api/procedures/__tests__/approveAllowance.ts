@@ -109,12 +109,12 @@ describe('approveAllowance procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const result = boundFunc({ asset, spender: 'someSpender', amount: new BigNumber(10) });
+      const result = boundFunc();
 
       expect(result).toEqual({
         permissions: {
           transactions: [TxTags.asset.Approve],
-          assets: [asset],
+          assets: [],
           portfolios: [],
         },
       });

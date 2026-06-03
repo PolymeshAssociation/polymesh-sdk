@@ -55,13 +55,10 @@ export function prepareApproveAllowance(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params, void>,
-  { asset }: Params
-): ProcedureAuthorization {
+export function getAuthorization(this: Procedure<Params, void>): ProcedureAuthorization {
   return {
     permissions: {
-      assets: [asset],
+      assets: [],
       transactions: [TxTags.asset.Approve],
       portfolios: [],
     },

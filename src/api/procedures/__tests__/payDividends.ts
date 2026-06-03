@@ -222,11 +222,11 @@ describe('payDividends procedure', () => {
         assetId,
       });
 
-      const result = boundFunc();
+      const result = boundFunc({ distribution, targets: [] } as unknown as Params);
 
       expect(result).toEqual({
         permissions: {
-          assets: [],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
           transactions: [TxTags.capitalDistribution.PushBenefit],
         },
