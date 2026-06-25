@@ -236,7 +236,12 @@ describe('Polymesh Transaction Base class', () => {
 
       dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.Succeeded);
 
-      expect(statuses).toEqual([TransactionStatus.Unapproved, TransactionStatus.Running]);
+      expect(statuses).toEqual([
+        TransactionStatus.Unapproved,
+        TransactionStatus.Running,
+        TransactionStatus.Future,
+        TransactionStatus.InBlock,
+      ]);
     });
 
     it('should resolve the result if it is a resolver function', async () => {
