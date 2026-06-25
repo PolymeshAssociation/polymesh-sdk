@@ -1263,6 +1263,7 @@ describe('warnUnexpectedSqVersion', () => {
 describe('assertExpectedChainVersion', () => {
   let client: MockWebSocket;
   let warnSpy: jest.SpyInstance;
+  let originalWebSocket: unknown;
 
   const getSpecVersion = (version: string): string =>
     `${version
@@ -1278,6 +1279,10 @@ describe('assertExpectedChainVersion', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    originalWebSocket = (globalThis as unknown as { WebSocket: unknown }).WebSocket;
+    // Node 18+ exposes a native WebSocket; remove it so ws:// tests exercise the Node ws fallback path
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as unknown as { WebSocket: unknown }).WebSocket = undefined as any;
   });
 
   beforeEach(() => {
@@ -1292,6 +1297,7 @@ describe('assertExpectedChainVersion', () => {
 
   afterAll(() => {
     warnSpy.mockRestore();
+    (globalThis as unknown as { WebSocket: unknown }).WebSocket = originalWebSocket;
   });
 
   describe('with http:// connection', () => {
@@ -1532,8 +1538,7 @@ describe('assertExpectedChainVersion', () => {
       });
     });
 
-    it('should use Node ws if globalThis.WebSocket is defined but it is a Node environment', async () => {
-      // Temporarily revert process.versions.node to its original truthy value
+    it('should prefer native WebSocket over Node ws when both are available', async () => {
       Object.defineProperty(process, 'versions', {
         value: originalVersions,
         configurable: true,
@@ -1542,23 +1547,27 @@ describe('assertExpectedChainVersion', () => {
       mockBrowserWs.send.mockClear();
       const signal = assertExpectedChainVersion('ws://example.com');
 
-      // Wait for dynamic import and client initialization
       await new Promise(resolve => setImmediate(resolve));
 
-      // Get the Node mock WS instance
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const nodeWs: any = getWebSocketInstance();
-      nodeWs.triggerOpen();
+      mockBrowserWs.onopen!();
+      expect(mockBrowserWs.send).toHaveBeenCalledTimes(2);
 
-      nodeWs.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
-      nodeWs.sendIsPrivateSupported(false);
+      const confPayload = JSON.stringify({
+        jsonrpc: '2.0',
+        id: CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id,
+        result: null,
+      });
+      const specPayload = JSON.stringify({
+        jsonrpc: '2.0',
+        id: STATE_RUNTIME_VERSION_CALL.id,
+        result: { specVersion: getSpecVersion(SUPPORTED_SPEC_SEMVER) },
+      });
+
+      mockBrowserWs.onmessage!({ data: confPayload });
+      mockBrowserWs.onmessage!({ data: specPayload });
 
       await expect(signal).resolves.not.toThrow();
 
-      // Verify that the browser WebSocket was NOT used
-      expect(mockBrowserWs.send).not.toHaveBeenCalled();
-
-      // Restore the undefined node version for other tests
       Object.defineProperty(process, 'versions', {
         value: { ...originalVersions, node: undefined },
         configurable: true,

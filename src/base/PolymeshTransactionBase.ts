@@ -707,8 +707,11 @@ export abstract class PolymeshTransactionBase<
 
     /* eslint-disable default-case */
     switch (status) {
+      case TransactionStatus.Idle:
       case TransactionStatus.Unapproved:
       case TransactionStatus.Running:
+      case TransactionStatus.InBlock:
+      case TransactionStatus.Future:
       case TransactionStatus.Succeeded: {
         emitter.emit(Event.StatusChange, this);
         return;

@@ -1602,12 +1602,11 @@ export async function assertExpectedChainVersion(nodeUrl: string): Promise<numbe
     });
   }
 
-  // Lazily import the Node ws implementation only when needed, so browser bundles never pull it in
+  // Prefer the native WebSocket when available (browser, Cloudflare Workers, Node 18+).
+  // Only fall back to the Node ws package when no native implementation exists.
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const NodeWs =
-    protocol.startsWith('ws') &&
-    (typeof globalThis.WebSocket !== 'function' ||
-      (typeof process !== 'undefined' && !!process.versions?.node))
+    protocol.startsWith('ws') && typeof globalThis.WebSocket !== 'function'
       ? (await import('ws')).default
       : null;
 
