@@ -5,6 +5,13 @@ const fs = require('fs');
 const path = require('path');
 
 const SDK_DOCS_DIR = path.join(__dirname, '..', 'sdk-docs');
+const CHANGELOGS_DIR = path.join(__dirname, '..', 'changelogs');
+const SDK_CHANGELOGS_DIR = path.join(SDK_DOCS_DIR, 'changelogs');
+const TOP_LEVEL_CATEGORY_POSITIONS = {
+  api: 3,
+  base: 5,
+  changelogs: 6,
+};
 
 /**
  * Recursively walk through directory structure
@@ -22,6 +29,18 @@ function walkDir(dir, callback) {
       callback(filePath);
     }
   });
+}
+
+/**
+ * Copy changelog docs into the generated SDK docs tree
+ */
+function syncChangelogDocs() {
+  if (!fs.existsSync(CHANGELOGS_DIR)) {
+    return;
+  }
+
+  fs.rmSync(SDK_CHANGELOGS_DIR, { recursive: true, force: true });
+  fs.cpSync(CHANGELOGS_DIR, SDK_CHANGELOGS_DIR, { recursive: true });
 }
 
 /**
@@ -54,6 +73,9 @@ function processMdxFile(filePath) {
     // Update the heading
     newContent = newContent.replace(/^# .+$/m, '# ' + title);
     modified = true;
+  } else if (relativePath === 'types/index.mdx') {
+    label = 'Types';
+    position = 4;
   } else {
     // Extract the label from the heading (titles should already be formatted by pageTitleTemplates)
     const heading1Match = newContent.match(/^# (.+)$/m);
@@ -123,11 +145,11 @@ function needsCategoryFile(dirPath) {
   // Check if there's an index.mdx file
   const hasIndex = files.some(file => file === 'index.mdx');
 
-  // Check if there are any .mdx files or subdirectories
+  // Check if there are any documentation files or subdirectories
   const hasMdxFilesOrSubdirs = files.some(file => {
     const filePath = path.join(dirPath, file);
     const stat = fs.statSync(filePath);
-    return file.endsWith('.mdx') || stat.isDirectory();
+    return file.endsWith('.mdx') || file.endsWith('.md') || stat.isDirectory();
   });
 
   // Need category file if no index but has .mdx files or subdirectories
@@ -139,12 +161,17 @@ function needsCategoryFile(dirPath) {
  */
 function createCategoryFile(dirPath) {
   const dirName = path.basename(dirPath);
+  const relativePath = path.relative(SDK_DOCS_DIR, dirPath);
 
   // Generate label with special case for "api"
   const label =
     dirName.toLowerCase() === 'api' ? 'API' : dirName.charAt(0).toUpperCase() + dirName.slice(1);
 
   let categoryContent = 'label: "' + label + '"\n';
+
+  if (!relativePath.includes(path.sep) && TOP_LEVEL_CATEGORY_POSITIONS[dirName.toLowerCase()]) {
+    categoryContent += 'position: ' + TOP_LEVEL_CATEGORY_POSITIONS[dirName.toLowerCase()] + '\n';
+  }
 
   // Add collapsed: false for Classes folders so they're expanded by default
   if (dirName.toLowerCase() === 'classes') {
@@ -201,6 +228,8 @@ const main = () => {
     console.error('SDK docs directory not found: ' + SDK_DOCS_DIR);
     process.exit(1);
   }
+
+  syncChangelogDocs();
 
   // Process all .mdx files
   walkDir(SDK_DOCS_DIR, filePath => {
