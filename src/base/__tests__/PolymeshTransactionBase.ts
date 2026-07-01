@@ -823,7 +823,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(result).toBe('pollingResult');
     });
 
-    it('should throw an error when polling if there is an extrinsic failure', () => {
+    it('should throw an error when polling if the finalized receipt contains an extrinsic failure', () => {
       const transaction = dsMockUtils.createTxMock('staking', 'bond', { autoResolve: false });
       context.supportsSubscription.mockReturnValue(false);
 

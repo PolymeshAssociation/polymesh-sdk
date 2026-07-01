@@ -1788,7 +1788,7 @@ describe('assertTickerValid', () => {
   it('should not throw an error', () => {
     const ticker = 'FAKE_TICKER';
 
-    assertTickerValid(ticker);
+    expect(() => assertTickerValid(ticker)).not.toThrow();
   });
 });
 
@@ -2620,7 +2620,7 @@ describe('getTickerForAsset', () => {
 
     result = await getTickerForAsset(assetId, context);
 
-    expect(result).toEqual(undefined);
+    expect(result).toBeUndefined();
   });
 });
 
@@ -2738,18 +2738,6 @@ describe('asBaseAsset', () => {
     const result = await asBaseAsset(baseAsset, context);
 
     expect(result.id).toEqual(baseAsset);
-  });
-
-  it('should return BaseAsset when asset ID is provided in hex format', async () => {
-    const baseAsset = '0x12341234123482348234123412341234';
-    const ticker = 'SOME_TICKER;';
-
-    assetIdTickerMock.mockResolvedValue(
-      dsMockUtils.createMockOption(dsMockUtils.createMockTicker(ticker))
-    );
-    const result = await asBaseAsset(baseAsset, context);
-
-    expect(result.id).toEqual('12341234-1234-8234-8234-123412341234');
   });
 
   it('should return BaseAsset when asset ID is provided in hex format', async () => {
