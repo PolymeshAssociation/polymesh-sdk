@@ -1385,7 +1385,7 @@ describe('assertExpectedChainVersion', () => {
 
   describe('with browser WebSocket', () => {
     let originalVersions: NodeJS.ProcessVersions;
-    let originalWebSocket: unknown;
+    let savedWebSocket: unknown;
     let mockBrowserWs: {
       url: string;
       send: jest.Mock;
@@ -1397,7 +1397,7 @@ describe('assertExpectedChainVersion', () => {
 
     beforeAll(() => {
       originalVersions = process.versions;
-      originalWebSocket = (globalThis as unknown as { WebSocket: unknown }).WebSocket;
+      savedWebSocket = (globalThis as unknown as { WebSocket: unknown }).WebSocket;
 
       Object.defineProperty(process, 'versions', {
         value: { ...originalVersions, node: undefined },
@@ -1420,7 +1420,7 @@ describe('assertExpectedChainVersion', () => {
         value: originalVersions,
         configurable: true,
       });
-      (globalThis as unknown as { WebSocket: unknown }).WebSocket = originalWebSocket;
+      (globalThis as unknown as { WebSocket: unknown }).WebSocket = savedWebSocket;
     });
 
     it('should resolve if the versions are correct via browser WebSocket', async () => {
