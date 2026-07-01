@@ -213,7 +213,7 @@ export class AccountManagement {
    *
    * This is to be called in by the paying key to approve allowance with respect to a beneficiary key.
    *
-   * @note this will create a pending subsidies entry, which has to be accepted by the `beneficiary` Account. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies.getPendingSubsidies | subsides.getPendingSubsidies}.
+   * @note this will create a pending subsidies entry, which has to be accepted by the `beneficiary` Account. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies!Subsidies.getPendingSubsidies | subsidies.getPendingSubsidies}.
    *
    * @throws
    *  - if called for a v7 chain
@@ -224,7 +224,7 @@ export class AccountManagement {
   /**
    * Accepts a pending subsidy request from subsidizer
    *
-   * @note Only the beneficiary can accept an already approved subsidy request. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies.getPendingSubsidies | subsides.getPendingSubsidies}.
+   * @note Only the beneficiary can accept an already approved subsidy request. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies!Subsidies.getPendingSubsidies | subsidies.getPendingSubsidies}.
    * @note this is only available from chain v8
    */
   public acceptSubsidy: ProcedureMethod<AcceptSubsidyParams, void>;
@@ -232,7 +232,7 @@ export class AccountManagement {
   /**
    * Revokes an already approved subsidy request
    *
-   * @note Only the subsidizer can revoke an already approved subsidy request. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies.getPendingSubsidies | subsides.getPendingSubsidies}.
+   * @note Only the subsidizer can revoke an already approved subsidy request. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies!Subsidies.getPendingSubsidies | subsidies.getPendingSubsidies}.
    * @note this is only available from chain v8
    */
   public revokeSubsidy: ProcedureMethod<RevokeSubsidyParams, void>;

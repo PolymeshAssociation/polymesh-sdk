@@ -3702,6 +3702,7 @@ __metadata:
     prettier-eslint: "npm:15.0.1"
     prettier-eslint-cli: "npm:7.1.0"
     replace-in-file: "npm:^7.0.1"
+    rimraf: "npm:^3.0.2"
     semantic-release: "npm:^25.0.3"
     semver: "npm:^7.5.4"
     stream-browserify: "npm:^3.0.0"
