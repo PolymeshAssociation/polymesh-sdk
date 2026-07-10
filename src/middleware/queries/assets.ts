@@ -156,9 +156,11 @@ export function assetTransactionQuery(
     : `${AssetTransactionsOrderBy.CreatedAtAsc}, ${AssetTransactionsOrderBy.CreatedBlockIdAsc}`;
 
   const query = gql`
-    query AssetTransactionQuery($assetId: String!) {
+    query AssetTransactionQuery($assetId: String!, $size: Int, $start: Int) {
       assetTransactions(
         filter: { assetId: { equalTo: $assetId } }
+        first: $size
+        offset: $start
         orderBy:  [${orderBy}]
       ) {
         totalCount
