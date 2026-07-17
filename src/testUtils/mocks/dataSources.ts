@@ -58,7 +58,6 @@ import {
   PalletAssetAssetDetails,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
-  PalletContractsStorageContractInfo,
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotMotion,
   PalletCorporateActionsCaCheckpoint,
@@ -4735,31 +4734,6 @@ export const createMockMemo = (
   }
 
   return createMockStringCodec<PolymeshPrimitivesMemo>(memo);
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockContractInfo = (contractInfo?: {
-  trieId: Bytes;
-  codeHash: U8aFixed;
-  storageDeposit: u128;
-}): MockCodec<PalletContractsStorageContractInfo> => {
-  const { trieId, codeHash, storageDeposit } = contractInfo ?? {
-    trieId: createMockBytes(),
-    codeHash: createMockHash(),
-    storageDeposit: createMockU128(),
-  };
-
-  return createMockCodec(
-    {
-      trieId,
-      codeHash,
-      storageDeposit,
-    },
-    !contractInfo
-  );
 };
 
 /**

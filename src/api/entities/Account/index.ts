@@ -514,7 +514,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: { identity, multiSig, contracts },
+          query: { identity, multiSig },
         },
       },
       context,
@@ -522,23 +522,16 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const accountId = stringToAccountId(address, context);
-    const [optKeyRecord, multiSignsRequired, smartContract] = await requestMulti<
-      [
-        typeof identity.keyRecords,
-        typeof multiSig.multiSigSignsRequired,
-        typeof contracts.contractInfoOf
-      ]
+    const [optKeyRecord, multiSignsRequired] = await requestMulti<
+      [typeof identity.keyRecords, typeof multiSig.multiSigSignsRequired]
     >(context, [
       [identity.keyRecords, accountId],
       [multiSig.multiSigSignsRequired, accountId],
-      [contracts.contractInfoOf, accountId],
     ]);
 
     let keyType: AccountKeyType = AccountKeyType.Normal;
     if (!multiSignsRequired.isZero()) {
       keyType = AccountKeyType.MultiSig;
-    } else if (smartContract.isSome) {
-      keyType = AccountKeyType.SmartContract;
     }
 
     if (optKeyRecord.isNone) {
@@ -730,8 +723,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const assetBalances: Record<string, AssetHolderBalance> = {};
 
     totalBalanceEntries.forEach(([key, balance]) => {
-      const assetId = assetIdToString(key.args[1]);
       const total = balanceToBigNumber(balance);
+      const assetId = assetIdToString(key.args[1]);
 
       assetBalances[assetId] = {
         asset: new FungibleAsset({ assetId }, context),
@@ -742,8 +735,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     });
 
     lockedBalanceEntries.forEach(([key, balance]) => {
-      const assetId = assetIdToString(key.args[1]);
       const locked = balanceToBigNumber(balance);
+      const assetId = assetIdToString(key.args[1]);
 
       if (!locked.isZero()) {
         const assetBalance = assetBalances[assetId]!;

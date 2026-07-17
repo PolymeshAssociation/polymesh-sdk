@@ -869,7 +869,6 @@ describe('Account class', () => {
           })
         ),
         dsMockUtils.createMockU64(new BigNumber(0)),
-        dsMockUtils.createMockOption(),
       ]);
 
       const result = await account.getTypeInfo();
@@ -888,7 +887,6 @@ describe('Account class', () => {
           })
         ),
         dsMockUtils.createMockU64(new BigNumber(2)),
-        dsMockUtils.createMockOption(),
       ]);
 
       const result = await account.getTypeInfo();
@@ -899,21 +897,20 @@ describe('Account class', () => {
       });
     });
 
-    it('should return the type for a SmartContract', async () => {
+    it('should return the relation as MultSigSigner', async () => {
       mockQueryMulti.mockResolvedValue([
         dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             MultiSigSignerKey: createMockAccountId('multiSigAddress'),
           })
         ),
-        dsMockUtils.createMockU64(new BigNumber(0)),
-        dsMockUtils.createMockOption(dsMockUtils.createMockContractInfo()),
+        dsMockUtils.createMockU64(new BigNumber(1)),
       ]);
 
       const result = await account.getTypeInfo();
 
       expect(result).toEqual({
-        keyType: AccountKeyType.SmartContract,
+        keyType: AccountKeyType.MultiSig,
         relation: AccountIdentityRelation.MultiSigSigner,
       });
     });
