@@ -1,7 +1,7 @@
 import { PolymeshError, Procedure } from '~/internal';
 import { Account, Balance, BondPolyxParams, ErrorCode } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToBalance, stringToAccountId } from '~/utils/conversion';
+import { bigNumberToBalance } from '~/utils/conversion';
 import { asAccount, calculateRawStakingPayee } from '~/utils/internal';
 
 export interface Storage {
@@ -63,7 +63,6 @@ export async function prepareBondPolyx(
   }
 
   const rawAmount = bigNumberToBalance(amount, context);
-  const rawController = stringToAccountId(controller.address, context);
   const rawPayee = await calculateRawStakingPayee(
     payee,
     actingAccount,
@@ -72,21 +71,11 @@ export async function prepareBondPolyx(
     context
   );
 
-  if (context.isV7) {
-    return {
-      transaction: bond,
-      args: [rawController, rawAmount, rawPayee],
-      resolver: undefined,
-      // v8 no longer allows controllers to be specified
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any;
-  } else {
-    return {
-      transaction: bond,
-      args: [rawAmount, rawPayee],
-      resolver: undefined,
-    };
-  }
+  return {
+    transaction: bond,
+    args: [rawAmount, rawPayee],
+    resolver: undefined,
+  };
 }
 
 /**

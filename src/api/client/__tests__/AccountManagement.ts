@@ -180,26 +180,6 @@ describe('AccountManagement class', () => {
     });
   });
 
-  describe('method: subsidizeAccount', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const args = {
-        beneficiary: 'someAccount',
-        allowance: new BigNumber(1000),
-      };
-
-      const expectedTransaction =
-        'someTransaction' as unknown as PolymeshTransaction<AuthorizationRequest>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ...args, isV7Method: true }, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await accountManagement.subsidizeAccount(args); // NOSONAR
-
-      expect(tx).toEqual(expectedTransaction);
-    });
-  });
-
   describe('method: acceptSubsidy', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
@@ -247,7 +227,7 @@ describe('AccountManagement class', () => {
         'someTransaction' as unknown as PolymeshTransaction<AuthorizationRequest>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ...args, isV7Method: false }, transformer: undefined }, context, {})
+        .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.approveSubsidy(args);
@@ -439,7 +419,6 @@ describe('AccountManagement class', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         ownerAuth: new BigNumber(1),
-        cddAuth: new BigNumber(2),
       };
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;

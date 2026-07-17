@@ -1,4 +1,3 @@
-import { PolymeshPrimitivesNftNftOwnerStatus } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Account, Context, Entity, NftCollection, PolymeshError, redeemNft } from '~/internal';
@@ -262,20 +261,11 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
     const rawNftId = bigNumberToU64(id, context);
 
     if (owner instanceof Account) {
-      let rawLocked: PolymeshPrimitivesNftNftOwnerStatus;
-      if (context.isV7) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        rawLocked = await (nft.nftHolder as any)(stringToAccountId(owner.address, context), [
-          rawAssetId,
-          rawNftId,
-        ]);
-      } else {
-        rawLocked = await nft.nftHolder(
-          stringToAccountId(owner.address, context),
-          rawAssetId,
-          rawNftId
-        );
-      }
+      const rawLocked = await nft.nftHolder(
+        stringToAccountId(owner.address, context),
+        rawAssetId,
+        rawNftId
+      );
       return meshNftOwnerStatusToNftOwnerStatus(rawLocked) === NftOwnerStatus.OwnerLocked;
     }
 

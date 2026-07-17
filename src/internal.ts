@@ -14,10 +14,6 @@ export {
   ConsumeAddMultiSigSignerAuthorizationParams,
 } from '~/api/procedures/consumeAddMultiSigSignerAuthorization';
 export {
-  consumeAddRelayerPayingKeyAuthorization,
-  ConsumeAddRelayerPayingKeyAuthorizationParams,
-} from '~/api/procedures/consumeAddRelayerPayingKeyAuthorization';
-export {
   consumeJoinOrRotateAuthorization,
   ConsumeJoinOrRotateAuthorizationParams,
 } from '~/api/procedures/consumeJoinOrRotateAuthorization';
@@ -49,8 +45,6 @@ export {
 export { registerIdentity } from '~/api/procedures/registerIdentity';
 export { registerDid } from '~/api/procedures/registerDid';
 export { selfRegisterDid } from '~/api/procedures/selfRegisterDid';
-export { createChildIdentity } from '~/api/procedures/createChildIdentity';
-export { createChildIdentities } from '~/api/procedures/createChildIdentities';
 export { attestPrimaryKeyRotation } from '~/api/procedures/attestPrimaryKeyRotation';
 export { rotatePrimaryKey } from '~/api/procedures/rotatePrimaryKey';
 export { addSecondaryAccounts } from '~/api/procedures/addSecondaryAccountsWithAuth';
@@ -113,7 +107,6 @@ export { linkCaDocs } from '~/api/procedures/linkCaDocs';
 export { linkTickerToAsset } from '~/api/procedures/linkTickerToAsset';
 export { unlinkTickerFromAsset } from '~/api/procedures/unlinkTickerFromAsset';
 export { Identity } from '~/api/entities/Identity';
-export { ChildIdentity } from '~/api/entities/Identity/ChildIdentity';
 export { Account } from '~/api/entities/Account';
 export { MultiSig } from '~/api/entities/Account/MultiSig';
 export { MultiSigProposal } from '~/api/entities/MultiSigProposal';

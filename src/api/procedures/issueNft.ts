@@ -26,13 +26,7 @@ export type Params = {
 export const issuedNftsResolver =
   (context: Context) =>
   (receipt: ISubmittableResult): Nft[] => {
-    let records;
-    if (context.isV7) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      records = filterEventRecords(receipt, 'nft' as any, 'NFTPortfolioUpdated');
-    } else {
-      records = filterEventRecords(receipt, 'nft', 'NFTHoldingsUpdated');
-    }
+    const records = filterEventRecords(receipt, 'nft', 'NFTHoldingsUpdated');
 
     return records.map(({ data }) => {
       const { assetId, ids } = meshNftToNftId(data[1] as PolymeshPrimitivesNftNfTs);

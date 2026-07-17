@@ -129,21 +129,13 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, void, Storage>,
-  {
-    destinationPortfolio, // NOSONAR
-    destination,
-  }: Params
+  { destination }: Params
 ): Promise<Storage> {
   const { context } = this;
 
-  let givenAssetHolder = destination;
-  if (!destination) {
-    givenAssetHolder = destinationPortfolio;
-  }
-
   const { did } = await context.getSigningIdentity();
-  const destinationAssetHolder = givenAssetHolder
-    ? assetHolderLikeToAssetHolder(givenAssetHolder, context)
+  const destinationAssetHolder = destination
+    ? assetHolderLikeToAssetHolder(destination, context)
     : new DefaultPortfolio({ did }, context);
 
   return {

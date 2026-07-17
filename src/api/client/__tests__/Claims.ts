@@ -28,7 +28,6 @@ import {
 } from '~/types';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -424,99 +423,6 @@ describe('Claims Class', () => {
       const tx = await claims.revokeClaims(args);
 
       expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: getCddClaims', () => {
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-    it('should return a list of cdd claims', async () => {
-      context.isV7 = true;
-      const target = 'someTarget';
-      jest.spyOn(utilsInternalModule, 'getDid').mockResolvedValue(target);
-
-      const rawTarget = dsMockUtils.createMockIdentityId(target);
-      jest.spyOn(utilsConversionModule, 'stringToIdentityId').mockReturnValue(rawTarget);
-
-      const claimIssuer = 'someClaimIssuer';
-      const issuanceDate = new Date('2023/01/01');
-      const lastUpdateDate = new Date('2023/06/01');
-      const claim = {
-        type: ClaimType.CustomerDueDiligence,
-        id: 'someCddId',
-      };
-
-      const rawIdentityClaim = {
-        claimIssuer: dsMockUtils.createMockIdentityId(claimIssuer),
-        issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuanceDate.getTime())),
-        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdateDate.getTime())),
-        expiry: dsMockUtils.createMockOption(),
-        claim: dsMockUtils.createMockClaim({
-          CustomerDueDiligence: dsMockUtils.createMockCddId(claim.id),
-        }),
-      };
-
-      jest.spyOn(utilsConversionModule, 'identityIdToString').mockReturnValue(claimIssuer);
-      dsMockUtils.createCallMock<'identityApi', 'validCddClaims'>('identityApi', 'validCddClaims', {
-        returnValue: [rawIdentityClaim],
-      });
-
-      const mockResult = {
-        target: expect.objectContaining({
-          did: target,
-        }),
-        issuer: expect.objectContaining({
-          did: claimIssuer,
-        }),
-        issuedAt: issuanceDate,
-        lastUpdatedAt: lastUpdateDate,
-        expiry: null,
-        claim,
-      };
-      let result = await claims.getCddClaims();
-
-      expect(result).toEqual([mockResult]);
-
-      const expiry = new Date('2030/01/01');
-      dsMockUtils.createCallMock('identityApi', 'validCddClaims', {
-        returnValue: [
-          {
-            ...rawIdentityClaim,
-            expiry: dsMockUtils.createMockOption(
-              dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()))
-            ),
-          },
-        ],
-      });
-
-      result = await claims.getCddClaims({ target, includeExpired: false });
-
-      expect(result).toEqual([
-        {
-          ...mockResult,
-          expiry,
-        },
-      ]);
-    });
-
-    it('should throw an error if the chain version is v8', async () => {
-      context.isV7 = false;
-      await expect(
-        claims.getCddClaims() // NOSONAR
-      ).rejects.toThrow('CDD claims are no longer supported in chain v8');
-    });
-
-    it('should return an empty list if identityApi is not available on call', async () => {
-      context.isV7 = true;
-      const identityApi = context.polymeshApi.call.identityApi;
-      // @ts-expect-error The operand of a 'delete' operator must be optional
-      delete context.polymeshApi.call.identityApi;
-
-      const result = await claims.getCddClaims(); // NOSONAR
-      expect(result).toEqual([]);
-
-      context.polymeshApi.call.identityApi = identityApi;
     });
   });
 

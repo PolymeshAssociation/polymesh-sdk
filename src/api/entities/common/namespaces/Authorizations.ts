@@ -60,15 +60,6 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
     let result: Vec<PolymeshPrimitivesAuthorization>;
 
     if (opts?.type) {
-      if (context.isV7 && opts.type === AuthorizationType.OldAddRelayerPayingKey) {
-        opts.type = AuthorizationType.AddRelayerPayingKey; // NOSONAR
-      }
-      if (
-        !context.isV7 &&
-        opts.type === AuthorizationType.AddRelayerPayingKey // NOSONAR
-      ) {
-        opts.type = AuthorizationType.OldAddRelayerPayingKey;
-      }
       result = await identityApi.getFilteredAuthorizations(
         signatory,
         rawBoolean,

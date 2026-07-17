@@ -1,10 +1,8 @@
 import { AccountId } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { when } from 'jest-when';
 
 import {
   getAuthorization,
-  Params,
   prepareSetStakingController,
   prepareStorage,
   Storage,
@@ -12,10 +10,9 @@ import {
 import { Account, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, StakingLedger } from '~/types';
+import { ErrorCode } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
-import * as utilsConversionModule from '~/utils/conversion';
 
 describe('setStakingController procedure', () => {
   beforeAll(() => {
@@ -25,15 +22,10 @@ describe('setStakingController procedure', () => {
   });
 
   let currentController: Account;
-  let newControllerLedger: StakingLedger;
 
   let mockContext: Mocked<Context>;
   let setControllerTx: PolymeshTx<[AccountId]>;
   let actingAccount: Account;
-  let newController: Account;
-  let rawAccountId: AccountId;
-
-  let stringToAccountIdSpy: jest.SpyInstance;
 
   let storage: Storage;
 
@@ -41,29 +33,11 @@ describe('setStakingController procedure', () => {
     setControllerTx = dsMockUtils.createTxMock('staking', 'setController');
     mockContext = dsMockUtils.getContextInstance();
     actingAccount = entityMockUtils.getAccountInstance({ address: DUMMY_ACCOUNT_ID });
-    newController = entityMockUtils.getAccountInstance({
-      address: '5FvreMigHtY1c6XTzDccjn8SVLiAeHz58z4MV4reJYyrdmj3',
-    });
-    rawAccountId = dsMockUtils.createMockAccountId(newController.address);
-
-    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
-
-    when(stringToAccountIdSpy)
-      .calledWith(newController.address, mockContext)
-      .mockReturnValue(rawAccountId);
 
     currentController = entityMockUtils.getAccountInstance();
-    newControllerLedger = {
-      stash: entityMockUtils.getAccountInstance(),
-      total: new BigNumber(0),
-      active: new BigNumber(0),
-      unlocking: [],
-      claimedRewards: [],
-    };
     storage = {
       actingAccount,
       currentController,
-      newControllerLedger: null,
     };
   });
 
@@ -78,26 +52,8 @@ describe('setStakingController procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the target is already a controller', () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      ...storage,
-      newControllerLedger,
-    });
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The given controller is already paired with a stash',
-    });
-
-    expect(() =>
-      prepareSetStakingController.call(proc, {
-        controller: newController,
-      })
-    ).toThrow(expectedError);
-  });
-
   it('should throw an error if the the acting account is not a stash', () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<void, void, Storage>(mockContext, {
       ...storage,
       currentController: null,
     });
@@ -107,25 +63,16 @@ describe('setStakingController procedure', () => {
       message: 'Current controller not found. The acting account must be a stash account',
     });
 
-    expect(() =>
-      prepareSetStakingController.call(proc, {
-        controller: newController,
-      })
-    ).toThrow(expectedError);
+    expect(() => prepareSetStakingController.call(proc)).toThrow(expectedError);
   });
 
   it('should return a setController transaction spec', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<void, void, Storage>(mockContext, {
       actingAccount,
       currentController,
-      newControllerLedger: null,
     });
 
-    const args = {
-      controller: newController,
-    };
-
-    const result = await prepareSetStakingController.call(proc, args);
+    const result = await prepareSetStakingController.call(proc);
 
     expect(result).toEqual({
       transaction: setControllerTx,
@@ -134,36 +81,9 @@ describe('setStakingController procedure', () => {
     });
   });
 
-  it('should return a v7 setController transaction spec with controller arg', async () => {
-    mockContext = dsMockUtils.getContextInstance({ isV7: true });
-    setControllerTx = dsMockUtils.createTxMock('staking', 'setController');
-
-    when(stringToAccountIdSpy)
-      .calledWith(newController.address, mockContext)
-      .mockReturnValue(rawAccountId);
-
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      actingAccount,
-      currentController,
-      newControllerLedger: null,
-    });
-
-    const args = {
-      controller: newController,
-    };
-
-    const result = await prepareSetStakingController.call(proc, args);
-
-    expect(result).toEqual({
-      transaction: setControllerTx,
-      args: [rawAccountId],
-      resolver: undefined,
-    });
-  });
-
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+      const proc = procedureMockUtils.getInstance<void, void, Storage>(mockContext, storage);
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
@@ -184,18 +104,13 @@ describe('setStakingController procedure', () => {
       });
       mockContext.getActingAccount.mockResolvedValue(actingAccount);
 
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<void, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      return expect(
-        boundFunc({
-          controller: entityMockUtils.getAccountInstance(),
-        })
-      ).resolves.toEqual(
+      return expect(boundFunc()).resolves.toEqual(
         expect.objectContaining({
           actingAccount: expect.objectContaining({ address: 'someAddress' }),
           currentController: expect.objectContaining({ address: 'currentController' }),
-          newControllerLedger: null,
         })
       );
     });

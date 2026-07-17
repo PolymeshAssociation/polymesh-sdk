@@ -35,13 +35,6 @@ export async function prepareSetMandatoryReceiverAffirmation(
   } = this;
   const { did, requirement } = args;
 
-  if (context.isV7) {
-    throw new PolymeshError({
-      code: ErrorCode.NotSupported,
-      message: 'setMandatoryReceiverAffirmation is not supported on v7 chains',
-    });
-  }
-
   const rawDid = stringToIdentityId(did, context);
 
   const rawCurrentValue = await query.settlement.mandatoryReceiverAffirmation(rawDid);

@@ -54,24 +54,9 @@ describe('revokeSubsidy procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw NotSupported when chain is v7', () => {
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        isV7: true,
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<RevokeSubsidyParams, void>(mockContext);
-
-    return expect(prepareRevokeSubsidy.call(proc, args)).rejects.toThrow(
-      'This method is not supported for chain 7.x.'
-    );
-  });
-
   it('should throw an error if no pending subsidy exists', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
-        isV7: false,
         getPendingSubsidies: [],
       },
     });
@@ -83,10 +68,9 @@ describe('revokeSubsidy procedure', () => {
     );
   });
 
-  it('should return a revokeSubsidy transaction spec when chain is v8 and subsidy is pending', async () => {
+  it('should return a revokeSubsidy transaction spec when a subsidy is pending', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
-        isV7: false,
         getPendingSubsidies: [
           {
             allowance: new BigNumber(100),

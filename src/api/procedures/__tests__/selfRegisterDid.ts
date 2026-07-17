@@ -24,7 +24,7 @@ describe('selfRegisterDid procedure', () => {
   });
 
   beforeEach(() => {
-    mockContext = dsMockUtils.getContextInstance({ isV7: false });
+    mockContext = dsMockUtils.getContextInstance();
     selfRegisterDidTransaction = dsMockUtils.createTxMock('identity', 'selfRegisterDid');
     proc = procedureMockUtils.getInstance<void, Identity>(mockContext);
   });
@@ -51,18 +51,6 @@ describe('selfRegisterDid procedure', () => {
       transaction: selfRegisterDidTransaction,
       resolver: expect.any(Function),
     });
-  });
-
-  it('should throw if called for chain v7', () => {
-    mockContext = dsMockUtils.getContextInstance({ isV7: true });
-    proc = procedureMockUtils.getInstance<void, Identity>(mockContext);
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.NotSupported,
-      message: 'selfRegisterDid is only supported in chain v8',
-    });
-
-    return expect(prepareSelfRegisterDid.call(proc)).rejects.toThrow(expectedError);
   });
 
   it('should throw if the signing Account already has an Identity', () => {

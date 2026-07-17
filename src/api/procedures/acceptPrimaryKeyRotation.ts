@@ -1,11 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
-import { AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
-import { AcceptPrimaryKeyRotationParams, AuthorizationType, ErrorCode } from '~/types';
+import { AuthorizationRequest, Procedure } from '~/internal';
+import { AcceptPrimaryKeyRotationParams, AuthorizationType } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64 } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -13,7 +12,6 @@ import { optionize } from '~/utils/internal';
 export interface Storage {
   calledByTarget: boolean;
   ownerAuthRequest: AuthorizationRequest;
-  cddAuthRequest: AuthorizationRequest | undefined;
 }
 
 /**
@@ -28,31 +26,13 @@ export async function prepareAcceptPrimaryKeyRotation(
         tx: { identity },
       },
     },
-    storage: { ownerAuthRequest, cddAuthRequest },
+    storage: { ownerAuthRequest },
     context,
   } = this;
 
-  const validationPromises = [assertAuthorizationRequestValid(ownerAuthRequest, context)];
-  if (cddAuthRequest) {
-    validationPromises.push(assertAuthorizationRequestValid(cddAuthRequest, context));
-  }
-
-  await Promise.all(validationPromises);
+  await assertAuthorizationRequestValid(ownerAuthRequest, context);
 
   const { authId: ownerAuthId, issuer } = ownerAuthRequest;
-
-  if (context.isV7) {
-    return {
-      transaction: identity.acceptPrimaryKey,
-      paidForBy: issuer,
-      args: [
-        bigNumberToU64(ownerAuthId, context),
-        optionize(bigNumberToU64)(cddAuthRequest?.authId, context),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ] as any,
-      resolver: undefined,
-    };
-  }
 
   return {
     transaction: identity.acceptPrimaryKey,
@@ -84,18 +64,11 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<AcceptPrimaryKeyRotationParams, void, Storage>,
-  { ownerAuth, cddAuth }: AcceptPrimaryKeyRotationParams
+  { ownerAuth }: AcceptPrimaryKeyRotationParams
 ): Promise<Storage> {
   const { context } = this;
 
   const actingAccount = await context.getActingAccount();
-
-  if (!context.isV7 && cddAuth) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'CDD is discontinued since v8',
-    });
-  }
 
   const getAuthRequest = (
     auth: BigNumber | AuthorizationRequest
@@ -108,18 +81,11 @@ export async function prepareStorage(
 
   const ownerAuthRequest = await getAuthRequest(ownerAuth);
 
-  let calledByTarget = actingAccount.isEqual(ownerAuthRequest.target);
-
-  let cddAuthRequest;
-  if (cddAuth) {
-    cddAuthRequest = await getAuthRequest(cddAuth);
-    calledByTarget = calledByTarget && actingAccount.isEqual(cddAuthRequest.target);
-  }
+  const calledByTarget = actingAccount.isEqual(ownerAuthRequest.target);
 
   return {
     calledByTarget,
     ownerAuthRequest,
-    cddAuthRequest,
   };
 }
 

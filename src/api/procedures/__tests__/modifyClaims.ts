@@ -562,7 +562,7 @@ describe('modifyClaims procedure', () => {
       } as ModifyClaimsParams;
 
       expect(getAuthorization(args)).toEqual({
-        roles: [{ type: RoleType.CddProvider }],
+        roles: [{ type: RoleType.DidRegistrar }],
         permissions: {
           assets: [],
           portfolios: [],

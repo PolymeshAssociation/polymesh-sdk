@@ -366,14 +366,14 @@ describe('Portfolio class', () => {
     });
 
     beforeEach(() => {
-      dsMockUtils.configureMocks({ contextOptions: { did, isV7: true } });
+      dsMockUtils.configureMocks({ contextOptions: { did } });
       dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', {
         entries: [
-          tuple([rawPortfolioId, [rawAssetId, rawNftId]], rawTrue),
-          tuple([rawPortfolioId, [rawAssetId, rawSecondId]], rawTrue),
-          tuple([rawPortfolioId, [rawAssetId, rawLockedId]], rawTrue),
-          tuple([rawPortfolioId, [rawHeldOnlyAssetId, rawHeldOnlyId]], rawTrue),
-          tuple([rawPortfolioId, [rawLockedOnlyAssetId, rawLockedOnlyId]], rawTrue),
+          tuple([rawPortfolioId, rawAssetId, rawNftId], rawTrue),
+          tuple([rawPortfolioId, rawAssetId, rawSecondId], rawTrue),
+          tuple([rawPortfolioId, rawAssetId, rawLockedId], rawTrue),
+          tuple([rawPortfolioId, rawHeldOnlyAssetId, rawHeldOnlyId], rawTrue),
+          tuple([rawPortfolioId, rawLockedOnlyAssetId, rawLockedOnlyId], rawTrue),
         ],
       });
       dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT', {
@@ -440,55 +440,6 @@ describe('Portfolio class', () => {
             locked: expect.arrayContaining([expect.objectContaining({ id: lockedNftId })]),
             total: new BigNumber(3),
           },
-        ])
-      );
-    });
-
-    it("should return all of the portfolio's NFTs when no args are given on a v8 chain", async () => {
-      const v8Context = dsMockUtils.getContextInstance({ did, isV7: false });
-      const portfolio = new NonAbstract({ did, id: portfolioId }, v8Context);
-
-      dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', {
-        entries: [
-          tuple([rawPortfolioId, rawAssetId, rawNftId], rawTrue),
-          tuple([rawPortfolioId, rawAssetId, rawSecondId], rawTrue),
-          tuple([rawPortfolioId, rawAssetId, rawLockedId], rawTrue),
-          tuple([rawPortfolioId, rawHeldOnlyAssetId, rawHeldOnlyId], rawTrue),
-          tuple([rawPortfolioId, rawLockedOnlyAssetId, rawLockedOnlyId], rawTrue),
-        ],
-      });
-      dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT', {
-        entries: [
-          tuple([rawPortfolioId, [rawAssetId, rawLockedId]], rawTrue),
-          tuple([rawPortfolioId, [rawLockedOnlyAssetId, rawLockedOnlyId]], rawTrue),
-        ],
-      });
-
-      const result = await portfolio.getCollections();
-
-      expect(result).toEqual(
-        expect.arrayContaining([
-          {
-            collection: expect.objectContaining({ id: hexToUuid(assetId) }),
-            free: expect.arrayContaining([
-              expect.objectContaining({ id: nftId }),
-              expect.objectContaining({ id: secondNftId }),
-            ]),
-            locked: expect.arrayContaining([expect.objectContaining({ id: lockedNftId })]),
-            total: new BigNumber(3),
-          },
-          expect.objectContaining({
-            collection: expect.objectContaining({ id: hexToUuid(heldOnlyAssetId) }),
-            free: expect.arrayContaining([expect.objectContaining({ id: heldOnlyNftId })]),
-            locked: [],
-            total: new BigNumber(1),
-          }),
-          expect.objectContaining({
-            collection: expect.objectContaining({ id: hexToUuid(lockedOnlyAssetId) }),
-            free: [],
-            locked: expect.arrayContaining([expect.objectContaining({ id: lockedOnlyNftId })]),
-            total: new BigNumber(1),
-          }),
         ])
       );
     });

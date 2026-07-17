@@ -247,7 +247,7 @@ export function getAuthorization({
   };
   if (claims.some(({ claim: { type } }) => type === ClaimType.CustomerDueDiligence)) {
     return {
-      roles: [{ type: RoleType.CddProvider }],
+      roles: [{ type: RoleType.DidRegistrar }],
       permissions,
     };
   }

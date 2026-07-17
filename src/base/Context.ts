@@ -8,7 +8,7 @@ import {
 import { ApiPromise } from '@polkadot/api';
 import { UnsubscribePromise } from '@polkadot/api/types';
 import { getTypeDef, Option } from '@polkadot/types';
-import { AccountInfo, Header } from '@polkadot/types/interfaces';
+import { Header } from '@polkadot/types/interfaces';
 import {
   FrameSystemAccountInfo,
   PalletCorporateActionsCaId,
@@ -26,7 +26,6 @@ import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { processType } from '~/base/utils';
 import {
   Account,
-  ChildIdentity,
   DividendDistribution,
   FungibleAsset,
   Identity,
@@ -99,7 +98,6 @@ import {
   delay,
   getApiAtBlock,
   getLatestSqVersion,
-  isV7Spec,
 } from '~/utils/internal';
 
 interface ConstructorParams {
@@ -136,8 +134,6 @@ export class Context {
 
   private _isArchiveNodeResult?: boolean;
 
-  public isV7 = false;
-
   public isSqIdPadded = false;
 
   public specVersion: number;
@@ -158,13 +154,10 @@ export class Context {
 
     this.specVersion = polymeshApi.runtimeVersion.specVersion.toNumber();
     this.specName = polymeshApi.runtimeVersion.specName.toString();
-    this.isV7 = isV7Spec(this.specVersion);
 
     this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
-      /* istanbul ignore next: this will be removed after dual version support for v7-v8 */
       if (upgrade.isSome) {
         this.specVersion = upgrade.unwrap().specVersion.toNumber();
-        this.isV7 = isV7Spec(this.specVersion);
       }
     });
   }
@@ -374,28 +367,7 @@ export class Context {
 
     const rawAddress = stringToAccountId(address, this);
 
-    // istanbul ignore next: will be removed with v7 support
-    const legacyAssembleResult = ({
-      data: { free: rawFree, miscFrozen, feeFrozen, reserved: rawReserved },
-    }: AccountInfo): AccountBalance => {
-      /*
-       * On v7 chains, frozen funds are carved out of the chain's "free" balance, so the spendable
-       * balance is the free balance minus the largest freeze, minus anything reserved
-       */
-      const reserved = balanceToBigNumber(rawReserved);
-      const total = balanceToBigNumber(rawFree).plus(reserved);
-      const frozen = BigNumber.max(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen));
-      const free = total.minus(frozen).minus(reserved);
-      return {
-        total,
-        locked: total.minus(free),
-        free,
-        reserved,
-        frozen,
-      };
-    };
-
-    const v8AssembleResult = ({ data }: FrameSystemAccountInfo): AccountBalance => {
+    const assembleResult = ({ data }: FrameSystemAccountInfo): AccountBalance => {
       const { free: rawFree, frozen: rawFrozen, reserved: rawReserved } = data;
       const {
         consts: {
@@ -425,11 +397,6 @@ export class Context {
         frozen,
       };
     };
-
-    // istanbul ignore next: will be removed with v7 support
-    const assembleResult = this.isV7
-      ? (legacyAssembleResult as unknown as typeof v8AssembleResult)
-      : v8AssembleResult;
 
     if (callback) {
       this.assertSupportsSubscription();
@@ -722,30 +689,6 @@ export class Context {
     }
 
     return id;
-  }
-
-  /**
-   * @hidden
-   *
-   * Returns an Child Identity when given a DID string
-   *
-   * @throws if the Child Identity does not exist
-   */
-  public async getChildIdentity(child: ChildIdentity | string): Promise<ChildIdentity> {
-    if (child instanceof ChildIdentity) {
-      return child;
-    }
-    const childIdentity = new ChildIdentity({ did: child }, this);
-    const exists = await childIdentity.exists();
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'The passed DID does not correspond to an on-chain child Identity',
-      });
-    }
-
-    return childIdentity;
   }
 
   /**

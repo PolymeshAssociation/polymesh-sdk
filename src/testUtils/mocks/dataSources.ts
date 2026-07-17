@@ -192,7 +192,7 @@ import { cloneDeep, map, merge, upperFirst } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { BallotMotion } from '~/api/entities/CorporateBallot/types';
-import { Account, AuthorizationRequest, ChildIdentity, Context, Identity } from '~/internal';
+import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -459,7 +459,6 @@ interface ContextOptions {
   checkPermissions?: CheckPermissionsResult<SignerType.Account>;
   hasAssetPermissions?: boolean;
   checkAssetPermissions?: CheckPermissionsResult<SignerType.Identity>;
-  validCdd?: boolean;
   assetBalance?: BigNumber;
   invalidDids?: string[];
   transactionFees?: ProtocolFees[];
@@ -467,7 +466,6 @@ interface ContextOptions {
   nonce?: BigNumber;
   issuedClaims?: ResultSet<ClaimData>;
   getIdentity?: Identity;
-  getChildIdentity?: ChildIdentity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   getExternalSigner?: PolkadotSigner;
@@ -495,7 +493,6 @@ interface ContextOptions {
   supportsSubscription?: boolean;
   getSignature?: `0x${string}`;
   getNextAssetId?: string;
-  isV7?: boolean;
   getPendingSubsidies?: SubsidyWithAllowance[];
 }
 
@@ -721,7 +718,6 @@ const defaultContextOptions: ContextOptions = {
     result: true,
   },
   getExternalSigner: 'signer' as PolkadotSigner,
-  validCdd: true,
   assetBalance: new BigNumber(1000),
   invalidDids: [],
   transactionFees: [
@@ -860,7 +856,6 @@ function configureContext(opts: ContextOptions): void {
     did: opts.did,
     hasRoles: jest.fn().mockResolvedValue(opts.hasRoles),
     checkRoles: jest.fn().mockResolvedValue(opts.checkRoles),
-    hasValidCdd: jest.fn().mockResolvedValue(opts.validCdd),
     getAssetBalance: jest.fn().mockResolvedValue(opts.assetBalance),
     getPrimaryAccount: jest.fn().mockResolvedValue({
       account: {
@@ -959,7 +954,6 @@ function configureContext(opts: ContextOptions): void {
     getSecondaryAccounts: jest.fn().mockReturnValue({ data: opts.secondaryAccounts, next: null }),
     issuedClaims: jest.fn().mockResolvedValue(opts.issuedClaims),
     getIdentity: jest.fn().mockResolvedValue(opts.getIdentity),
-    getChildIdentity: jest.fn().mockResolvedValue(opts.getChildIdentity),
     getIdentityClaimsFromChain: jest.fn().mockResolvedValue(opts.getIdentityClaimsFromChain),
     getIdentityClaimsFromMiddleware: jest
       .fn()
@@ -982,7 +976,6 @@ function configureContext(opts: ContextOptions): void {
     assertHasSigningAddress: jest.fn(),
     assertSupportsSubscription: jest.fn(),
     getSignature: jest.fn().mockReturnValue(opts.getSignature),
-    isV7: opts.isV7,
     getPendingSubsidies: jest.fn().mockResolvedValue(opts.getPendingSubsidies),
   } as unknown as MockContext;
 
@@ -1588,7 +1581,7 @@ export function createQueryMock<
  */
 export function createCallMock<
   ModuleName extends keyof Calls,
-  CallName extends keyof Calls[ModuleName] | string // string type has been added to support dual compatibility mocking of runtime APIs
+  CallName extends keyof Calls[ModuleName] | string // string allows broader mocking of runtime API call names
 >(
   mod: ModuleName,
   query: CallName,

@@ -20,13 +20,6 @@ export async function prepareAcceptSubsidy(
 
   const { subsidizer } = args;
 
-  if (context.isV7) {
-    throw new PolymeshError({
-      code: ErrorCode.NotSupported,
-      message: 'This method is not supported for chain 7.x.',
-    });
-  }
-
   const subsidizerAccount = asAccount(subsidizer, context);
   const { address: subsidizerAddress } = subsidizerAccount;
 

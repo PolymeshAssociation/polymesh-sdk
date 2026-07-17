@@ -10,7 +10,7 @@ import {
   Moment,
   Permill,
 } from '@polkadot/types/interfaces';
-import { AccountId32, H512 } from '@polkadot/types/interfaces/runtime';
+import { AccountId32 } from '@polkadot/types/interfaces/runtime';
 import { DispatchError } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsBallotBallotMeta,
@@ -76,7 +76,7 @@ import {
   SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
 import { BTreeSet, Result } from '@polkadot/types-codec';
-import type { Codec, ITuple } from '@polkadot/types-codec/types';
+import type { ITuple } from '@polkadot/types-codec/types';
 import { hexToU8a, stringToHex } from '@polkadot/util';
 import {
   AuthorizationType as MeshAuthorizationType,
@@ -143,7 +143,6 @@ import {
   AssetDocumentWithId,
   Authorization,
   AuthorizationType,
-  ChildKeyWithAuth,
   Claim,
   ClaimType,
   Condition,
@@ -249,7 +248,6 @@ import {
   cddIdToString,
   cddStatusToBoolean,
   checkpointToRecordDateSpec,
-  childKeysWithAuthToCreateChildIdentitiesWithAuth,
   claimBalanceStatInputToStatUpdates,
   claimCountStatInputToStatUpdates,
   claimCountToClaimCountRestrictionValue,
@@ -1521,7 +1519,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       expect(result).toBe(fakeResult);
 
       value = {
-        type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
+        type: AuthorizationType.OldAddRelayerPayingKey,
         value: {
           beneficiary: new Account({ address: 'beneficiary' }, context),
           subsidizer: new Account({ address: 'subsidizer' }, context),
@@ -1666,12 +1664,6 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       result = authorizationDataToAuthorization(authorizationData, context);
       expect(result).toEqual(fakeResult);
-
-      result = authorizationDataToAuthorization(
-        authorizationData,
-        dsMockUtils.getContextInstance({ isV7: true })
-      );
-      expect(result).toEqual({ ...fakeResult, type: AuthorizationType.AddRelayerPayingKey }); // NOSONAR
 
       const type = PermissionGroupType.Full;
       fakeResult = {
@@ -4272,13 +4264,11 @@ describe('assetDispatchErrorToTransferError', () => {
   });
 
   it('should process errors', () => {
-    const context = dsMockUtils.getContextInstance({ isV7: true });
+    const context = dsMockUtils.getContextInstance();
 
     context.polymeshApi.errors.asset = {
       InvalidGranularity: { is: jest.fn().mockReturnValue(false) },
       SenderSameAsReceiver: { is: jest.fn().mockReturnValue(false) },
-      InvalidTransferInvalidReceiverCDD: { is: jest.fn().mockReturnValue(false) },
-      InvalidTransferInvalidSenderCDD: { is: jest.fn().mockReturnValue(false) },
       InsufficientBalance: { is: jest.fn().mockReturnValue(false) },
       InvalidTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
       InvalidTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
@@ -4290,7 +4280,6 @@ describe('assetDispatchErrorToTransferError', () => {
     context.polymeshApi.errors.portfolio = {
       PortfolioDoesNotExist: { is: jest.fn().mockReturnValue(false) },
       InsufficientPortfolioBalance: { is: jest.fn().mockReturnValue(false) },
-      InvalidTransferSenderIdMatchesReceiverId: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['portfolio'];
 
     context.polymeshApi.errors.statistics = {
@@ -4316,22 +4305,6 @@ describe('assetDispatchErrorToTransferError', () => {
     result = assetDispatchErrorToTransferError(mockError, context);
 
     expect(result).toEqual(TransferError.SelfTransfer);
-
-    dsMockUtils.setErrorMock('asset', 'InvalidTransferInvalidReceiverCDD', {
-      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
-    });
-
-    result = assetDispatchErrorToTransferError(mockError, context);
-
-    expect(result).toEqual(TransferError.InvalidReceiverCdd);
-
-    dsMockUtils.setErrorMock('asset', 'InvalidTransferInvalidSenderCDD', {
-      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
-    });
-
-    result = assetDispatchErrorToTransferError(mockError, context);
-
-    expect(result).toEqual(TransferError.InvalidSenderCdd);
 
     dsMockUtils.setErrorMock('asset', 'InsufficientBalance', {
       returnValue: { is: jest.fn().mockReturnValueOnce(true) },
@@ -4396,14 +4369,6 @@ describe('assetDispatchErrorToTransferError', () => {
     result = assetDispatchErrorToTransferError(mockError, context);
 
     expect(result).toEqual(TransferError.InsufficientPortfolioBalance);
-
-    dsMockUtils.setErrorMock('portfolio', 'InvalidTransferSenderIdMatchesReceiverId', {
-      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
-    });
-
-    result = assetDispatchErrorToTransferError(mockError, context);
-
-    expect(result).toEqual(TransferError.SelfTransfer);
 
     dsMockUtils.setErrorMock('statistics', 'InvalidTransferStatisticsFailure', {
       returnValue: { is: jest.fn().mockReturnValueOnce(true) },
@@ -6036,12 +6001,10 @@ describe('txTagToProtocolOp', () => {
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.capitalDistribution.Distribute, context)).toEqual(fakeResult);
 
-    const mockResult = 'mockResult' as unknown as Codec;
-    dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
-    when(context.createType)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'NftIssueNft')
-      .mockReturnValue(mockResult);
-    expect(txTagToProtocolOp(TxTags.nft.IssueNft, context)).toEqual(mockResult);
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'NftIssueNft')
+      .mockReturnValue(fakeResult);
+    expect(txTagToProtocolOp(TxTags.nft.IssueNft, context)).toEqual(fakeResult);
   });
 
   it('should throw an error if tag does not match any PolymeshPrimitivesProtocolFeeProtocolOp', () => {
@@ -11490,7 +11453,7 @@ describe('middlewareAuthorizationDataToAuthorization', () => {
     const relayerAddress = 'relayerAddress';
     const allowance = new BigNumber(1000);
     fakeResult = {
-      type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
+      type: AuthorizationType.OldAddRelayerPayingKey,
       value: {
         beneficiary: expect.objectContaining({ address: beneficiaryAddress }),
         subsidizer: expect.objectContaining({ address: relayerAddress }),
@@ -12094,62 +12057,6 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
 
     expect(result).toEqual(fakeResult);
   });
-
-  it('should return a SpRuntimeMultiSignature for v7+ chain versions', () => {
-    const context = dsMockUtils.getContextInstance();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (context as any).isV7 = true;
-
-    const fakeResult = 'SpCoreEcdsaSignature' as unknown as SpRuntimeMultiSignature;
-
-    const signature = 'someSignature';
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fakeEcdsaSignature = 'fakeEcdsaSignature' as any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fakeEd25519Signature = 'fakeEd25519Signature' as any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fakeSr25519Signature = 'fakeSr25519Signature' as any;
-
-    // Test Ecdsa
-    when(context.createType)
-      .calledWith('SpCoreEcdsaSignature', signature)
-      .mockReturnValue(fakeEcdsaSignature);
-
-    when(context.createType)
-      .calledWith('SpRuntimeMultiSignature', { Ecdsa: fakeEcdsaSignature })
-      .mockReturnValue(fakeResult);
-
-    let result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Ecdsa, signature, context);
-
-    expect(result).toEqual(fakeResult);
-
-    // Test Ed25519
-    when(context.createType)
-      .calledWith('SpCoreEd25519Signature', signature)
-      .mockReturnValue(fakeEd25519Signature);
-
-    when(context.createType)
-      .calledWith('SpRuntimeMultiSignature', { Ed25519: fakeEd25519Signature })
-      .mockReturnValue(fakeResult);
-
-    result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Ed25519, signature, context);
-
-    expect(result).toEqual(fakeResult);
-
-    // Test Sr25519
-    when(context.createType)
-      .calledWith('SpCoreSr25519Signature', signature)
-      .mockReturnValue(fakeSr25519Signature);
-
-    when(context.createType)
-      .calledWith('SpRuntimeMultiSignature', { Sr25519: fakeSr25519Signature })
-      .mockReturnValue(fakeResult);
-
-    result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Sr25519, signature, context);
-
-    expect(result).toEqual(fakeResult);
-  });
 });
 
 describe('offChainMetadataToMeshReceiptMetadata', () => {
@@ -12202,49 +12109,8 @@ describe('receiptDetailsToMeshReceiptDetails', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should create receipt details on a v7 chain without expiresAt', () => {
-    const context = dsMockUtils.getContextInstance({ isV7: true });
-    const instructionId = new BigNumber(1);
-    const receipt: OffChainAffirmationReceipt = {
-      uid: new BigNumber(1),
-      legId: new BigNumber(0),
-      signer: '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
-      signature: {
-        type: SignerKeyRingType.Sr25519,
-        value: '0xsomevalue',
-      },
-      metadata: 'Random metadata',
-    };
-    const fakeKey = 'fakeKey' as unknown as PolymeshPrimitivesSettlementReceiptDetails;
-    const fakeResult =
-      'fakeMetadataKeys' as unknown as Vec<PolymeshPrimitivesSettlementReceiptDetails>;
-
-    when(context.createType)
-      .calledWith('PolymeshPrimitivesSettlementReceiptDetails', {
-        uid: bigNumberToU64(receipt.uid, context),
-        instructionId: bigNumberToU64(instructionId, context),
-        legId: bigNumberToU64(receipt.legId, context),
-        signer: stringToAccountId(receipt.signer as string, context),
-        signature: signatureToMeshRuntimeMultiSignature(
-          receipt.signature.type,
-          receipt.signature.value,
-          context
-        ),
-        metadata: offChainMetadataToMeshReceiptMetadata(receipt.metadata as string, context),
-      })
-      .mockReturnValue(fakeKey);
-
-    when(context.createType)
-      .calledWith('Vec<PolymeshPrimitivesSettlementReceiptDetails>', [fakeKey])
-      .mockReturnValue(fakeResult);
-
-    const result = receiptDetailsToMeshReceiptDetails([receipt], instructionId, context);
-
-    expect(result).toEqual(fakeResult);
-  });
-
-  it('should create receipt details on a v8 chain with expiresAt forwarded', () => {
-    const context = dsMockUtils.getContextInstance({ isV7: false });
+  it('should create receipt details with expiresAt forwarded', () => {
+    const context = dsMockUtils.getContextInstance();
     const instructionId = new BigNumber(1);
     const expiresAt = new Date('2030/01/01');
     const receipt: OffChainAffirmationReceipt = {
@@ -12287,8 +12153,8 @@ describe('receiptDetailsToMeshReceiptDetails', () => {
     expect(result).toEqual(fakeResult);
   });
 
-  it('should throw an error if expiresAt is missing on a v8 chain', () => {
-    const context = dsMockUtils.getContextInstance({ isV7: false });
+  it('should throw an error if expiresAt is missing', () => {
+    const context = dsMockUtils.getContextInstance();
     const instructionId = new BigNumber(1);
     const receipt: OffChainAffirmationReceipt = {
       uid: new BigNumber(1),
@@ -12365,66 +12231,7 @@ describe('secondaryAccountWithAuthToSecondaryKeyWithAuth', () => {
       .calledWith('Vec<PolymeshPrimitivesIdentitySecondaryKeyWithAuth>', expect.any(Object))
       .mockReturnValue(fakeResult);
 
-    let result = secondaryAccountWithAuthToSecondaryKeyWithAuth(accounts, context);
-
-    expect(result).toEqual(fakeResult);
-
-    dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
-    const mockResult = 'fakeSecondaryKeysWithAuth' as unknown as Vec<Codec>;
-
-    when(context.createType)
-      .calledWith('Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>', expect.any(Object))
-      .mockReturnValue(mockResult);
-
-    result = secondaryAccountWithAuthToSecondaryKeyWithAuth(accounts, context);
-
-    expect(result).toEqual(mockResult);
-  });
-});
-
-describe('childKeysWithAuthToCreateChildIdentitiesWithAuth', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should create child identities with auth', () => {
-    const context = dsMockUtils.getContextInstance();
-
-    const childKey = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
-    const childKeyAuths: ChildKeyWithAuth[] = [
-      {
-        key: childKey,
-        authSignature: '0xSignature',
-      },
-    ];
-
-    const childAccountId = 'childKey' as unknown as AccountId;
-
-    when(context.createType).calledWith('AccountId', childKey).mockReturnValue(childAccountId);
-
-    const h512Signature = '0xSignature' as unknown as H512;
-    when(context.createType).calledWith('H512', '0xSignature').mockReturnValue(h512Signature);
-
-    const fakeResult = 'fakeSecondaryKeysWithAuth' as unknown as Vec<Codec>;
-
-    when(context.createType)
-      .calledWith('Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>', [
-        {
-          key: childAccountId,
-          authSignature: h512Signature,
-        },
-      ])
-      .mockReturnValue(fakeResult);
-
-    const result = childKeysWithAuthToCreateChildIdentitiesWithAuth(childKeyAuths, context);
+    const result = secondaryAccountWithAuthToSecondaryKeyWithAuth(accounts, context);
 
     expect(result).toEqual(fakeResult);
   });
@@ -12695,37 +12502,6 @@ describe('rawStakingLedgerToStakingLedgerEntry', () => {
       legacyClaimedRewards: dsMockUtils.createMockVec([
         dsMockUtils.createMockU32(new BigNumber(7)),
       ]),
-      stash: dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID),
-    });
-
-    const result = rawStakingLedgerToStakingLedgerEntry(rawNomination, mockContext);
-
-    expect(result).toEqual({
-      stash: expect.any(Account),
-      total: new BigNumber(10),
-      active: new BigNumber(5),
-      unlocking: expect.arrayContaining([]),
-      claimedRewards: expect.arrayContaining([new BigNumber(7)]),
-    });
-  });
-
-  it('should handle v7 staking ledger format', () => {
-    const mockContext = dsMockUtils.getContextInstance({ isV7: true });
-
-    const rawNomination = dsMockUtils.createMockStakingLedger({
-      total: dsMockUtils.createMockCompact(
-        dsMockUtils.createMockU128(new BigNumber(10).times(10 ** 6))
-      ),
-      active: dsMockUtils.createMockCompact(
-        dsMockUtils.createMockU128(new BigNumber(5).times(10 ** 6))
-      ),
-      unlocking: dsMockUtils.createMockVec([
-        dsMockUtils.createMockUnlockChunk({
-          value: dsMockUtils.createMockCompact(dsMockUtils.createMockU128(new BigNumber(8))),
-          era: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(9))),
-        }),
-      ]),
-      claimedRewards: dsMockUtils.createMockVec([dsMockUtils.createMockU32(new BigNumber(7))]),
       stash: dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID),
     });
 
@@ -13833,8 +13609,8 @@ describe('asset holder conversion helpers', () => {
   });
 
   describe('assetHolderIdToMeshAssetHolder', () => {
-    it('should map a hex DID string for non-v7 chains', async () => {
-      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
+    it('should map a hex DID string', async () => {
+      const mockContext = dsMockUtils.getContextInstance();
       stubMeshAssetHolderCreateTypes(mockContext);
       const result = await assetHolderIdToMeshAssetHolder(did, mockContext);
       expect(result).toBeDefined();
@@ -13844,15 +13620,8 @@ describe('asset holder conversion helpers', () => {
       );
     });
 
-    it('should map a hex DID string for v7 chains', async () => {
-      const v7Context = dsMockUtils.getContextInstance({ isV7: true });
-      stubMeshAssetHolderCreateTypes(v7Context);
-      const result = await assetHolderIdToMeshAssetHolder(did, v7Context);
-      expect(result).toBeDefined();
-    });
-
-    it('should map a plain address string for non-v7 chains', async () => {
-      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
+    it('should map a plain address string', async () => {
+      const mockContext = dsMockUtils.getContextInstance();
       stubMeshAssetHolderCreateTypes(mockContext);
       const result = await assetHolderIdToMeshAssetHolder(DUMMY_ACCOUNT_ID, mockContext);
       expect(result).toBeDefined();
@@ -13862,35 +13631,8 @@ describe('asset holder conversion helpers', () => {
       );
     });
 
-    it('should map a plain address string for v7 when the account has an identity', async () => {
-      const v7Context = dsMockUtils.getContextInstance({ isV7: true });
-      stubMeshAssetHolderCreateTypes(v7Context);
-      dsMockUtils.createQueryMock('identity', 'keyRecords', {
-        returnValue: createMockOption(
-          dsMockUtils.createMockKeyRecord({
-            PrimaryKey: createMockIdentityId('linkedDid'),
-          })
-        ),
-      });
-      const result = await assetHolderIdToMeshAssetHolder(DUMMY_ACCOUNT_ID, v7Context);
-      expect(result).toBeDefined();
-    });
-
-    it('should throw when a v7 string account has no identity', async () => {
-      const v7Context = dsMockUtils.getContextInstance({ isV7: true });
-      entityMockUtils.configureMocks({
-        accountOptions: { getIdentity: null },
-      });
-      await expect(assetHolderIdToMeshAssetHolder(DUMMY_ACCOUNT_ID, v7Context)).rejects.toThrow(
-        new PolymeshError({
-          code: ErrorCode.UnmetPrerequisite,
-          message: 'Invalid string value',
-        })
-      );
-    });
-
-    it('should map a portfolio id object for non-v7', async () => {
-      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
+    it('should map a portfolio id object', async () => {
+      const mockContext = dsMockUtils.getContextInstance();
       stubMeshAssetHolderCreateTypes(mockContext);
       const portfolioId = { did: 'pid', number: new BigNumber(1) };
       const result = await assetHolderIdToMeshAssetHolder(portfolioId, mockContext);
@@ -13900,19 +13642,11 @@ describe('asset holder conversion helpers', () => {
         expect.objectContaining({ Portfolio: expect.anything() })
       );
     });
-
-    it('should map a portfolio id object for v7', async () => {
-      const v7Context = dsMockUtils.getContextInstance({ isV7: true });
-      stubMeshAssetHolderCreateTypes(v7Context);
-      const portfolioId = { did: 'pid', number: new BigNumber(1) };
-      const result = await assetHolderIdToMeshAssetHolder(portfolioId, v7Context);
-      expect(result).toBeDefined();
-    });
   });
 
   describe('assetHolderToAssetHolderKind', () => {
-    it('should map Account and portfolio variants for non-v7', () => {
-      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
+    it('should map Account and portfolio variants', () => {
+      const mockContext = dsMockUtils.getContextInstance();
       const fakeKind = 'kind' as unknown as PolymeshPrimitivesIdentityIdPortfolioKind;
 
       when(mockContext.createType)
@@ -13940,45 +13674,11 @@ describe('asset holder conversion helpers', () => {
         .mockReturnValue(fakeKind);
       expect(assetHolderToAssetHolderKind(numbered, mockContext)).toBe(fakeKind);
     });
-
-    it('should map Account and portfolio variants for v7', () => {
-      const v7Context = dsMockUtils.getContextInstance({ isV7: true });
-      const fakeKind = 'kind' as unknown as PolymeshPrimitivesIdentityIdPortfolioKind;
-      const fakeAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
-
-      when(v7Context.createType)
-        .calledWith('AccountId', DUMMY_ACCOUNT_ID)
-        .mockReturnValue(fakeAccountId);
-      when(v7Context.createType)
-        .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', { AccountId: fakeAccountId })
-        .mockReturnValue(fakeKind);
-      expect(
-        assetHolderToAssetHolderKind(
-          new Account({ address: DUMMY_ACCOUNT_ID }, v7Context),
-          v7Context
-        )
-      ).toBe(fakeKind);
-
-      when(v7Context.createType)
-        .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', 'Default')
-        .mockReturnValue(fakeKind);
-      expect(
-        assetHolderToAssetHolderKind(new DefaultPortfolio({ did: 'd' }, v7Context), v7Context)
-      ).toBe(fakeKind);
-
-      const numbered = new NumberedPortfolio({ did: 'd', id: new BigNumber(2) }, v7Context);
-      const rawU64 = dsMockUtils.createMockU64(new BigNumber(2));
-      when(v7Context.createType).calledWith('u64', '2').mockReturnValue(rawU64);
-      when(v7Context.createType)
-        .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', { User: rawU64 })
-        .mockReturnValue(fakeKind);
-      expect(assetHolderToAssetHolderKind(numbered, v7Context)).toBe(fakeKind);
-    });
   });
 
   describe('assetHolderIdsToBtreeSet', () => {
-    it('should create a BTreeSet of asset holders for non-v7', () => {
-      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
+    it('should create a BTreeSet of asset holders', () => {
+      const mockContext = dsMockUtils.getContextInstance();
       const raw = createMockAssetHolder({
         Account: dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID),
       });
@@ -13987,20 +13687,6 @@ describe('asset holder conversion helpers', () => {
         .calledWith('BTreeSet<PolymeshPrimitivesAssetAssetHolder>', expect.anything())
         .mockReturnValue(fakeSet);
       expect(assetHolderIdsToBtreeSet([raw, raw], mockContext)).toBe(fakeSet);
-    });
-
-    it('should delegate to portfolio id btree set for v7', () => {
-      const v7Context = dsMockUtils.getContextInstance({ isV7: true });
-      const raw = dsMockUtils.createMockPortfolioId();
-      const fakeSet = {} as BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>;
-      when(v7Context.createType)
-        .calledWith('BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', expect.anything())
-        .mockReturnValue(fakeSet);
-      const result = assetHolderIdsToBtreeSet(
-        [raw, raw] as unknown as PolymeshPrimitivesAssetAssetHolder[], // NOSONAR
-        v7Context
-      );
-      expect(result).toBe(fakeSet);
     });
   });
 });

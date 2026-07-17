@@ -315,30 +315,7 @@ describe('nftControllerTransfer procedure', () => {
       );
     });
 
-    it('should give preference to destination when both destination and destinationPortfolio are provided', async () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
-      const boundFunc = prepareStorage.bind(proc);
-
-      when(assetHolderLikeToAssetHolderSpy)
-        .calledWith(destinationAccount, mockContext)
-        .mockReturnValue(destinationAccount);
-      const result = await boundFunc({
-        collection,
-        originPortfolio,
-        nfts,
-        destinationPortfolio,
-        destination: destinationAccount,
-      });
-
-      expect(JSON.stringify(result)).toEqual(
-        JSON.stringify({
-          did: 'someDid',
-          destinationAssetHolder: destinationAccount,
-        })
-      );
-    });
-
-    it('should return the default portfolio if destinationPortfolio is not provided', async () => {
+    it('should return the default portfolio if destination is not provided', async () => {
       mockContext.getSigningIdentity.mockResolvedValue(
         entityMockUtils.getIdentityInstance({ did: signerDid })
       );

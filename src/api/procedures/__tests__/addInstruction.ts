@@ -101,7 +101,6 @@ describe('addInstruction procedure', () => {
   let identityToBtreeSetSpy: jest.SpyInstance;
   let assetHolderIdsToBtreeSetSpy: jest.SpyInstance;
   let getAssetHolderDidSpy: jest.SpyInstance;
-  let assertValidCddSpy: jest.SpyInstance;
   let assertAssetHolderExistsSpy: jest.SpyInstance;
   let venueId: BigNumber;
   let amount: BigNumber;
@@ -190,7 +189,6 @@ describe('addInstruction procedure', () => {
     identityToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
     assetHolderIdsToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'assetHolderIdsToBtreeSet');
     getAssetHolderDidSpy = jest.spyOn(procedureUtilsModule, 'getAssetHolderDid');
-    assertValidCddSpy = jest.spyOn(procedureUtilsModule, 'assertValidCdd');
     assertAssetHolderExistsSpy = jest.spyOn(procedureUtilsModule, 'assertAssetHolderExists');
 
     venueId = new BigNumber(1);
@@ -311,7 +309,6 @@ describe('addInstruction procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    assertValidCddSpy.mockResolvedValue(undefined);
     assertAssetHolderExistsSpy.mockResolvedValue(undefined);
 
     when(assetHolderLikeToAssetHolderIdSpy).calledWith(from).mockReturnValue({ did: fromDid });
@@ -1001,80 +998,6 @@ describe('addInstruction procedure', () => {
     ).rejects.toThrow(expectedError);
   });
 
-  it('should throw an error if from asset holder does not exist on v7 chain', async () => {
-    mockContext = dsMockUtils.getContextInstance({ isV7: true });
-
-    when(getAssetHolderDidSpy).calledWith(from, mockContext).mockResolvedValue(null);
-
-    entityMockUtils.configureMocks({
-      venueOptions: { exists: true },
-      fungibleAssetOptions: { exists: true },
-      nftCollectionOptions: { exists: false },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      assetHoldersToAffirm: [[]],
-    });
-
-    let error;
-    try {
-      await prepareAddInstruction.call(proc, args);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('From Asset Holder does not exist');
-    expect(error.code).toBe(ErrorCode.UnmetPrerequisite);
-  });
-
-  it('should throw an error if to asset holder does not exist on v7 chain', async () => {
-    mockContext = dsMockUtils.getContextInstance({ isV7: true });
-
-    when(getAssetHolderDidSpy).calledWith(to, mockContext).mockResolvedValue(null);
-
-    entityMockUtils.configureMocks({
-      venueOptions: { exists: true },
-      fungibleAssetOptions: { exists: true },
-      nftCollectionOptions: { exists: false },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      assetHoldersToAffirm: [[]],
-    });
-
-    let error;
-    try {
-      await prepareAddInstruction.call(proc, args);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('To Asset Holder does not exist');
-    expect(error.code).toBe(ErrorCode.UnmetPrerequisite);
-  });
-
-  it('should call assertValidCdd for both leg parties on v7 when holders exist', async () => {
-    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
-    (mockContext as { isV7: boolean }).isV7 = true;
-    entityMockUtils.configureMocks({
-      venueOptions: {
-        exists: true,
-      },
-      nftCollectionOptions: {
-        exists: false,
-      },
-    });
-    getCustodianMock.mockReturnValue({ did: fromDid });
-    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      assetHoldersToAffirm: [[fromPortfolio, toPortfolio]],
-    });
-
-    await prepareAddInstruction.call(proc, args);
-
-    expect(assertValidCddSpy).toHaveBeenCalledWith(fromDid, mockContext);
-    expect(assertValidCddSpy).toHaveBeenCalledWith(toDid, mockContext);
-  });
-
   it('should handle NFT legs', async () => {
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -1514,18 +1437,6 @@ describe('addInstruction procedure', () => {
           returnValue: { isAutomatic: false },
         });
 
-        const result = await boundFunc(args);
-
-        expect(result).toEqual({ assetHoldersToAffirm: [[fromPortfolio, signerAccount]] });
-      });
-
-      it('should skip auto-affirmation check on v7 and include the receiver', async () => {
-        const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(
-          dsMockUtils.getContextInstance({ isV7: true })
-        );
-        const boundFunc = prepareStorage.bind(proc);
-
-        // No call mock needed — v7 path returns false immediately
         const result = await boundFunc(args);
 
         expect(result).toEqual({ assetHoldersToAffirm: [[fromPortfolio, signerAccount]] });

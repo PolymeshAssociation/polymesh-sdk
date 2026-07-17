@@ -1,5 +1,3 @@
-import { Vec } from '@polkadot/types';
-import { IdentityClaim } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
@@ -17,7 +15,6 @@ import {
 } from '~/middleware/queries/claims';
 import { ClaimsOrderBy, Query } from '~/middleware/types';
 import {
-  CddClaim,
   ClaimData,
   ClaimOperation,
   ClaimScope,
@@ -43,12 +40,8 @@ import {
   bigNumberToU32,
   bytesToString,
   claimTypeInputToMiddlewareClaimTypeDetails,
-  identityIdToString,
-  meshClaimToClaim,
-  momentToDate,
   scopeToMiddlewareScope,
   signerToString,
-  stringToIdentityId,
   toCustomClaimTypeWithIdentity,
   toIdentityWithClaimsArray,
   u32ToBigNumber,
@@ -384,71 +377,6 @@ export class Claims {
       [...claimScopeList, ...customClaimScopeList.filter(scope => scope.scope)],
       isEqual
     );
-  }
-
-  /**
-   * Retrieve the list of CDD claims for a target Identity
-   *
-   * @deprecated CDD claims are no longer supported with v8 chains
-   *
-   * @param opts.target - Identity for which to fetch CDD claims (optional, defaults to the signing Identity)
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   */
-  public async getCddClaims(
-    opts: {
-      target?: string | Identity;
-      includeExpired?: boolean;
-    } = {}
-  ): Promise<ClaimData<CddClaim>[]> {
-    const {
-      context,
-      context: {
-        polymeshApi: { call },
-      },
-    } = this;
-
-    if (!context.isV7) {
-      throw new PolymeshError({
-        code: ErrorCode.NotSupported,
-        message: 'CDD claims are no longer supported in chain v8',
-      });
-    }
-
-    const { identityApi: identity } = call;
-
-    if (!identity) {
-      return [];
-    }
-
-    const { target, includeExpired = true } = opts;
-
-    const did = await getDid(target, context);
-
-    const rawDid = stringToIdentityId(did, context);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: Vec<IdentityClaim> = await (identity as any).validCddClaims(rawDid, null);
-
-    const data: ClaimData<CddClaim>[] = [];
-
-    result.forEach(optClaim => {
-      const { claimIssuer, issuanceDate, lastUpdateDate, expiry: rawExpiry, claim } = optClaim;
-
-      const expiry = rawExpiry.isSome ? momentToDate(rawExpiry.unwrap()) : null;
-
-      if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
-        data.push({
-          target: new Identity({ did }, context),
-          issuer: new Identity({ did: identityIdToString(claimIssuer) }, context),
-          issuedAt: momentToDate(issuanceDate),
-          lastUpdatedAt: momentToDate(lastUpdateDate),
-          expiry,
-          claim: meshClaimToClaim(claim) as CddClaim,
-        });
-      }
-    });
-
-    return data;
   }
 
   /**

@@ -1559,31 +1559,6 @@ describe('Instruction class', () => {
     });
   });
 
-  describe('method: withdraw', () => {
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          {
-            args: { id, operation: InstructionAffirmationOperation.Withdraw },
-            transformer: undefined,
-          },
-          context,
-          {}
-        )
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await instruction.withdraw();
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
   describe('method: lockForExecution', () => {
     afterAll(() => {
       jest.restoreAllMocks();
@@ -1679,31 +1654,6 @@ describe('Instruction class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await instruction.affirmAsMediator();
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: withdrawAsMediator', () => {
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          {
-            args: { id, operation: InstructionAffirmationOperation.WithdrawAsMediator },
-            transformer: undefined,
-          },
-          context,
-          {}
-        )
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await instruction.withdrawAsMediator();
 
       expect(tx).toBe(expectedTransaction);
     });
@@ -2949,7 +2899,6 @@ describe('Instruction class', () => {
         signer,
       });
     });
-
     it('should throw an error if expiresAt is not provided and chain is v8', () => {
       return expect(
         instruction.generateOffChainAffirmationReceipt({
@@ -2957,59 +2906,6 @@ describe('Instruction class', () => {
           uid,
         })
       ).rejects.toThrow('`expiresAt` is mandatory from chain 8.x');
-    });
-
-    it('should return the affirmation receipt for offchain leg on v7 chain', async () => {
-      const v7Context = dsMockUtils.getContextInstance({
-        isV7: true,
-      });
-      const v7Instruction = new Instruction({ id }, v7Context);
-      when(bigNumberToU64Spy).calledWith(id, v7Context).mockReturnValue(rawId);
-      when(bigNumberToU64Spy).calledWith(uid, v7Context).mockReturnValue(rawUid);
-      when(bigNumberToU64Spy).calledWith(legId, v7Context).mockReturnValue(rawLegId);
-
-      const senderIdentity = 'senderDid';
-      const rawSenderIdentity = dsMockUtils.createMockIdentityId(senderIdentity);
-      const receiverIdentity = 'receiverDid';
-      const rawReceiverIdentity = dsMockUtils.createMockIdentityId(receiverIdentity);
-
-      const ticker = 'ABCDEF';
-      const rawTicker = dsMockUtils.createMockTicker(ticker);
-      rawTicker.toHex = jest.fn().mockReturnValue('0xABCDEF0000');
-
-      const amount = new BigNumber(10);
-      const rawAmount = dsMockUtils.createMockU128(amount.shiftedBy(6));
-
-      dsMockUtils.createQueryMock('settlement', 'instructionLegs', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockInstructionLeg({
-            OffChain: {
-              senderIdentity: rawSenderIdentity,
-              receiverIdentity: rawReceiverIdentity,
-              amount: rawAmount,
-              ticker: rawTicker,
-            },
-          })
-        ),
-      });
-
-      const result = await v7Instruction.generateOffChainAffirmationReceipt({
-        legId,
-        uid,
-      });
-
-      expect(result).toEqual({
-        uid,
-        legId,
-        signer: expect.objectContaining({
-          address: '0xdummy',
-        }),
-        signature: {
-          type: SignerKeyRingType.Sr25519,
-          value: '0xsignature',
-        },
-        metadata: undefined,
-      });
     });
   });
 });

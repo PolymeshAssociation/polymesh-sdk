@@ -1,27 +1,18 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { Account, ErrorCode, SetStakingControllerParams, StakingLedger } from '~/types';
+import { Account, ErrorCode } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { stringToAccountId } from '~/utils/conversion';
-import { asAccount } from '~/utils/internal';
 
 export interface Storage {
   actingAccount: Account;
 
   currentController: Account | null;
-  newControllerLedger: StakingLedger | null;
 }
 
 /**
  * @hidden
  */
-export type Params = SetStakingControllerParams;
-
-/**
- * @hidden
- */
 export function prepareSetStakingController(
-  this: Procedure<Params, void, Storage>,
-  args: Params
+  this: Procedure<void, void, Storage>
 ): Promise<TransactionSpec<void, ExtrinsicParams<'staking', 'setController'>>> {
   const {
     context: {
@@ -31,23 +22,8 @@ export function prepareSetStakingController(
         },
       },
     },
-    context,
-    storage: { actingAccount, currentController, newControllerLedger: targetLedger },
+    storage: { actingAccount, currentController },
   } = this;
-  const { controller: controllerInput } = args;
-
-  const controller = asAccount(controllerInput, context);
-
-  if (targetLedger) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The given controller is already paired with a stash',
-      data: {
-        givenController: controller.address,
-        givenControllerStash: targetLedger.stash.address,
-      },
-    });
-  }
 
   if (!currentController) {
     throw new PolymeshError({
@@ -57,31 +33,19 @@ export function prepareSetStakingController(
     });
   }
 
-  const rawController = stringToAccountId(controller.address, context);
-
-  if (context.isV7) {
-    return Promise.resolve({
-      transaction: setController,
-      args: [rawController],
-      resolver: undefined,
-      // v8 no longer allows for a controller to be specified
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
-  } else {
-    // This is now a no arg extrinsic
-    return Promise.resolve({
-      transaction: setController,
-      args: undefined,
-      resolver: undefined,
-    });
-  }
+  // This is a no arg extrinsic
+  return Promise.resolve({
+    transaction: setController,
+    args: undefined,
+    resolver: undefined,
+  });
 }
 
 /**
  * @hidden
  * @note the staking module is exempt from permission checks
  */
-export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
+export function getAuthorization(this: Procedure<void, void, Storage>): ProcedureAuthorization {
   return {
     permissions: {
       assets: [],
@@ -94,30 +58,21 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
 /**
  * @hidden
  */
-export async function prepareStorage(
-  this: Procedure<Params, void, Storage>,
-  args: Params
-): Promise<Storage> {
+export async function prepareStorage(this: Procedure<void, void, Storage>): Promise<Storage> {
   const { context } = this;
-
-  const targetController = asAccount(args.controller, context);
 
   const actingAccount = await context.getActingAccount();
 
-  const [currentController, newControllerLedger] = await Promise.all([
-    actingAccount.staking.getController(),
-    targetController.staking.getLedger(),
-  ]);
+  const currentController = await actingAccount.staking.getController();
 
   return {
     actingAccount,
     currentController,
-    newControllerLedger,
   };
 }
 
 /**
  * @hidden
  */
-export const setStakingController = (): Procedure<Params, void, Storage> =>
+export const setStakingController = (): Procedure<void, void, Storage> =>
   new Procedure(prepareSetStakingController, getAuthorization, prepareStorage);

@@ -767,13 +767,6 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    if (context.isV7) {
-      throw new PolymeshError({
-        code: ErrorCode.NotSupported,
-        message: 'Account.getCollections is not supported for chain 7.x',
-      });
-    }
-
     const rawAccountId = stringToAccountId(address, context);
 
     let queriedCollections: string[] | undefined;

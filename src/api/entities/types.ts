@@ -7,7 +7,6 @@ import {
   BaseAsset,
   Checkpoint as CheckpointClass,
   CheckpointSchedule as CheckpointScheduleClass,
-  ChildIdentity as ChildIdentityClass,
   CorporateAction as CorporateActionClass,
   CorporateBallot,
   CustomPermissionGroup as CustomPermissionGroupClass,
@@ -56,7 +55,6 @@ export type DefaultPortfolio = DefaultPortfolioClass;
 export type DefaultTrustedClaimIssuer = DefaultTrustedClaimIssuerClass;
 export type DividendDistribution = DividendDistributionClass;
 export type Identity = IdentityClass;
-export type ChildIdentity = ChildIdentityClass;
 export type Instruction = InstructionClass;
 export type KnownPermissionGroup = KnownPermissionGroupClass;
 export type NumberedPortfolio = NumberedPortfolioClass;
@@ -139,10 +137,6 @@ export enum AuthorizationType {
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
   BecomeAgent = 'BecomeAgent',
-  /**
-   * @deprecated in favour of OldRelayerPayingKey
-   */
-  AddRelayerPayingKey = 'AddRelayerPayingKey',
   OldAddRelayerPayingKey = 'OldAddRelayerPayingKey',
   RotatePrimaryKeyToSecondary = 'RotatePrimaryKeyToSecondary',
 }
@@ -477,14 +471,6 @@ export type BecomeAgentAuthorizationData = {
   value: KnownPermissionGroup | CustomPermissionGroup;
 };
 
-/**
- * @deprecated in favour of OldAddRelayerPayingKeyAuthorizationData
- */
-export type AddRelayerPayingKeyAuthorizationData = {
-  type: AuthorizationType.AddRelayerPayingKey;
-  value: SubsidyData;
-};
-
 export type OldAddRelayerPayingKeyAuthorizationData = {
   type: AuthorizationType.OldAddRelayerPayingKey;
   value: SubsidyData;
@@ -497,7 +483,6 @@ export type GenericAuthorizationData = {
     | AuthorizationType.JoinIdentity
     | AuthorizationType.PortfolioCustody
     | AuthorizationType.BecomeAgent
-    | AuthorizationType.AddRelayerPayingKey
     | AuthorizationType.OldAddRelayerPayingKey
     | AuthorizationType.RotatePrimaryKeyToSecondary
     | AuthorizationType.AttestPrimaryKeyRotation
@@ -513,7 +498,6 @@ export type Authorization =
   | JoinIdentityAuthorizationData
   | PortfolioCustodyAuthorizationData
   | BecomeAgentAuthorizationData
-  | AddRelayerPayingKeyAuthorizationData
   | OldAddRelayerPayingKeyAuthorizationData
   | RotatePrimaryKeyToSecondaryData
   | GenericAuthorizationData;

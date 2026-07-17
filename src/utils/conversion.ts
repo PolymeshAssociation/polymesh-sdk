@@ -26,7 +26,6 @@ import {
   PalletStakingActiveEraInfo,
   PalletStakingNominations,
   PalletStakingStakingLedger,
-  PalletStakingUnlockChunk,
   PalletStakingValidatorPrefs,
   PalletStoFundingMethod,
   PalletStoFundraiser,
@@ -98,8 +97,8 @@ import {
   SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
 import type { IsError } from '@polkadot/types/metadata/decorate/types';
-import { Codec, ITuple } from '@polkadot/types/types';
-import { BTreeSet, Compact, Result } from '@polkadot/types-codec';
+import { ITuple } from '@polkadot/types/types';
+import { BTreeSet, Result } from '@polkadot/types-codec';
 import {
   hexHasPrefix,
   hexToString,
@@ -212,7 +211,6 @@ import {
   AssetStat,
   Authorization,
   AuthorizationType,
-  ChildKeyWithAuth,
   Claim,
   ClaimBalanceStatInput,
   ClaimCountRestrictionValue,
@@ -923,16 +921,12 @@ export function portfolioIdToMeshPortfolioId(
 /**
  * @hidden
  */
-export async function assetHolderIdToMeshAssetHolder(
+export async function assetHolderIdToMeshAssetHolder( // eslint-disable-line require-await
   assetHolderId: AssetHolderId,
   context: Context
 ): Promise<PolymeshPrimitivesAssetAssetHolder> {
   if (typeof assetHolderId === 'string') {
     if (hexHasPrefix(assetHolderId)) {
-      if (context.isV7) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return portfolioIdToMeshPortfolioId({ did: assetHolderId }, context) as any;
-      }
       return context.createType<PolymeshPrimitivesAssetAssetHolder>(
         'PolymeshPrimitivesAssetAssetHolder',
         {
@@ -940,31 +934,12 @@ export async function assetHolderIdToMeshAssetHolder(
         }
       );
     }
-    if (context.isV7) {
-      const account = new Account({ address: assetHolderId }, context);
-      const identity = await account.getIdentity();
-      if (!identity) {
-        throw new PolymeshError({
-          code: ErrorCode.UnmetPrerequisite,
-          message: 'Invalid string value',
-        });
-      }
-      return context.createType('PolymeshPrimitivesIdentityIdPortfolioId', {
-        did: stringToIdentityId(identity.did, context),
-        kind: { AccountId: stringToAccountId(assetHolderId, context) },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any;
-    }
     return context.createType<PolymeshPrimitivesAssetAssetHolder>(
       'PolymeshPrimitivesAssetAssetHolder',
       {
         Account: stringToAccountId(assetHolderId, context),
       }
     );
-  }
-  if (context.isV7) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return portfolioIdToMeshPortfolioId(assetHolderId, context) as any;
   }
   return context.createType<PolymeshPrimitivesAssetAssetHolder>(
     'PolymeshPrimitivesAssetAssetHolder',
@@ -996,15 +971,6 @@ export function assetHolderToAssetHolderKind(
   assetHolder: AssetHolder,
   context: Context
 ): PolymeshPrimitivesAssetAssetHolderKind {
-  if (context.isV7) {
-    if (assetHolder instanceof Account) {
-      return context.createType('PolymeshPrimitivesIdentityIdPortfolioKind', {
-        AccountId: stringToAccountId(assetHolder.address, context),
-      });
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return portfolioToPortfolioKind(assetHolder, context) as any;
-  }
   if (assetHolder instanceof Account) {
     return context.createType('PolymeshPrimitivesAssetAssetHolderKind', 'Account');
   }
@@ -1807,13 +1773,6 @@ export function authorizationDataToAuthorization(
       subsidizer: new Account({ address: accountIdToString(payingKey) }, context),
       allowance: balanceToBigNumber(polyxLimit),
     };
-
-    if (context.isV7) {
-      return {
-        type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
-        value,
-      };
-    }
 
     return {
       type: AuthorizationType.OldAddRelayerPayingKey,
@@ -3181,9 +3140,6 @@ export function txTagToProtocolOp(
     });
   }
 
-  if (context.isV7) {
-    return context.createType('PolymeshCommonUtilitiesProtocolFeeProtocolOp', value);
-  }
   return context.createType('PolymeshPrimitivesProtocolFeeProtocolOp', value);
 }
 
@@ -3740,13 +3696,6 @@ export function assetHolderIdsToBtreeSet(
   rawAssetHolderIds: PolymeshPrimitivesAssetAssetHolder[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesAssetAssetHolder> {
-  if (context.isV7) {
-    return portfolioIdsToBtreeSet(
-      rawAssetHolderIds as unknown as PolymeshPrimitivesIdentityIdPortfolioId[], // NOSONAR
-      context
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ) as any;
-  }
   return context.createType(
     'BTreeSet<PolymeshPrimitivesAssetAssetHolder>',
     uniqWith(rawAssetHolderIds, isEqual)
@@ -3778,7 +3727,7 @@ export function assetDispatchErrorToTransferError(
 
   type ErrorCase = [IsError, TransferError];
 
-  let record: ErrorCase[] = [
+  const record: ErrorCase[] = [
     [assetErrors.NoSuchAsset, TransferError.AssetDoesNotExists],
     [assetErrors.InvalidGranularity, TransferError.InvalidGranularity],
     [assetErrors.SenderSameAsReceiver, TransferError.SelfTransfer],
@@ -3792,20 +3741,6 @@ export function assetDispatchErrorToTransferError(
     [statisticsError.InvalidTransferStatisticsFailure, TransferError.TransferNotAllowed],
   ];
 
-  if (context.isV7) {
-    record = [
-      ...record,
-      [
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (portfolioErrors as any).InvalidTransferSenderIdMatchesReceiverId,
-        TransferError.SelfTransfer,
-      ],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      [(assetErrors as any).InvalidTransferInvalidReceiverCDD, TransferError.InvalidReceiverCdd],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      [(assetErrors as any).InvalidTransferInvalidSenderCDD, TransferError.InvalidSenderCdd],
-    ];
-  }
   if (error.isModule) {
     const moduleErr = error.asModule;
 
@@ -5451,7 +5386,7 @@ export function middlewareAuthorizationDataToAuthorization(
       }
 
       return {
-        type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
+        type: AuthorizationType.OldAddRelayerPayingKey,
         value: {
           beneficiary: new Account({ address: beneficiary }, context),
           subsidizer: new Account({ address: subsidizer }, context),
@@ -5744,16 +5679,7 @@ export function signatureToMeshRuntimeMultiSignature(
   context: Context
 ): SpRuntimeMultiSignature {
   let rawValue;
-  if (context.isV7) {
-    if (type === SignerKeyRingType.Ecdsa) {
-      rawValue = context.createType('SpCoreEcdsaSignature', value);
-    } else if (type === SignerKeyRingType.Ed25519) {
-      rawValue = context.createType('SpCoreEd25519Signature', value);
-    } else {
-      // assume sr 25519
-      rawValue = context.createType('SpCoreSr25519Signature', value);
-    }
-  } else if (type === SignerKeyRingType.Ecdsa) {
+  if (type === SignerKeyRingType.Ecdsa) {
     // Ecdsa signatures are 65 bytes (64 byte signature + 1 byte recovery ID)
     rawValue = context.createType('[u8;65]', value);
   } else {
@@ -5803,7 +5729,7 @@ export function receiptDetailsToMeshReceiptDetails(
     ({ legId, uid, signer, signature, metadata, expiresAt }) => {
       const { address: signerAddress } = asAccount(signer, context);
 
-      if (!expiresAt && !context.isV7) {
+      if (!expiresAt) {
         throw new PolymeshError({
           code: ErrorCode.UnmetPrerequisite,
           message: '`expiresAt` is mandatory from chain 8.x',
@@ -5816,7 +5742,7 @@ export function receiptDetailsToMeshReceiptDetails(
         legId: bigNumberToU64(legId, context),
         signer: stringToAccountId(signerAddress, context),
         signature: signatureToMeshRuntimeMultiSignature(signature.type, signature.value, context),
-        ...(!context.isV7 && { expiresAt: dateToMoment(expiresAt!, context) }),
+        expiresAt: dateToMoment(expiresAt, context),
         metadata: optionize(offChainMetadataToMeshReceiptMetadata)(metadata, context),
       });
     }
@@ -5847,33 +5773,7 @@ export function secondaryAccountWithAuthToSecondaryKeyWithAuth(
     };
   });
 
-  if (context.isV7) {
-    return context.createType(
-      'Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>',
-      keyWithAuths
-    );
-  }
   return context.createType('Vec<PolymeshPrimitivesIdentitySecondaryKeyWithAuth>', keyWithAuths);
-}
-
-/**
- * @hidden
- *
- * @deprecated no longer supported in chain v8
- */
-export function childKeysWithAuthToCreateChildIdentitiesWithAuth(
-  childKeyAuths: ChildKeyWithAuth[],
-  context: Context
-): Vec<Codec> {
-  const keyWithAuths = childKeyAuths.map(({ key, authSignature }) => ({
-    key: stringToAccountId(asAccount(key, context).address, context),
-    authSignature: stringToH512(authSignature, context),
-  }));
-
-  return context.createType(
-    'Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>',
-    keyWithAuths
-  );
 }
 
 /**
@@ -5992,30 +5892,13 @@ export function rawStakingLedgerToStakingLedgerEntry(
   ledger: PalletStakingStakingLedger,
   context: Context
 ): StakingLedger {
-  let rawTotal: Compact<u128>;
-  let rawActive: Compact<u128>;
-  let rawClaimedRewards: Vec<u32>;
-  let rawUnlocking: Vec<PalletStakingUnlockChunk>;
-  let rawStash: AccountId32;
-
-  if (context.isV7) {
-    ({
-      total: rawTotal,
-      active: rawActive,
-      unlocking: rawUnlocking,
-      claimedRewards: rawClaimedRewards,
-      stash: rawStash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } = ledger as any);
-  } else {
-    ({
-      total: rawTotal,
-      active: rawActive,
-      unlocking: rawUnlocking,
-      legacyClaimedRewards: rawClaimedRewards,
-      stash: rawStash,
-    } = ledger);
-  }
+  const {
+    total: rawTotal,
+    active: rawActive,
+    unlocking: rawUnlocking,
+    legacyClaimedRewards: rawClaimedRewards,
+    stash: rawStash,
+  } = ledger;
 
   const total = balanceToBigNumber(rawTotal.unwrap());
   const active = balanceToBigNumber(rawActive.unwrap());

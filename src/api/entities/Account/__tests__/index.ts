@@ -1151,16 +1151,7 @@ describe('Account class', () => {
   });
 
   describe('method: getCollections', () => {
-    it('should throw an error if the chain version is v7', async () => {
-      context.isV7 = true;
-      await expect(account.getCollections()).rejects.toThrow(
-        'Account.getCollections is not supported for chain 7.x'
-      );
-    });
-
     it('should return collections held by the Account', async () => {
-      context.isV7 = false;
-
       const rawAccountId = dsMockUtils.createMockAccountId(address);
       jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccountId);
 

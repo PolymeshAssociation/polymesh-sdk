@@ -534,13 +534,8 @@ export async function assertMultiSigSignerAuthorizationValid(
  * Asserts valid add relayer paying key authorization
  */
 export async function assertOldAddRelayerPayingKeyAuthorizationValid(
-  subsidy: SubsidyData,
-  context: Context
+  subsidy: SubsidyData
 ): Promise<void> {
-  if (!context.isV7) {
-    return;
-  }
-
   const [beneficiaryIdentity, subsidizerIdentity] = await Promise.all([
     subsidy.beneficiary.getIdentity(),
     subsidy.subsidizer.getIdentity(),
@@ -560,19 +555,19 @@ export async function assertOldAddRelayerPayingKeyAuthorizationValid(
     });
   }
 
-  const [isBeneficiaryCddValid, isSubsidizerCddValid] = await Promise.all([
-    beneficiaryIdentity.hasValidCdd(),
-    subsidizerIdentity.hasValidCdd(),
+  const [beneficiaryExists, subsidizerExists] = await Promise.all([
+    beneficiaryIdentity.exists(),
+    subsidizerIdentity.exists(),
   ]);
 
-  if (!isBeneficiaryCddValid) {
+  if (!beneficiaryExists) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Beneficiary Account does not have a valid CDD Claim',
     });
   }
 
-  if (!isSubsidizerCddValid) {
+  if (!subsidizerExists) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Subsidizer Account does not have a valid CDD Claim',
@@ -603,8 +598,8 @@ async function assertJoinOrRotateAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
   const { issuer, target } = authRequest;
-  const hasValidCdd = await issuer.hasValidCdd();
-  if (!hasValidCdd) {
+  const issuerExists = await issuer.exists();
+  if (!issuerExists) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Issuing Identity does not have a valid CDD claim',
@@ -681,9 +676,8 @@ export async function assertAuthorizationRequestValid(
       return;
     case AuthorizationType.JoinIdentity:
       return assertJoinOrRotateAuthorizationValid(authRequest);
-    case AuthorizationType.AddRelayerPayingKey:
     case AuthorizationType.OldAddRelayerPayingKey:
-      return assertOldAddRelayerPayingKeyAuthorizationValid(data.value, context);
+      return assertOldAddRelayerPayingKeyAuthorizationValid(data.value);
     case AuthorizationType.RotatePrimaryKeyToSecondary:
       return assertJoinOrRotateAuthorizationValid(authRequest);
     default:
@@ -696,9 +690,9 @@ export async function assertAuthorizationRequestValid(
  */
 export async function assertValidCdd(identity: string | Identity, context: Context): Promise<void> {
   const id = asIdentity(identity, context);
-  const validCdd = await id.hasValidCdd();
+  const identityExists = await id.exists();
 
-  if (!validCdd) {
+  if (!identityExists) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The identity does not have a valid CDD claim',

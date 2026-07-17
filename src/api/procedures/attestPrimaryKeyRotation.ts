@@ -84,7 +84,7 @@ export const attestPrimaryKeyRotation = (): Procedure<
   AuthorizationRequest
 > =>
   new Procedure(prepareAttestPrimaryKeyRotation, {
-    roles: [{ type: RoleType.CddProvider }],
+    roles: [{ type: RoleType.DidRegistrar }],
     permissions: {
       assets: [],
       portfolios: [],

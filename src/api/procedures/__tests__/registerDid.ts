@@ -37,7 +37,7 @@ describe('registerDid procedure', () => {
   });
 
   beforeEach(() => {
-    mockContext = dsMockUtils.getContextInstance({ isV7: false });
+    mockContext = dsMockUtils.getContextInstance();
     registerDidTransaction = dsMockUtils.createTxMock('identity', 'registerDid');
     proc = procedureMockUtils.getInstance<RegisterDidParams, Identity>(mockContext);
     jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
@@ -74,22 +74,6 @@ describe('registerDid procedure', () => {
       args: [rawAccountId],
       resolver: expect.any(Function),
     });
-  });
-
-  it('should throw if called for chain v7', () => {
-    mockContext = dsMockUtils.getContextInstance({ isV7: true });
-    proc = procedureMockUtils.getInstance<RegisterDidParams, Identity>(mockContext);
-
-    const args = {
-      targetAccount,
-    };
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.NotSupported,
-      message: 'registerDid is only supported in chain v8',
-    });
-
-    return expect(prepareRegisterDid.call(proc, args)).rejects.toThrow(expectedError);
   });
 
   it('should throw if the target Account already has an Identity', () => {

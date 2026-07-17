@@ -36,13 +36,6 @@ export async function prepareRegisterDid(
   } = this;
   const { targetAccount } = args;
 
-  if (context.isV7) {
-    throw new PolymeshError({
-      code: ErrorCode.NotSupported,
-      message: 'registerDid is only supported in chain v8',
-    });
-  }
-
   const account = asAccount(targetAccount, context);
 
   const identityExists = await account.getIdentity();

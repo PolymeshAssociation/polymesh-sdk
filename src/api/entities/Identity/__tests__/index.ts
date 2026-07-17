@@ -82,12 +82,6 @@ jest.mock(
   )
 );
 jest.mock(
-  '~/api/entities/Identity/ChildIdentity',
-  require('~/testUtils/mocks/entities').mockChildIdentityModule(
-    '~/api/entities/Identity/ChildIdentity'
-  )
-);
-jest.mock(
   '~/api/entities/Instruction',
   require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
 );
@@ -244,30 +238,6 @@ describe('Identity class', () => {
       const rawDid = dsMockUtils.createMockIdentityId(did);
 
       dsMockUtils.createQueryMock('didRegistrars', 'activeMembers').mockResolvedValue([rawDid]);
-
-      when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
-
-      let hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(true);
-
-      identity.did = 'otherDid';
-
-      hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(false);
-    });
-
-    it('should check CDD Provider / DidRegistrar role against cddServiceProviders on v7', async () => {
-      const did = 'someDid';
-      const mockContext = dsMockUtils.getContextInstance({ isV7: true });
-      const identity = new Identity({ did }, mockContext);
-      const role: Role = { type: RoleType.DidRegistrar };
-      const rawDid = dsMockUtils.createMockIdentityId(did);
-
-      dsMockUtils
-        .createQueryMock('cddServiceProviders', 'activeMembers')
-        .mockResolvedValue([rawDid]);
 
       when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
 
@@ -470,45 +440,6 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: hasValidCdd', () => {
-    it('should return whether the Identity has valid CDD', async () => {
-      const did = 'someDid';
-      const statusResponse = true;
-      const mockContext = dsMockUtils.getContextInstance({ isV7: true });
-      const rawIdentityId = dsMockUtils.createMockIdentityId(did);
-      const fakeHasValidCdd = dsMockUtils.createMockCddStatus({
-        Ok: rawIdentityId,
-      });
-
-      when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
-
-      when(dsMockUtils.createCallMock('identityApi', 'isIdentityHasValidCdd'))
-        .calledWith(rawIdentityId, null)
-        .mockResolvedValue(fakeHasValidCdd);
-
-      when(jest.spyOn(utilsConversionModule, 'cddStatusToBoolean'))
-        .calledWith(fakeHasValidCdd)
-        .mockReturnValue(statusResponse);
-
-      const identity = new Identity({ did }, mockContext);
-      const result = await identity.hasValidCdd(); // NOSONAR
-      expect(result).toEqual(statusResponse);
-    });
-
-    it('should return whether the Identity exists if the chain version is v8', async () => {
-      const did = 'someDid';
-      const mockContext = dsMockUtils.getContextInstance({ isV7: false });
-      const identity = new Identity({ did }, mockContext);
-
-      const existsSpy = jest.spyOn(identity, 'exists').mockResolvedValue(true);
-
-      const result = await identity.hasValidCdd(); // NOSONAR
-
-      expect(result).toBe(true);
-      expect(existsSpy).toHaveBeenCalled();
-    });
-  });
-
   describe('method: isGcMember', () => {
     it('should return whether the Identity is GC member', async () => {
       const did = 'someDid';
@@ -539,23 +470,6 @@ describe('Identity class', () => {
 
       dsMockUtils
         .createQueryMock('didRegistrars', 'activeMembers')
-        .mockResolvedValue([rawDid, dsMockUtils.createMockIdentityId('otherDid')]);
-
-      const result = await identity.isCddProvider();
-
-      expect(result).toBeTruthy();
-    });
-
-    it('should use cddServiceProviders.activeMembers when chain is v7', async () => {
-      const did = 'someDid';
-      const rawDid = dsMockUtils.createMockIdentityId(did);
-      const mockContext = dsMockUtils.getContextInstance({ isV7: true });
-      const identity = new Identity({ did }, mockContext);
-
-      when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
-
-      dsMockUtils
-        .createQueryMock('cddServiceProviders', 'activeMembers')
         .mockResolvedValue([rawDid, dsMockUtils.createMockIdentityId('otherDid')]);
 
       const result = await identity.isCddProvider();
@@ -1415,95 +1329,6 @@ describe('Identity class', () => {
         count: new BigNumber(5),
       });
       expect(calculateNextSpy).toHaveBeenCalledWith(new BigNumber(5), 1, start);
-    });
-  });
-
-  describe('method: getChildIdentities', () => {
-    it('should return the list of all child identities of which the given Identity is a parent', async () => {
-      const mockContext = dsMockUtils.getContextInstance({
-        middlewareEnabled: true,
-        isV7: true,
-      });
-      const identity = new Identity({ did: 'someDid' }, mockContext);
-
-      const rawIdentity = dsMockUtils.createMockIdentityId(identity.did);
-      when(identityIdToStringSpy).calledWith(rawIdentity).mockReturnValue(identity.did);
-
-      const children = ['someChild', 'someOtherChild'];
-      const rawChildren = children.map(child => dsMockUtils.createMockIdentityId(child));
-
-      when(identityIdToStringSpy).calledWith(rawChildren[0]!).mockReturnValue(children[0]!);
-      when(identityIdToStringSpy).calledWith(rawChildren[1]!).mockReturnValue(children[1]!);
-
-      dsMockUtils.createQueryMock('identity', 'parentDid', {
-        entries: rawChildren.map(child =>
-          tuple([child], dsMockUtils.createMockOption(rawIdentity))
-        ),
-      });
-
-      const result = await identity.getChildIdentities();
-
-      expect(result).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ did: children[0] }),
-          expect.objectContaining({ did: children[1] }),
-        ])
-      );
-    });
-
-    it('should throw an error if the chain version is v8', async () => {
-      const mockContext = dsMockUtils.getContextInstance({
-        isV7: false,
-      });
-      const identity = new Identity({ did: 'someDid' }, mockContext);
-
-      await expect(
-        identity.getChildIdentities() // NOSONAR
-      ).rejects.toThrow('getChildIdentities is not supported in v8');
-    });
-  });
-
-  describe('method: unlinkChild', () => {
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const expectedTransaction = 'someQueue' as unknown as PolymeshTransaction<void>;
-
-      const identity = new Identity({ did: 'someDid' }, context);
-
-      const args = {
-        child: 'someChild',
-      };
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const transaction = await identity.unlinkChild(args);
-
-      expect(transaction).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: isChild', () => {
-    it('should return whether the Identity is a child Identity', async () => {
-      entityMockUtils.configureMocks({
-        childIdentityOptions: {
-          exists: true,
-        },
-      });
-      const identity = new Identity({ did: 'someDid' }, context);
-      let result = await identity.isChild();
-
-      expect(result).toBeTruthy();
-
-      entityMockUtils.configureMocks({
-        childIdentityOptions: {
-          exists: false,
-        },
-      });
-
-      result = await identity.isChild();
-
-      expect(result).toBeFalsy();
     });
   });
 

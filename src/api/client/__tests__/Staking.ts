@@ -154,17 +154,13 @@ describe('Staking Class', () => {
 
   describe('method: setController', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const args = {
-        controller: 'someAccount',
-      };
-
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, mockContext, {})
+        .calledWith({ args: undefined, transformer: undefined }, mockContext, {})
         .mockResolvedValue(expectedTransaction);
 
-      const tx = await staking.setController(args);
+      const tx = await staking.setController();
 
       expect(tx).toBe(expectedTransaction);
     });

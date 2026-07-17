@@ -34,7 +34,6 @@ import {
   BaseAsset,
   Checkpoint,
   CheckpointSchedule,
-  ChildIdentity,
   Context,
   FungibleAsset,
   Identity,
@@ -221,14 +220,6 @@ export async function getDid(
  */
 export function asIdentity(value: string | Identity, context: Context): Identity {
   return typeof value === 'string' ? new Identity({ did: value }, context) : value;
-}
-
-/**
- * @hidden
- * Given a DID return the corresponding ChildIdentity, given an ChildIdentity return the ChildIdentity
- */
-export function asChildIdentity(value: string | ChildIdentity, context: Context): ChildIdentity {
-  return typeof value === 'string' ? new ChildIdentity({ did: value }, context) : value;
 }
 
 /**
@@ -2463,15 +2454,4 @@ export async function getCorporateActionWithDescription(
   }
 
   return { corporateAction: ca.unwrap(), description };
-}
-
-/**
- * @hidden
- */
-export function isV7Spec(specVersion: number): boolean {
-  if (specVersion < 8000000) {
-    return true;
-  }
-
-  return false;
 }

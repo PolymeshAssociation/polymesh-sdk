@@ -20,13 +20,6 @@ export async function prepareRevokeSubsidy(
 
   const { beneficiary } = args;
 
-  if (context.isV7) {
-    throw new PolymeshError({
-      code: ErrorCode.NotSupported,
-      message: 'This method is not supported for chain 7.x.',
-    });
-  }
-
   const beneficiaryAccount = asAccount(beneficiary, context);
   const { address: beneficiaryAddress } = beneficiaryAccount;
 

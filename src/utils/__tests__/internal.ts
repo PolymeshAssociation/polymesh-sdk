@@ -82,7 +82,6 @@ import {
   asAccount,
   asAsset,
   asBaseAsset,
-  asChildIdentity,
   asDid,
   asFungibleAsset,
   asNftId,
@@ -134,7 +133,6 @@ import {
   isMiddlewareV6Extrinsic,
   isModuleOrTagMatch,
   isPrintableAscii,
-  isV7Spec,
   mergeReceipts,
   neededStatTypeForRestrictionInput,
   optionize,
@@ -2254,25 +2252,6 @@ describe('getIdentityFromKeyRecord', () => {
   });
 });
 
-describe('asChildIdentity', () => {
-  it('should return child identity instance', () => {
-    const mockContext = dsMockUtils.getContextInstance();
-
-    const childDid = 'childDid';
-    const childIdentity = entityMockUtils.getChildIdentityInstance({
-      did: childDid,
-    });
-
-    let result = asChildIdentity(childDid, mockContext);
-
-    expect(result).toEqual(expect.objectContaining({ did: childDid }));
-
-    result = asChildIdentity(childIdentity, mockContext);
-
-    expect(result).toEqual(expect.objectContaining({ did: childDid }));
-  });
-});
-
 describe('asFungibleAsset', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -3220,16 +3199,6 @@ describe('getAllowedMajors', () => {
   it('should handle version ranges with invalid version format', () => {
     const result = getAllowedMajors('7.0 || invalid', '7.0.0');
     expect(result).toEqual(['7']);
-  });
-});
-
-describe('isV7Spec', () => {
-  it('should return true for spec versions below 8000000', () => {
-    expect(isV7Spec(7999999)).toBe(true);
-  });
-
-  it('should return false for spec versions 8000000 and above', () => {
-    expect(isV7Spec(8000000)).toBe(false);
   });
 });
 

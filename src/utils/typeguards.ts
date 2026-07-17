@@ -34,7 +34,6 @@ import {
   BlockedClaim,
   BuyLockupClaim,
   CddClaim,
-  CddProviderRole,
   Claim,
   ClaimType,
   ConditionType,
@@ -310,13 +309,6 @@ export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodian
  */
 export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
   return role.type === RoleType.VenueOwner;
-}
-
-/**
- * Return whether Role is CddProviderRole
- */
-export function isCddProviderRole(role: Role): role is CddProviderRole {
-  return role.type === RoleType.CddProvider;
 }
 
 /**

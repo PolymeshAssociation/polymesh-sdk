@@ -485,35 +485,7 @@ describe('Nft class', () => {
 
       expect(result).toBe(true);
     });
-
-    it('should return whether NFT is locked in any settlement when owner is an Account (context isV7)', async () => {
-      const owner = entityMockUtils.getAccountInstance({ address: 'ownerAddress' });
-      ownerSpy.mockResolvedValue(owner);
-
-      context.isV7 = true;
-
-      const rawOwner = dsMockUtils.createMockAccountId(owner.address);
-      const stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
-      when(stringToAccountIdSpy).calledWith(owner.address, context).mockReturnValue(rawOwner);
-
-      const rawLocked = dsMockUtils.createMockNftOwnerStatus(NftOwnerStatus.OwnerLocked);
-      const nftHolderMock = dsMockUtils.createQueryMock('nft', 'nftHolder');
-      nftHolderMock.mockResolvedValue(rawLocked);
-
-      const meshNftOwnerStatusToNftOwnerStatusSpy = jest.spyOn(
-        utilsConversionModule,
-        'meshNftOwnerStatusToNftOwnerStatus'
-      );
-      when(meshNftOwnerStatusToNftOwnerStatusSpy)
-        .calledWith(rawLocked)
-        .mockReturnValue(NftOwnerStatus.OwnerLocked);
-
-      const result = await nft.isLocked();
-
-      expect(result).toBe(true);
-    });
   });
-
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();

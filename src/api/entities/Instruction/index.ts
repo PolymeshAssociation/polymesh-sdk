@@ -67,7 +67,6 @@ import {
   SignerKeyRingType,
   SubCallback,
   UnsubCallback,
-  WithdrawInstructionParams,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { Ensured } from '~/types/utils';
@@ -163,21 +162,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context
     );
 
-    this.withdraw = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [
-          modifyInstructionAffirmation,
-          {
-            id,
-            operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
-            ...args,
-          },
-        ],
-        optionalArgs: true,
-      },
-      context
-    );
-
     this.rejectAsMediator = createProcedureMethod(
       {
         getProcedureAndArgs: () => [
@@ -196,17 +180,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           { id, operation: InstructionAffirmationOperation.AffirmAsMediator, ...args },
         ],
         optionalArgs: true,
-      },
-      context
-    );
-
-    this.withdrawAsMediator = createProcedureMethod(
-      {
-        getProcedureAndArgs: () => [
-          modifyInstructionAffirmation,
-          { id, operation: InstructionAffirmationOperation.WithdrawAsMediator },
-        ],
-        voidArgs: true,
       },
       context
     );
@@ -977,13 +950,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   public affirm: OptionalArgsProcedureMethod<AffirmInstructionParams, Instruction>;
 
   /**
-   * Withdraw affirmation from this instruction (unauthorize)
-   *
-   * @deprecated Withdrawing affirmation is no longer supported in chain v8. If you need to revoke the affirmation, you can do that by using `reject` method.
-   */
-  public withdraw: OptionalArgsProcedureMethod<WithdrawInstructionParams, Instruction>;
-
-  /**
    * Reject this instruction as a mediator
    *
    * @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
@@ -996,13 +962,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Affirm this instruction as a mediator (authorize)
    */
   public affirmAsMediator: OptionalArgsProcedureMethod<AffirmAsMediatorParams, Instruction>;
-
-  /**
-   * Withdraw affirmation from this instruction as a mediator (unauthorize)
-   *
-   * @deprecated Withdrawing affirmation is no longer supported in chain v8. If you need to revoke the affirmation, you can do that by using `rejectAsMediator` method.
-   */
-  public withdrawAsMediator: NoArgsProcedureMethod<Instruction>;
 
   /**
    * Executes an Instruction either of type `SettleManual` or a `Failed` instruction
@@ -1414,7 +1373,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       expiresAt,
     } = args;
 
-    if (!expiresAt && !context.isV7) {
+    if (!expiresAt) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: '`expiresAt` is mandatory from chain 8.x',
@@ -1446,39 +1405,23 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const rawUid = bigNumberToU64(uid, context);
 
-    let payloadStrings: string[];
-
-    if (context.isV7) {
-      payloadStrings = [
-        stringToHex('<Bytes>'),
-        rawUid.toHex(true),
-        rawId.toHex(true),
-        rawLegId.toHex(true),
-        senderIdentity.toHex(),
-        receiverIdentity.toHex(),
-        ticker.toHex(),
-        amount.toHex(true),
-        stringToHex('</Bytes>'),
-      ];
-    } else {
-      payloadStrings = [
-        stringToHex('<Bytes>'),
-        context.polymeshApi.genesisHash.toHex(),
-        rawUid.toHex(true),
-        // the chain encodes the label as a SCALE `&[u8]`, which is length
-        // prefixed - `Bytes.toHex()` strips that prefix, so `toU8a()` (the
-        // full wire encoding) has to be used instead
-        u8aToHex(stringToBytes('Polymesh Settlement Receipt', context).toU8a()),
-        dateToMoment(expiresAt!, context).toHex(true),
-        rawId.toHex(true),
-        rawLegId.toHex(true),
-        senderIdentity.toHex(),
-        receiverIdentity.toHex(),
-        ticker.toHex(),
-        amount.toHex(true),
-        stringToHex('</Bytes>'),
-      ];
-    }
+    const payloadStrings: string[] = [
+      stringToHex('<Bytes>'),
+      context.polymeshApi.genesisHash.toHex(),
+      rawUid.toHex(true),
+      // the chain encodes the label as a SCALE `&[u8]`, which is length
+      // prefixed - `Bytes.toHex()` strips that prefix, so `toU8a()` (the
+      // full wire encoding) has to be used instead
+      u8aToHex(stringToBytes('Polymesh Settlement Receipt', context).toU8a()),
+      dateToMoment(expiresAt, context).toHex(true),
+      rawId.toHex(true),
+      rawLegId.toHex(true),
+      senderIdentity.toHex(),
+      receiverIdentity.toHex(),
+      ticker.toHex(),
+      amount.toHex(true),
+      stringToHex('</Bytes>'),
+    ];
 
     const rawPayload = hexAddPrefix(payloadStrings.map(e => hexStripPrefix(e)).join(''));
 

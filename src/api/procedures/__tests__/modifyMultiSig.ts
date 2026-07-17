@@ -75,7 +75,6 @@ describe('modifyMultiSig procedure', () => {
     when(signerToSignatorySpy).calledWith(newSigner1, mockContext).mockReturnValue('newOne');
     when(signerToSignatorySpy).calledWith(newSigner2, mockContext).mockReturnValue('newTwo');
 
-    // for v7 tests
     when(stringToAccountIdSpy)
       .calledWith(oldSigner1.address, mockContext)
       .mockReturnValue(rawOldSigner1);

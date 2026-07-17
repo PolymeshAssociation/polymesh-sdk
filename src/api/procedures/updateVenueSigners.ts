@@ -7,7 +7,6 @@ import {
   addressesToBtreeSet,
   bigNumberToU64,
   booleanToBool,
-  stringToAccountId,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { asAccount } from '~/utils/internal';
@@ -77,11 +76,7 @@ export async function prepareUpdateVenueSigners(
     }
   }
 
-  let accountArgs = addressesToBtreeSet(signerParams, context);
-  if (context.isV7) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    accountArgs = signerParams.map(signer => stringToAccountId(signer, context)) as any;
-  }
+  const accountArgs = addressesToBtreeSet(signerParams, context);
 
   return {
     transaction: settlement.updateVenueSigners,

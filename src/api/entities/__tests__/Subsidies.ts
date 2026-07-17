@@ -156,13 +156,5 @@ describe('Subsidies Class', () => {
 
       expect(result).toEqual(fakeResult);
     });
-
-    it('should throw error for v7 chain', () => {
-      dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
-
-      expect(() => subsidies.getPendingSubsidies()).toThrow(
-        'This method is only supported in chain v8'
-      );
-    });
   });
 });

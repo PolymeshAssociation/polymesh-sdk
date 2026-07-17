@@ -3,10 +3,7 @@ import {
   allowIdentityToCreatePortfolios,
   attestPrimaryKeyRotation,
   AuthorizationRequest,
-  ChildIdentity,
   Context,
-  createChildIdentities,
-  createChildIdentity,
   createPortfolios,
   Identity,
   NumberedPortfolio,
@@ -20,8 +17,6 @@ import {
 import {
   AllowIdentityToCreatePortfoliosParams,
   AttestPrimaryKeyRotationParams,
-  CreateChildIdentitiesParams,
-  CreateChildIdentityParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
   RegisterDidParams,
@@ -99,20 +94,6 @@ export class Identities {
             })),
           },
         ],
-      },
-      context
-    );
-
-    this.createChild = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [createChildIdentity, args],
-      },
-      context
-    );
-
-    this.createChildren = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [createChildIdentities, args],
       },
       context
     );
@@ -228,53 +209,11 @@ export class Identities {
   }
 
   /**
-   * Create a ChildIdentity instance from a DID
-   *
-   * @throws if there is no ChildIdentity with the passed DID
-   *
-   * @deprecated Child identities are no longer supported in chain v8
-   */
-  public getChildIdentity(args: { did: string }): Promise<ChildIdentity> {
-    // NOSONAR
-    return this.context.getChildIdentity(args.did);
-  }
-
-  /**
    * Return whether the supplied Identity/DID exists
    */
   public isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
     return asIdentity(args.identity, this.context).exists();
   }
-
-  /**
-   * Creates a child identity and makes the `secondaryKey` as the primary key of the child identity
-   *
-   * @note the given `secondaryKey` is removed as secondary key from the signing Identity
-   *
-   * @throws if
-   *  - the transaction signer is not the primary account of which the `secondaryKey` is a secondary key
-   *  - the `secondaryKey` can't be unlinked (can happen when it's part of a multisig with some balance)
-   *  - the signing account is not a primary key
-   *  - the signing Identity is already a child of some other identity
-   *
-   * @deprecated Child identities are no longer supported in chain v8
-   */
-  public createChild: ProcedureMethod<CreateChildIdentityParams, ChildIdentity>;
-
-  /**
-   * Create child identities using off chain authorization
-   *
-   * @note the list of `key` provided in the params should not be linked to any other account
-   *
-   * @throws if
-   *  - the signing account is not a primary key
-   *  - the signing Identity is already a child of some other identity
-   *  - `expiresAt` is not a future date
-   *  - the any `key` in `childKeyAuths` is already linked to an Identity
-   *
-   * @deprecated Child identities are no longer supported in chain v8
-   */
-  public createChildren: ProcedureMethod<CreateChildIdentitiesParams, ChildIdentity[]>;
 
   /**
    * Gives permission to the Identity to create Portfolios on behalf of the signing Identity

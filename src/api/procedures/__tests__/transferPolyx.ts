@@ -88,37 +88,6 @@ describe('transferPolyx procedure', () => {
     expect(result.preRunValidation).toBeDefined();
   });
 
-  it('should return a v7 transferWithMemo transaction spec when isV7 and memo is provided', async () => {
-    mockContext = dsMockUtils.getContextInstance({ isV7: true });
-    const to = entityMockUtils.getAccountInstance({ address: 'someAccount' });
-    const amount = new BigNumber(99);
-    const memo = 'someMessage';
-    const rawAccount = dsMockUtils.createMockAccountId(to.address);
-    const rawAmount = dsMockUtils.createMockBalance(amount);
-    const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
-
-    jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccount);
-    jest.spyOn(utilsConversionModule, 'bigNumberToBalance').mockReturnValue(rawAmount);
-    jest.spyOn(utilsConversionModule, 'stringToMemo').mockReturnValue(rawMemo);
-
-    const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
-
-    const tx = dsMockUtils.createTxMock('balances', 'transferWithMemo');
-
-    const result = await prepareTransferPolyx.call(proc, {
-      to,
-      amount,
-      memo,
-    });
-
-    expect(result).toMatchObject({
-      transaction: tx,
-      args: [rawAccount, rawAmount, rawMemo],
-      resolver: undefined,
-    });
-    expect(result.preRunValidation).toBeDefined();
-  });
-
   describe('preRunValidation', () => {
     it('should check signing account balance when asProposal is false', async () => {
       const amount = new BigNumber(101);

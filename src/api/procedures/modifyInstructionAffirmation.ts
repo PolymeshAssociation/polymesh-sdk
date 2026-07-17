@@ -93,8 +93,7 @@ const assertAssetHoldersAreValid = (
 ): void => {
   if (
     operation === InstructionAffirmationOperation.AffirmAsMediator ||
-    operation === InstructionAffirmationOperation.RejectAsMediator ||
-    operation === InstructionAffirmationOperation.WithdrawAsMediator
+    operation === InstructionAffirmationOperation.RejectAsMediator
   ) {
     // since no asset holders are involved in these operations, consider them as valid
     return;
@@ -262,23 +261,6 @@ function validateMediatorStatusForAffirmation(
 }
 
 /**
- * @hidden
- */
-function validateMediatorStatusForWithdrawal(
-  mediatorStatus: AffirmationStatus,
-  signer: Identity,
-  id: BigNumber
-): void {
-  if (mediatorStatus !== AffirmationStatus.Affirmed) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The signer is not a mediator that has already affirmed the instruction',
-      data: { signer: signer.did, instructionId: id.toString() },
-    });
-  }
-}
-
-/**
  *
  */
 function affirmAsMediator(
@@ -410,10 +392,8 @@ export async function prepareModifyInstructionAffirmation(
 ): Promise<
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstructionWithCount'>>
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmWithReceiptsWithCount'>>
-  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'withdrawAffirmationWithCount'>>
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstructionWithCount'>>
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstructionAsMediator'>>
-  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'withdrawAffirmationAsMediator'>>
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstructionAsMediator'>>
 > {
   const {
@@ -479,24 +459,6 @@ export async function prepareModifyInstructionAffirmation(
       return affirmAsMediator(mediatorStatus, signer, context, instruction, args.expiry);
     }
 
-    case InstructionAffirmationOperation.WithdrawAsMediator: {
-      if (!context.isV7) {
-        throw new PolymeshError({
-          code: ErrorCode.NotSupported,
-          message: 'Withdrawal of affirmed instructions has been discontinued from v8 chain',
-        });
-      }
-
-      validateMediatorStatusForWithdrawal(mediatorStatus, signer, id);
-
-      return {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: (settlementTx as any).withdrawAffirmationAsMediator,
-        resolver: instruction,
-        args: [rawInstructionId],
-      };
-    }
-
     case InstructionAffirmationOperation.RejectAsMediator: {
       return rejectAsMediator(mediatorStatus, signer, context, instruction, instructionInfo);
     }
@@ -517,23 +479,6 @@ export async function prepareModifyInstructionAffirmation(
       } else {
         transaction = settlementTx.affirmInstructionWithCount;
       }
-      break;
-    }
-
-    case InstructionAffirmationOperation.Withdraw: {
-      if (!context.isV7) {
-        throw new PolymeshError({
-          code: ErrorCode.UnmetPrerequisite,
-          message: 'Withdrawal of affirmed instructions has been discontinued from v8 chain',
-        });
-      }
-      await validateInstructionNotLocked(instruction);
-
-      excludeCriteria.push(AffirmationStatus.Pending);
-      errorMessage = 'The instruction is not affirmed';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transaction = (settlementTx as any).withdrawAffirmationWithCount;
-
       break;
     }
   }
@@ -598,11 +543,6 @@ export function getAuthorization(
 
       break;
     }
-    case InstructionAffirmationOperation.Withdraw: {
-      transactions = [TxTags.settlement.WithdrawAffirmationWithCount];
-
-      break;
-    }
     case InstructionAffirmationOperation.Reject: {
       transactions = [TxTags.settlement.RejectInstructionWithCount];
 
@@ -610,11 +550,6 @@ export function getAuthorization(
     }
     case InstructionAffirmationOperation.AffirmAsMediator: {
       transactions = [TxTags.settlement.AffirmInstructionAsMediator];
-
-      break;
-    }
-    case InstructionAffirmationOperation.WithdrawAsMediator: {
-      transactions = [TxTags.settlement.WithdrawAffirmationAsMediator];
 
       break;
     }
@@ -645,10 +580,7 @@ function extractAssetHolderParams(params: ModifyInstructionAffirmationParams): A
     if (portfolio) {
       assetHolderParams.push(portfolio);
     }
-  } else if (
-    operation === InstructionAffirmationOperation.Affirm ||
-    operation === InstructionAffirmationOperation.Withdraw
-  ) {
+  } else if (operation === InstructionAffirmationOperation.Affirm) {
     const { holders } = params;
     if (holders) {
       assetHolderParams = [...assetHolderParams, ...holders];

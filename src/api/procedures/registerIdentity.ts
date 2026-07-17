@@ -95,7 +95,7 @@ export async function prepareRegisterIdentity(
  */
 export const registerIdentity = (): Procedure<RegisterIdentityParams, Identity> =>
   new Procedure(prepareRegisterIdentity, {
-    roles: [{ type: RoleType.CddProvider }],
+    roles: [{ type: RoleType.DidRegistrar }],
     permissions: {
       assets: [],
       portfolios: [],

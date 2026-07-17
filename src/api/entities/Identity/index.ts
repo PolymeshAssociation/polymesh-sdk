@@ -10,12 +10,10 @@ import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash
 import { AssetPermissions } from '~/api/entities/Identity/AssetPermissions';
 import { IdentityAuthorizations } from '~/api/entities/Identity/IdentityAuthorizations';
 import { Portfolios } from '~/api/entities/Identity/Portfolios';
-import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertAssetHolderExists } from '~/api/procedures/utils';
 import {
   Account,
   BaseAsset,
-  ChildIdentity,
   Context,
   Entity,
   FungibleAsset,
@@ -53,12 +51,10 @@ import {
   ResultSet,
   Role,
   SubCallback,
-  UnlinkChildParams,
   UnsubCallback,
 } from '~/types';
 import { Ensured, tuple } from '~/types/utils';
 import {
-  isCddProviderRole,
   isDidRegistrarRole,
   isIdentityRole,
   isPortfolioCustodianRole,
@@ -74,7 +70,6 @@ import {
   assetToMeshAssetId,
   balanceToBigNumber,
   boolToBoolean,
-  cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
   middlewareInstructionToHistoricInstruction,
@@ -141,13 +136,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     this.portfolios = new Portfolios(this, context);
     this.assetPermissions = new AssetPermissions(this, context);
 
-    this.unlinkChild = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [unlinkChildIdentity, args],
-      },
-      context
-    );
-
     this.setMandatoryReceiverAffirmation = createProcedureMethod(
       {
         getProcedureAndArgs: args => [setMandatoryReceiverAffirmation, { ...args, did: this.did }],
@@ -169,17 +157,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const { owner } = await reservation.details();
 
       return owner ? this.isEqual(owner) : false;
-    } else if (isCddProviderRole(role) || isDidRegistrarRole(role)) {
+    } else if (isDidRegistrarRole(role)) {
       const {
         polymeshApi: { query },
       } = context;
 
-      const activeMembersStorage = context.isV7
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (query as any).cddServiceProviders.activeMembers
-        : query.didRegistrars.activeMembers;
-
-      const rawMembers: Vec<PolymeshPrimitivesIdentityId> = await activeMembersStorage();
+      const rawMembers: Vec<PolymeshPrimitivesIdentityId> =
+        await query.didRegistrars.activeMembers();
       const memberDids = rawMembers.map(identityIdToString);
 
       return memberDids.includes(did);
@@ -297,30 +281,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether this Identity has a valid CDD claim
-   *
-   * @deprecated CDD claims are discontinued from chain v8. If invoked with a v8 chain, this returns true if DID exists
-   */
-  public async hasValidCdd(): Promise<boolean> {
-    const {
-      context,
-      did,
-      context: {
-        polymeshApi: { call },
-      },
-    } = this;
-    const identityId = stringToIdentityId(did, context);
-
-    if (!context.isV7) {
-      return this.exists();
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (call.identityApi as any).isIdentityHasValidCdd(identityId, null);
-    return cddStatusToBoolean(result);
-  }
-
-  /**
    * Check whether this Identity is Governance Committee member
    */
   public async isGcMember(): Promise<boolean> {
@@ -345,16 +305,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context: {
         polymeshApi: { query },
       },
-      context,
       did,
     } = this;
 
-    const activeMembersStorage = context.isV7
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (query as any).cddServiceProviders.activeMembers
-      : query.didRegistrars.activeMembers;
-
-    const activeMembers = await activeMembersStorage();
+    const activeMembers = await query.didRegistrars.activeMembers();
     return activeMembers.map(identityIdToString).includes(did);
   }
 
@@ -1070,65 +1024,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       next,
       count,
     };
-  }
-
-  /**
-   * Returns the list of all child identities
-   *
-   * @note this query can be potentially **SLOW** depending on the number of parent Identities present on the chain
-   *
-   * @deprecated Child identites are no longer supported in chain v8
-   */
-  public async getChildIdentities(): Promise<ChildIdentity[]> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { identity },
-        },
-      },
-      context,
-      did,
-    } = this;
-
-    if (!context.isV7) {
-      throw new PolymeshError({
-        code: ErrorCode.NotSupported,
-        message: 'getChildIdentities is not supported in v8',
-      });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rawEntries: any[] = await (identity as any).parentDid.entries();
-
-    return rawEntries
-      .filter(([, rawParentDid]) => identityIdToString(rawParentDid.unwrapOrDefault()) === did)
-      .map(
-        ([
-          {
-            args: [rawChildDid],
-          },
-        ]) => new ChildIdentity({ did: identityIdToString(rawChildDid) }, context)
-      );
-  }
-
-  /**
-   * Unlinks a child identity
-   *
-   * @throws if
-   *  - the `child` is not a child of this identity
-   *  - the transaction signer is not the primary key of the parent identity
-   */
-  public unlinkChild: ProcedureMethod<UnlinkChildParams, void>;
-
-  /**
-   * Check whether this Identity is a child Identity
-   */
-  public isChild(): Promise<boolean> {
-    const { did, context } = this;
-
-    const childIdentity = new ChildIdentity({ did }, context);
-
-    return childIdentity.exists();
   }
 
   /**

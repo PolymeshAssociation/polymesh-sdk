@@ -34,13 +34,6 @@ export async function prepareSelfRegisterDid(
     context,
   } = this;
 
-  if (context.isV7) {
-    throw new PolymeshError({
-      code: ErrorCode.NotSupported,
-      message: 'selfRegisterDid is only supported in chain v8',
-    });
-  }
-
   const actingAccount = await context.getActingAccount();
 
   const identityExists = await actingAccount.getIdentity();

@@ -5,7 +5,6 @@ import {
   Account,
   AuthorizationRequest,
   CheckpointSchedule,
-  ChildIdentity,
   CorporateActionBase,
   CorporateBallot,
   CustomPermissionGroup,
@@ -272,10 +271,6 @@ export interface TxData<Args extends unknown[] = unknown[]> {
 
 export enum RoleType {
   TickerOwner = 'TickerOwner',
-  /**
-   * @deprecated `CddProvider` role has been deprecated in favor of `DidRegistrar` role for chain v8
-   */
-  CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
   CorporateActionsAgent = 'CorporateActionsAgent',
@@ -287,10 +282,6 @@ export enum RoleType {
 export interface TickerOwnerRole {
   type: RoleType.TickerOwner;
   ticker: string;
-}
-
-export interface CddProviderRole {
-  type: RoleType.CddProvider;
 }
 
 export interface DidRegistrarRole {
@@ -321,7 +312,6 @@ export interface IdentityRole {
 
 export type Role =
   | TickerOwnerRole
-  | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole
   | IdentityRole
@@ -708,11 +698,6 @@ export interface AcceptPrimaryKeyRotationParams {
    * Authorization from the owner who initiated the change
    */
   ownerAuth: BigNumber | AuthorizationRequest;
-  /**
-   * (optional) Authorization from a CDD service provider attesting the rotation of primary key
-   * @deprecated this value will be ignored from chain v8
-   */
-  cddAuth?: BigNumber | AuthorizationRequest;
 }
 
 export interface ModifySignerPermissionsParams {
@@ -1152,16 +1137,8 @@ export interface InstructionIdParams {
 
 export enum InstructionAffirmationOperation {
   Affirm = 'Affirm',
-  /**
-   * @deprecated withdrawing an affirmation is no longer supported in chain v8
-   */
-  Withdraw = 'Withdraw',
   Reject = 'Reject',
   AffirmAsMediator = 'AffirmAsMediator',
-  /**
-   * @deprecated withdrawing an affirmation as a mediator is no longer supported in chain v8
-   */
-  WithdrawAsMediator = 'WithdrawAsMediator',
   RejectAsMediator = 'RejectAsMediator',
 }
 
@@ -1170,18 +1147,6 @@ export type RejectInstructionParams = {
    * (optional) Asset holder that the signer controls and wants to reject the instruction
    */
   assetHolder?: AssetHolderLike;
-};
-
-/**
- * @deprecated withdrawing affirmation is no longer supported in chain v8
- */
-export type WithdrawInstructionParams = {
-  /**
-   * (optional) Asset holders that the signer controls and wants to affirm the instruction or withdraw affirmation
-   *
-   * @note if empty, all the legs containing any custodied Asset Holders of the signer will be affirmed/affirmation will be withdrawn, based on the operation.
-   */
-  holders?: AssetHolderLike[];
 };
 
 export enum SignerKeyRingType {
@@ -1252,18 +1217,13 @@ export type ModifyInstructionAffirmationParams = InstructionIdParams &
         operation: InstructionAffirmationOperation.Affirm;
       } & AffirmInstructionParams)
     | ({
-        operation: InstructionAffirmationOperation.Withdraw;
-      } & WithdrawInstructionParams)
-    | ({
         operation: InstructionAffirmationOperation.Reject;
       } & RejectInstructionParams)
     | ({
         operation: InstructionAffirmationOperation.AffirmAsMediator;
       } & AffirmAsMediatorParams)
     | {
-        operation:
-          | InstructionAffirmationOperation.WithdrawAsMediator
-          | InstructionAffirmationOperation.RejectAsMediator;
+        operation: InstructionAffirmationOperation.RejectAsMediator;
       }
   );
 
@@ -1314,16 +1274,7 @@ export interface NftControllerTransferParams {
   nfts: (Nft | BigNumber)[];
 
   /**
-   * Optional portfolio (or portfolio ID) to which NFTs will be transferred to. Defaults to default portfolio. If specified it must be one of the callers own portfolios
-   *
-   * @deprecated in favour of `destination`. If both are passed `destination` will take precedence
-   */
-  destinationPortfolio?: PortfolioLike;
-
-  /**
    * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to default portfolio. If specified it must be one of the callers own portfolios or accounts
-   *
-   * @note this takes precedence over `destinationPortfolio`
    */
   destination?: AssetHolderLike;
 }
@@ -1883,7 +1834,7 @@ export interface CreateTransactionBatchParams<ReturnValues extends readonly [...
 
 export interface CreateMultiSigParams {
   /**
-   * @note Signer must be an Account as of v7
+   * @note Signer must be an Account
    */
   signers: Signer[];
   requiredSignatures: BigNumber;
@@ -1937,49 +1888,6 @@ export type SetVenueFilteringParams = {
   disallowedVenues?: BigNumber[];
 };
 
-export interface CreateChildIdentityParams {
-  /**
-   * The secondary key that will become the primary key of the new child Identity
-   */
-  secondaryKey: string | Account;
-}
-
-export interface ChildKeyWithAuth {
-  /**
-   * The key that will become the primary key of the new child Identity
-   *
-   * @note This key should not be linked to any other Identity
-   */
-  key: string | Account;
-  /**
-   * Off-chain authorization signature generated by `key` signing of the target Id authorization
-   *
-   * Target Id authorization consists of the target Identity (which will become the parent of the child Identity),
-   * off chain authorization nonce of the target Identity and expiry date (same as `expiresAt` value) until which the off chain authorization will be valid.
-   * Signature has to be generated encoding the target Id authorization value in the specified order.
-   *
-   * @note Nonce value can be fetched using {@link api/entities/Identity!Identity.getOffChainAuthorizationNonce | Identity.getOffChainAuthorizationNonce }
-   * Signature can also be generated using the method {@link api/client/AccountManagement!AccountManagement.generateOffChainAuthSignature | accountManagement.generateOffChainAuthSignature }
-   */
-  authSignature: `0x${string}`;
-}
-
-export interface CreateChildIdentitiesParams {
-  /**
-   * Expiry date until which all the off chain authorizations received from each key will be valid
-   */
-  expiresAt: Date;
-
-  /**
-   * List of child keys along with their off chain authorization signatures
-   */
-  childKeyAuths: ChildKeyWithAuth[];
-}
-
-export interface UnlinkChildParams {
-  child: string | ChildIdentity;
-}
-
 export interface RegisterCustomClaimTypeParams {
   name: string;
 }
@@ -2025,15 +1933,6 @@ export interface BondPolyxParams {
    * At the minimum a stash account needs enough POLYX to sign the unbond extrinsic ()
    */
   amount: BigNumber;
-}
-
-export interface SetStakingControllerParams {
-  /**
-   * The account responsible for managing the signing stash's staking preferences
-   *
-   * @deprecated Chain v8 will ignore this argument. Instead the stash will become its own controller
-   */
-  controller: Account | string;
 }
 
 export interface SetStakingPayeeParams {

@@ -212,7 +212,7 @@ describe('AuthorizationRequest class', () => {
       expect(tx).toBe(expectedTransaction);
     });
 
-    it('should prepare the consumeAddRelayerPayingKeyAuthorization procedure with the correct arguments and context, and return the resulting transaction', async () => {
+    it('should throw an error when accepting an OldAddRelayerPayingKey Authorization Request', () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -220,7 +220,7 @@ describe('AuthorizationRequest class', () => {
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
           data: {
-            type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
+            type: AuthorizationType.OldAddRelayerPayingKey,
             value: {
               beneficiary: new Account({ address: 'beneficiary' }, context),
               subsidizer: new Account({ address: 'subsidizer' }, context),
@@ -231,20 +231,9 @@ describe('AuthorizationRequest class', () => {
         context
       );
 
-      const args = {
-        authRequest: authorizationRequest,
-        accept: true,
-      };
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await authorizationRequest.accept();
-
-      expect(tx).toBe(expectedTransaction);
+      expect(() => authorizationRequest.accept()).toThrow(
+        'Accepting this type of Authorization Request is no longer supported. Use AccountManagement.approveSubsidy instead'
+      );
     });
   });
 
@@ -384,7 +373,7 @@ describe('AuthorizationRequest class', () => {
       expect(tx).toBe(expectedTransaction);
     });
 
-    it('should prepare the consumeAddRelayerPayingKeyAuthorization procedure with the correct arguments and context, and return the resulting transaction', async () => {
+    it('should prepare the consumeAuthorizationRequests procedure with an OldAddRelayerPayingKey auth and return the resulting transaction', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -392,7 +381,7 @@ describe('AuthorizationRequest class', () => {
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
           data: {
-            type: AuthorizationType.AddRelayerPayingKey, // NOSONAR
+            type: AuthorizationType.OldAddRelayerPayingKey,
             value: {
               beneficiary: new Account({ address: 'beneficiary' }, context),
               subsidizer: new Account({ address: 'subsidizer' }, context),
@@ -404,8 +393,8 @@ describe('AuthorizationRequest class', () => {
       );
 
       const args = {
-        authRequest: authorizationRequest,
         accept: false,
+        authRequests: [authorizationRequest],
       };
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;

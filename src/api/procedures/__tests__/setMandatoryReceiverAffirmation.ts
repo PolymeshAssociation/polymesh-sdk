@@ -37,7 +37,7 @@ describe('setMandatoryReceiverAffirmation procedure', () => {
   });
 
   beforeEach(() => {
-    mockContext = dsMockUtils.getContextInstance({ isV7: false });
+    mockContext = dsMockUtils.getContextInstance();
     mockSigningIdentity = entityMockUtils.getIdentityInstance({ did: 'someDid' });
     mockContext.getSigningIdentity.mockResolvedValue(mockSigningIdentity);
 
@@ -61,20 +61,6 @@ describe('setMandatoryReceiverAffirmation procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-  });
-
-  it('should throw a NotSupported error when called on a v7 chain', () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      identity: mockSigningIdentity,
-    });
-    mockContext.isV7 = true;
-
-    return expect(
-      prepareSetMandatoryReceiverAffirmation.call(proc, {
-        did: 'someDid',
-        requirement: ReceiverAffirmationRequirement.Required,
-      })
-    ).rejects.toThrow('setMandatoryReceiverAffirmation is not supported on v7 chains');
   });
 
   it('should throw a NoDataChange error when setting Required and it is already Required', () => {

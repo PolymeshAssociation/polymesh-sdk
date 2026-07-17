@@ -121,10 +121,6 @@ export class AccountManagement {
       },
       context
     );
-    this.subsidizeAccount = createProcedureMethod(
-      { getProcedureAndArgs: args => [subsidizeAccount, { ...args, isV7Method: true }] },
-      context
-    );
     this.acceptSubsidy = createProcedureMethod(
       { getProcedureAndArgs: args => [acceptSubsidy, args] },
       context
@@ -134,7 +130,7 @@ export class AccountManagement {
       context
     );
     this.approveSubsidy = createProcedureMethod(
-      { getProcedureAndArgs: args => [subsidizeAccount, { ...args, isV7Method: false }] },
+      { getProcedureAndArgs: args => [subsidizeAccount, { ...args }] },
       context
     );
     this.createMultiSigAccount = createProcedureMethod(
@@ -198,26 +194,13 @@ export class AccountManagement {
   public unfreezeSecondaryAccounts: NoArgsProcedureMethod<void>;
 
   /**
-   * Send an Authorization Request to an Account to subsidize its transaction fees
-   *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `beneficiary` Account.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
-   *
-   * @deprecated use {@link approveSubsidy} instead from chain v8
-   */
-  public subsidizeAccount: ProcedureMethod<SubsidizeAccountParams, AuthorizationRequest>;
-
-  /**
    * Approves a subsidy request
    *
    * This is to be called in by the paying key to approve allowance with respect to a beneficiary key.
    *
    * @note this will create a pending subsidies entry, which has to be accepted by the `beneficiary` Account. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies!Subsidies.getPendingSubsidies | subsidies.getPendingSubsidies}.
    *
-   * @throws
-   *  - if called for a v7 chain
-   *  - if same allowance amount is pending for acceptance with respect to same beneficiary
+   * @throws if same allowance amount is pending for acceptance with respect to same beneficiary
    */
   public approveSubsidy: ProcedureMethod<SubsidizeAccountParams, void>;
 
@@ -225,7 +208,6 @@ export class AccountManagement {
    * Accepts a pending subsidy request from subsidizer
    *
    * @note Only the beneficiary can accept an already approved subsidy request. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies!Subsidies.getPendingSubsidies | subsidies.getPendingSubsidies}.
-   * @note this is only available from chain v8
    */
   public acceptSubsidy: ProcedureMethod<AcceptSubsidyParams, void>;
 
@@ -233,7 +215,6 @@ export class AccountManagement {
    * Revokes an already approved subsidy request
    *
    * @note Only the subsidizer can revoke an already approved subsidy request. Pending subsidies for a beneficiary can be fetched by calling {@link api/entities/Subsidies!Subsidies.getPendingSubsidies | subsidies.getPendingSubsidies}.
-   * @note this is only available from chain v8
    */
   public revokeSubsidy: ProcedureMethod<RevokeSubsidyParams, void>;
 

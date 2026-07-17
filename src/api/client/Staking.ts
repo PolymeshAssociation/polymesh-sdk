@@ -20,7 +20,6 @@ import {
   PaginationOptions,
   ProcedureMethod,
   ResultSet,
-  SetStakingControllerParams,
   SetStakingPayeeParams,
   StakingCommission,
   StakingEraInfo,
@@ -87,7 +86,8 @@ export class Staking {
 
     this.setController = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [setStakingController, args],
+        getProcedureAndArgs: () => [setStakingController, undefined],
+        voidArgs: true,
       },
       context
     );
@@ -134,12 +134,11 @@ export class Staking {
   public nominate: ProcedureMethod<NominateValidatorsParams, void>;
 
   /**
-   * Allow for a stash account to update its controller
+   * Allow for a stash account to update its controller so the stash becomes its own controller
    *
    * @note the transaction must be signed by a stash account
-   * @note Polymesh v8 makes it so the stash will become its own controller account
    */
-  public setController: ProcedureMethod<SetStakingControllerParams, void>;
+  public setController: NoArgsProcedureMethod<void>;
 
   /**
    * Allow for a stash account to update where it's staking rewards are deposited

@@ -142,12 +142,8 @@ describe('modifyInstructionAffirmation procedure', () => {
   beforeEach(() => {
     rawLegAmount = dsMockUtils.createMockU32(new BigNumber(2));
     dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    dsMockUtils.createTxMock('settlement' as any, 'withdrawAffirmationWithCount');
     dsMockUtils.createTxMock('settlement', 'rejectInstructionWithCount');
     dsMockUtils.createTxMock('settlement', 'affirmInstructionAsMediator');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    dsMockUtils.createTxMock('settlement' as any, 'withdrawAffirmationAsMediator');
     dsMockUtils.createTxMock('settlement', 'rejectInstructionAsMediator');
     dsMockUtils.createCallMock('settlementApi', 'getExecuteInstructionInfo', {
       returnValue: dsMockUtils.createMockOption(mockExecuteInfo),
@@ -210,64 +206,6 @@ describe('modifyInstructionAffirmation procedure', () => {
         operation: InstructionAffirmationOperation.Affirm,
       })
     ).rejects.toThrow('Some of the asset holders are not a involved in this instruction');
-  });
-
-  it('should throw an error if the operation is Withdraw and the chain is v8 (isV7 = false)', () => {
-    const v8MockContext = dsMockUtils.getContextInstance({ isV7: false });
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAffirmationParams,
-      Instruction,
-      Storage
-    >(v8MockContext, {
-      allowedAssetHolders: [portfolio],
-      assetHolderParams: [],
-      senderLegCount: legAmount,
-      totalLegCount: legAmount,
-      signer,
-      offChainLegIndices: [],
-      instructionInfo: mockExecuteInfo,
-    });
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Withdrawal of affirmed instructions has been discontinued from v8 chain',
-    });
-
-    return expect(
-      prepareModifyInstructionAffirmation.call(proc, {
-        id,
-        operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
-      })
-    ).rejects.toThrow(expectedError);
-  });
-
-  it('should throw an error if the operation is WithdrawAsMediator and the chain is v8 (isV7 = false)', () => {
-    const v8MockContext = dsMockUtils.getContextInstance({ isV7: false });
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAffirmationParams,
-      Instruction,
-      Storage
-    >(v8MockContext, {
-      allowedAssetHolders: [portfolio],
-      assetHolderParams: [],
-      senderLegCount: legAmount,
-      totalLegCount: legAmount,
-      signer,
-      offChainLegIndices: [],
-      instructionInfo: mockExecuteInfo,
-    });
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.NotSupported,
-      message: 'Withdrawal of affirmed instructions has been discontinued from v8 chain',
-    });
-
-    return expect(
-      prepareModifyInstructionAffirmation.call(proc, {
-        id,
-        operation: InstructionAffirmationOperation.WithdrawAsMediator, // NOSONAR
-      })
-    ).rejects.toThrow(expectedError);
   });
 
   it('should throw an error if the signing Identity is not the custodian of any of the involved portfolios', () => {
@@ -756,52 +694,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     });
   });
 
-  it('should throw an error if operation is Withdraw and the current status of the instruction is pending', () => {
-    dsMockUtils.configureMocks({
-      contextOptions: { isV7: true },
-    });
-    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
-    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
-      multi: [rawAffirmationStatus, rawAffirmationStatus],
-    });
-    when(meshAffirmationStatusToAffirmationStatusSpy)
-      .calledWith(rawAffirmationStatus)
-      .mockReturnValue(AffirmationStatus.Pending);
-
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAffirmationParams,
-      Instruction,
-      Storage
-    >(mockContext, {
-      allowedAssetHolders: [portfolio, portfolio],
-      assetHolderParams: [],
-      senderLegCount: legAmount,
-      totalLegCount: legAmount,
-      signer,
-      offChainLegIndices: [],
-      instructionInfo: mockExecuteInfo,
-    });
-
-    return expect(
-      prepareModifyInstructionAffirmation.call(proc, {
-        id,
-        operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
-      })
-    ).rejects.toThrow('The instruction is not affirmed');
-  });
-
-  it('should throw an error if operation is Withdraw/Reject and the current status of the instruction is LockedForExecution', async () => {
-    dsMockUtils.configureMocks({
-      contextOptions: { isV7: true },
-    });
-    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
-    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
-      multi: [rawAffirmationStatus, rawAffirmationStatus],
-    });
-    when(meshAffirmationStatusToAffirmationStatusSpy)
-      .calledWith(rawAffirmationStatus)
-      .mockReturnValue(AffirmationStatus.Affirmed);
-
+  it('should throw an error if operation is Reject and the current status of the instruction is LockedForExecution', async () => {
     const lockedAt = new Date();
     const unlocksAt = new Date(lockedAt.getTime() + 84400000);
 
@@ -833,152 +726,9 @@ describe('modifyInstructionAffirmation procedure', () => {
     await expect(
       prepareModifyInstructionAffirmation.call(proc, {
         id,
-        operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
-      })
-    ).rejects.toThrow('The instruction is locked for execution');
-
-    await expect(
-      prepareModifyInstructionAffirmation.call(proc, {
-        id,
         operation: InstructionAffirmationOperation.Reject,
       })
     ).rejects.toThrow('The instruction is locked for execution');
-  });
-
-  it('should return a withdraw instruction transaction spec', async () => {
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        isV7: true,
-      },
-    });
-    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
-    dsMockUtils.createQueryMock('settlement', 'affirmsReceived', {
-      multi: [rawAffirmationStatus, rawAffirmationStatus],
-    });
-    when(meshAffirmationStatusToAffirmationStatusSpy)
-      .calledWith(rawAffirmationStatus)
-      .mockReturnValue(AffirmationStatus.Affirmed);
-
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAffirmationParams,
-      Instruction,
-      Storage
-    >(mockContext, {
-      allowedAssetHolders: [portfolio, portfolio],
-      assetHolderParams: [],
-      senderLegCount: legAmount,
-      totalLegCount: legAmount,
-      signer,
-      offChainLegIndices: [],
-      instructionInfo: mockExecuteInfo,
-    });
-
-    const transaction = dsMockUtils.createTxMock(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      'settlement' as any,
-      'withdrawAffirmationWithCount'
-    );
-
-    const result = await prepareModifyInstructionAffirmation.call(proc, {
-      id,
-      operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
-    });
-
-    expect(result).toEqual({
-      transaction,
-      feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, new Set([rawPortfolioId, rawPortfolioId]), mockAffirmCount],
-      resolver: expect.objectContaining({ id }),
-    });
-  });
-
-  it('should throw an error if a mediator attempts to withdraw a non affirmed transaction', () => {
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        isV7: true,
-      },
-    });
-    const rawAffirmationStatus = createMockMediatorAffirmationStatus(AffirmationStatus.Pending);
-    dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
-      returnValue: rawAffirmationStatus,
-    });
-    when(mediatorAffirmationStatusToStatusSpy)
-      .calledWith(rawAffirmationStatus)
-      .mockReturnValue({ status: AffirmationStatus.Pending });
-
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAffirmationParams,
-      Instruction,
-      Storage
-    >(mockContext, {
-      allowedAssetHolders: [portfolio, portfolio],
-      assetHolderParams: [],
-      senderLegCount: legAmount,
-      totalLegCount: legAmount,
-      signer,
-      offChainLegIndices: [],
-      instructionInfo: mockExecuteInfo,
-    });
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The signer is not a mediator that has already affirmed the instruction',
-    });
-
-    return expect(
-      prepareModifyInstructionAffirmation.call(proc, {
-        id,
-        operation: InstructionAffirmationOperation.WithdrawAsMediator, // NOSONAR
-      })
-    ).rejects.toThrow(expectedError);
-  });
-
-  it('should return a withdraw as mediator instruction transaction spec', async () => {
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        isV7: true,
-      },
-    });
-    const rawAffirmationStatus = createMockMediatorAffirmationStatus({
-      Affirmed: dsMockUtils.createMockOption(),
-    });
-    dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
-      returnValue: rawAffirmationStatus,
-    });
-    when(mediatorAffirmationStatusToStatusSpy)
-      .calledWith(rawAffirmationStatus)
-      .mockReturnValue({ status: AffirmationStatus.Affirmed });
-
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAffirmationParams,
-      Instruction,
-      Storage
-    >(mockContext, {
-      allowedAssetHolders: [portfolio, portfolio],
-      assetHolderParams: [],
-      senderLegCount: legAmount,
-      totalLegCount: legAmount,
-      signer,
-      offChainLegIndices: [],
-      instructionInfo: mockExecuteInfo,
-    });
-
-    const transaction = dsMockUtils.createTxMock(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      'settlement' as any,
-      'withdrawAffirmationAsMediator'
-    );
-
-    const result = await prepareModifyInstructionAffirmation.call(proc, {
-      id,
-      operation: InstructionAffirmationOperation.WithdrawAsMediator, // NOSONAR
-    });
-
-    expect(result).toEqual({
-      transaction,
-      args: [rawInstructionId],
-      resolver: expect.objectContaining({ id }),
-    });
   });
 
   it('should return a reject instruction transaction spec', async () => {
@@ -1193,16 +943,6 @@ describe('modifyInstructionAffirmation procedure', () => {
         },
       });
 
-      result = boundFunc({ ...args, operation: InstructionAffirmationOperation.Withdraw });
-
-      expect(result).toEqual({
-        permissions: {
-          assets: [],
-          portfolios: [],
-          transactions: [TxTags.settlement.WithdrawAffirmationWithCount],
-        },
-      });
-
       result = boundFunc({
         ...args,
         operation: InstructionAffirmationOperation.AffirmAsMediator,
@@ -1213,19 +953,6 @@ describe('modifyInstructionAffirmation procedure', () => {
           assets: [],
           portfolios: [],
           transactions: [TxTags.settlement.AffirmInstructionAsMediator],
-        },
-      });
-
-      result = boundFunc({
-        ...args,
-        operation: InstructionAffirmationOperation.WithdrawAsMediator, // NOSONAR
-      });
-
-      expect(result).toEqual({
-        permissions: {
-          assets: [],
-          portfolios: [],
-          transactions: [TxTags.settlement.WithdrawAffirmationAsMediator],
         },
       });
 
@@ -1333,22 +1060,6 @@ describe('modifyInstructionAffirmation procedure', () => {
         id: new BigNumber(1),
         operation: InstructionAffirmationOperation.Reject,
         assetHolder: fromDid,
-      });
-
-      expect(result).toEqual({
-        allowedAssetHolders: [],
-        assetHolderParams: [fromDid],
-        senderLegCount: new BigNumber(0),
-        totalLegCount: new BigNumber(3),
-        signer: expect.objectContaining({ did: signer.did }),
-        offChainLegIndices: [2],
-        instructionInfo: mockExecuteInfo,
-      });
-
-      result = await boundFunc({
-        id: new BigNumber(1),
-        operation: InstructionAffirmationOperation.Withdraw, // NOSONAR
-        holders: [fromDid],
       });
 
       expect(result).toEqual({

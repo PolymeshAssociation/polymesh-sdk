@@ -5,7 +5,6 @@ import { CreateVenueParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import {
   addressesToBtreeSet,
-  stringToAccountId,
   stringToBytes,
   u32ToBigNumber,
   u64ToBigNumber,
@@ -61,11 +60,7 @@ export function prepareCreateVenue(
   }
 
   const signerAddresses = signers.map(signer => asAccount(signer, context).address);
-  let accountArgs = addressesToBtreeSet(signerAddresses, context);
-  if (context.isV7) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    accountArgs = signerAddresses.map(address => stringToAccountId(address, context)) as any;
-  }
+  const accountArgs = addressesToBtreeSet(signerAddresses, context);
 
   return Promise.resolve({
     transaction: settlement.createVenue,

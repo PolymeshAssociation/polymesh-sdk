@@ -13,7 +13,6 @@ import { flatten, isEqual, union, unionWith } from 'lodash';
 
 import {
   assertAssetHolderExists,
-  assertValidCdd,
   assertVenueExists,
   getAssetHolderDid,
 } from '~/api/procedures/utils';
@@ -187,26 +186,6 @@ export async function getRawLegDetails(
     assertAssetHolderExists(toId, context),
   ];
 
-  if (context.isV7) {
-    const [fromDid, toDid] = await Promise.all([
-      getAssetHolderDid(from, context),
-      getAssetHolderDid(to, context),
-    ]);
-
-    if (!fromDid) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'From Asset Holder does not exist',
-      });
-    }
-    if (!toDid) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'To Asset Holder does not exist',
-      });
-    }
-    assertPromises.push(assertValidCdd(fromDid, context), assertValidCdd(toDid, context));
-  }
   await Promise.all(assertPromises);
 
   const sender = await assetHolderIdToMeshAssetHolder(fromId, context);
@@ -921,8 +900,6 @@ export async function prepareStorage(
     rawToHolder: PolymeshPrimitivesAssetAssetHolder,
     rawAssetId: ReturnType<typeof stringToAssetId>
   ): Promise<boolean> => {
-    if (context.isV7) return false;
-
     const requirement =
       await context.polymeshApi.call.settlementApi.getReceiverAffirmationRequirement(
         rawToHolder,

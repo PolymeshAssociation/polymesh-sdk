@@ -3,8 +3,6 @@ import BigNumber from 'bignumber.js';
 import {
   consumeAddMultiSigSignerAuthorization,
   ConsumeAddMultiSigSignerAuthorizationParams,
-  consumeAddRelayerPayingKeyAuthorization,
-  ConsumeAddRelayerPayingKeyAuthorizationParams,
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
   consumeJoinOrRotateAuthorization,
@@ -12,10 +10,12 @@ import {
   Context,
   Entity,
   Identity,
+  PolymeshError,
 } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
+  ErrorCode,
   NoArgsProcedureMethod,
   Signer,
   SignerValue,
@@ -117,8 +117,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
     this.accept = createProcedureMethod<
       | ConsumeAuthorizationRequestsParams
       | ConsumeJoinOrRotateAuthorizationParams
-      | ConsumeAddMultiSigSignerAuthorizationParams
-      | ConsumeAddRelayerPayingKeyAuthorizationParams,
+      | ConsumeAddMultiSigSignerAuthorizationParams,
       void,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       any
@@ -126,8 +125,12 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
       {
         getProcedureAndArgs: () => {
           switch (this.data.type) {
-            case AuthorizationType.AddRelayerPayingKey: {
-              return [consumeAddRelayerPayingKeyAuthorization, { authRequest: this, accept: true }];
+            case AuthorizationType.OldAddRelayerPayingKey: {
+              throw new PolymeshError({
+                code: ErrorCode.NotSupported,
+                message:
+                  'Accepting this type of Authorization Request is no longer supported. Use AccountManagement.approveSubsidy instead',
+              });
             }
             case AuthorizationType.JoinIdentity:
             case AuthorizationType.RotatePrimaryKey:
@@ -150,8 +153,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
     this.remove = createProcedureMethod<
       | ConsumeAuthorizationRequestsParams
       | ConsumeJoinOrRotateAuthorizationParams
-      | ConsumeAddMultiSigSignerAuthorizationParams
-      | ConsumeAddRelayerPayingKeyAuthorizationParams,
+      | ConsumeAddMultiSigSignerAuthorizationParams,
       void,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       any
@@ -159,12 +161,6 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
       {
         getProcedureAndArgs: () => {
           switch (this.data.type) {
-            case AuthorizationType.AddRelayerPayingKey: {
-              return [
-                consumeAddRelayerPayingKeyAuthorization,
-                { authRequest: this, accept: false },
-              ];
-            }
             case AuthorizationType.JoinIdentity:
             case AuthorizationType.RotatePrimaryKeyToSecondary: {
               return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: false }];
