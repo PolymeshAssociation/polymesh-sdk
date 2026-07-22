@@ -441,7 +441,8 @@ let errorMock: jest.Mock;
 type StatusCallback = (receipt: ISubmittableResult) => void;
 
 interface TxMockData {
-  statusCallback: StatusCallback;
+  // not set when the transaction was submitted via the promise (no callback) form of `signAndSend`
+  statusCallback?: StatusCallback;
   unsubCallback: UnsubCallback;
   status: MockTxStatus;
   resolved: boolean;
@@ -1387,7 +1388,7 @@ export function createTxMock<
     meta = { args: [] },
   } = opts;
 
-  const mockHandleSend = (cb: StatusCallback): Promise<unknown> => {
+  const mockHandleSend = (cb?: StatusCallback): Promise<unknown> => {
     if (autoResolve === MockTxStatus.Rejected) {
       return Promise.reject(new Error('Cancelled'));
     }
@@ -1402,11 +1403,12 @@ export function createTxMock<
       status: null as unknown as MockTxStatus,
     });
 
-    if (autoResolve) {
+    if (autoResolve && cb) {
       process.nextTick(() => cb(statusToReceipt(autoResolve)));
     }
 
-    return new Promise(resolve => setImmediate(() => resolve(unsubCallback)));
+    // when no status callback is passed (promise form), `signAndSend` resolves with the submitted tx hash
+    return new Promise(resolve => setImmediate(() => resolve(cb ? unsubCallback : tx)));
   };
 
   const mockSend = jest.fn().mockImplementation((cb: StatusCallback) => {
@@ -1801,7 +1803,7 @@ export function updateTxStatus<
     });
   }
 
-  txMockData.statusCallback(statusToReceipt(status, failReason));
+  txMockData.statusCallback?.(statusToReceipt(status, failReason));
 }
 
 /**

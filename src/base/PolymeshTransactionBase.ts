@@ -2,6 +2,7 @@
 import { EventEmitter } from 'events';
 
 import { SubmittableExtrinsic } from '@polkadot/api/types';
+import { SignerOptions } from '@polkadot/api-base/types';
 import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -397,86 +398,98 @@ export abstract class PolymeshTransactionBase<
 
     const txWithArgs = this.composeTx();
 
+    const signerOptions = {
+      nonce,
+      /*
+       * allows signers (e.g. Ledger devices signing via the generic app) to return a modified
+       *   `signedTransaction`, which is required when signed extensions like `CheckMetadataHash` alter the payload
+       */
+      withSignedTransaction: true,
+      /*
+       * a returned `signedTransaction` may only alter signed extensions (e.g. `mode`, `metadataHash`).
+       *   The API will reject any submission where the signer changed the call data itself
+       */
+      allowCallDataAlteration: false,
+      ...(signer && { signer }),
+      ...(era !== undefined ? { era } : {}),
+    };
+
     if (context.supportsSubscription()) {
       return new Promise((resolve, reject) => {
         let settingBlockData = Promise.resolve();
-        const gettingUnsub = txWithArgs.signAndSend(
-          signingAddress,
-          { nonce, ...(signer && { signer }), ...(era !== undefined ? { era } : {}) },
-          receipt => {
-            const { status } = receipt;
-            let isLastCallback = false;
-            let unsubscribing = Promise.resolve();
-            let extrinsicFailedEvent;
+        const gettingUnsub = txWithArgs.signAndSend(signingAddress, signerOptions, receipt => {
+          const { status } = receipt;
+          let isLastCallback = false;
+          let unsubscribing = Promise.resolve();
+          let extrinsicFailedEvent;
 
-            if (status.isFuture) {
-              this.updateStatus(TransactionStatus.Future);
-            } else if (receipt.isCompleted) {
-              // isCompleted implies status is one of: isFinalized, isInBlock or isError
-              if (receipt.isInBlock) {
-                const inBlockHash = status.asInBlock;
-                /*
-                 * this must be done to ensure that the block hash and number are set before the success event
-                 *   is emitted, and at the same time. We do not resolve or reject the containing promise until this
-                 *   one resolves
-                 */
-                settingBlockData = defusePromise(
-                  this.context.polymeshApi.rpc.chain.getBlock(inBlockHash).then(({ block }) => {
-                    this.blockHash = hashToString(inBlockHash);
-                    this.blockNumber = u32ToBigNumber(block.header.number.unwrap());
-
-                    // we know that the index has to be set by the time the transaction is included in a block
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    this.txIndex = new BigNumber(receipt.txIndex!);
-                    this.updateStatus(TransactionStatus.InBlock);
-                  })
-                );
-
-                // if the extrinsic failed due to an on-chain error, we should handle it in a special way
-                [extrinsicFailedEvent] = filterEventRecords(
-                  receipt,
-                  'system',
-                  'ExtrinsicFailed',
-                  true
-                );
-                // extrinsic failed so we can unsubscribe
-                isLastCallback = !!extrinsicFailedEvent;
-              } else {
-                // isFinalized || isError so we know we can unsubscribe
-                isLastCallback = true;
-              }
-
-              if (isLastCallback) {
-                unsubscribing = gettingUnsub.then((unsub: UnsubCallback) => {
-                  unsub();
-                });
-              }
-
+          if (status.isFuture) {
+            this.updateStatus(TransactionStatus.Future);
+          } else if (receipt.isCompleted) {
+            // isCompleted implies status is one of: isFinalized, isInBlock or isError
+            if (receipt.isInBlock) {
+              const inBlockHash = status.asInBlock;
               /*
-               * Promise chain that handles all sub-promises in this pass through the signAndSend callback.
-               * Primarily for consistent error handling
+               * this must be done to ensure that the block hash and number are set before the success event
+               *   is emitted, and at the same time. We do not resolve or reject the containing promise until this
+               *   one resolves
                */
-              let finishing = Promise.resolve();
+              settingBlockData = defusePromise(
+                this.context.polymeshApi.rpc.chain.getBlock(inBlockHash).then(({ block }) => {
+                  this.blockHash = hashToString(inBlockHash);
+                  this.blockNumber = u32ToBigNumber(block.header.number.unwrap());
 
-              if (extrinsicFailedEvent) {
-                const { data } = extrinsicFailedEvent;
+                  // we know that the index has to be set by the time the transaction is included in a block
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  this.txIndex = new BigNumber(receipt.txIndex!);
+                  this.updateStatus(TransactionStatus.InBlock);
+                })
+              );
 
-                finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
-                  const error = handleExtrinsicFailure(data[0]);
-                  reject(error);
-                });
-              } else if (receipt.isFinalized) {
-                finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
-                  this.handleExtrinsicSuccess(resolve, reject, receipt);
-                });
-              } else if (receipt.isError) {
-                reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
-              }
-
-              finishing.catch((err: Error) => reject(err));
+              // if the extrinsic failed due to an on-chain error, we should handle it in a special way
+              [extrinsicFailedEvent] = filterEventRecords(
+                receipt,
+                'system',
+                'ExtrinsicFailed',
+                true
+              );
+              // extrinsic failed so we can unsubscribe
+              isLastCallback = !!extrinsicFailedEvent;
+            } else {
+              // isFinalized || isError so we know we can unsubscribe
+              isLastCallback = true;
             }
+
+            if (isLastCallback) {
+              unsubscribing = gettingUnsub.then((unsub: UnsubCallback) => {
+                unsub();
+              });
+            }
+
+            /*
+             * Promise chain that handles all sub-promises in this pass through the signAndSend callback.
+             * Primarily for consistent error handling
+             */
+            let finishing = Promise.resolve();
+
+            if (extrinsicFailedEvent) {
+              const { data } = extrinsicFailedEvent;
+
+              finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
+                const error = handleExtrinsicFailure(data[0]);
+                reject(error);
+              });
+            } else if (receipt.isFinalized) {
+              finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
+                this.handleExtrinsicSuccess(resolve, reject, receipt);
+              });
+            } else if (receipt.isError) {
+              reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
+            }
+
+            finishing.catch((err: Error) => reject(err));
           }
-        );
+        });
 
         gettingUnsub
           .then(() => {
@@ -489,50 +502,68 @@ export abstract class PolymeshTransactionBase<
           });
       });
     } else {
-      const startingBlock = await context.getLatestBlock();
-
-      await txWithArgs
-        .signAndSend(signingAddress, {
-          nonce,
-          ...(signer && { signer }),
-          ...(era !== undefined ? { era } : {}),
-        })
-        .then(() => {
-          this.setIsRunningStatus(txWithArgs.hash.toString());
-        })
-        .catch((err: Error) => {
-          const error = handleTransactionSubmissionError(err);
-
-          throw new PolymeshError(error);
-        });
-
-      const finalizedReceipt = await pollForTransactionFinalization(
-        txWithArgs.hash,
-        startingBlock,
-        context
-      );
-
-      this.blockHash = hashToString(finalizedReceipt.status.asFinalized);
-      this.blockNumber = u32ToBigNumber(finalizedReceipt.blockNumber!);
-      this.txIndex = new BigNumber(finalizedReceipt.txIndex!);
-
-      // if the extrinsic failed due to an on-chain error, we should handle it in a special way
-      const [extrinsicFailedEvent] = filterEventRecords(
-        finalizedReceipt,
-        'system',
-        'ExtrinsicFailed',
-        true
-      );
-
-      if (extrinsicFailedEvent) {
-        const { data } = extrinsicFailedEvent;
-        const error = handleExtrinsicFailure(data[0]);
-
-        throw error;
-      }
-
-      return finalizedReceipt;
+      return this.runViaPolling(txWithArgs, signerOptions);
     }
+  }
+
+  /**
+   * @hidden
+   *
+   * Sign and submit the transaction, then poll for its finalization. Used when the
+   *   node connection does not support subscriptions
+   */
+  private async runViaPolling(
+    txWithArgs: SubmittableExtrinsic<'promise', ISubmittableResult>,
+    signerOptions: Partial<SignerOptions>
+  ): Promise<ISubmittableResult> {
+    const { signingAddress, context } = this;
+
+    const startingBlock = await context.getLatestBlock();
+
+    /*
+     * the resolved hash is used instead of `txWithArgs.hash` because a signer may return a modified
+     *   `signedTransaction` (e.g. Ledger devices signing via the generic app), in which case the
+     *   submitted extrinsic's hash can differ from the locally composed one
+     */
+    const submittedTxHash = await txWithArgs
+      .signAndSend(signingAddress, signerOptions)
+      .then(txHash => {
+        this.setIsRunningStatus(txHash.toString());
+
+        return txHash;
+      })
+      .catch((err: Error) => {
+        const error = handleTransactionSubmissionError(err);
+
+        throw new PolymeshError(error);
+      });
+
+    const finalizedReceipt = await pollForTransactionFinalization(
+      submittedTxHash,
+      startingBlock,
+      context
+    );
+
+    this.blockHash = hashToString(finalizedReceipt.status.asFinalized);
+    this.blockNumber = u32ToBigNumber(finalizedReceipt.blockNumber!);
+    this.txIndex = new BigNumber(finalizedReceipt.txIndex!);
+
+    // if the extrinsic failed due to an on-chain error, we should handle it in a special way
+    const [extrinsicFailedEvent] = filterEventRecords(
+      finalizedReceipt,
+      'system',
+      'ExtrinsicFailed',
+      true
+    );
+
+    if (extrinsicFailedEvent) {
+      const { data } = extrinsicFailedEvent;
+      const error = handleExtrinsicFailure(data[0]);
+
+      throw error;
+    }
+
+    return finalizedReceipt;
   }
 
   /**

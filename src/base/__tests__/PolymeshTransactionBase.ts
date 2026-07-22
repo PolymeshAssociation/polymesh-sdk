@@ -726,7 +726,11 @@ describe('Polymesh Transaction Base class', () => {
       await tx.run();
       expect(txWithArgsMock.signAndSend).toHaveBeenCalledWith(
         txSpec.signingAddress,
-        expect.objectContaining({ era: 0 }),
+        expect.objectContaining({
+          era: 0,
+          withSignedTransaction: true,
+          allowCallDataAlteration: false,
+        }),
         expect.any(Function)
       );
     });
@@ -810,7 +814,12 @@ describe('Polymesh Transaction Base class', () => {
       const result = await tx.run();
       expect(txWithArgsMock.signAndSend).toHaveBeenCalledWith(
         txSpec.signingAddress,
-        expect.objectContaining({ nonce: -1, signer: 'signer' })
+        expect.objectContaining({
+          nonce: -1,
+          signer: 'signer',
+          withSignedTransaction: true,
+          allowCallDataAlteration: false,
+        })
       );
 
       expect(tx.blockHash).toEqual('blockHash');
@@ -891,7 +900,13 @@ describe('Polymesh Transaction Base class', () => {
       await tx.run();
       expect(txWithArgsMock.signAndSend).toHaveBeenCalledWith(
         txSpec.signingAddress,
-        expect.objectContaining({ nonce: -1, signer: 'signer', era: 0 })
+        expect.objectContaining({
+          nonce: -1,
+          signer: 'signer',
+          era: 0,
+          withSignedTransaction: true,
+          allowCallDataAlteration: false,
+        })
       );
     });
 
