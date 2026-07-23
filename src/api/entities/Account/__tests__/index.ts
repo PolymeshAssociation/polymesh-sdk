@@ -20,7 +20,6 @@ import {
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
-  Balance,
   ErrorCode,
   ModuleName,
   MultiSigTx,
@@ -113,6 +112,8 @@ describe('Account class', () => {
         free: new BigNumber(100),
         locked: new BigNumber(10),
         total: new BigNumber(110),
+        reserved: new BigNumber(0),
+        frozen: new BigNumber(0),
       };
     });
 
@@ -132,7 +133,7 @@ describe('Account class', () => {
       const callback = jest.fn();
 
       context.accountBalance = jest.fn();
-      context.accountBalance.mockImplementation((_, cbFunc: (balance: Balance) => void) => {
+      context.accountBalance.mockImplementation((_, cbFunc: (balance: AccountBalance) => void) => {
         cbFunc(fakeResult);
         return unsubCallback;
       });

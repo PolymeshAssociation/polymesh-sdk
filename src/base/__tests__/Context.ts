@@ -380,6 +380,13 @@ describe('Context class', () => {
     const free = new BigNumber(100);
     const reserved = new BigNumber(40);
     const frozen = new BigNumber(25);
+    const existentialDeposit = new BigNumber(1);
+
+    beforeEach(() => {
+      dsMockUtils.setConstMock('balances', 'existentialDeposit', {
+        returnValue: dsMockUtils.createMockBalance(existentialDeposit),
+      });
+    });
 
     it('should throw if there is no signing Account and no Account is passed', async () => {
       const context = await Context.create({
@@ -413,9 +420,11 @@ describe('Context class', () => {
 
       const result = await context.accountBalance();
       expect(result).toEqual({
-        free: free.minus(frozen).shiftedBy(-6),
-        locked: frozen.shiftedBy(-6),
+        free: free.minus(existentialDeposit).shiftedBy(-6),
+        locked: reserved.plus(existentialDeposit).shiftedBy(-6),
         total: free.plus(reserved).shiftedBy(-6),
+        reserved: reserved.shiftedBy(-6),
+        frozen: frozen.shiftedBy(-6),
       });
     });
 
@@ -439,9 +448,71 @@ describe('Context class', () => {
 
       const result = await context.accountBalance('someAddress');
       expect(result).toEqual({
-        free: free.minus(frozen).shiftedBy(-6),
-        locked: frozen.shiftedBy(-6),
+        free: free.minus(existentialDeposit).shiftedBy(-6),
+        locked: reserved.plus(existentialDeposit).shiftedBy(-6),
         total: free.plus(reserved).shiftedBy(-6),
+        reserved: reserved.shiftedBy(-6),
+        frozen: frozen.shiftedBy(-6),
+      });
+    });
+
+    it('should deduct the frozen amount not covered by the reserved balance from the free balance', async () => {
+      const frozenOverReserved = new BigNumber(75);
+      const returnValue = dsMockUtils.createMockAccountInfo({
+        nonce: dsMockUtils.createMockIndex(),
+        refcount: dsMockUtils.createMockRefCount(),
+        data: dsMockUtils.createMockAccountData({
+          free,
+          reserved,
+          frozen: frozenOverReserved,
+        }),
+      });
+
+      dsMockUtils.createQueryMock('system', 'account', { returnValue });
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const result = await context.accountBalance('someAddress');
+      expect(result).toEqual({
+        free: free.minus(frozenOverReserved.minus(reserved)).shiftedBy(-6),
+        locked: reserved.plus(frozenOverReserved.minus(reserved)).shiftedBy(-6),
+        total: free.plus(reserved).shiftedBy(-6),
+        reserved: reserved.shiftedBy(-6),
+        frozen: frozenOverReserved.shiftedBy(-6),
+      });
+    });
+
+    it('should return a zero free balance for a fully staked Account', async () => {
+      const stakedFree = new BigNumber(1);
+      const stakedReserved = new BigNumber(150909701126);
+      const stakedFrozen = new BigNumber(133054349116);
+      const returnValue = dsMockUtils.createMockAccountInfo({
+        nonce: dsMockUtils.createMockIndex(),
+        refcount: dsMockUtils.createMockRefCount(),
+        data: dsMockUtils.createMockAccountData({
+          free: stakedFree,
+          reserved: stakedReserved,
+          frozen: stakedFrozen,
+        }),
+      });
+
+      dsMockUtils.createQueryMock('system', 'account', { returnValue });
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const result = await context.accountBalance('someAddress');
+      expect(result).toEqual({
+        free: new BigNumber(0),
+        locked: stakedFree.plus(stakedReserved).shiftedBy(-6),
+        total: stakedFree.plus(stakedReserved).shiftedBy(-6),
+        reserved: stakedReserved.shiftedBy(-6),
+        frozen: stakedFrozen.shiftedBy(-6),
       });
     });
 
@@ -474,9 +545,11 @@ describe('Context class', () => {
 
       expect(result).toEqual(unsubCallback);
       expect(callback).toHaveBeenCalledWith({
-        free: free.minus(frozen).shiftedBy(-6),
-        locked: frozen.shiftedBy(-6),
+        free: free.minus(existentialDeposit).shiftedBy(-6),
+        locked: reserved.plus(existentialDeposit).shiftedBy(-6),
         total: free.plus(reserved).shiftedBy(-6),
+        reserved: reserved.shiftedBy(-6),
+        frozen: frozen.shiftedBy(-6),
       });
     });
   });

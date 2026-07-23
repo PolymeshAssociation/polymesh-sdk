@@ -450,7 +450,7 @@ interface TxMockData {
 interface ContextOptions {
   did?: string;
   withSigningManager?: boolean;
-  balance?: AccountBalance;
+  balance?: Partial<AccountBalance>;
   subsidy?: SubsidyWithAllowance;
   hasRoles?: boolean;
   checkRoles?: CheckRolesResult;
@@ -704,6 +704,8 @@ const defaultContextOptions: ContextOptions = {
     free: new BigNumber(100),
     locked: new BigNumber(10),
     total: new BigNumber(110),
+    reserved: new BigNumber(0),
+    frozen: new BigNumber(0),
   },
   hasRoles: true,
   checkRoles: {
@@ -1844,7 +1846,7 @@ export function throwOnApiCreation(error?: unknown): void {
  *
  * @param balance - new account balance
  */
-export function setContextAccountBalance(balance: AccountBalance): void {
+export function setContextAccountBalance(balance: Partial<AccountBalance>): void {
   mockInstanceContainer.contextInstance.accountBalance.mockResolvedValue(balance as any);
 }
 

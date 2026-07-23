@@ -379,32 +379,50 @@ export class Context {
       data: { free: rawFree, miscFrozen, feeFrozen, reserved: rawReserved },
     }: AccountInfo): AccountBalance => {
       /*
-       * The chain's "free" balance is the balance that isn't locked. Here we calculate it so
-       * the free balance is what the Account is able to spend
+       * On v7 chains, frozen funds are carved out of the chain's "free" balance, so the spendable
+       * balance is the free balance minus the largest freeze, minus anything reserved
        */
       const reserved = balanceToBigNumber(rawReserved);
       const total = balanceToBigNumber(rawFree).plus(reserved);
-      const locked = BigNumber.max(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen));
+      const frozen = BigNumber.max(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen));
+      const free = total.minus(frozen).minus(reserved);
       return {
         total,
-        locked,
-        free: total.minus(locked).minus(reserved),
+        locked: total.minus(free),
+        free,
+        reserved,
+        frozen,
       };
     };
 
     const v8AssembleResult = ({ data }: FrameSystemAccountInfo): AccountBalance => {
-      const { free: rawFree, frozen: feeFrozen, reserved: rawReserved } = data;
+      const { free: rawFree, frozen: rawFrozen, reserved: rawReserved } = data;
+      const {
+        consts: {
+          balances: { existentialDeposit },
+        },
+      } = this.polymeshApi;
       /*
-       * The chain's "free" balance is the balance that isn't locked. Here we calculate it so
-       * the free balance is what the Account is able to spend
+       * The chain's "free" balance still includes frozen funds, while funds on hold (e.g. bonded
+       * for staking) are tracked in "reserved". Frozen funds can overlap with funds on hold, so
+       * the spendable balance is calculated as per the chain's rules:
+       *   transferable = free - max(frozen - reserved, ED)
        */
       const reserved = balanceToBigNumber(rawReserved);
-      const total = balanceToBigNumber(rawFree).plus(reserved);
-      const locked = balanceToBigNumber(feeFrozen);
+      const chainFree = balanceToBigNumber(rawFree);
+      const total = chainFree.plus(reserved);
+      const frozen = balanceToBigNumber(rawFrozen);
+      const untouchable = BigNumber.max(
+        frozen.minus(reserved),
+        balanceToBigNumber(existentialDeposit)
+      );
+      const free = BigNumber.max(chainFree.minus(untouchable), 0);
       return {
         total,
-        locked,
-        free: total.minus(locked).minus(reserved),
+        locked: total.minus(free),
+        free,
+        reserved,
+        frozen,
       };
     };
 

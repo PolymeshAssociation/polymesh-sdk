@@ -243,7 +243,7 @@ interface AccountOptions extends EntityOptions {
   address?: string;
   key?: string;
   isFrozen?: EntityGetter<boolean>;
-  getBalance?: EntityGetter<AccountBalance>;
+  getBalance?: EntityGetter<Partial<AccountBalance>>;
   getIdentity?: EntityGetter<Identity | null>;
   getTransactionHistory?: EntityGetter<ExtrinsicData[]>;
   hasPermissions?: EntityGetter<boolean>;
@@ -914,6 +914,8 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
       free: new BigNumber(100),
       locked: new BigNumber(10),
       total: new BigNumber(110),
+      reserved: new BigNumber(0),
+      frozen: new BigNumber(0),
     },
     getTransactionHistory: [],
     getIdentity: getIdentityInstance(),
@@ -2212,6 +2214,8 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
       free: new BigNumber(100),
       locked: new BigNumber(10),
       total: new BigNumber(110),
+      reserved: new BigNumber(0),
+      frozen: new BigNumber(0),
     },
     getTransactionHistory: [],
     getIdentity: getIdentityInstance(),

@@ -6,11 +6,11 @@ import { EventIdentifier } from '~/types';
 
 export interface Balance {
   /**
-   * balance available for transferring and paying fees
+   * balance available for transferring
    */
   free: BigNumber;
   /**
-   * unavailable balance, either bonded for staking or locked for some other purpose
+   * unavailable balance, locked for some purpose (e.g. pending settlement instructions)
    */
   locked: BigNumber;
   /**
@@ -19,7 +19,44 @@ export interface Balance {
   total: BigNumber;
 }
 
-export type AccountBalance = Balance;
+/**
+ * POLYX balance of an Account
+ */
+export interface AccountBalance {
+  /**
+   * balance that is guaranteed to be spendable on transfers and transaction fees. Calculated according
+   *   to the chain's rules as `chain free - max(frozen - reserved, existential deposit)`
+   *
+   * @note this differs from the chain's raw `free` value, which still includes frozen funds. The
+   *   existential deposit (0.000001 POLYX) is always treated as unspendable, so this value is a
+   *   lower bound on what the Account can spend without risk of the transaction failing
+   */
+  free: BigNumber;
+  /**
+   * balance that is unavailable for spending. Made up of funds on hold (`reserved`, e.g. bonded for
+   *   staking), frozen funds not covered by holds (`frozen`) and the existential
+   *   deposit. Always equal to `total - free`
+   */
+  locked: BigNumber;
+  /**
+   * total balance owned by the Account, including unavailable funds. Equal to the chain's
+   *   `free + reserved`, and to `free + locked` as returned here
+   */
+  total: BigNumber;
+  /**
+   * balance placed on hold by the protocol, e.g. POLYX bonded for staking. Held funds are not part
+   *   of the chain's `free` balance and cannot be spent until released (e.g. unbonded and withdrawn).
+   *   Corresponds to the chain's raw `reserved` value
+   */
+  reserved: BigNumber;
+  /**
+   * minimum balance (out of `total`) that must remain in the Account due to freezes/locks.
+   *   Frozen funds may overlap with `reserved` funds. Corresponds to the chain's raw `frozen` value
+   *
+   * @note on v7 chains this is the maximum of the chain's `miscFrozen` and `feeFrozen` values
+   */
+  frozen: BigNumber;
+}
 
 /**
  * Distinguishes MultiSig and Smart Contract accounts

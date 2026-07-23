@@ -151,6 +151,8 @@ describe('Network Class', () => {
         free: new BigNumber(500000),
         locked: new BigNumber(0),
         total: new BigNumber(500000),
+        reserved: new BigNumber(0),
+        frozen: new BigNumber(0),
       };
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
     });
