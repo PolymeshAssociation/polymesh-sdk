@@ -110,7 +110,7 @@ describe('Instruction class', () => {
   });
 
   it('should extend Entity', () => {
-    expect(Instruction.prototype instanceof Entity).toBe(true);
+    expect(Instruction.prototype).toBeInstanceOf(Entity);
   });
 
   describe('method: isUniqueIdentifiers', () => {

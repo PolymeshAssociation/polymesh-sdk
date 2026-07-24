@@ -3,7 +3,7 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
-import { groupBy, uniq } from 'lodash';
+import { groupBy } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { claimsQuery } from '~/middleware/queries/claims';
@@ -141,7 +141,7 @@ export async function prepareModifyClaims(
     );
   }
 
-  allTargets = uniq(allTargets);
+  allTargets = [...new Set(allTargets)];
 
   const [nonExistentDids, middlewareAvailable] = await Promise.all([
     context.getInvalidDids(allTargets),

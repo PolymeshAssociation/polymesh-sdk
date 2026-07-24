@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
+import { isEqual, uniqBy, uniqWith } from 'lodash';
 
 import {
   Context,
@@ -233,7 +233,7 @@ export class Claims {
       );
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      targetIssuers = flatten(groupedTargets!.map(groupedTarget => groupedTarget.keys!));
+      targetIssuers = groupedTargets!.map(groupedTarget => groupedTarget.keys!).flat();
     }
 
     // note: pagination count is based on the target issuers and not the claims count
@@ -403,7 +403,7 @@ export class Claims {
 
     const identitiesWithClaims = issuers.map(identity => ({
       identity,
-      claims: filter(identityClaimsFromChain, ({ issuer }) => issuer.isEqual(identity)),
+      claims: identityClaimsFromChain.filter(({ issuer }) => issuer.isEqual(identity)),
     }));
 
     return {
@@ -467,7 +467,7 @@ export class Claims {
         );
 
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        claimIssuers = flatten(groupedIssuers!.map(groupedAggregate => groupedAggregate.keys!));
+        claimIssuers = groupedIssuers!.map(groupedAggregate => groupedAggregate.keys!).flat();
       }
 
       // note: pagination count is based on the claim issuers and not the claims count

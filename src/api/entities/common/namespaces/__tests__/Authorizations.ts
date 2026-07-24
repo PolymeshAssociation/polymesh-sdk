@@ -43,7 +43,7 @@ describe('Authorizations class', () => {
   });
 
   it('should extend namespace', () => {
-    expect(Authorizations.prototype instanceof Namespace).toBe(true);
+    expect(Authorizations.prototype).toBeInstanceOf(Namespace);
   });
 
   describe('method: getReceived', () => {

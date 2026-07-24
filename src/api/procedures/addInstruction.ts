@@ -9,7 +9,7 @@ import {
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { flatten, isEqual, union, unionWith } from 'lodash';
+import { isEqual, union, unionWith } from 'lodash';
 
 import {
   assertAssetHolderExists,
@@ -941,7 +941,7 @@ export async function prepareStorage(
           return result;
         })
       );
-      return flatten(portfolios);
+      return portfolios.flat();
     })
   );
 

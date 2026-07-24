@@ -188,7 +188,7 @@ describe('Claims Class', () => {
 
       expect(result.data).toEqual(expect.arrayContaining(expectedClaims));
       expect(result.count).toEqual(new BigNumber(1));
-      expect(result.next).toEqual(null);
+      expect(result.next).toBeNull();
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
@@ -220,7 +220,7 @@ describe('Claims Class', () => {
 
       expect(result.data).toEqual(expect.arrayContaining(expectedClaims));
       expect(result.count).toEqual(new BigNumber(1));
-      expect(result.next).toEqual(null);
+      expect(result.next).toBeNull();
     });
 
     it('should return a list of Identities with claims associated to them filtered by scope', async () => {
@@ -466,7 +466,7 @@ describe('Claims Class', () => {
 
       result = await claims.getClaimScopes();
 
-      expect(result.length).toEqual(2);
+      expect(result).toHaveLength(2);
     });
 
     it('should return a list of scopes and asset IDs with middleware enabled', async () => {
@@ -655,7 +655,7 @@ describe('Claims Class', () => {
       expect(result[0]!.scope).toEqual({ type: ScopeType.Identity, value: someDid });
       expect(result[1]!.assetId).toEqual(assetId);
       expect(result[1]!.scope).toEqual({ type: ScopeType.Asset, value: assetId });
-      expect(result.length).toEqual(2);
+      expect(result).toHaveLength(2);
       expect(getIdentitiesWithClaimsSpy).toHaveBeenCalledTimes(2);
     });
   });
@@ -740,7 +740,7 @@ describe('Claims Class', () => {
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(new BigNumber(1));
-      expect(result.next).toEqual(null);
+      expect(result.next).toBeNull();
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
@@ -848,13 +848,13 @@ describe('Claims Class', () => {
         target,
       });
 
-      expect(result.data.length).toEqual(2);
+      expect(result.data).toHaveLength(2);
       expect(result.data[0]!.identity.did).toEqual(issuer);
-      expect(result.data[0]!.claims.length).toEqual(2);
+      expect(result.data[0]!.claims).toHaveLength(2);
       expect(result.data[0]!.claims[0]!.claim).toEqual(identityClaims[0]!.claim);
       expect(result.data[0]!.claims[1]!.claim).toEqual(identityClaims[1]!.claim);
       expect(result.data[1]!.identity.did).toEqual(otherIssuer);
-      expect(result.data[1]!.claims.length).toEqual(1);
+      expect(result.data[1]!.claims).toHaveLength(1);
       expect(result.data[1]!.claims[0]!.claim).toEqual(identityClaims[2]!.claim);
 
       result = await claims.getTargetingClaims({
@@ -862,7 +862,7 @@ describe('Claims Class', () => {
         trustedClaimIssuers: ['trusted'],
       });
 
-      expect(result.data.length).toEqual(2);
+      expect(result.data).toHaveLength(2);
     });
   });
 

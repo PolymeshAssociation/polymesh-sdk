@@ -19,7 +19,7 @@ import {
 import { CallFunction, Codec, DetectCodec, Signer as PolkadotSigner } from '@polkadot/types/types';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import BigNumber from 'bignumber.js';
-import { chunk, clone, flatten, flattenDeep } from 'lodash';
+import { chunk, clone, flattenDeep } from 'lodash';
 import { gte } from 'semver';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
@@ -321,11 +321,11 @@ export class Context {
 
     const accounts = await signingManager.getAccounts();
 
-    const newSigningAddress = accounts.find(account => {
+    const hasSigningAddress = accounts.some(account => {
       return account === address;
     });
 
-    if (!newSigningAddress) {
+    if (!hasSigningAddress) {
       throw new PolymeshError({
         code: ErrorCode.General,
         message: 'The Account is not part of the Signing Manager attached to the SDK',
@@ -846,7 +846,7 @@ export class Context {
           corporateActionQuery.corporateActions.entries(assetToMeshAssetId(assetValue, this))
         )
       );
-      const eligibleCas = flatten(corporateActions).filter(([, action]) => {
+      const eligibleCas = corporateActions.flat().filter(([, action]) => {
         const kind = action.unwrap().kind;
 
         return kind.isUnpredictableBenefit || kind.isPredictableBenefit;

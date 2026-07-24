@@ -5,7 +5,7 @@ import {
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
+import { chunk, differenceWith, intersectionWith, uniqBy } from 'lodash';
 
 import { AssetPermissions } from '~/api/entities/Identity/AssetPermissions';
 import { IdentityAuthorizations } from '~/api/entities/Identity/IdentityAuthorizations';
@@ -649,7 +649,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       );
 
       const uniqueEntries = uniqBy(
-        flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
+        auths.flat().map(([key, status]) => ({ id: key.args[1], status })),
         ({ id, status }) => `${id.toString()}-${status.type}`
       );
 

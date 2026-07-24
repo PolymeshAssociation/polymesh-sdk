@@ -134,7 +134,7 @@ describe('Identity class', () => {
   });
 
   it('should extend Entity', () => {
-    expect(Identity.prototype instanceof Entity).toBe(true);
+    expect(Identity.prototype).toBeInstanceOf(Entity);
   });
 
   describe('constructor', () => {

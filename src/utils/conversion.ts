@@ -128,18 +128,14 @@ import BigNumber from 'bignumber.js';
 import { computeWithoutCheck } from 'iso-7064';
 import {
   camelCase,
-  flatten,
   forEach,
   groupBy,
-  includes,
   isEqual,
   map,
   range,
   rangeRight,
   snakeCase,
-  uniq,
   uniqWith,
-  values,
 } from 'lodash';
 
 import {
@@ -1027,7 +1023,7 @@ export function transactionPermissionsToTxGroups(
     excludedTags = transactionValues;
   }
 
-  return values(TxGroup)
+  return Object.values(TxGroup)
     .sort()
     .filter(group => {
       const tagsInGroup = txGroupToTxTags(group);
@@ -1064,29 +1060,27 @@ function initExtrinsicDict(
 ): Record<string, { tx: string[]; exception?: true } | null> {
   const extrinsicDict: Record<string, { tx: string[]; exception?: true } | null> = {};
 
-  uniq(txValues)
-    .sort()
-    .forEach(tag => {
-      if (tag.includes('.')) {
-        const { palletName, dispatchableName } = splitTag(tag as TxTag);
-        let pallet = extrinsicDict[palletName];
+  [...new Set(txValues)].sort().forEach(tag => {
+    if (tag.includes('.')) {
+      const { palletName, dispatchableName } = splitTag(tag as TxTag);
+      let pallet = extrinsicDict[palletName];
 
-        if (pallet === null) {
-          throw new PolymeshError({
-            code: ErrorCode.ValidationError,
-            message,
-            data: {
-              module: palletName,
-              transactions: [dispatchableName],
-            },
-          });
-        } else pallet ??= extrinsicDict[palletName] = { tx: [] };
+      if (pallet === null) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message,
+          data: {
+            module: palletName,
+            transactions: [dispatchableName],
+          },
+        });
+      } else pallet ??= extrinsicDict[palletName] = { tx: [] };
 
-        pallet.tx.push(dispatchableName);
-      } else {
-        extrinsicDict[stringUpperFirst(tag)] = null;
-      }
-    });
+      pallet.tx.push(dispatchableName);
+    } else {
+      extrinsicDict[stringUpperFirst(tag)] = null;
+    }
+  });
 
   return extrinsicDict;
 }
@@ -2934,7 +2928,7 @@ export function complianceRequirementResultToRequirementCompliance(
         complies: boolToBoolean(result),
       };
 
-      const existingCondition = conditions.find(condition =>
+      const existingCondition = conditions.some(condition =>
         conditionCompliancesAreEqual(condition, newCondition)
       );
 
@@ -3003,7 +2997,7 @@ export function complianceRequirementReportToRequirementCompliance(
         complies: boolToBoolean(satisfied),
       };
 
-      const existingCondition = conditions.find(condition =>
+      const existingCondition = conditions.some(condition =>
         conditionCompliancesAreEqual(condition, newCondition)
       );
 
@@ -3066,7 +3060,7 @@ export function complianceRequirementToRequirement(
       );
     }
 
-    const existingCondition = conditions.find(condition =>
+    const existingCondition = conditions.some(condition =>
       conditionsAreEqual(condition, newCondition)
     );
 
@@ -3111,7 +3105,7 @@ export function txTagToProtocolOp(
   tag: TxTag,
   context: Context
 ): PolymeshPrimitivesProtocolFeeProtocolOp {
-  const protocolOpTags = [
+  const protocolOpTags: TxTag[] = [
     TxTags.asset.RegisterUniqueTicker,
     TxTags.asset.RegisterTicker,
     TxTags.asset.Issue,
@@ -3133,7 +3127,7 @@ export function txTagToProtocolOp(
   const [moduleName, extrinsicName] = tag.split('.');
   const value = `${stringUpperFirst(moduleName)}${stringUpperFirst(extrinsicName)}`;
 
-  if (!includes(protocolOpTags, tag)) {
+  if (!protocolOpTags.includes(tag)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: `${value} does not match any PolymeshPrimitivesProtocolFeeProtocolOp`,
@@ -3864,8 +3858,8 @@ export function permissionsLikeToPermissions(
   if (transactions !== undefined) {
     transactionPermissions = transactions;
   } else if (transactionGroups !== undefined) {
-    transactionGroupPermissions = uniq(transactionGroups);
-    const groupTags = flatten(transactionGroups.map(txGroupToTxTags));
+    transactionGroupPermissions = [...new Set(transactionGroups)];
+    const groupTags = transactionGroups.map(txGroupToTxTags).flat();
     transactionPermissions = {
       ...transactionPermissions,
       values: groupTags,

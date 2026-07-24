@@ -209,8 +209,8 @@ describe('Context class', () => {
       const result = await context.getSigningAccounts();
       expect(result[0]!.address).toBe(addresses[0]);
       expect(result[1]!.address).toBe(addresses[1]);
-      expect(result[0] instanceof Account).toBe(true);
-      expect(result[1] instanceof Account).toBe(true);
+      expect(result[0]).toBeInstanceOf(Account);
+      expect(result[1]).toBeInstanceOf(Account);
     });
 
     it('should return an empty array if signing manager is not set', async () => {
@@ -1689,7 +1689,7 @@ describe('Context class', () => {
         includeExpired: false,
       });
 
-      expect(data.length).toEqual(2);
+      expect(data).toHaveLength(2);
       expect(data[0]).toEqual(fakeClaims[1]);
       expect(data[1]).toEqual(fakeClaims[2]);
 
@@ -1701,7 +1701,7 @@ describe('Context class', () => {
         trustedClaimIssuers: [targetDid],
       });
 
-      expect(result.data.length).toEqual(0);
+      expect(result.data).toHaveLength(0);
 
       const customClaimTypeId = new BigNumber(1);
 
@@ -1719,7 +1719,7 @@ describe('Context class', () => {
         trustedClaimIssuers: [targetDid],
       });
 
-      expect(result.data.length).toEqual(0);
+      expect(result.data).toHaveLength(0);
     });
 
     it('should throw if the middleware V2 is not available and targets or claimTypes are not set', async () => {
@@ -2195,7 +2195,7 @@ describe('Context class', () => {
         assets: assetIds.map(assetId => entityMockUtils.getFungibleAssetInstance({ assetId })),
       });
 
-      expect(result.length).toBe(2);
+      expect(result).toHaveLength(2);
       expect(result[0]!.details.fundsReclaimed).toBe(false);
       expect(result[0]!.details.remainingFunds).toEqual(new BigNumber(400000));
       expect(result[0]!.distribution.origin).toEqual(
@@ -2204,7 +2204,7 @@ describe('Context class', () => {
       expect(result[0]!.distribution.currency).toBe('00000000-0000-8000-8000-000000000001');
       expect(result[0]!.distribution.perShare).toEqual(new BigNumber(10));
       expect(result[0]!.distribution.maxAmount).toEqual(new BigNumber(500000));
-      expect(result[0]!.distribution.expiryDate).toBe(null);
+      expect(result[0]!.distribution.expiryDate).toBeNull();
       expect(result[0]!.distribution.paymentDate).toEqual(new Date('10/14/1987'));
 
       expect(result[1]!.details.fundsReclaimed).toBe(false);
@@ -2218,7 +2218,7 @@ describe('Context class', () => {
       expect(result[1]!.distribution.currency).toBe('00000000-0000-8000-8000-000000000002');
       expect(result[1]!.distribution.perShare).toEqual(new BigNumber(20));
       expect(result[1]!.distribution.maxAmount).toEqual(new BigNumber(300000));
-      expect(result[1]!.distribution.expiryDate).toBe(null);
+      expect(result[1]!.distribution.expiryDate).toBeNull();
       expect(result[1]!.distribution.paymentDate).toEqual(new Date('11/26/1989'));
     });
   });
@@ -2548,7 +2548,7 @@ describe('Context class', () => {
       expect(result.data[0]).toEqual(fakeTxs[0]);
       expect(result.data[1]).toEqual(fakeTxs[1]);
       expect(result.count).toEqual(new BigNumber(2));
-      expect(result.next).toEqual(null);
+      expect(result.next).toBeNull();
 
       dsMockUtils.createApolloQueryMock(
         polyxTransactionsQuery(false, {}, new BigNumber(25), new BigNumber(0)),

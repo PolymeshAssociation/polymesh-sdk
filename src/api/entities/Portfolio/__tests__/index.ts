@@ -294,7 +294,7 @@ describe('Portfolio class', () => {
         assets: [hexToUuid(assetId0), new FungibleAsset({ assetId: otherAssetId }, context)],
       });
 
-      expect(result.length).toBe(2);
+      expect(result).toHaveLength(2);
       expect(result[0]!.asset.id).toBe(hexToUuid(assetId0));
       expect(result[0]!.total).toEqual(total0);
       expect(result[0]!.locked).toEqual(locked0);
@@ -427,7 +427,7 @@ describe('Portfolio class', () => {
 
       const result = await portfolio.getCollections({ collections: [hexToUuid(assetId)] });
 
-      expect(result.length).toEqual(1);
+      expect(result).toHaveLength(1);
 
       expect(result).toEqual(
         expect.arrayContaining([

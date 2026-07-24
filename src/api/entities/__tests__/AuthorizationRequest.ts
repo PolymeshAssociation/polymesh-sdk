@@ -45,7 +45,7 @@ describe('AuthorizationRequest class', () => {
   });
 
   it('should extend Entity', () => {
-    expect(AuthorizationRequest.prototype instanceof Entity).toBe(true);
+    expect(AuthorizationRequest.prototype).toBeInstanceOf(Entity);
   });
 
   describe('constructor', () => {

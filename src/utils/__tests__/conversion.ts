@@ -5310,7 +5310,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.type).toEqual(InstructionType.SettleOnBlock);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((result as any).endBlock).toEqual(endBlock);
-    expect(result.venueId).toEqual(undefined);
+    expect(result.venueId).toBeUndefined();
     expect(result.createdAt).toEqual(createdAt);
     resultLeg = result.legs[0] as NftLeg;
     expect(resultLeg.asset.id).toBe(hexToUuid(assetId));
@@ -7460,12 +7460,12 @@ describe('portfolioLikeToPortfolio', () => {
 
   it('should convert a PortfolioLike to a DefaultPortfolio instance', () => {
     const result = portfolioLikeToPortfolio(did, context);
-    expect(result instanceof DefaultPortfolio).toBe(true);
+    expect(result).toBeInstanceOf(DefaultPortfolio);
   });
 
   it('should convert a PortfolioLike to a NumberedPortfolio instance', () => {
     const result = portfolioLikeToPortfolio({ identity: did, id }, context);
-    expect(result instanceof NumberedPortfolio).toBe(true);
+    expect(result).toBeInstanceOf(NumberedPortfolio);
   });
 });
 
@@ -7715,7 +7715,7 @@ describe('middlewarePortfolioToPortfolio', () => {
     } as MiddlewarePortfolio;
 
     let result = middlewarePortfolioToPortfolio(middlewarePortfolio, context);
-    expect(result instanceof DefaultPortfolio).toBe(true);
+    expect(result).toBeInstanceOf(DefaultPortfolio);
 
     middlewarePortfolio = {
       identityId: 'someDid',
@@ -7723,7 +7723,7 @@ describe('middlewarePortfolioToPortfolio', () => {
     } as MiddlewarePortfolio;
 
     result = middlewarePortfolioToPortfolio(middlewarePortfolio, context);
-    expect(result instanceof NumberedPortfolio).toBe(true);
+    expect(result).toBeInstanceOf(NumberedPortfolio);
   });
 });
 
@@ -7735,7 +7735,7 @@ describe('middlewareAssetHolderToAssetHolder', () => {
     };
 
     const result = middlewareAssetHolderToAssetHolder(middlewareAssetHolder, context);
-    expect(result instanceof Account).toBe(true);
+    expect(result).toBeInstanceOf(Account);
     expect((result as Account).address).toBe('someAccount');
   });
 
@@ -7747,7 +7747,7 @@ describe('middlewareAssetHolderToAssetHolder', () => {
     };
 
     let result = middlewareAssetHolderToAssetHolder(middlewareAssetHolder, context);
-    expect(result instanceof DefaultPortfolio).toBe(true);
+    expect(result).toBeInstanceOf(DefaultPortfolio);
 
     middlewareAssetHolder = {
       identityId: 'someDid',
@@ -7755,7 +7755,7 @@ describe('middlewareAssetHolderToAssetHolder', () => {
     };
 
     result = middlewareAssetHolderToAssetHolder(middlewareAssetHolder, context);
-    expect(result instanceof NumberedPortfolio).toBe(true);
+    expect(result).toBeInstanceOf(NumberedPortfolio);
   });
 });
 
@@ -8697,7 +8697,7 @@ describe('checkpointToRecordDateSpec', () => {
     const value = null;
     const context = dsMockUtils.getContextInstance();
     const result = checkpointToRecordDateSpec(value, context);
-    expect(result).toEqual(null);
+    expect(result).toBeNull();
   });
 
   it('should convert a Checkpoint to a polkadot PalletCorporateActionsRecordDateSpec', () => {
@@ -11077,7 +11077,7 @@ describe('middlewarePortfolioDataToPortfolio', () => {
     };
 
     let result = middlewarePortfolioDataToPortfolio(defaultPortfolioData, context);
-    expect(result instanceof DefaultPortfolio).toBe(true);
+    expect(result).toBeInstanceOf(DefaultPortfolio);
 
     const numberedPortfolioData = {
       did: 'someDid',
@@ -11085,7 +11085,7 @@ describe('middlewarePortfolioDataToPortfolio', () => {
     };
 
     result = middlewarePortfolioDataToPortfolio(numberedPortfolioData, context);
-    expect(result instanceof NumberedPortfolio).toBe(true);
+    expect(result).toBeInstanceOf(NumberedPortfolio);
   });
 });
 

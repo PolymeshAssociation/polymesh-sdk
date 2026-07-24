@@ -4,7 +4,6 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { values } from 'lodash';
 
 import {
   HistoricSettlement,
@@ -300,7 +299,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       return filteredBalances;
     }
 
-    return values(assetBalances);
+    return Object.values(assetBalances);
   }
 
   /**
