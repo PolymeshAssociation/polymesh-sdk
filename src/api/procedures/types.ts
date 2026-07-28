@@ -1213,6 +1213,10 @@ export interface OffChainAffirmationReceipt {
    * (optional) Metadata value that can be used to attach messages to the receipt
    */
   metadata: string | undefined;
+  /**
+   * Timestamp at which the receipt expires. Mandatory from chain 8.x onwards
+   */
+  expiresAt?: Date | undefined;
 }
 
 export type AffirmInstructionParams = {

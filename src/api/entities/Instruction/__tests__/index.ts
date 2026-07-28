@@ -1,9 +1,10 @@
-import { Option, StorageKey, u64 } from '@polkadot/types';
+import { Bytes, Option, StorageKey, u64 } from '@polkadot/types';
 import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
 } from '@polkadot/types/lookup';
+import { stringToU8a, u8aConcat } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -2683,6 +2684,13 @@ describe('Instruction class', () => {
       jest
         .spyOn(utilsConversionModule, 'dateToMoment')
         .mockReturnValue(dsMockUtils.createMockMoment(new BigNumber(1000)));
+
+      const label = stringToU8a('Polymesh Settlement Receipt');
+      when(context.createType)
+        .calledWith('Bytes', 'Polymesh Settlement Receipt')
+        .mockReturnValue({
+          toU8a: () => u8aConcat(new Uint8Array([label.length << 2]), label),
+        } as unknown as Bytes);
     });
 
     it('should throw an error for an invalid leg ID', () => {
@@ -2761,10 +2769,12 @@ describe('Instruction class', () => {
         ),
       });
 
+      const expiresAt = new Date();
+
       let result = await instruction.generateOffChainAffirmationReceipt({
         legId,
         uid,
-        expiresAt: new Date(),
+        expiresAt,
       });
 
       expect(result).toEqual({
@@ -2778,10 +2788,12 @@ describe('Instruction class', () => {
           value: '0xsignature',
         },
         metadata: undefined,
+        expiresAt,
       });
 
       const signer = 'someSigner';
       const metadata = 'some metadata';
+      const otherExpiresAt = new Date();
 
       result = await instruction.generateOffChainAffirmationReceipt({
         legId,
@@ -2789,7 +2801,7 @@ describe('Instruction class', () => {
         signer,
         signerKeyRingType: SignerKeyRingType.Ed25519,
         metadata,
-        expiresAt: new Date(),
+        expiresAt: otherExpiresAt,
       });
 
       expect(result).toEqual({
@@ -2801,6 +2813,7 @@ describe('Instruction class', () => {
           value: '0xsignature',
         },
         metadata,
+        expiresAt: otherExpiresAt,
       });
 
       expect(context.getSignature).toHaveBeenCalledWith({

@@ -12014,12 +12014,14 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
 
     const signature = 'someSignature';
 
-    const fakeSignature = 'fakeSignature' as unknown as U8aFixed;
+    const fakeEcdsaSignature = 'fakeEcdsaSignature' as unknown as U8aFixed;
+    const fakeOtherSignature = 'fakeOtherSignature' as unknown as U8aFixed;
 
-    when(context.createType).calledWith('U8aFixed', signature).mockReturnValue(fakeSignature);
+    when(context.createType).calledWith('[u8;65]', signature).mockReturnValue(fakeEcdsaSignature);
+    when(context.createType).calledWith('[u8;64]', signature).mockReturnValue(fakeOtherSignature);
 
     when(context.createType)
-      .calledWith('SpRuntimeMultiSignature', { Ecdsa: fakeSignature })
+      .calledWith('SpRuntimeMultiSignature', { Ecdsa: fakeEcdsaSignature })
       .mockReturnValue(fakeResult);
 
     let result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Ecdsa, signature, context);
@@ -12027,7 +12029,7 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
     expect(result).toEqual(fakeResult);
 
     when(context.createType)
-      .calledWith('SpRuntimeMultiSignature', { Ed25519: fakeSignature })
+      .calledWith('SpRuntimeMultiSignature', { Ed25519: fakeOtherSignature })
       .mockReturnValue(fakeResult);
 
     result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Ed25519, signature, context);
@@ -12035,7 +12037,7 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
     expect(result).toEqual(fakeResult);
 
     when(context.createType)
-      .calledWith('SpRuntimeMultiSignature', { Sr25519: fakeSignature })
+      .calledWith('SpRuntimeMultiSignature', { Sr25519: fakeOtherSignature })
       .mockReturnValue(fakeResult);
 
     result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Sr25519, signature, context);
@@ -12150,8 +12152,8 @@ describe('receiptDetailsToMeshReceiptDetails', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should create receipt details', () => {
-    const context = dsMockUtils.getContextInstance();
+  it('should create receipt details on a v7 chain without expiresAt', () => {
+    const context = dsMockUtils.getContextInstance({ isV7: true });
     const instructionId = new BigNumber(1);
     const receipt: OffChainAffirmationReceipt = {
       uid: new BigNumber(1),
@@ -12189,6 +12191,69 @@ describe('receiptDetailsToMeshReceiptDetails', () => {
     const result = receiptDetailsToMeshReceiptDetails([receipt], instructionId, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  it('should create receipt details on a v8 chain with expiresAt forwarded', () => {
+    const context = dsMockUtils.getContextInstance({ isV7: false });
+    const instructionId = new BigNumber(1);
+    const expiresAt = new Date('2030/01/01');
+    const receipt: OffChainAffirmationReceipt = {
+      uid: new BigNumber(1),
+      legId: new BigNumber(0),
+      signer: '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
+      signature: {
+        type: SignerKeyRingType.Sr25519,
+        value: '0xsomevalue',
+      },
+      metadata: 'Random metadata',
+      expiresAt,
+    };
+    const fakeKey = 'fakeKey' as unknown as PolymeshPrimitivesSettlementReceiptDetails;
+    const fakeResult =
+      'fakeMetadataKeys' as unknown as Vec<PolymeshPrimitivesSettlementReceiptDetails>;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSettlementReceiptDetails', {
+        uid: bigNumberToU64(receipt.uid, context),
+        instructionId: bigNumberToU64(instructionId, context),
+        legId: bigNumberToU64(receipt.legId, context),
+        signer: stringToAccountId(receipt.signer as string, context),
+        signature: signatureToMeshRuntimeMultiSignature(
+          receipt.signature.type,
+          receipt.signature.value,
+          context
+        ),
+        expiresAt: dateToMoment(expiresAt, context),
+        metadata: offChainMetadataToMeshReceiptMetadata(receipt.metadata as string, context),
+      })
+      .mockReturnValue(fakeKey);
+
+    when(context.createType)
+      .calledWith('Vec<PolymeshPrimitivesSettlementReceiptDetails>', [fakeKey])
+      .mockReturnValue(fakeResult);
+
+    const result = receiptDetailsToMeshReceiptDetails([receipt], instructionId, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  it('should throw an error if expiresAt is missing on a v8 chain', () => {
+    const context = dsMockUtils.getContextInstance({ isV7: false });
+    const instructionId = new BigNumber(1);
+    const receipt: OffChainAffirmationReceipt = {
+      uid: new BigNumber(1),
+      legId: new BigNumber(0),
+      signer: '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
+      signature: {
+        type: SignerKeyRingType.Sr25519,
+        value: '0xsomevalue',
+      },
+      metadata: 'Random metadata',
+    };
+
+    expect(() => receiptDetailsToMeshReceiptDetails([receipt], instructionId, context)).toThrow(
+      '`expiresAt` is mandatory from chain 8.x'
+    );
   });
 });
 

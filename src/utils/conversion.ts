@@ -5726,8 +5726,13 @@ export function signatureToMeshRuntimeMultiSignature(
       // assume sr 25519
       rawValue = context.createType('SpCoreSr25519Signature', value);
     }
+  } else if (type === SignerKeyRingType.Ecdsa) {
+    // Ecdsa signatures are 65 bytes (64 byte signature + 1 byte recovery ID)
+    rawValue = context.createType('[u8;65]', value);
   } else {
-    rawValue = context.createType('U8aFixed', value);
+    // Ed25519 and Sr25519 signatures are both 64 bytes. A bare 'U8aFixed' does
+    // not resolve against chain v8's metadata-derived type registry.
+    rawValue = context.createType('[u8;64]', value);
   }
 
   return context.createType('SpRuntimeMultiSignature', {
@@ -5767,18 +5772,28 @@ export function receiptDetailsToMeshReceiptDetails(
   context: Context
 ): Vec<PolymeshPrimitivesSettlementReceiptDetails> {
   const rawInstructionId = bigNumberToU64(instructionId, context);
-  const rawReceiptDetails = receiptDetails.map(({ legId, uid, signer, signature, metadata }) => {
-    const { address: signerAddress } = asAccount(signer, context);
+  const rawReceiptDetails = receiptDetails.map(
+    ({ legId, uid, signer, signature, metadata, expiresAt }) => {
+      const { address: signerAddress } = asAccount(signer, context);
 
-    return context.createType('PolymeshPrimitivesSettlementReceiptDetails', {
-      uid: bigNumberToU64(uid, context),
-      instructionId: rawInstructionId,
-      legId: bigNumberToU64(legId, context),
-      signer: stringToAccountId(signerAddress, context),
-      signature: signatureToMeshRuntimeMultiSignature(signature.type, signature.value, context),
-      metadata: optionize(offChainMetadataToMeshReceiptMetadata)(metadata, context),
-    });
-  });
+      if (!expiresAt && !context.isV7) {
+        throw new PolymeshError({
+          code: ErrorCode.UnmetPrerequisite,
+          message: '`expiresAt` is mandatory from chain 8.x',
+        });
+      }
+
+      return context.createType('PolymeshPrimitivesSettlementReceiptDetails', {
+        uid: bigNumberToU64(uid, context),
+        instructionId: rawInstructionId,
+        legId: bigNumberToU64(legId, context),
+        signer: stringToAccountId(signerAddress, context),
+        signature: signatureToMeshRuntimeMultiSignature(signature.type, signature.value, context),
+        ...(!context.isV7 && { expiresAt: dateToMoment(expiresAt!, context) }),
+        metadata: optionize(offChainMetadataToMeshReceiptMetadata)(metadata, context),
+      });
+    }
+  );
 
   return context.createType('Vec<PolymeshPrimitivesSettlementReceiptDetails>', rawReceiptDetails);
 }

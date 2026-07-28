@@ -2,7 +2,7 @@ import {
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
 } from '@polkadot/types/lookup';
-import { hexAddPrefix, hexStripPrefix, stringToHex } from '@polkadot/util';
+import { hexAddPrefix, hexStripPrefix, stringToHex, u8aToHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -88,6 +88,7 @@ import {
   middlewareInstructionToInstructionEndCondition,
   middlewareLegToLeg,
   momentToDate,
+  stringToBytes,
   tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -1362,9 +1363,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     } else {
       payloadStrings = [
         stringToHex('<Bytes>'),
+        context.polymeshApi.genesisHash.toHex(),
         rawUid.toHex(true),
-        stringToHex('Polymesh Settlement Receipt'),
-        dateToMoment(expiresAt!, context).toHex(),
+        // the chain encodes the label as a SCALE `&[u8]`, which is length
+        // prefixed - `Bytes.toHex()` strips that prefix, so `toU8a()` (the
+        // full wire encoding) has to be used instead
+        u8aToHex(stringToBytes('Polymesh Settlement Receipt', context).toU8a()),
+        dateToMoment(expiresAt!, context).toHex(true),
         rawId.toHex(true),
         rawLegId.toHex(true),
         senderIdentity.toHex(),
@@ -1391,6 +1396,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         value: signatureValue,
       },
       metadata,
+      expiresAt,
     };
   }
 }
