@@ -45,6 +45,7 @@ import {
   stringToTicker,
 } from '~/utils/conversion';
 import {
+  assertTickerLengthValid,
   checkTxType,
   isAllowedCharacters,
   optionize,
@@ -190,6 +191,7 @@ export async function prepareCreateNftCollection(
 
   if (ticker) {
     assertTickerOk(ticker);
+    await assertTickerLengthValid(ticker, context);
   }
 
   const internalNftType = getInternalNftType(customTypeData, nftType);

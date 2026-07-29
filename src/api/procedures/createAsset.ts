@@ -42,6 +42,7 @@ import {
   stringToTicker,
 } from '~/utils/conversion';
 import {
+  assertTickerLengthValid,
   checkTxType,
   isAllowedCharacters,
   optionize,
@@ -272,6 +273,7 @@ export async function prepareCreateAsset(
   let rawTicker: PolymeshPrimitivesTicker | undefined;
 
   if (ticker) {
+    await assertTickerLengthValid(ticker, context);
     rawTicker = stringToTicker(ticker, context);
   }
 

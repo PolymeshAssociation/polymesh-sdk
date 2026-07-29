@@ -98,6 +98,7 @@ import {
   assertMetaLength,
   assertNoPendingAuthorizationExists,
   assertStatIsSet,
+  assertTickerLengthValid,
   assertTickerValid,
   calculateNextKey,
   calculateRawStakingPayee,
@@ -1789,6 +1790,52 @@ describe('assertTickerValid', () => {
     const ticker = 'FAKE_TICKER';
 
     expect(() => assertTickerValid(ticker)).not.toThrow();
+  });
+});
+
+describe('assertTickerLengthValid', () => {
+  it('should throw an error if the ticker length exceeds the chain configured max ticker length', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const maxTickerLength = new BigNumber(6);
+
+    dsMockUtils.createQueryMock('asset', 'tickerConfig', {
+      returnValue: dsMockUtils.createMockTickerRegistrationConfig({
+        maxTickerLength: dsMockUtils.createMockU8(maxTickerLength),
+        registrationLength: dsMockUtils.createMockOption(),
+      }),
+    });
+
+    await expect(assertTickerLengthValid('TOO_LONG', context)).rejects.toThrow(
+      `Ticker length must be between 1 and ${maxTickerLength.toString()} characters`
+    );
+  });
+
+  it('should throw an error if the ticker is empty', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.createQueryMock('asset', 'tickerConfig', {
+      returnValue: dsMockUtils.createMockTickerRegistrationConfig({
+        maxTickerLength: dsMockUtils.createMockU8(new BigNumber(12)),
+        registrationLength: dsMockUtils.createMockOption(),
+      }),
+    });
+
+    await expect(assertTickerLengthValid('', context)).rejects.toThrow(
+      'Ticker length must be between 1 and 12 characters'
+    );
+  });
+
+  it('should not throw an error if the ticker length is within the chain configured max ticker length', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.createQueryMock('asset', 'tickerConfig', {
+      returnValue: dsMockUtils.createMockTickerRegistrationConfig({
+        maxTickerLength: dsMockUtils.createMockU8(new BigNumber(12)),
+        registrationLength: dsMockUtils.createMockOption(),
+      }),
+    });
+
+    await expect(assertTickerLengthValid('FAKE_TICKER', context)).resolves.not.toThrow();
   });
 });
 

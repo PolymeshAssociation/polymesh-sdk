@@ -134,6 +134,7 @@ import {
   stringToTicker,
   tickerToString,
   transferRestrictionTypeToStatOpType,
+  u8ToBigNumber,
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -997,6 +998,36 @@ export function assertTickerValid(ticker: string): void {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Ticker cannot contain lower case letters',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Validates a ticker's length against the chain's current ticker registration rules.
+ *
+ * @note this is distinct from {@link assertTickerValid}, which enforces the fixed 12 byte
+ *   width of the on chain `Ticker` type. `maxTickerLength` is a separate, governance
+ *   configurable ceiling (never greater than 12) used to validate new ticker registrations
+ */
+export async function assertTickerLengthValid(ticker: string, context: Context): Promise<void> {
+  const {
+    polymeshApi: {
+      query: {
+        asset: { tickerConfig },
+      },
+    },
+  } = context;
+
+  const { maxTickerLength: rawMaxTickerLength } = await tickerConfig();
+  const maxTickerLength = u8ToBigNumber(rawMaxTickerLength);
+
+  if (!ticker.length || maxTickerLength.lt(ticker.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Ticker length must be between 1 and ${maxTickerLength.toString()} characters`,
+      data: { maxTickerLength },
     });
   }
 }

@@ -4,7 +4,7 @@ import { Context, PolymeshError, Procedure, TickerReservation } from '~/internal
 import { ErrorCode, ReserveTickerParams, RoleType, TickerReservationStatus, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker, tickerToString } from '~/utils/conversion';
-import { filterEventRecords, isAllowedCharacters } from '~/utils/internal';
+import { assertTickerLengthValid, filterEventRecords, isAllowedCharacters } from '~/utils/internal';
 
 /**
  * @hidden
@@ -42,6 +42,8 @@ export async function prepareReserveTicker(
       message: 'New Tickers can only contain alphanumeric values "_", "-", ".", and "/"',
     });
   }
+
+  await assertTickerLengthValid(ticker, context);
 
   const rawTicker = stringToTicker(ticker, context);
 
