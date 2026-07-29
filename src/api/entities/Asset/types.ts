@@ -262,6 +262,17 @@ export interface VenueFilteringDetails {
   allowedVenues: Venue[];
 }
 
+export interface TickerRegistrationConfig {
+  /**
+   * maximum allowed length for a ticker
+   */
+  maxTickerLength: BigNumber;
+  /**
+   * amount of time (in milliseconds) a ticker reservation is valid for before it expires, starting from the moment it is reserved. A null value means ticker reservations never expire
+   */
+  registrationLength: BigNumber | null;
+}
+
 /**
  * A metadata entry for which each NFT in the collection must have an entry for
  *

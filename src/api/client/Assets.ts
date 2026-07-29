@@ -26,6 +26,7 @@ import {
   ReserveTickerParams,
   ResultSet,
   SubCallback,
+  TickerRegistrationConfig,
   TickerReservationStatus,
   TransferFundsParams,
   UnsubCallback,
@@ -36,6 +37,7 @@ import {
   meshMetadataSpecToMetadataSpec,
   stringToIdentityId,
   tickerToString,
+  u8ToBigNumber,
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -525,4 +527,28 @@ export class Assets {
    * @note To transfer between asset holders owned by separate DID use settlement instructions
    */
   public transferFunds: ProcedureMethod<TransferFundsParams, void>;
+
+  /**
+   * Gets the chain-wide rules used to validate ticker registrations
+   */
+  public async getTickerRegistrationConfig(): Promise<TickerRegistrationConfig> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            asset: { tickerConfig },
+          },
+        },
+      },
+    } = this;
+
+    const { maxTickerLength, registrationLength } = await tickerConfig();
+
+    return {
+      maxTickerLength: u8ToBigNumber(maxTickerLength),
+      registrationLength: registrationLength.isSome
+        ? u64ToBigNumber(registrationLength.unwrap())
+        : null,
+    };
+  }
 }

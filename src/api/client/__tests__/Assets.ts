@@ -723,6 +723,42 @@ describe('Assets Class', () => {
     });
   });
 
+  describe('method: getTickerRegistrationConfig', () => {
+    it('should return the chain-wide ticker registration rules', async () => {
+      const maxTickerLength = new BigNumber(12);
+      const registrationLength = new BigNumber(60 * 24 * 60 * 60 * 1000);
+
+      dsMockUtils.createQueryMock('asset', 'tickerConfig', {
+        returnValue: dsMockUtils.createMockTickerRegistrationConfig({
+          maxTickerLength: dsMockUtils.createMockU8(maxTickerLength),
+          registrationLength: dsMockUtils.createMockOption(
+            dsMockUtils.createMockU64(registrationLength)
+          ),
+        }),
+      });
+
+      const result = await assets.getTickerRegistrationConfig();
+
+      expect(result).toEqual({
+        maxTickerLength,
+        registrationLength,
+      });
+    });
+
+    it('should return a null registration length if tickers never expire', async () => {
+      dsMockUtils.createQueryMock('asset', 'tickerConfig', {
+        returnValue: dsMockUtils.createMockTickerRegistrationConfig({
+          maxTickerLength: dsMockUtils.createMockU8(new BigNumber(12)),
+          registrationLength: dsMockUtils.createMockOption(),
+        }),
+      });
+
+      const result = await assets.getTickerRegistrationConfig();
+
+      expect(result.registrationLength).toBeNull();
+    });
+  });
+
   describe('method: transferFunds', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
       const args = {
