@@ -54,6 +54,7 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
+  fundingRoundToAssetFundingRound,
   identitiesSetToIdentities,
   identityIdToString,
   tickerToString,
@@ -535,6 +536,29 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
     const fundingRound = await asset.fundingRound(rawAssetId);
     return assembleResult(fundingRound);
+  }
+
+  /**
+   * Retrieve the total amount of the Asset issued in the given funding round
+   *
+   * @param fundingRound - name of the funding round to query
+   */
+  public async getIssuedInFundingRound(fundingRound: string): Promise<BigNumber> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+    } = this;
+
+    const rawAssetId = assetToMeshAssetId(this, context);
+    const rawFundingRound = fundingRoundToAssetFundingRound(fundingRound, context);
+
+    const issued = await asset.issuedInFundingRound([rawAssetId, rawFundingRound]);
+
+    return balanceToBigNumber(issued);
   }
 
   /**

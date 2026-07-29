@@ -398,6 +398,30 @@ describe('Fungible class', () => {
     });
   });
 
+  describe('method: getIssuedInFundingRound', () => {
+    it('should return the amount of the Asset issued in the given funding round', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const fundingRound = 'Series A';
+      const issuedAmount = new BigNumber(1000);
+
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ assetId }, context);
+
+      const rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
+      when(jest.spyOn(utilsConversionModule, 'fundingRoundToAssetFundingRound'))
+        .calledWith(fundingRound, context)
+        .mockReturnValue(rawFundingRound);
+
+      dsMockUtils.createQueryMock('asset', 'issuedInFundingRound', {
+        returnValue: dsMockUtils.createMockBalance(issuedAmount.shiftedBy(6)),
+      });
+
+      const result = await asset.getIssuedInFundingRound(fundingRound);
+
+      expect(result).toEqual(issuedAmount);
+    });
+  });
+
   describe('method: getIdentifiers', () => {
     let assetId: string;
     let isinValue: string;
