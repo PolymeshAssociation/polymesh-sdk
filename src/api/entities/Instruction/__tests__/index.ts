@@ -303,6 +303,73 @@ describe('Instruction class', () => {
     });
   });
 
+  describe('method: getRelockStatus', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    let bigNumberToU64Spy: jest.SpyInstance;
+    const unlockedTime = new Date('2025-07-01');
+    const relockCooldown = new BigNumber(86400000);
+    const maxRelockCount = new BigNumber(3);
+    const relockCount = new BigNumber(1);
+
+    beforeAll(() => {
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+      dsMockUtils.createQueryMock('settlement', 'unlockedTimestamp');
+      dsMockUtils.createQueryMock('settlement', 'instructionRelockCount');
+    });
+
+    beforeEach(() => {
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+
+      dsMockUtils.setConstMock('settlement', 'relockCooldown', {
+        returnValue: dsMockUtils.createMockU64(relockCooldown),
+      });
+      dsMockUtils.setConstMock('settlement', 'maxRelockCount', {
+        returnValue: dsMockUtils.createMockU32(maxRelockCount),
+      });
+    });
+
+    it('should return all the details for an instruction that has been unlocked', async () => {
+      dsMockUtils
+        .getQueryMultiMock()
+        .mockResolvedValue([
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockU64(new BigNumber(unlockedTime.getTime()))
+          ),
+          dsMockUtils.createMockU32(relockCount),
+        ]);
+
+      const result = await instruction.getRelockStatus();
+
+      expect(result).toEqual({
+        unlockedAt: unlockedTime,
+        relockCount,
+        maxRelockCount,
+        cooldownEndsAt: new Date(unlockedTime.getTime() + relockCooldown.toNumber()),
+      });
+    });
+
+    it('should return all the details for an instruction that has never been unlocked', async () => {
+      dsMockUtils
+        .getQueryMultiMock()
+        .mockResolvedValue([
+          dsMockUtils.createMockOption(),
+          dsMockUtils.createMockU32(new BigNumber(0)),
+        ]);
+
+      const result = await instruction.getRelockStatus();
+
+      expect(result).toEqual({
+        unlockedAt: null,
+        relockCount: new BigNumber(0),
+        maxRelockCount,
+        cooldownEndsAt: null,
+      });
+    });
+  });
+
   describe('method: onStatusChange', () => {
     let bigNumberToU64Spy: jest.SpyInstance;
     let instructionStatusesMock: jest.Mock;
@@ -1535,6 +1602,31 @@ describe('Instruction class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await instruction.lockForExecution();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: unlockForExecution', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { id },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await instruction.unlockForExecution();
 
       expect(tx).toBe(expectedTransaction);
     });

@@ -9,6 +9,7 @@ import {
   AffirmationStatus,
   InstructionAffirmation,
   InstructionDetails,
+  InstructionRelockStatus,
   InstructionStatus,
   InstructionStatusResult,
   Leg,
@@ -17,6 +18,7 @@ import {
 } from '~/api/entities/Instruction/types';
 import { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 import { lockInstructionForExecution } from '~/api/procedures/lockInstructionForExecution';
+import { unlockInstructionForExecution } from '~/api/procedures/unlockInstructionForExecution';
 import {
   Account,
   Context,
@@ -90,6 +92,7 @@ import {
   momentToDate,
   stringToBytes,
   tickerToString,
+  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -221,6 +224,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       },
       context
     );
+
+    this.unlockForExecution = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [unlockInstructionForExecution, { id }],
+        voidArgs: true,
+      },
+      context
+    );
   }
 
   /**
@@ -344,6 +355,59 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       lockedAt: null,
       expiry: null,
       unlocksAt: null,
+    };
+  }
+
+  /**
+   * Retrieve the relock cooldown status of the Instruction
+   *
+   * @note After a mediator unlocks an Instruction, they must wait for the relock cooldown period to
+   *   end before locking it again. `maxRelockCount` limits the total number of times an Instruction can be relocked.
+   */
+  public async getRelockStatus(): Promise<InstructionRelockStatus> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+          consts: {
+            settlement: { relockCooldown, maxRelockCount },
+          },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const rawId = bigNumberToU64(id, context);
+
+    const [rawUnlockedTimestamp, rawRelockCount] = await requestMulti<
+      [typeof settlement.unlockedTimestamp, typeof settlement.instructionRelockCount]
+    >(context, [
+      [settlement.unlockedTimestamp, rawId],
+      [settlement.instructionRelockCount, rawId],
+    ]);
+
+    const relockCount = u32ToBigNumber(rawRelockCount);
+    const maxRelockCountValue = u32ToBigNumber(maxRelockCount);
+
+    if (rawUnlockedTimestamp.isSome) {
+      const unlockedAt = momentToDate(rawUnlockedTimestamp.unwrap());
+      const cooldown = u64ToBigNumber(relockCooldown);
+      const cooldownEndsAt = new Date(unlockedAt.getTime() + cooldown.toNumber());
+
+      return {
+        unlockedAt,
+        relockCount,
+        maxRelockCount: maxRelockCountValue,
+        cooldownEndsAt,
+      };
+    }
+
+    return {
+      unlockedAt: null,
+      relockCount,
+      maxRelockCount: maxRelockCountValue,
+      cooldownEndsAt: null,
     };
   }
 
@@ -959,6 +1023,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @throws if any of the above conditions are not met
    */
   public lockForExecution: NoArgsProcedureMethod<Instruction>;
+
+  /**
+   * Unlocks an Instruction that is currently `LockedForExecution`, moving it back to `Pending`. Only a mediator of the instruction can unlock it.
+   *
+   * @note After unlocking, the mediator must wait for the relock cooldown period (see {@link getRelockStatus}) before locking the instruction again. This gives other parties time to reject the instruction if they wish to back out.
+   */
+  public unlockForExecution: NoArgsProcedureMethod<Instruction>;
 
   /**
    * @hidden

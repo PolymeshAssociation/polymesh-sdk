@@ -12,6 +12,7 @@ import {
   assertInstructionValid,
   assertInstructionValidForLocking,
   assertInstructionValidForManualExecution,
+  assertInstructionValidForUnlocking,
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
@@ -258,6 +259,38 @@ describe('assertInstructionValidForLocking', () => {
       assertInstructionValidForLocking({
         status: InstructionStatus.Pending,
         type: InstructionType.SettleAfterLock,
+      } as InstructionDetails)
+    ).not.toThrow();
+  });
+});
+
+describe('assertInstructionValidForUnlocking', () => {
+  it('should throw an error if instruction is not in pending or failed state', () => {
+    expect(() =>
+      assertInstructionValidForUnlocking({
+        status: InstructionStatus.Success,
+      } as InstructionDetails)
+    ).toThrow('The Instruction has already been executed');
+
+    expect(() =>
+      assertInstructionValidForUnlocking({
+        status: InstructionStatus.Rejected,
+      } as InstructionDetails)
+    ).toThrow('The Instruction has already been executed');
+  });
+
+  it('should throw an error if the instruction is not locked for execution', () => {
+    expect(() =>
+      assertInstructionValidForUnlocking({
+        status: InstructionStatus.Pending,
+      } as InstructionDetails)
+    ).toThrow('The Instruction is not locked for execution');
+  });
+
+  it('should not throw an error for valid instruction', () => {
+    expect(() =>
+      assertInstructionValidForUnlocking({
+        status: InstructionStatus.LockedForExecution,
       } as InstructionDetails)
     ).not.toThrow();
   });

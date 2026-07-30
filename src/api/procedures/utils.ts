@@ -152,6 +152,25 @@ export function assertInstructionValidForLocking(details: InstructionDetails): v
 /**
  * @hidden
  */
+export function assertInstructionValidForUnlocking(details: InstructionDetails): void {
+  const { status } = details;
+
+  assertInstructionIsNotPruned(status);
+
+  if (status !== InstructionStatus.LockedForExecution) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Instruction is not locked for execution',
+      data: {
+        currentStatus: status,
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
 export async function assertPortfolioExists(
   portfolioId: PortfolioId,
   context: Context

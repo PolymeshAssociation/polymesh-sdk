@@ -168,6 +168,25 @@ export interface GroupedInvolvedInstructions {
   owned: Omit<GroupedInstructions, 'affirmed'>;
 }
 
+export interface InstructionRelockStatus {
+  /**
+   * The date and time when the instruction was last unlocked by a mediator, `null` if it has never been unlocked
+   */
+  unlockedAt: Date | null;
+  /**
+   * The number of times the instruction has been relocked
+   */
+  relockCount: BigNumber;
+  /**
+   * The maximum number of times the instruction can be relocked
+   */
+  maxRelockCount: BigNumber;
+  /**
+   * The date and time after which the instruction can be locked again, `null` if it has never been unlocked
+   */
+  cooldownEndsAt: Date | null;
+}
+
 export interface InstructionLockedInfo {
   /**
    * Whether the instruction is locked for execution
