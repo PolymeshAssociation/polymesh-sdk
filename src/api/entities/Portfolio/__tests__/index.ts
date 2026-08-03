@@ -26,13 +26,21 @@ import {
   SettlementDirectionEnum,
 } from '~/types';
 import { tuple } from '~/types/utils';
-import { hexToUuid } from '~/utils';
+import { hexToUuid, uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
 );
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -579,6 +587,45 @@ describe('Portfolio class', () => {
       const result = await portfolio.isAssetPreApproved(assetId);
 
       expect(result).toBe(true);
+    });
+  });
+
+  describe('method: preApprovedAssets', () => {
+    let did: string;
+    let id: BigNumber;
+
+    beforeAll(() => {
+      did = 'someDid';
+      id = new BigNumber(1);
+      jest.spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return the list of pre-approved assets for the portfolio', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
+      const rawPortfolioId = dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(did),
+        kind: dsMockUtils.createMockPortfolioKind({
+          User: dsMockUtils.createMockU64(id),
+        }),
+      });
+
+      dsMockUtils.createQueryMock('portfolio', 'preApprovedPortfolios', {
+        entries: [tuple([rawPortfolioId, rawAssetId], dsMockUtils.createMockBool(true))],
+      });
+
+      const portfolio = new NonAbstract({ did, id }, context);
+
+      const result = await portfolio.preApprovedAssets();
+
+      expect(result).toEqual({
+        data: [expect.objectContaining({ id: assetId })],
+        next: null,
+      });
     });
   });
 

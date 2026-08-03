@@ -27,7 +27,15 @@ import {
 import { portfolioMovementsQuery } from '~/middleware/queries/portfolios';
 import { settlementsQuery } from '~/middleware/queries/settlements';
 import { Query } from '~/middleware/types';
-import { ErrorCode, MoveFundsParams, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import {
+  Asset,
+  ErrorCode,
+  MoveFundsParams,
+  NoArgsProcedureMethod,
+  PaginationOptions,
+  ProcedureMethod,
+  ResultSet,
+} from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   assetIdToString,
@@ -40,12 +48,14 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asAsset,
   asAssetId,
   asBaseAsset,
   asFungibleAsset,
   createProcedureMethod,
   getAssetIdForMiddleware,
   getIdentity,
+  requestPaginated,
   toHumanReadable,
 } from '~/utils/internal';
 
@@ -176,6 +186,42 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     const rawIsApproved = await portfolio.preApprovedPortfolios(rawPortfolioId, rawAssetId);
 
     return boolToBoolean(rawIsApproved);
+  }
+
+  /**
+   * Returns a list of all assets this Portfolio has pre-approved. These assets will not require affirmation when being received in settlements
+   */
+  public async preApprovedAssets(paginationOpts?: PaginationOptions): Promise<ResultSet<Asset>> {
+    const {
+      owner: { did },
+      _id: id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+    } = this;
+
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: id }, context);
+
+    const { entries, lastKey: next } = await requestPaginated(portfolio.preApprovedPortfolios, {
+      arg: rawPortfolioId,
+      paginationOpts,
+    });
+
+    const data = await Promise.all(
+      entries.map(([storageKey]) => {
+        const {
+          args: [, rawAssetId],
+        } = storageKey;
+        const assetId = assetIdToString(rawAssetId);
+
+        return asAsset(assetId, context);
+      })
+    );
+
+    return { data, next };
   }
 
   /**
