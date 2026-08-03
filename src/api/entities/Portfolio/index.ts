@@ -12,6 +12,7 @@ import {
   PortfolioCollection,
 } from '~/api/entities/Portfolio/types';
 import {
+  BaseAsset,
   Context,
   Entity,
   FungibleAsset,
@@ -21,6 +22,7 @@ import {
   NftCollection,
   PolymeshError,
   quitCustody,
+  togglePortfolioPreApproval,
 } from '~/internal';
 import { portfolioMovementsQuery } from '~/middleware/queries/portfolios';
 import { settlementsQuery } from '~/middleware/queries/settlements';
@@ -29,7 +31,9 @@ import { ErrorCode, MoveFundsParams, NoArgsProcedureMethod, ProcedureMethod } fr
 import { Ensured } from '~/types/utils';
 import {
   assetIdToString,
+  assetToMeshAssetId,
   balanceToBigNumber,
+  boolToBoolean,
   identityIdToString,
   portfolioIdToMeshPortfolioId,
   toHistoricalSettlements,
@@ -37,6 +41,7 @@ import {
 } from '~/utils/conversion';
 import {
   asAssetId,
+  asBaseAsset,
   asFungibleAsset,
   createProcedureMethod,
   getAssetIdForMiddleware,
@@ -99,6 +104,24 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       { getProcedureAndArgs: () => [quitCustody, { portfolio: this }], voidArgs: true },
       context
     );
+    this.preApproveAsset = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          togglePortfolioPreApproval,
+          { ...args, portfolio: this, preApprove: true },
+        ],
+      },
+      context
+    );
+    this.removeAssetPreApproval = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          togglePortfolioPreApproval,
+          { ...args, portfolio: this, preApprove: false },
+        ],
+      },
+      context
+    );
   }
 
   /**
@@ -128,6 +151,31 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     ]);
 
     return portfolioCustodian.isEqual(targetIdentity);
+  }
+
+  /**
+   * Returns whether or not this Portfolio has pre-approved a particular asset
+   */
+  public async isAssetPreApproved(asset: BaseAsset | string): Promise<boolean> {
+    const {
+      owner: { did },
+      _id: id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+    } = this;
+
+    const baseAsset = await asBaseAsset(asset, context);
+    const rawAssetId = assetToMeshAssetId(baseAsset, context);
+
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: id }, context);
+
+    const rawIsApproved = await portfolio.preApprovedPortfolios(rawPortfolioId, rawAssetId);
+
+    return boolToBoolean(rawIsApproved);
   }
 
   /**
@@ -319,6 +367,16 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    *   - Portfolio Custodian
    */
   public quitCustody: NoArgsProcedureMethod<void>;
+
+  /**
+   * Pre-approves receiving an asset for this Portfolio. Receiving this asset in a settlement will not require manual affirmation
+   */
+  public preApproveAsset: ProcedureMethod<{ asset: BaseAsset | string }, void>;
+
+  /**
+   * Removes pre-approval of an asset for this Portfolio
+   */
+  public removeAssetPreApproval: ProcedureMethod<{ asset: BaseAsset | string }, void>;
 
   /**
    * Retrieve the custodian Identity of this Portfolio

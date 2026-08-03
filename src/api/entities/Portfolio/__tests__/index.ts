@@ -545,6 +545,43 @@ describe('Portfolio class', () => {
     });
   });
 
+  describe('method: isAssetPreApproved', () => {
+    let did: string;
+    let id: BigNumber;
+
+    beforeAll(() => {
+      did = 'someDid';
+      id = new BigNumber(1);
+      jest.spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return whether the asset is pre-approved or not', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const asset = entityMockUtils.getBaseAssetInstance({ assetId });
+      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+
+      jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
+      const assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+      when(assetToMeshAssetIdSpy)
+        .calledWith(expect.objectContaining({ id: assetId }), context)
+        .mockReturnValue(rawAssetId);
+
+      dsMockUtils
+        .createQueryMock('portfolio', 'preApprovedPortfolios')
+        .mockResolvedValue(dsMockUtils.createMockBool(true));
+
+      const portfolio = new NonAbstract({ did, id }, context);
+
+      const result = await portfolio.isAssetPreApproved(assetId);
+
+      expect(result).toBe(true);
+    });
+  });
+
   describe('method: moveFunds', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
       const args: MoveFundsParams = {
@@ -574,6 +611,46 @@ describe('Portfolio class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await portfolio.quitCustody();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: preApproveAsset', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const portfolio = new NonAbstract({ did: 'someDid', id: new BigNumber(0) }, context);
+      const asset = entityMockUtils.getBaseAssetInstance({ assetId: 'SOME_ASSET' });
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { asset, portfolio, preApprove: true }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await portfolio.preApproveAsset({ asset });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: removeAssetPreApproval', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const portfolio = new NonAbstract({ did: 'someDid', id: new BigNumber(0) }, context);
+      const asset = entityMockUtils.getBaseAssetInstance({ assetId: 'SOME_ASSET' });
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { asset, portfolio, preApprove: false }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await portfolio.removeAssetPreApproval({ asset });
 
       expect(tx).toBe(expectedTransaction);
     });

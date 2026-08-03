@@ -279,6 +279,7 @@ interface NumberedPortfolioOptions extends EntityOptions {
   getCollections?: EntityGetter<PortfolioCollection[]>;
   getCustodian?: EntityGetter<Identity>;
   isCustodiedBy?: EntityGetter<boolean>;
+  isAssetPreApproved?: EntityGetter<boolean>;
 }
 
 interface DefaultPortfolioOptions extends EntityOptions {
@@ -288,6 +289,7 @@ interface DefaultPortfolioOptions extends EntityOptions {
   getCollections?: EntityGetter<PortfolioCollection[]>;
   getCustodian?: EntityGetter<Identity>;
   isCustodiedBy?: EntityGetter<boolean>;
+  isAssetPreApproved?: EntityGetter<boolean>;
 }
 
 interface CustomPermissionGroupOptions extends EntityOptions {
@@ -1649,6 +1651,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
     getCollections!: jest.Mock;
     getCustodian!: jest.Mock;
     isCustodiedBy!: jest.Mock;
+    isAssetPreApproved!: jest.Mock;
 
     /**
      * @hidden
@@ -1669,6 +1672,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
       this.getCollections = createEntityGetterMock(opts.getCollections);
       this.getCustodian = createEntityGetterMock(opts.getCustodian);
       this.isCustodiedBy = createEntityGetterMock(opts.isCustodiedBy);
+      this.isAssetPreApproved = createEntityGetterMock(opts.isAssetPreApproved);
     }
   },
   () => ({
@@ -1686,6 +1690,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
+    isAssetPreApproved: false,
     toHuman: {
       did: 'someDid',
       id: '1',
@@ -1703,6 +1708,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
     getCollections!: jest.Mock;
     getCustodian!: jest.Mock;
     isCustodiedBy!: jest.Mock;
+    isAssetPreApproved!: jest.Mock;
 
     /**
      * @hidden
@@ -1722,6 +1728,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
       this.getCollections = createEntityGetterMock(opts.getCollections);
       this.getCustodian = createEntityGetterMock(opts.getCustodian);
       this.isCustodiedBy = createEntityGetterMock(opts.isCustodiedBy);
+      this.isAssetPreApproved = createEntityGetterMock(opts.isAssetPreApproved);
     }
   },
   () => ({
@@ -1738,6 +1745,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
+    isAssetPreApproved: false,
     toHuman: {
       did: 'someDid',
     },
