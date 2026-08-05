@@ -47,6 +47,7 @@ export {
   Params as ModifyAssetTrustedClaimIssuersParams,
 } from '~/api/procedures/modifyAssetTrustedClaimIssuers';
 export { registerIdentity } from '~/api/procedures/registerIdentity';
+export { registerDid } from '~/api/procedures/registerDid';
 export { selfRegisterDid } from '~/api/procedures/selfRegisterDid';
 export { createChildIdentity } from '~/api/procedures/createChildIdentity';
 export { createChildIdentities } from '~/api/procedures/createChildIdentities';

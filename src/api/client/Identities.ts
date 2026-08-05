@@ -10,6 +10,7 @@ import {
   createPortfolios,
   Identity,
   NumberedPortfolio,
+  registerDid,
   registerIdentity,
   revokeIdentityToCreatePortfolios,
   rotatePrimaryKey,
@@ -23,6 +24,7 @@ import {
   CreateChildIdentityParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
+  RegisterDidParams,
   RegisterIdentityParams,
   RevokeIdentityToCreatePortfoliosParams,
   RotatePrimaryKeyParams,
@@ -50,6 +52,11 @@ export class Identities {
 
     this.selfRegisterDid = createProcedureMethod(
       { getProcedureAndArgs: () => [selfRegisterDid, undefined], voidArgs: true },
+      context
+    );
+
+    this.registerDid = createProcedureMethod(
+      { getProcedureAndArgs: args => [registerDid, args] },
       context
     );
 
@@ -140,6 +147,16 @@ export class Identities {
    * @throws if the signing Account is already linked to an Identity
    */
   public selfRegisterDid: NoArgsProcedureMethod<Identity>;
+
+  /**
+   * Register a new DID for the `targetAccount`
+   *
+   * @note the transaction signer must be an active DID Registrar
+   * @note unlike {@link registerIdentity}, this does not support secondary keys or CDD claims
+   *
+   * @throws if the `targetAccount` is already linked to an Identity
+   */
+  public registerDid: ProcedureMethod<RegisterDidParams, Identity>;
 
   /**
    * Get CDD Provider's attestation to change primary key

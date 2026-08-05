@@ -1002,6 +1002,13 @@ export interface RegisterIdentityParams {
   expiry?: Date;
 }
 
+export interface RegisterDidParams {
+  /**
+   * The Account that should function as the primary key of the newly created Identity. Can be ss58 encoded address or an instance of Account
+   */
+  targetAccount: string | Account;
+}
+
 export interface AttestPrimaryKeyRotationParams {
   /**
    * The Account that will be attested to become the primary key of the `identity`. Can be ss58 encoded address or an instance of Account

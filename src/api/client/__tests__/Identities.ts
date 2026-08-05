@@ -139,6 +139,24 @@ describe('Identities Class', () => {
     });
   });
 
+  describe('method: registerDid', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        targetAccount: 'someTarget',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Identity>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.registerDid(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: selfRegisterDid', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Identity>;
