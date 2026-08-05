@@ -45,6 +45,7 @@ import {
   InstructionAffirmationOperation,
   InstructionStatus,
   InstructionType,
+  LegStatusType,
   NftLeg,
   OffChainLeg,
   SignerKeyRingType,
@@ -53,6 +54,7 @@ import {
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { hexToUuid } from '~/utils';
+import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -2750,6 +2752,40 @@ describe('Instruction class', () => {
 
         expect(result).toEqual(AffirmationStatus.Pending);
       });
+    });
+  });
+
+  describe('method: getLegStatus', () => {
+    const legId = new BigNumber(2);
+
+    it('should return the execution status for a specific leg', async () => {
+      dsMockUtils.createQueryMock('settlement', 'instructionLegStatus', {
+        returnValue: dsMockUtils.createMockLegStatus('ExecutionPending'),
+      });
+
+      const result = await instruction.getLegStatus({ legId });
+
+      expect(result).toEqual({ type: LegStatusType.ExecutionPending });
+    });
+
+    it('should return the receipt details when the leg execution is to be skipped', async () => {
+      const address = DUMMY_ACCOUNT_ID;
+      const uid = new BigNumber(10);
+
+      dsMockUtils.createQueryMock('settlement', 'instructionLegStatus', {
+        returnValue: dsMockUtils.createMockLegStatus({
+          ExecutionToBeSkipped: [
+            dsMockUtils.createMockAccountId(address),
+            dsMockUtils.createMockU64(uid),
+          ],
+        }),
+      });
+
+      const result = await instruction.getLegStatus({ legId });
+
+      expect(result).toEqual(
+        expect.objectContaining({ type: LegStatusType.ExecutionToBeSkipped, uid })
+      );
     });
   });
 

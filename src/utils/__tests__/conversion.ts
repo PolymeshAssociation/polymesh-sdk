@@ -162,6 +162,7 @@ import {
   KnownAssetType,
   KnownNftType,
   Leg,
+  LegStatusType,
   MetadataLockStatus,
   MetadataType,
   ModuleName,
@@ -318,6 +319,7 @@ import {
   meshCorporateBallotMetaToCorporateBallotMeta,
   meshCorporateBallotMotionToCorporateBallotMotion,
   meshInstructionStatusToInstructionStatus,
+  meshLegStatusToLegStatus,
   meshMetadataKeyToMetadataKey,
   meshMetadataSpecToMetadataSpec,
   meshMetadataValueToMetadataValue,
@@ -7232,6 +7234,54 @@ describe('meshAffirmationStatusToAffirmationStatus', () => {
 
     result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('meshLegStatusToLegStatus', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a polkadot LegStatus object to a LegStatus', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    let legStatus = dsMockUtils.createMockLegStatus('PendingTokenLock');
+
+    let result = meshLegStatusToLegStatus(legStatus, context);
+    expect(result).toEqual({ type: LegStatusType.PendingTokenLock });
+
+    legStatus = dsMockUtils.createMockLegStatus('ExecutionPending');
+
+    result = meshLegStatusToLegStatus(legStatus, context);
+    expect(result).toEqual({ type: LegStatusType.ExecutionPending });
+
+    const address = DUMMY_ACCOUNT_ID;
+    const uid = new BigNumber(10);
+
+    legStatus = dsMockUtils.createMockLegStatus({
+      ExecutionToBeSkipped: [
+        dsMockUtils.createMockAccountId(address),
+        dsMockUtils.createMockU64(uid),
+      ],
+    });
+
+    result = meshLegStatusToLegStatus(legStatus, context);
+    expect(result).toEqual(
+      expect.objectContaining({
+        type: LegStatusType.ExecutionToBeSkipped,
+        uid,
+      })
+    );
+    expect((result as { signer: Account }).signer).toBeInstanceOf(Account);
+    expect((result as { signer: Account }).signer.address).toBe(address);
   });
 });
 

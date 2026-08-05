@@ -136,6 +136,7 @@ import {
   PolymeshPrimitivesSettlementInstruction,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementLegStatus,
   PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
@@ -3490,6 +3491,16 @@ export const createMockAffirmationStatus = (
   authorizationStatus?: 'Unknown' | 'Pending' | 'Affirmed'
 ): MockCodec<PolymeshPrimitivesSettlementAffirmationStatus> => {
   return createMockEnum<PolymeshPrimitivesSettlementAffirmationStatus>(authorizationStatus);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockLegStatus = (
+  legStatus?: 'PendingTokenLock' | 'ExecutionPending' | { ExecutionToBeSkipped: [AccountId, u64] }
+): MockCodec<PolymeshPrimitivesSettlementLegStatus> => {
+  return createMockEnum<PolymeshPrimitivesSettlementLegStatus>(legStatus);
 };
 
 /**

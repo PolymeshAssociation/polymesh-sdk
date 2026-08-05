@@ -34,6 +34,7 @@ import {
   identityIdToString,
   meshVenueTypeToVenueType,
   middlewareInstructionToHistoricInstruction,
+  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
@@ -315,6 +316,25 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
         },
       ]) => new Account({ address: accountIdToString(rawAccountId) }, context)
     );
+  }
+
+  /**
+   * Get the number of signers allowed by this Venue
+   */
+  public async getSignerCount(): Promise<BigNumber> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const rawCount = await settlement.numberOfVenueSigners(bigNumberToU64(id, context));
+
+    return u32ToBigNumber(rawCount);
   }
 
   /**

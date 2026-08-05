@@ -409,6 +409,20 @@ describe('Venue class', () => {
     });
   });
 
+  describe('method: getSignerCount', () => {
+    it('should return the number of signers allowed by the Venue', async () => {
+      const count = new BigNumber(3);
+
+      dsMockUtils.createQueryMock('settlement', 'numberOfVenueSigners', {
+        returnValue: dsMockUtils.createMockU32(count),
+      });
+
+      const result = await venue.getSignerCount();
+
+      expect(result).toEqual(count);
+    });
+  });
+
   describe('method: addSigners', () => {
     afterAll(() => {
       jest.restoreAllMocks();

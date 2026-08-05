@@ -13,6 +13,7 @@ import {
   InstructionStatus,
   InstructionStatusResult,
   Leg,
+  LegStatus,
   MediatorAffirmation,
   OffChainAffirmation,
 } from '~/api/entities/Instruction/types';
@@ -82,6 +83,7 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshAssetHolderToAssetHolder,
   meshInstructionStatusToInstructionStatus,
+  meshLegStatusToLegStatus,
   meshNftToNftId,
   meshSettlementTypeToEndCondition,
   middlewareAffirmStatusToAffirmationStatus,
@@ -1327,6 +1329,33 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const rawAffirmStatus = await settlement.offChainAffirmations(rawId, rawLegId);
 
     return meshAffirmationStatusToAffirmationStatus(rawAffirmStatus);
+  }
+
+  /**
+   * Returns the execution status of a specific leg in this Instruction
+   *
+   * @param args.legId index of the leg whose status is to be fetched
+   */
+  public async getLegStatus(args: { legId: BigNumber }): Promise<LegStatus> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+    } = this;
+
+    const { legId } = args;
+
+    const rawId = bigNumberToU64(id, context);
+
+    const rawLegId = bigNumberToU64(legId, context);
+
+    const rawLegStatus = await settlement.instructionLegStatus(rawId, rawLegId);
+
+    return meshLegStatusToLegStatus(rawLegStatus, context);
   }
 
   /**

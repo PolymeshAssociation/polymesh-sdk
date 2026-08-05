@@ -105,6 +105,25 @@ export enum ReceiverAffirmationRequirement {
   Required = 'Required',
 }
 
+export enum LegStatusType {
+  PendingTokenLock = 'PendingTokenLock',
+  ExecutionPending = 'ExecutionPending',
+  ExecutionToBeSkipped = 'ExecutionToBeSkipped',
+}
+
+export type LegStatus =
+  | {
+      type: LegStatusType.PendingTokenLock;
+    }
+  | {
+      type: LegStatusType.ExecutionPending;
+    }
+  | {
+      type: LegStatusType.ExecutionToBeSkipped;
+      signer: Account;
+      uid: BigNumber;
+    };
+
 export interface InstructionAffirmation {
   party: Identity | Account;
   status: AffirmationStatus;

@@ -78,6 +78,7 @@ import {
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementLegStatus,
   PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementReceiptDetails,
   PolymeshPrimitivesSettlementReceiptMetadata,
@@ -252,6 +253,8 @@ import {
   KnownAssetType,
   KnownNftType,
   Leg,
+  LegStatus,
+  LegStatusType,
   MediatorAffirmation,
   MetadataKeyId,
   MetadataLockStatus,
@@ -3410,6 +3413,30 @@ export function meshAffirmationStatusToAffirmationStatus(
   }
 
   return AffirmationStatus.Affirmed;
+}
+
+/**
+ * @hidden
+ */
+export function meshLegStatusToLegStatus(
+  status: PolymeshPrimitivesSettlementLegStatus,
+  context: Context
+): LegStatus {
+  if (status.isPendingTokenLock) {
+    return { type: LegStatusType.PendingTokenLock };
+  }
+
+  if (status.isExecutionPending) {
+    return { type: LegStatusType.ExecutionPending };
+  }
+
+  const [rawSigner, rawUid] = status.asExecutionToBeSkipped;
+
+  return {
+    type: LegStatusType.ExecutionToBeSkipped,
+    signer: new Account({ address: accountIdToString(rawSigner) }, context),
+    uid: u64ToBigNumber(rawUid),
+  };
 }
 
 /**
