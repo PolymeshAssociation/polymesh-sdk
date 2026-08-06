@@ -12,7 +12,7 @@
 
 ## Polymesh version
 
-This release is compatible with Polymesh v7.3-v8.0
+This release is compatible with Polymesh v7.0, v7.1, v7.2, v7.3, v8.0
 
 ## Getting Started
 
