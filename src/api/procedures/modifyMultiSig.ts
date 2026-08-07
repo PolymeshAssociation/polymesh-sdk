@@ -222,15 +222,15 @@ export async function getAuthorization(
 
   if (isAdmin) {
     if (signersToAdd.length > 0) {
-      transactions.push(TxTags.multiSig.AddMultisigSignersViaCreator);
+      transactions.push(TxTags.multiSig.AddMultisigSignersViaAdmin);
     }
 
     if (signersToRemove.length > 0) {
-      transactions.push(TxTags.multiSig.RemoveMultisigSignersViaCreator);
+      transactions.push(TxTags.multiSig.RemoveMultisigSignersViaAdmin);
     }
 
     if (newRequiredSignatures) {
-      transactions.push(TxTags.multiSig.ChangeSigsRequiredViaCreator);
+      transactions.push(TxTags.multiSig.ChangeSigsRequiredViaAdmin);
     }
   } else {
     if (signersToAdd.length > 0) {

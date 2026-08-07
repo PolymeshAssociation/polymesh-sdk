@@ -138,7 +138,7 @@ export class PolymeshTransaction<
      * this is the only extrinsic so far that always has to be
      *   paid by the caller
      */
-    return this.tag === TxTags.relayer.RemovePayingKey;
+    return this.tag === TxTags.relayer.RemoveSubsidy;
   }
 
   // eslint-disable-next-line require-jsdoc

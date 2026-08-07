@@ -121,7 +121,7 @@ export function getMissingTransactionPermissions(
   const exemptedTransactions: (TxTag | ModuleName)[] = [
     TxTags.identity.LeaveIdentityAsKey,
     TxTags.identity.JoinIdentityAsKey,
-    TxTags.multiSig.AcceptMultisigSignerAsKey,
+    TxTags.multiSig.AcceptMultisigSigner,
     ...difference(Object.values(TxTags.balances), [
       TxTags.balances.DepositBlockRewardReserveBalance,
       TxTags.balances.BurnAccountBalance,

@@ -375,7 +375,7 @@ describe('modifyMultiSig procedure', () => {
       let result = await boundFunc({});
       expect(result).toEqual({
         permissions: {
-          transactions: [TxTags.multiSig.AddMultisigSignersViaCreator],
+          transactions: [TxTags.multiSig.AddMultisigSignersViaAdmin],
           assets: undefined,
           portfolios: undefined,
         },
@@ -398,7 +398,7 @@ describe('modifyMultiSig procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          transactions: [TxTags.multiSig.RemoveMultisigSignersViaCreator],
+          transactions: [TxTags.multiSig.RemoveMultisigSignersViaAdmin],
           assets: undefined,
           portfolios: undefined,
         },
@@ -421,7 +421,7 @@ describe('modifyMultiSig procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          transactions: [TxTags.multiSig.ChangeSigsRequiredViaCreator],
+          transactions: [TxTags.multiSig.ChangeSigsRequiredViaAdmin],
           assets: undefined,
           portfolios: undefined,
         },

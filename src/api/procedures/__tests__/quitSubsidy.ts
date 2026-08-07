@@ -99,7 +99,7 @@ describe('quitSubsidy procedure', () => {
       expect(result).toEqual({
         roles: 'Only the subsidizer or the beneficiary are allowed to quit a Subsidy',
         permissions: {
-          transactions: [TxTags.relayer.RemovePayingKey],
+          transactions: [TxTags.relayer.RemoveSubsidy],
         },
       });
 
@@ -109,7 +109,7 @@ describe('quitSubsidy procedure', () => {
       expect(result).toEqual({
         roles: true,
         permissions: {
-          transactions: [TxTags.relayer.RemovePayingKey],
+          transactions: [TxTags.relayer.RemoveSubsidy],
         },
       });
 
@@ -119,7 +119,7 @@ describe('quitSubsidy procedure', () => {
       expect(result).toEqual({
         roles: true,
         permissions: {
-          transactions: [TxTags.relayer.RemovePayingKey],
+          transactions: [TxTags.relayer.RemoveSubsidy],
         },
       });
     });

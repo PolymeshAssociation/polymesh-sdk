@@ -99,7 +99,7 @@ export async function getAuthorization(
   } else {
     calledByTarget = !!identity?.isEqual(target);
     hasRoles = calledByTarget;
-    permissions = { transactions: [TxTags.multiSig.AcceptMultisigSignerAsIdentity] };
+    permissions = { transactions: [TxTags.multiSig.AcceptMultisigSigner] };
   }
 
   if (accept) {

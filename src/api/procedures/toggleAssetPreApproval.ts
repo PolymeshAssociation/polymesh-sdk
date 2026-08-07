@@ -61,7 +61,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [
-        preApprove ? TxTags.asset.PreApproveTicker : TxTags.asset.RemoveTickerPreApproval,
+        preApprove ? TxTags.asset.PreApproveAsset : TxTags.asset.RemoveAssetPreApproval,
       ],
       assets: [],
       portfolios: [],

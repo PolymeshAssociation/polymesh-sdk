@@ -339,7 +339,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
         roles:
           '"AddMultiSigSigner" Authorization Requests can only be accepted by the target Signer',
         permissions: {
-          transactions: [TxTags.multiSig.AcceptMultisigSignerAsIdentity],
+          transactions: [TxTags.multiSig.AcceptMultisigSigner],
         },
       });
 

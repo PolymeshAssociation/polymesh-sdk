@@ -73,7 +73,7 @@ export async function getAuthorization(
   return {
     roles: hasRoles || 'Only the subsidizer or the beneficiary are allowed to quit a Subsidy',
     permissions: {
-      transactions: [TxTags.relayer.RemovePayingKey],
+      transactions: [TxTags.relayer.RemoveSubsidy],
     },
   };
 }

@@ -124,7 +124,7 @@ describe('toggleAssetPreApproval procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          transactions: [TxTags.asset.PreApproveTicker],
+          transactions: [TxTags.asset.PreApproveAsset],
           assets: [],
           portfolios: [],
         },
@@ -134,7 +134,7 @@ describe('toggleAssetPreApproval procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          transactions: [TxTags.asset.RemoveTickerPreApproval],
+          transactions: [TxTags.asset.RemoveAssetPreApproval],
           assets: [],
           portfolios: [],
         },
