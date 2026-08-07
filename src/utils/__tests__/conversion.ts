@@ -8108,13 +8108,14 @@ describe('txGroupToTxTags', () => {
     const portfolioManagementResult = txGroupToTxTags(TxGroup.PortfolioManagement);
     const expectedPortfolioManagement = [
       TxTags.portfolio.AcceptPortfolioCustody,
+      TxTags.portfolio.AllowIdentityToCreatePortfolios,
       TxTags.portfolio.CreateCustodyPortfolio,
       TxTags.portfolio.CreatePortfolio,
       TxTags.portfolio.DeletePortfolio,
       TxTags.portfolio.MovePortfolioFunds,
-      TxTags.portfolio.MovePortfolioFundsV2,
       TxTags.portfolio.QuitPortfolioCustody,
       TxTags.portfolio.RenamePortfolio,
+      TxTags.portfolio.RevokeCreatePortfoliosPermission,
     ];
     expect(portfolioManagementResult).toEqual(expectedPortfolioManagement);
   });
@@ -8126,13 +8127,14 @@ describe('transactionPermissionsToTxGroups', () => {
       transactionPermissionsToTxGroups({
         values: [
           TxTags.portfolio.AcceptPortfolioCustody,
+          TxTags.portfolio.AllowIdentityToCreatePortfolios,
           TxTags.portfolio.CreateCustodyPortfolio,
           TxTags.portfolio.CreatePortfolio,
           TxTags.portfolio.DeletePortfolio,
           TxTags.portfolio.MovePortfolioFunds,
-          TxTags.portfolio.MovePortfolioFundsV2,
           TxTags.portfolio.QuitPortfolioCustody,
           TxTags.portfolio.RenamePortfolio,
+          TxTags.portfolio.RevokeCreatePortfoliosPermission,
         ],
         type: PermissionType.Include,
       })

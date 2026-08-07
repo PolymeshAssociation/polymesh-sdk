@@ -1,5 +1,14 @@
 import { TxGroup, TxTag, TxTags } from '~/types';
 
+/*
+ * A transaction belongs in a group only if the chain resolves its origin through a call-permission
+ * check (`ensure_origin_call_permissions`, `ensure_perms`, `ensure_valid_origin`, or an external
+ * agent check), since those are the only paths that consult a signer's `ExtrinsicPermissions`.
+ * Calls gated by `ensure_signed`, `ensure_root`, `ensure_did` or `ensure_primary_key` ignore
+ * permissions, so granting them would have no effect. The check may sit behind a delegation, so
+ * follow the call through before concluding.
+ */
+
 /**
  * Transaction tags for Advanced Asset Management operations
  * Contains asset freeze/unfreeze, controller transfer, and NFT management operations.
@@ -138,10 +147,24 @@ export const CAPITAL_DISTRIBUTION_TX_TAGS = [
  * Values:
  * - TxTags.identity.CddRegisterDid
  * - TxTags.identity.CddRegisterDidWithCdd
+ *
+ * @deprecated these extrinsics no longer attach a `CustomerDueDiligence` claim as of chain v8.
+ *   Use {@link DID_REGISTRATION_TX_TAGS} instead
  */
 export const CDD_REGISTRATION_TX_TAGS = [
   TxTags.identity.CddRegisterDid, // Secondary Key
   TxTags.identity.CddRegisterDidWithCdd, // Secondary Key
+] as const satisfies TxTag[];
+
+/**
+ * Transaction tags for DID Registration operations
+ * Contains registrar-gated DID registration, superseding CDD registration.
+ *
+ * Values:
+ * - TxTags.identity.RegisterDid
+ */
+export const DID_REGISTRATION_TX_TAGS = [
+  TxTags.identity.RegisterDid, // Secondary Key
 ] as const satisfies TxTag[];
 
 /**
@@ -234,6 +257,7 @@ export const COMPLIANCE_MANAGEMENT_TX_TAGS = [
 export const CORPORATE_ACTIONS_MANAGEMENT_TX_TAGS = [
   TxTags.corporateAction.ChangeRecordDate, // Agent
   TxTags.corporateAction.InitiateCorporateAction, // Agent
+  TxTags.corporateAction.InitiateCorporateActionAndBallot, // Agent
   TxTags.corporateAction.InitiateCorporateActionAndDistribute, // Agent
   TxTags.corporateAction.LinkCaDoc, // Agent
   TxTags.corporateAction.RemoveCa, // Agent
@@ -311,40 +335,82 @@ export const EXTERNAL_AGENT_PARTICIPATION_TX_TAGS = [
  * Contains comprehensive settlement instruction, venue management, asset pre-approval, and investment operations.
  *
  * Values:
+ * - TxTags.asset.Approve
  * - TxTags.asset.PreApproveAsset
+ * - TxTags.asset.ReceiverAffirmAssetTransfer
+ * - TxTags.asset.RejectAssetTransfer
  * - TxTags.asset.RemoveAssetPreApproval
+ * - TxTags.asset.TransferAsset
  * - TxTags.capitalDistribution.Claim
+ * - TxTags.nft.TransferNft
+ * - TxTags.portfolio.PreApprovePortfolio
+ * - TxTags.portfolio.RemovePortfolioPreApproval
  * - TxTags.settlement.AddAndAffirmInstruction
- * - TxTags.settlement.AddAndAffirmInstructionWithMemo
+ * - TxTags.settlement.AddAndAffirmWithMediators
  * - TxTags.settlement.AddInstruction
- * - TxTags.settlement.AddInstructionWithMemo
+ * - TxTags.settlement.AddInstructionWithMediators
  * - TxTags.settlement.AffirmInstruction
+ * - TxTags.settlement.AffirmInstructionWithCount
  * - TxTags.settlement.AffirmWithReceipts
+ * - TxTags.settlement.AffirmWithReceiptsWithCount
  * - TxTags.settlement.CreateVenue
  * - TxTags.settlement.ExecuteManualInstruction
  * - TxTags.settlement.RejectInstruction
+ * - TxTags.settlement.RejectInstructionWithCount
+ * - TxTags.settlement.SetMandatoryReceiverAffirmation
+ * - TxTags.settlement.TransferFunds
  * - TxTags.settlement.UpdateVenueDetails
  * - TxTags.settlement.UpdateVenueSigners
  * - TxTags.settlement.UpdateVenueType
  * - TxTags.sto.Invest
  */
 export const SETTLEMENT_MANAGEMENT_TX_TAGS = [
+  TxTags.asset.Approve, // Secondary Key
   TxTags.asset.PreApproveAsset, // Secondary Key
+  TxTags.asset.ReceiverAffirmAssetTransfer, // Secondary Key
+  TxTags.asset.RejectAssetTransfer, // Secondary Key
   TxTags.asset.RemoveAssetPreApproval, // Secondary Key
+  TxTags.asset.TransferAsset, // Secondary Key
   TxTags.capitalDistribution.Claim, // Secondary Key
+  TxTags.nft.TransferNft, // Secondary Key
+  TxTags.portfolio.PreApprovePortfolio, // Secondary Key
+  TxTags.portfolio.RemovePortfolioPreApproval, // Secondary Key
   TxTags.settlement.AddAndAffirmInstruction, // Secondary Key
-  TxTags.settlement.AddAndAffirmInstructionWithMemo, // Secondary Key
+  TxTags.settlement.AddAndAffirmWithMediators, // Secondary Key
   TxTags.settlement.AddInstruction, // Secondary Key
-  TxTags.settlement.AddInstructionWithMemo, // Secondary Key
+  TxTags.settlement.AddInstructionWithMediators, // Secondary Key
   TxTags.settlement.AffirmInstruction, // Secondary Key
+  TxTags.settlement.AffirmInstructionWithCount, // Secondary Key
   TxTags.settlement.AffirmWithReceipts, // Secondary Key
+  TxTags.settlement.AffirmWithReceiptsWithCount, // Secondary Key
   TxTags.settlement.CreateVenue, // Secondary Key
   TxTags.settlement.ExecuteManualInstruction, // Secondary Key
   TxTags.settlement.RejectInstruction, // Secondary Key
+  TxTags.settlement.RejectInstructionWithCount, // Secondary Key
+  TxTags.settlement.SetMandatoryReceiverAffirmation, // Secondary Key
+  TxTags.settlement.TransferFunds, // Secondary Key
   TxTags.settlement.UpdateVenueDetails, // Secondary Key
   TxTags.settlement.UpdateVenueSigners, // Secondary Key
   TxTags.settlement.UpdateVenueType, // Secondary Key
   TxTags.sto.Invest, // Secondary Key
+] as const satisfies TxTag[];
+
+/**
+ * Transaction tags for Instruction Mediation operations
+ * Contains the operations available to an Instruction's mediators — affirming or rejecting as a
+ * mediator, and locking/unlocking an Instruction for execution.
+ *
+ * Values:
+ * - TxTags.settlement.AffirmInstructionAsMediator
+ * - TxTags.settlement.LockInstruction
+ * - TxTags.settlement.RejectInstructionAsMediator
+ * - TxTags.settlement.UnlockInstruction
+ */
+export const INSTRUCTION_MEDIATION_TX_TAGS = [
+  TxTags.settlement.AffirmInstructionAsMediator, // Secondary Key
+  TxTags.settlement.LockInstruction, // Secondary Key
+  TxTags.settlement.RejectInstructionAsMediator, // Secondary Key
+  TxTags.settlement.UnlockInstruction, // Secondary Key
 ] as const satisfies TxTag[];
 
 /**
@@ -366,6 +432,10 @@ export const ISSUANCE_TX_TAGS = [
  *
  * Values:
  * - TxTags.multiSig.CreateMultisig
+ *
+ * @note a MultiSig executes proposals under its own origin, so what it may do via proposal is
+ *   constrained by the permissions held by the MultiSig Account itself, not by those of its
+ *   signers. Those permissions are drawn from these same groups
  */
 export const MULTISIG_MANAGEMENT_TX_TAGS = [
   TxTags.multiSig.CreateMultisig, // Secondary Key
@@ -377,43 +447,25 @@ export const MULTISIG_MANAGEMENT_TX_TAGS = [
  *
  * Values:
  * - TxTags.portfolio.AcceptPortfolioCustody
+ * - TxTags.portfolio.AllowIdentityToCreatePortfolios
  * - TxTags.portfolio.CreateCustodyPortfolio
  * - TxTags.portfolio.CreatePortfolio
  * - TxTags.portfolio.DeletePortfolio
  * - TxTags.portfolio.MovePortfolioFunds
- * - TxTags.portfolio.MovePortfolioFundsV2
  * - TxTags.portfolio.QuitPortfolioCustody
  * - TxTags.portfolio.RenamePortfolio
+ * - TxTags.portfolio.RevokeCreatePortfoliosPermission
  */
 export const PORTFOLIO_MANAGEMENT_TX_TAGS = [
   TxTags.portfolio.AcceptPortfolioCustody, // Secondary Key
+  TxTags.portfolio.AllowIdentityToCreatePortfolios, // Secondary Key
   TxTags.portfolio.CreateCustodyPortfolio, // Secondary Key
   TxTags.portfolio.CreatePortfolio, // Secondary Key
   TxTags.portfolio.DeletePortfolio, // Secondary Key
   TxTags.portfolio.MovePortfolioFunds, // Secondary Key
-  TxTags.portfolio.MovePortfolioFundsV2, // Secondary Key
   TxTags.portfolio.QuitPortfolioCustody, // Secondary Key
   TxTags.portfolio.RenamePortfolio, // Secondary Key
-] as const satisfies TxTag[];
-
-/**
- * Transaction tags for Relayer Management operations
- * Contains operations for managing relayer and paying keys.
- *
- * Values:
- * - TxTags.relayer.AcceptPayingKey
- * - TxTags.relayer.DecreasePolyxLimit
- * - TxTags.relayer.IncreasePolyxLimit
- * - TxTags.relayer.RemovePayingKey
- * - TxTags.relayer.SetPayingKey
- * - TxTags.relayer.UpdatePolyxLimit
- */
-export const RELAYER_MANAGEMENT_TX_TAGS = [
-  TxTags.relayer.DecreasePolyxLimit, // Secondary Key
-  TxTags.relayer.IncreasePolyxLimit, // Secondary Key
-  TxTags.relayer.RemovePayingKey, // Secondary Key
-  TxTags.relayer.SetPayingKey, // Secondary Key
-  TxTags.relayer.UpdatePolyxLimit, // Secondary Key
+  TxTags.portfolio.RevokeCreatePortfoliosPermission, // Secondary Key
 ] as const satisfies TxTag[];
 
 /**
@@ -435,6 +487,7 @@ export const REDEMPTION_TX_TAGS = [
  *
  * Values:
  * - TxTags.sto.CreateFundraiser
+ * - TxTags.sto.EnableOffchainFunding
  * - TxTags.sto.FreezeFundraiser
  * - TxTags.sto.ModifyFundraiserWindow
  * - TxTags.sto.Stop
@@ -442,6 +495,7 @@ export const REDEMPTION_TX_TAGS = [
  */
 export const STO_MANAGEMENT_TX_TAGS = [
   TxTags.sto.CreateFundraiser, // Agent
+  TxTags.sto.EnableOffchainFunding, // Agent
   TxTags.sto.FreezeFundraiser, // Agent
   TxTags.sto.ModifyFundraiserWindow, // Agent
   TxTags.sto.Stop, // Agent
@@ -481,12 +535,13 @@ export const TX_GROUP_TO_TAGS_MAP: Record<TxGroup, TxTag[]> = {
   [TxGroup.CorporateActionsManagement]: CORPORATE_ACTIONS_MANAGEMENT_TX_TAGS,
   [TxGroup.CorporateBallotManagement]: CORPORATE_BALLOT_MANAGEMENT_TX_TAGS,
   [TxGroup.CorporateVoting]: CORPORATE_VOTING_TX_TAGS,
+  [TxGroup.DidRegistration]: DID_REGISTRATION_TX_TAGS,
   [TxGroup.ExternalAgentManagement]: EXTERNAL_AGENT_MANAGEMENT_TX_TAGS,
+  [TxGroup.InstructionMediation]: INSTRUCTION_MEDIATION_TX_TAGS,
   [TxGroup.ExternalAgentParticipation]: EXTERNAL_AGENT_PARTICIPATION_TX_TAGS,
   [TxGroup.Issuance]: ISSUANCE_TX_TAGS,
   [TxGroup.MultiSigManagement]: MULTISIG_MANAGEMENT_TX_TAGS,
   [TxGroup.PortfolioManagement]: PORTFOLIO_MANAGEMENT_TX_TAGS,
-  [TxGroup.RelayerManagement]: RELAYER_MANAGEMENT_TX_TAGS,
   [TxGroup.Redemption]: REDEMPTION_TX_TAGS,
   [TxGroup.SettlementManagement]: SETTLEMENT_MANAGEMENT_TX_TAGS,
   [TxGroup.StoManagement]: STO_MANAGEMENT_TX_TAGS,

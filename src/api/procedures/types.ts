@@ -367,8 +367,23 @@ export enum TxGroup {
   /**
    * CDD Registration operations
    * @see {@link types/txGroupConstants!CDD_REGISTRATION_TX_TAGS} for the complete list of transactions
+   *
+   * @deprecated as of chain v8 the underlying extrinsics are deprecated and no longer attach a
+   *   `CustomerDueDiligence` claim. Use {@link TxGroup.DidRegistration} instead.
    */
   CddRegistration = 'CddRegistration',
+
+  /**
+   * DID Registration operations
+   * @see {@link types/txGroupConstants!DID_REGISTRATION_TX_TAGS} for the complete list of transactions
+   */
+  DidRegistration = 'DidRegistration',
+
+  /**
+   * Instruction Mediation operations
+   * @see {@link types/txGroupConstants!INSTRUCTION_MEDIATION_TX_TAGS} for the complete list of transactions
+   */
+  InstructionMediation = 'InstructionMediation',
 
   /**
    * Checkpoint management
@@ -435,12 +450,6 @@ export enum TxGroup {
    * @see {@link types/txGroupConstants!PORTFOLIO_MANAGEMENT_TX_TAGS} for the complete list of transactions
    */
   PortfolioManagement = 'PortfolioManagement',
-
-  /**
-   * Relayer Management operations
-   * @see {@link types/txGroupConstants!RELAYER_MANAGEMENT_TX_TAGS} for the complete list of transactions
-   */
-  RelayerManagement = 'RelayerManagement',
 
   /**
    * Redemption operations
