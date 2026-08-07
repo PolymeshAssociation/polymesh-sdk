@@ -231,7 +231,7 @@ describe('Identity class', () => {
       spy.mockRestore();
     });
 
-    it('should check whether the Identity has the CDD Provider role', async () => {
+    it('should check whether the Identity has the DID Registrar role', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
       const role: Role = { type: RoleType.DidRegistrar };
@@ -459,8 +459,8 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: isCddProvider', () => {
-    it('should return whether the Identity is a CDD provider', async () => {
+  describe('method: isDidRegistrar', () => {
+    it('should return whether the Identity is a DID Registrar', async () => {
       const did = 'someDid';
       const rawDid = dsMockUtils.createMockIdentityId(did);
       const mockContext = dsMockUtils.getContextInstance();
@@ -472,7 +472,7 @@ describe('Identity class', () => {
         .createQueryMock('didRegistrars', 'activeMembers')
         .mockResolvedValue([rawDid, dsMockUtils.createMockIdentityId('otherDid')]);
 
-      const result = await identity.isCddProvider();
+      const result = await identity.isDidRegistrar();
 
       expect(result).toBeTruthy();
     });
@@ -849,19 +849,19 @@ describe('Identity class', () => {
 
       when(assetHolderToMeshAssetHolderIdSpy)
         .calledWith({ did, number: undefined }, context)
-        .mockResolvedValue(rawPortfolioHolder);
+        .mockReturnValue(rawPortfolioHolder);
 
       when(assetHolderToMeshAssetHolderIdSpy)
         .calledWith({ did: numberedPortfolioDid, number: numberedPortfolioId }, context)
-        .mockResolvedValue(rawNumberedPortfolioHolder);
+        .mockReturnValue(rawNumberedPortfolioHolder);
 
       when(assetHolderToMeshAssetHolderIdSpy)
         .calledWith({ did: custodiedPortfolioDid, number: custodiedPortfolioId }, context)
-        .mockResolvedValue(rawCustodiedPortfolioHolder);
+        .mockReturnValue(rawCustodiedPortfolioHolder);
 
       when(assetHolderToMeshAssetHolderIdSpy)
         .calledWith('someAddress', context)
-        .mockResolvedValue(rawAccountHolder);
+        .mockReturnValue(rawAccountHolder);
 
       const userAuthsMock = dsMockUtils.createQueryMock('settlement', 'userAffirmations');
 

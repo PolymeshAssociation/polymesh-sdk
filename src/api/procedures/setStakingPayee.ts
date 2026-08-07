@@ -30,7 +30,7 @@ export async function prepareSetStakingPayee(
       },
     },
     context,
-    storage: { actingAccount, ledger: controllerLedger, currentPayee },
+    storage: { ledger: controllerLedger, currentPayee },
   } = this;
   const { payee: payeeInput, autoStake } = args;
 
@@ -49,7 +49,6 @@ export async function prepareSetStakingPayee(
   const rawPayee = await calculateRawStakingPayee(
     payee,
     controllerLedger.stash,
-    actingAccount,
     autoStake,
     context
   );

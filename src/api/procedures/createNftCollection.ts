@@ -393,7 +393,7 @@ export async function prepareStorageForTickerDetails(
     storageStatus.assetId = reservationDetails.assetId;
     storageStatus.isAssetCreated = true;
     if (assetId && assetId !== reservationDetails.assetId) {
-      // For v7 chain, if assetID is provided in arguments, and the ticker provided is not already associated with the given asset ID, throw an error
+      // if an assetId is provided and the ticker isn't already associated with it, throw an error
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Ticker is already linked to another asset',

@@ -298,9 +298,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether this Identity is a CDD provider
+   * Check whether this Identity is a DID Registrar
    */
-  public async isCddProvider(): Promise<boolean> {
+  public async isDidRegistrar(): Promise<boolean> {
     const {
       context: {
         polymeshApi: { query },
@@ -641,9 +641,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     for (const accountHolderIdChunk of accountHolderIdChunks) {
       const auths = await Promise.all(
-        accountHolderIdChunk.map(async accountHolderId =>
+        accountHolderIdChunk.map(accountHolderId =>
           settlement.userAffirmations.entries(
-            await assetHolderIdToMeshAssetHolder(accountHolderId, context)
+            assetHolderIdToMeshAssetHolder(accountHolderId, context)
           )
         )
       );

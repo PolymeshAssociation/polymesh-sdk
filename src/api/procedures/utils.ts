@@ -456,11 +456,11 @@ export function assertPrimaryKeyRotationAuthorizationValid(
 export async function assertAttestPrimaryKeyAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
-  const isCddProvider = await authRequest.issuer.isCddProvider();
-  if (!isCddProvider) {
+  const isDidRegistrar = await authRequest.issuer.isDidRegistrar();
+  if (!isDidRegistrar) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Issuer must be a CDD provider',
+      message: 'Issuer must be a DID Registrar',
     });
   }
 }
@@ -563,14 +563,14 @@ export async function assertOldAddRelayerPayingKeyAuthorizationValid(
   if (!beneficiaryExists) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Beneficiary Account does not have a valid CDD Claim',
+      message: 'Beneficiary Account does not have an associated Identity',
     });
   }
 
   if (!subsidizerExists) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Subsidizer Account does not have a valid CDD Claim',
+      message: 'Subsidizer Account does not have an associated Identity',
     });
   }
 }
@@ -602,7 +602,7 @@ async function assertJoinOrRotateAuthorizationValid(
   if (!issuerExists) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Issuing Identity does not have a valid CDD claim',
+      message: 'Issuing Identity does not exist',
       data: { issuer: issuer.did },
     });
   }
@@ -682,22 +682,6 @@ export async function assertAuthorizationRequestValid(
       return assertJoinOrRotateAuthorizationValid(authRequest);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
-  }
-}
-
-/**
- * @hidden
- */
-export async function assertValidCdd(identity: string | Identity, context: Context): Promise<void> {
-  const id = asIdentity(identity, context);
-  const identityExists = await id.exists();
-
-  if (!identityExists) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The identity does not have a valid CDD claim',
-      data: { did: id.did },
-    });
   }
 }
 

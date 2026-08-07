@@ -3742,11 +3742,10 @@ describe('calculateRawStakingPayee', () => {
       getIdentity: jest.fn().mockResolvedValue(null),
     });
     const stash = entityMockUtils.getAccountInstance({});
-    const controller = entityMockUtils.getAccountInstance({});
 
-    await expect(
-      calculateRawStakingPayee(payee, stash, controller, false, context)
-    ).rejects.toThrow('The payee should have an identity');
+    await expect(calculateRawStakingPayee(payee, stash, false, context)).rejects.toThrow(
+      'The payee should have an identity'
+    );
   });
 
   it('should throw when autoStake is true but stash is not the payee', async () => {
@@ -3758,7 +3757,7 @@ describe('calculateRawStakingPayee', () => {
     const stash = entityMockUtils.getAccountInstance({});
     payee.isEqual = jest.fn().mockReturnValue(false);
 
-    await expect(calculateRawStakingPayee(payee, stash, payee, true, context)).rejects.toThrow(
+    await expect(calculateRawStakingPayee(payee, stash, true, context)).rejects.toThrow(
       'autoStake requires the stash to be the payee'
     );
   });
@@ -3770,7 +3769,6 @@ describe('calculateRawStakingPayee', () => {
       getIdentity: jest.fn().mockResolvedValue(payeeIdentity),
     });
     const stash = entityMockUtils.getAccountInstance({});
-    const controller = entityMockUtils.getAccountInstance({});
     const raw = {} as unknown as import('@polkadot/types/interfaces').RewardDestination;
     const stakingSpy = jest
       .spyOn(utilsConversionModule, 'stakingRewardDestinationToRaw')
@@ -3778,20 +3776,14 @@ describe('calculateRawStakingPayee', () => {
 
     payee.isEqual = jest.fn().mockImplementation((other: Account) => other === stash);
     stash.isEqual = jest.fn().mockImplementation((other: Account) => other === payee);
-    await calculateRawStakingPayee(payee, stash, controller, true, context);
+    await calculateRawStakingPayee(payee, stash, true, context);
     expect(stakingSpy).toHaveBeenCalledWith({ staked: true }, context);
 
-    await calculateRawStakingPayee(payee, stash, controller, false, context);
+    await calculateRawStakingPayee(payee, stash, false, context);
     expect(stakingSpy).toHaveBeenCalledWith({ stash: true }, context);
 
     stash.isEqual = jest.fn().mockReturnValue(false);
-    controller.isEqual = jest.fn().mockImplementation((other: Account) => other === payee);
-    await calculateRawStakingPayee(payee, stash, controller, false, context);
-    expect(stakingSpy).toHaveBeenCalledWith({ controller: true }, context);
-
-    stash.isEqual = jest.fn().mockReturnValue(false);
-    controller.isEqual = jest.fn().mockReturnValue(false);
-    await calculateRawStakingPayee(payee, stash, controller, false, context);
+    await calculateRawStakingPayee(payee, stash, false, context);
     expect(stakingSpy).toHaveBeenCalledWith({ account: payee }, context);
   });
 });

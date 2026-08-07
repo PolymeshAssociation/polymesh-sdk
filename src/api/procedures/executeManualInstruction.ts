@@ -78,11 +78,8 @@ export async function prepareExecuteManualInstruction(
   }
 
   const rawInstructionId = bigNumberToU64(id, context);
-  const rawAssetHolders = await Promise.all(
-    allowedAssetHolders.map(
-      async assetHolder =>
-        await assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(assetHolder), context)
-    )
+  const rawAssetHolders = allowedAssetHolders.map(assetHolder =>
+    assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(assetHolder), context)
   );
 
   if (!skipAffirmationCheck) {

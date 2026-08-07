@@ -188,8 +188,8 @@ export async function getRawLegDetails(
 
   await Promise.all(assertPromises);
 
-  const sender = await assetHolderIdToMeshAssetHolder(fromId, context);
-  const receiver = await assetHolderIdToMeshAssetHolder(toId, context);
+  const sender = assetHolderIdToMeshAssetHolder(fromId, context);
+  const receiver = assetHolderIdToMeshAssetHolder(toId, context);
 
   const baseAsset = await asBaseAsset(asset, context);
 
@@ -722,14 +722,8 @@ async function getTxArgsAndErrors(
       const rawLegs: PolymeshPrimitivesSettlementLeg[] = rawLegValues.flat();
 
       if (assetHoldersToAffirm[i]!.length) {
-        const rawAssetHolders = await Promise.all(
-          assetHoldersToAffirm[i]!.map(
-            async portfolio =>
-              await assetHolderIdToMeshAssetHolder(
-                assetHolderLikeToAssetHolderId(portfolio),
-                context
-              )
-          )
+        const rawAssetHolders = assetHoldersToAffirm[i]!.map(portfolio =>
+          assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(portfolio), context)
         );
         addAndAffirmInstructionParams.push([
           baseParams.rawVenueId,
@@ -931,7 +925,7 @@ export async function prepareStorage(
             }
 
             if (toCanAffirm) {
-              const rawToHolder = await assetHolderIdToMeshAssetHolder(toId, context);
+              const rawToHolder = assetHolderIdToMeshAssetHolder(toId, context);
               const isAutoAffirmed = await checkIfReceiverIsAutoAffirmed(rawToHolder, rawAssetId);
               if (!isAutoAffirmed) {
                 result.push(toCanAffirm);

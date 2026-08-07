@@ -16,7 +16,6 @@ import {
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
-  assertValidCdd,
   createAuthorizationResolver,
   createCreateGroupResolver,
   getAssetHolderDid,
@@ -902,7 +901,7 @@ describe('authorization request validations', () => {
     };
 
     it('should not throw with a valid request', () => {
-      const mockIssuer = entityMockUtils.getIdentityInstance({ isCddProvider: true });
+      const mockIssuer = entityMockUtils.getIdentityInstance({ isDidRegistrar: true });
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -917,8 +916,8 @@ describe('authorization request validations', () => {
       return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    it('should throw with non CDD provider Issuer', () => {
-      const mockIssuer = entityMockUtils.getIdentityInstance({ isCddProvider: false });
+    it('should throw with non DID Registrar Issuer', () => {
+      const mockIssuer = entityMockUtils.getIdentityInstance({ isDidRegistrar: false });
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -932,7 +931,7 @@ describe('authorization request validations', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Issuer must be a CDD provider',
+        message: 'Issuer must be a DID Registrar',
       });
 
       return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
@@ -1145,7 +1144,7 @@ describe('authorization request validations', () => {
       return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    it('should throw when the issuer lacks a valid CDD', () => {
+    it('should throw when the issuer Identity does not exist', () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ exists: false });
       const auth = new AuthorizationRequest(
         {
@@ -1160,7 +1159,7 @@ describe('authorization request validations', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Issuing Identity does not have a valid CDD claim',
+        message: 'Issuing Identity does not exist',
       });
 
       return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
@@ -1271,7 +1270,7 @@ describe('authorization request validations', () => {
       return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    it('should throw with a beneficiary that does not have a CDD Claim', () => {
+    it('should throw with a beneficiary Account that does not have an associated Identity', () => {
       const subsidizer = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance(),
       });
@@ -1302,7 +1301,7 @@ describe('authorization request validations', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Beneficiary Account does not have a valid CDD Claim',
+        message: 'Beneficiary Account does not have an associated Identity',
       });
 
       return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
@@ -1310,7 +1309,7 @@ describe('authorization request validations', () => {
       );
     });
 
-    it('should throw with a Subsidizer that does not have a CDD Claim', () => {
+    it('should throw with a Subsidizer Account that does not have an associated Identity', () => {
       const beneficiary = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance({ exists: true }),
       });
@@ -1344,7 +1343,7 @@ describe('authorization request validations', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Subsidizer Account does not have a valid CDD Claim',
+        message: 'Subsidizer Account does not have an associated Identity',
       });
 
       return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
@@ -1590,7 +1589,7 @@ describe('authorization request validations', () => {
       return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    it('should throw when the issuer lacks a valid CDD', () => {
+    it('should throw when the issuer Identity does not exist', () => {
       const noCddIssuer = entityMockUtils.getIdentityInstance({ exists: false });
       const auth = new AuthorizationRequest(
         {
@@ -1605,7 +1604,7 @@ describe('authorization request validations', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Issuing Identity does not have a valid CDD claim',
+        message: 'Issuing Identity does not exist',
       });
 
       return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
@@ -1678,27 +1677,6 @@ describe('authorization request validations', () => {
         )
       ).rejects.toThrow(expectedError);
     });
-  });
-});
-
-describe('assertValidCdd', () => {
-  it('should resolve if the identity has a valid CDD claim', () => {
-    const context = dsMockUtils.getContextInstance();
-    const identity = entityMockUtils.getIdentityInstance({ exists: true });
-
-    return expect(assertValidCdd(identity, context)).resolves.not.toThrow();
-  });
-
-  it('should throw an error if the identity does not have a valid CDD claim', () => {
-    const context = dsMockUtils.getContextInstance();
-    const identity = entityMockUtils.getIdentityInstance({ exists: false });
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The identity does not have a valid CDD claim',
-    });
-
-    return expect(assertValidCdd(identity, context)).rejects.toThrow(expectedError);
   });
 });
 

@@ -79,7 +79,7 @@ describe('transferFunds procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    assetHolderIdToMeshAssetHolderSpy.mockResolvedValue('someMeshAssetHolder');
+    assetHolderIdToMeshAssetHolderSpy.mockReturnValue('someMeshAssetHolder');
     assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someAssetHolderId');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isFungibleLegBuilderSpy.mockResolvedValue((leg: any) => 'amount' in leg);
@@ -300,7 +300,7 @@ describe('transferFunds procedure', () => {
 
       fungibleMovementToPortfolioFundSpy.mockResolvedValue('rawFund');
       assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someHolderId');
-      assetHolderIdToMeshAssetHolderSpy.mockResolvedValue('rawHolder');
+      assetHolderIdToMeshAssetHolderSpy.mockReturnValue('rawHolder');
 
       const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
         fromHolder: fromPortfolioHolder,
@@ -331,7 +331,7 @@ describe('transferFunds procedure', () => {
 
       nftMovementToPortfolioFundSpy.mockResolvedValue('rawNftFund');
       assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someHolderId');
-      assetHolderIdToMeshAssetHolderSpy.mockResolvedValue('rawHolder');
+      assetHolderIdToMeshAssetHolderSpy.mockReturnValue('rawHolder');
 
       const proc = procedureMockUtils.getInstance<TransferFundsParams, void, Storage>(mockContext, {
         fromHolder: fromPortfolioHolder,

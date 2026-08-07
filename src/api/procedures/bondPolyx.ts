@@ -35,19 +35,9 @@ export async function prepareBondPolyx(
       actingBalance: { free, locked },
     },
   } = this;
-  const { autoStake, controller: controllerInput, payee: payeeInput, amount } = args;
+  const { autoStake, payee: payeeInput, amount } = args;
 
   const payee = asAccount(payeeInput, context);
-  const controller = asAccount(controllerInput, context);
-
-  const controllerId = await controller.getIdentity();
-  if (!controllerId) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The controller should be associated to an Identity',
-      data: { controller: controller.address },
-    });
-  }
 
   if (free.lt(amount)) {
     throw new PolymeshError({
@@ -63,13 +53,7 @@ export async function prepareBondPolyx(
   }
 
   const rawAmount = bigNumberToBalance(amount, context);
-  const rawPayee = await calculateRawStakingPayee(
-    payee,
-    actingAccount,
-    controller,
-    autoStake,
-    context
-  );
+  const rawPayee = await calculateRawStakingPayee(payee, actingAccount, autoStake, context);
 
   return {
     transaction: bond,

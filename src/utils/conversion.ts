@@ -56,7 +56,6 @@ import {
   PolymeshPrimitivesIdentityClaimScope,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
-  PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesIdentitySecondaryKeyWithAuth,
   PolymeshPrimitivesJurisdictionCountryCode,
   PolymeshPrimitivesMemo,
@@ -116,7 +115,6 @@ import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
-  CddStatus,
   ComplianceReport,
   ComplianceRequirementResult,
   GranularCanTransferResult,
@@ -375,7 +373,6 @@ import { isSnakeCase, startsWithCapital, uuidToHex } from '~/utils/strings';
 import {
   isIdentityCondition,
   isMultiClaimCondition,
-  isNumberedPortfolio,
   isSingleClaimCondition,
 } from '~/utils/typeguards';
 
@@ -917,10 +914,10 @@ export function portfolioIdToMeshPortfolioId(
 /**
  * @hidden
  */
-export async function assetHolderIdToMeshAssetHolder( // eslint-disable-line require-await
+export function assetHolderIdToMeshAssetHolder(
   assetHolderId: AssetHolderId,
   context: Context
-): Promise<PolymeshPrimitivesAssetAssetHolder> {
+): PolymeshPrimitivesAssetAssetHolder {
   if (typeof assetHolderId === 'string') {
     if (hexHasPrefix(assetHolderId)) {
       return context.createType<PolymeshPrimitivesAssetAssetHolder>(
@@ -944,22 +941,6 @@ export async function assetHolderIdToMeshAssetHolder( // eslint-disable-line req
     }
   );
 }
-/**
- * @hidden
- */
-export function portfolioToPortfolioKind(
-  portfolio: DefaultPortfolio | NumberedPortfolio,
-  context: Context
-): PolymeshPrimitivesIdentityIdPortfolioKind {
-  let portfolioKind;
-  if (isNumberedPortfolio(portfolio)) {
-    portfolioKind = { User: bigNumberToU64(portfolio.id, context) };
-  } else {
-    portfolioKind = 'Default';
-  }
-  return context.createType('PolymeshPrimitivesIdentityIdPortfolioKind', portfolioKind);
-}
-
 /**
  * @hidden
  */
@@ -1024,7 +1005,7 @@ export function transactionPermissionsToTxGroups(
   }
 
   return Object.values(TxGroup)
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .filter(group => {
       const tagsInGroup = txGroupToTxTags(group);
 
@@ -1060,27 +1041,29 @@ function initExtrinsicDict(
 ): Record<string, { tx: string[]; exception?: true } | null> {
   const extrinsicDict: Record<string, { tx: string[]; exception?: true } | null> = {};
 
-  [...new Set(txValues)].sort().forEach(tag => {
-    if (tag.includes('.')) {
-      const { palletName, dispatchableName } = splitTag(tag as TxTag);
-      let pallet = extrinsicDict[palletName];
+  [...new Set(txValues)]
+    .sort((a, b) => a.localeCompare(b))
+    .forEach(tag => {
+      if (tag.includes('.')) {
+        const { palletName, dispatchableName } = splitTag(tag as TxTag);
+        let pallet = extrinsicDict[palletName];
 
-      if (pallet === null) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message,
-          data: {
-            module: palletName,
-            transactions: [dispatchableName],
-          },
-        });
-      } else pallet ??= extrinsicDict[palletName] = { tx: [] };
+        if (pallet === null) {
+          throw new PolymeshError({
+            code: ErrorCode.ValidationError,
+            message,
+            data: {
+              module: palletName,
+              transactions: [dispatchableName],
+            },
+          });
+        } else pallet ??= extrinsicDict[palletName] = { tx: [] };
 
-      pallet.tx.push(dispatchableName);
-    } else {
-      extrinsicDict[stringUpperFirst(tag)] = null;
-    }
-  });
+        pallet.tx.push(dispatchableName);
+      } else {
+        extrinsicDict[stringUpperFirst(tag)] = null;
+      }
+    });
 
   return extrinsicDict;
 }
@@ -1758,8 +1741,7 @@ export function authorizationDataToAuthorization(
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((auth as any).isAddRelayerPayingKey || auth.isOldAddRelayerPayingKey) {
+  if (auth.isOldAddRelayerPayingKey) {
     const [userKey, payingKey, polyxLimit] = auth.asOldAddRelayerPayingKey;
 
     const value = {
@@ -2374,16 +2356,6 @@ export function documentToAssetDocumentWithId({
     ...assetDoc,
     id: u32ToBigNumber(id),
   };
-}
-
-/**
- * @hidden
- */
-export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
-  if (cddStatus.isOk) {
-    return true;
-  }
-  return false;
 }
 
 /**
@@ -3668,19 +3640,6 @@ export function addressesToBtreeSet(addresses: string[], context: Context): BTre
   const rawIds = addresses.map(address => stringToAccountId(address, context));
 
   return context.createType('BTreeSet<AccountId32>', rawIds) as unknown as BTreeSet<AccountId32>;
-}
-
-/**
- * @hidden
- */
-export function portfolioIdsToBtreeSet(
-  rawPortfolioIds: PolymeshPrimitivesIdentityIdPortfolioId[],
-  context: Context
-): BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId> {
-  return context.createType(
-    'BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>',
-    uniqWith(rawPortfolioIds, isEqual)
-  ) as unknown as BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>;
 }
 
 /**
@@ -5092,7 +5051,7 @@ export function expiryToMoment(expiry: Date | undefined, context: Context): Mome
 
 /**
  * @hidden
- * Note: currently only supports fungible legs, see `portfolioToPortfolioKind` for exemplary API
+ * Note: currently only supports fungible legs
  */
 export function middlewarePortfolioDataToPortfolio(
   data: {

@@ -840,8 +840,6 @@ export interface IssueTokensParams {
 export interface CreateAssetWithTickerParams extends CreateAssetParams {
   /**
    * (optional) ticker to be linked with the Asset
-   *
-   * @note from 7.x chain, ticker has been made optional. For 6.x chain, it is still mandatory.
    */
   ticker?: string;
 }
@@ -866,17 +864,13 @@ export interface CreateNftCollectionParams {
   /**
    * The ID of the asset to be used to create the collection.
    * If no assetId is provided, a new asset with `NonFungible` asset type will be created
-   *
-   * @note for spec version before 7.x, this value is overwritten by `ticker` value
    */
   assetId?: string;
   /**
    * The primary identifier for the collection.
    * The ticker must either be free, or the signer has appropriate permissions if reserved.
    *
-   * Since spec version 7.x, this value (if provided) is then linked to `assetId` asset
-   *
-   * @note This value is mandatory for spec version before 7.x
+   * This value (if provided) is then linked to the `assetId` asset.
    */
   ticker?: string;
   /**
@@ -979,10 +973,15 @@ export interface RegisterIdentityParams {
   secondaryAccounts?: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
   /**
    * (optional) also issue a CDD claim for the created DID, completing the onboarding process for the Account
+   *
+   * @note as of chain v8, `cdd_register_did`/`cdd_register_did_with_cdd` are deprecated and no
+   *   longer attach a `CustomerDueDiligence` claim, so this flag no longer has any on-chain effect
    */
   createCdd?: boolean;
   /**
    * (optional) when the generated CDD claim should expire, `createCdd` must be true if specified
+   *
+   * @note as of chain v8, this no longer has any on-chain effect (see `createCdd`)
    */
   expiry?: Date;
 }
@@ -1909,13 +1908,6 @@ export interface RegisterCustomAssetTypeParams {
 }
 
 export interface BondPolyxParams {
-  /**
-   * The controller is the account responsible for managing staked POLYX. This can be the stash,
-   * but designating a different key can make it easier to update nomination preferences and maintain
-   * the POLYX in a more secure, but inconvenient, stash key.
-   */
-  controller: Account | string;
-
   /**
    * The account that should receive the stashing rewards
    */

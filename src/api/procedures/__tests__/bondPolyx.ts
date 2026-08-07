@@ -98,26 +98,7 @@ describe('bondPolyx procedure', () => {
 
     await expect(
       prepareBondPolyx.call(proc, {
-        controller: actingAccount,
         amount: new BigNumber(900),
-        payee: actingAccount,
-        autoStake: false,
-      })
-    ).rejects.toThrow(expectedError);
-  });
-
-  it('should throw an error if the controller lacks an identity', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The controller should be associated to an Identity',
-    });
-
-    await expect(
-      prepareBondPolyx.call(proc, {
-        controller: entityMockUtils.getAccountInstance({ getIdentity: null }),
-        amount: new BigNumber(3),
         payee: actingAccount,
         autoStake: false,
       })
@@ -134,7 +115,6 @@ describe('bondPolyx procedure', () => {
 
     await expect(
       prepareBondPolyx.call(proc, {
-        controller: actingAccount,
         amount: new BigNumber(3),
         payee: entityMockUtils.getAccountInstance({ getIdentity: null }),
         autoStake: false,
@@ -154,7 +134,6 @@ describe('bondPolyx procedure', () => {
 
     await expect(
       prepareBondPolyx.call(proc, {
-        controller: actingAccount,
         amount: new BigNumber(3),
         payee: payeeAccount,
         autoStake: true,
@@ -170,7 +149,6 @@ describe('bondPolyx procedure', () => {
 
     const args = {
       payee: actingAccount,
-      controller: actingAccount,
       rewardDestination: actingAccount,
       amount,
       autoStake: false,
@@ -196,7 +174,6 @@ describe('bondPolyx procedure', () => {
 
     const args = {
       payee: actingAccount,
-      controller: actingAccount,
       rewardDestination: actingAccount,
       amount,
       autoStake: true,
@@ -222,10 +199,6 @@ describe('bondPolyx procedure', () => {
 
     const args = {
       payee: destination,
-      controller: entityMockUtils.getAccountInstance({
-        isEqual: false,
-        address: '5CD1ydRQzG7du6Sd4EfBWTGpZc1VJjKNSc5ScyZXfRgkqUG9',
-      }),
       amount,
       autoStake: false,
     };
@@ -234,35 +207,6 @@ describe('bondPolyx procedure', () => {
 
     expect(stakingRewardDestinationToRawSpy).toHaveBeenCalledWith(
       { account: destination },
-      mockContext
-    );
-  });
-
-  it('should handle a controller destination', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      actingBalance,
-      actingAccount: entityMockUtils.getAccountInstance({
-        isEqual: false,
-        address: actingAccount.address,
-      }),
-    });
-
-    const controller = entityMockUtils.getAccountInstance({
-      isEqual: true,
-      address: '5CD1ydRQzG7du6Sd4EfBWTGpZc1VJjKNSc5ScyZXfRgkqUG9',
-    });
-    const args = {
-      payee: actingAccount,
-      controller,
-      rewardDestination: controller,
-      amount,
-      autoStake: false,
-    };
-
-    await prepareBondPolyx.call(proc, args);
-
-    expect(stakingRewardDestinationToRawSpy).toHaveBeenCalledWith(
-      { controller: true },
       mockContext
     );
   });

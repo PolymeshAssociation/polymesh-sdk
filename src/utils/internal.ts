@@ -2167,8 +2167,8 @@ export async function getAssetIdForMiddleware(
   context: Context
 ): Promise<string> {
   /**
-   * For cases where ticker is passed in with 7.x chain, we make sure we get assetId mapped with the ticker
-   * `asAssetId` creates a `BaseAsset` and returns the ID which is the ticker value for 6.x chain and ID for 7.x chain
+   * For cases where a ticker is passed in, we make sure we get the assetId mapped to that ticker.
+   * `asAssetId` creates a `BaseAsset` and returns its ID.
    */
   const assetId = await asAssetId(assetIdOrTicker, context);
 
@@ -2281,7 +2281,6 @@ export function isMiddlewareV6Extrinsic(
 export async function calculateRawStakingPayee(
   payee: Account,
   stash: Account,
-  controller: Account,
   autoStake: boolean,
   context: Context
 ): Promise<RewardDestination> {
@@ -2307,8 +2306,6 @@ export async function calculateRawStakingPayee(
     return stakingRewardDestinationToRaw({ staked: true }, context);
   } else if (stash.isEqual(payee)) {
     return stakingRewardDestinationToRaw({ stash: true }, context);
-  } else if (controller.isEqual(payee)) {
-    return stakingRewardDestinationToRaw({ controller: true }, context);
   } else {
     return stakingRewardDestinationToRaw({ account: payee }, context);
   }

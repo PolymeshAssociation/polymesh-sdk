@@ -142,7 +142,7 @@ interface IdentityOptions extends EntityOptions {
   checkRoles?: EntityGetter<CheckRolesResult>;
   assetPermissionsHasPermissions?: EntityGetter<boolean>;
   assetPermissionsCheckPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Identity>>;
-  isCddProvider?: EntityGetter<boolean>;
+  isDidRegistrar?: EntityGetter<boolean>;
   getPrimaryAccount?: EntityGetter<PermissionedAccount>;
   portfoliosGetPortfolio?: EntityGetter<Portfolio>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
@@ -622,7 +622,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     getAssetBalance!: jest.Mock;
     getSecondaryAccounts!: jest.Mock;
     areSecondaryAccountsFrozen!: jest.Mock;
-    isCddProvider!: jest.Mock;
+    isDidRegistrar!: jest.Mock;
     preApprovedAssets!: jest.Mock;
     isAssetPreApproved!: jest.Mock;
     getOffChainAuthorizationNonce!: jest.Mock;
@@ -661,7 +661,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getAssetBalance = createEntityGetterMock(opts.getAssetBalance);
       this.getSecondaryAccounts = createEntityGetterMock(opts.getSecondaryAccounts);
       this.areSecondaryAccountsFrozen = createEntityGetterMock(opts.areSecondaryAccountsFrozen);
-      this.isCddProvider = createEntityGetterMock(opts.isCddProvider);
+      this.isDidRegistrar = createEntityGetterMock(opts.isDidRegistrar);
       this.preApprovedAssets = createEntityGetterMock(opts.preApprovedAssets);
       this.isAssetPreApproved = createEntityGetterMock(opts.isAssetPreApproved);
       this.getOffChainAuthorizationNonce = createEntityGetterMock(
@@ -671,7 +671,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
   },
   () => ({
     did: 'someDid',
-    isCddProvider: false,
+    isDidRegistrar: false,
     authorizationsGetReceived: [],
     authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
     authorizationsGetOne: getAuthorizationRequestInstance(),

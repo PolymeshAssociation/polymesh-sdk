@@ -170,7 +170,6 @@ import {
   AssetComplianceResult,
   AssetCount,
   AuthorizationType as MeshAuthorizationType,
-  CddStatus,
   ComplianceReport,
   ComplianceRequirementResult,
   ConditionReport,
@@ -1581,7 +1580,7 @@ export function createQueryMock<
  */
 export function createCallMock<
   ModuleName extends keyof Calls,
-  CallName extends keyof Calls[ModuleName] | string // string allows broader mocking of runtime API call names
+  CallName extends keyof Calls[ModuleName]
 >(
   mod: ModuleName,
   query: CallName,
@@ -2923,14 +2922,6 @@ export const createMockIEvent = <T extends Codec[]>(data: unknown[]): IEvent<T> 
   ({
     data,
   } as unknown as IEvent<T>);
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockCddStatus = (
-  cddStatus?: { Ok: PolymeshPrimitivesIdentityId } | { Err: Bytes }
-): MockCodec<CddStatus> => createMockEnum<CddStatus>(cddStatus);
 
 /**
  * @hidden

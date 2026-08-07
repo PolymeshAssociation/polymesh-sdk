@@ -129,8 +129,8 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
       ({ isDivisible } = await parent.details());
     }
 
-    const rawFromAccountHolder = await assetHolderIdToMeshAssetHolder(fromAccountHolderId, context);
-    const rawToAccountHolder = await assetHolderIdToMeshAssetHolder(toAccountHolderId, context);
+    const rawFromAccountHolder = assetHolderIdToMeshAssetHolder(fromAccountHolderId, context);
+    const rawToAccountHolder = assetHolderIdToMeshAssetHolder(toAccountHolderId, context);
 
     const rawAssetId = assetToMeshAssetId(parent, context);
 

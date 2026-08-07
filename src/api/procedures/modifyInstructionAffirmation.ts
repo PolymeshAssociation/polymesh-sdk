@@ -428,11 +428,8 @@ export async function prepareModifyInstructionAffirmation(
 
   const rawInstructionId = bigNumberToU64(id, context);
 
-  const rawAllowedAssetHolders = await Promise.all(
-    allowedAssetHolders.map(
-      async assetHolder =>
-        await assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(assetHolder), context)
-    )
+  const rawAllowedAssetHolders = allowedAssetHolders.map(assetHolder =>
+    assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(assetHolder), context)
   );
 
   const rawDid = stringToIdentityId(signer.did, context);

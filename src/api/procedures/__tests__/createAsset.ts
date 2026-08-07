@@ -108,7 +108,6 @@ describe('createAsset procedure', () => {
   let numberedPortfolioHolderKind: MockCodec<PolymeshPrimitivesAssetAssetHolderKind>;
   let mockDefaultPortfolio: MockDefaultPortfolio;
   let mockNumberedPortfolio: MockNumberedPortfolio;
-  let portfolioToPortfolioKindSpy: jest.SpyInstance;
 
   const getPortfolio: EntityGetter<Portfolio> = jest.fn();
 
@@ -210,8 +209,6 @@ describe('createAsset procedure', () => {
     };
     protocolFees = [new BigNumber(250), new BigNumber(150), new BigNumber(100)];
 
-    portfolioToPortfolioKindSpy = jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind');
-
     defaultPortfolioId = new BigNumber(0);
     numberedPortfolioId = new BigNumber(1);
   });
@@ -294,12 +291,6 @@ describe('createAsset procedure', () => {
       .mockResolvedValue(mockDefaultPortfolio)
       .calledWith({ portfolioId: numberedPortfolioId })
       .mockResolvedValue(mockNumberedPortfolio);
-
-    when(portfolioToPortfolioKindSpy)
-      .calledWith(mockDefaultPortfolio, mockContext)
-      .mockReturnValue(defaultPortfolioHolderKind)
-      .calledWith(mockNumberedPortfolio, mockContext)
-      .mockReturnValue(numberedPortfolioHolderKind);
   });
 
   afterEach(() => {

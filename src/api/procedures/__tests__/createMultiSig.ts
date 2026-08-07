@@ -115,7 +115,7 @@ describe('createMultiSig procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'MultiSig signers must be accounts as of v7',
+      message: 'MultiSig signers must be accounts',
     });
 
     return expect(() =>

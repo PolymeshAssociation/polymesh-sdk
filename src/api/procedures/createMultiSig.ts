@@ -48,7 +48,7 @@ export function prepareCreateMultiSigAccount(
   if (identitySigners.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'MultiSig signers must be accounts as of v7',
+      message: 'MultiSig signers must be accounts',
       data: { identitySigners },
     });
   }

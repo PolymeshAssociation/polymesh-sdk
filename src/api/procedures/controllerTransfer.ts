@@ -80,7 +80,7 @@ export async function prepareControllerTransfer(
     args: [
       rawAssetId,
       bigNumberToBalance(amount, context),
-      await assetHolderIdToMeshAssetHolder(originAssetHolderId, context),
+      assetHolderIdToMeshAssetHolder(originAssetHolderId, context),
       assetHolderToAssetHolderKind(destinationAssetHolder, context),
     ],
     resolver: undefined,

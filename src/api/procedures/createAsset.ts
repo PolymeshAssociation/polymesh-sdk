@@ -169,7 +169,7 @@ async function getCreateAssetTransaction(
 /**
  * @hidden
  *
- * since 7.x, we need to separately register ticker first if ticker does not exists and then link to asset
+ * we need to separately register the ticker first if it doesn't exist, then link it to the asset
  */
 function getTickerTransactions(
   rawTicker: PolymeshPrimitivesTicker | undefined,
@@ -289,7 +289,7 @@ export async function prepareCreateAsset(
 
   transactions.push(await getCreateAssetTransaction(customTypeData, context, fee, args));
 
-  // since 7.x, we need to separately register ticker first if ticker does not exists and then link to asset
+  // we need to separately register the ticker first if it doesn't exist, then link it to the asset
   transactions = [
     ...transactions,
     ...getTickerTransactions(rawTicker, rawAssetId, context, status),

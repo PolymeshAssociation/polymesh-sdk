@@ -321,9 +321,7 @@ export class Context {
 
     const accounts = await signingManager.getAccounts();
 
-    const hasSigningAddress = accounts.some(account => {
-      return account === address;
-    });
+    const hasSigningAddress = accounts.includes(address);
 
     if (!hasSigningAddress) {
       throw new PolymeshError({

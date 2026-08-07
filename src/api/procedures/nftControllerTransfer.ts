@@ -81,10 +81,7 @@ export async function prepareNftControllerTransfer(
     transaction: tx.nft.controllerTransfer,
     args: [
       rawNfts,
-      await assetHolderIdToMeshAssetHolder(
-        assetHolderLikeToAssetHolderId(fromAssetHolder),
-        context
-      ),
+      assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(fromAssetHolder), context),
       assetHolderToAssetHolderKind(destinationAssetHolder, context),
     ],
     resolver: undefined,

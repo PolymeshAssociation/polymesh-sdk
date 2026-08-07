@@ -46,7 +46,7 @@ export type InstructionDetails = {
   status: InstructionStatus;
   /**
    * Date at which the instruction was created
-   * @note From 7.x chain, this value becomes null when instruction has been executed.
+   * @note this value becomes null once the Instruction has been executed.
    */
   createdAt: Date | null;
   /**
@@ -59,7 +59,7 @@ export type InstructionDetails = {
   valueDate: Date | null;
   /**
    * Venue to which the Instruction belongs to
-   * @note From 7.x chain, Instructions can be created without a Venue. Hence the possible null value.
+   * @note Instructions can be created without a Venue, hence the possible null value.
    */
   venue: Venue | null;
   memo: string | null;

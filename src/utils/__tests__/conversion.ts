@@ -246,7 +246,6 @@ import {
   bytesToString,
   caTaxWithholdingsToMeshTaxWithholdings,
   cddIdToString,
-  cddStatusToBoolean,
   checkpointToRecordDateSpec,
   claimBalanceStatInputToStatUpdates,
   claimCountStatInputToStatUpdates,
@@ -360,12 +359,10 @@ import {
   permissionGroupIdentifierToAgentGroup,
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
-  portfolioIdsToBtreeSet,
   portfolioIdStringToPortfolio,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
-  portfolioToPortfolioKind,
   posRatioToBigNumber,
   rawNominationToStakingNomination,
   rawStakingLedgerToStakingLedgerEntry,
@@ -3904,24 +3901,6 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
   });
 });
 
-describe('cddStatusToBoolean', () => {
-  it('should convert a valid CDD status to a true boolean', () => {
-    const cddStatusMock = dsMockUtils.createMockCddStatus({
-      Ok: dsMockUtils.createMockIdentityId(),
-    });
-    const result = cddStatusToBoolean(cddStatusMock);
-
-    expect(result).toEqual(true);
-  });
-
-  it('should convert an invalid CDD status to a false boolean', () => {
-    const cddStatusMock = dsMockUtils.createMockCddStatus();
-    const result = cddStatusToBoolean(cddStatusMock);
-
-    expect(result).toEqual(false);
-  });
-});
-
 describe('granularCanTransferResultToTransferBreakdown', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -4397,6 +4376,38 @@ describe('assetDispatchErrorToTransferError', () => {
         message: 'Received unknown Asset can transfer status',
       })
     );
+  });
+
+  it('should skip a record entry whose module error is not defined on the runtime', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.polymeshApi.errors.asset = {
+      // NoSuchAsset intentionally omitted to simulate a runtime that lacks this module error
+      InvalidGranularity: { is: jest.fn().mockReturnValue(false) },
+      SenderSameAsReceiver: { is: jest.fn().mockReturnValue(false) },
+      InsufficientBalance: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+      BalanceOverflow: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['asset'];
+
+    context.polymeshApi.errors.portfolio = {
+      PortfolioDoesNotExist: { is: jest.fn().mockReturnValue(false) },
+      InsufficientPortfolioBalance: { is: jest.fn().mockReturnValue(true) },
+    } as unknown as DecoratedErrors<'promise'>['portfolio'];
+
+    context.polymeshApi.errors.statistics = {
+      InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['statistics'];
+
+    const mockError = dsMockUtils.createMockDispatchResult({
+      Err: { index: createMockU8(), module: createMockU8aFixed() },
+    }).asErr;
+
+    const result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InsufficientPortfolioBalance);
   });
 });
 
@@ -6176,52 +6187,6 @@ describe('portfolioIdToMeshPortfolioId', () => {
       .mockReturnValue(fakeResult);
 
     result = portfolioIdToMeshPortfolioId({ ...portfolioId, number }, context);
-
-    expect(result).toBe(fakeResult);
-  });
-});
-
-describe('portfolioIdToMeshPortfolioId', () => {
-  beforeAll(() => {
-    entityMockUtils.initMocks();
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    entityMockUtils.reset();
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a portfolio to a polkadot PortfolioKind', () => {
-    const context = dsMockUtils.getContextInstance();
-
-    const fakeResult = 'PortfolioKind' as unknown as PolymeshPrimitivesIdentityIdPortfolioKind;
-
-    when(context.createType)
-      .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', 'Default')
-      .mockReturnValue(fakeResult);
-
-    let result = portfolioToPortfolioKind(entityMockUtils.getDefaultPortfolioInstance(), context);
-
-    expect(result).toBe(fakeResult);
-
-    const number = new BigNumber(1);
-    const rawU64 = dsMockUtils.createMockU64(number);
-
-    when(context.createType).calledWith('u64', number.toString()).mockReturnValue(rawU64);
-
-    when(context.createType)
-      .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', { User: rawU64 })
-      .mockReturnValue(fakeResult);
-
-    result = portfolioToPortfolioKind(
-      entityMockUtils.getNumberedPortfolioInstance({ id: number }),
-      context
-    );
 
     expect(result).toBe(fakeResult);
   });
@@ -9344,37 +9309,6 @@ describe('statUpdatesToBtreeStatUpdate', () => {
 
     const result = statUpdatesToBtreeStatUpdate(input, context);
     expect(result).toEqual([stat1, stat2]);
-  });
-});
-
-describe('portfolioIdsToBtreeSet', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', () => {
-    const context = dsMockUtils.getContextInstance();
-
-    const rawPortfolioId = dsMockUtils.createMockPortfolioId({
-      did: dsMockUtils.createMockIdentityId('someDid'),
-      kind: 'Default',
-    });
-    const mockPortfolioIdsSet = dsMockUtils.createMockBtreeSet([rawPortfolioId]);
-
-    when(context.createType)
-      .calledWith('BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', [rawPortfolioId])
-      .mockReturnValue(mockPortfolioIdsSet);
-
-    const result = portfolioIdsToBtreeSet([rawPortfolioId, rawPortfolioId], context);
-    expect(result).toEqual(mockPortfolioIdsSet);
   });
 });
 
@@ -13609,10 +13543,10 @@ describe('asset holder conversion helpers', () => {
   });
 
   describe('assetHolderIdToMeshAssetHolder', () => {
-    it('should map a hex DID string', async () => {
+    it('should map a hex DID string', () => {
       const mockContext = dsMockUtils.getContextInstance();
       stubMeshAssetHolderCreateTypes(mockContext);
-      const result = await assetHolderIdToMeshAssetHolder(did, mockContext);
+      const result = assetHolderIdToMeshAssetHolder(did, mockContext);
       expect(result).toBeDefined();
       expect(mockContext.createType).toHaveBeenCalledWith(
         'PolymeshPrimitivesAssetAssetHolder',
@@ -13620,10 +13554,10 @@ describe('asset holder conversion helpers', () => {
       );
     });
 
-    it('should map a plain address string', async () => {
+    it('should map a plain address string', () => {
       const mockContext = dsMockUtils.getContextInstance();
       stubMeshAssetHolderCreateTypes(mockContext);
-      const result = await assetHolderIdToMeshAssetHolder(DUMMY_ACCOUNT_ID, mockContext);
+      const result = assetHolderIdToMeshAssetHolder(DUMMY_ACCOUNT_ID, mockContext);
       expect(result).toBeDefined();
       expect(mockContext.createType).toHaveBeenCalledWith(
         'PolymeshPrimitivesAssetAssetHolder',
@@ -13631,11 +13565,11 @@ describe('asset holder conversion helpers', () => {
       );
     });
 
-    it('should map a portfolio id object', async () => {
+    it('should map a portfolio id object', () => {
       const mockContext = dsMockUtils.getContextInstance();
       stubMeshAssetHolderCreateTypes(mockContext);
       const portfolioId = { did: 'pid', number: new BigNumber(1) };
-      const result = await assetHolderIdToMeshAssetHolder(portfolioId, mockContext);
+      const result = assetHolderIdToMeshAssetHolder(portfolioId, mockContext);
       expect(result).toBeDefined();
       expect(mockContext.createType).toHaveBeenCalledWith(
         'PolymeshPrimitivesAssetAssetHolder',

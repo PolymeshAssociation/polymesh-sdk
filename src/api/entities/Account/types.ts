@@ -52,8 +52,6 @@ export interface AccountBalance {
   /**
    * minimum balance (out of `total`) that must remain in the Account due to freezes/locks.
    *   Frozen funds may overlap with `reserved` funds. Corresponds to the chain's raw `frozen` value
-   *
-   * @note on v7 chains this is the maximum of the chain's `miscFrozen` and `feeFrozen` values
    */
   frozen: BigNumber;
 }

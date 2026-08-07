@@ -149,14 +149,11 @@ export async function prepareTransferFunds(
     });
   }
 
-  const rawFrom = await assetHolderIdToMeshAssetHolder(
+  const rawFrom = assetHolderIdToMeshAssetHolder(
     assetHolderLikeToAssetHolderId(fromHolder),
     context
   );
-  const rawTo = await assetHolderIdToMeshAssetHolder(
-    assetHolderLikeToAssetHolderId(toHolder),
-    context
-  );
+  const rawTo = assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(toHolder), context);
   const rawFund = await getFund(context, args, fromDid, storage);
 
   return {
