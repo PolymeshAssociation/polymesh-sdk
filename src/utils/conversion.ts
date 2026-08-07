@@ -2465,7 +2465,7 @@ export async function claimToMeshClaim(
 
   return context.createType('PolymeshPrimitivesIdentityClaimClaim', {
     [claim.type]: value,
-  }) as unknown as PolymeshPrimitivesIdentityClaimClaim;
+  }) as PolymeshPrimitivesIdentityClaimClaim;
 }
 
 /**
@@ -2816,7 +2816,7 @@ export async function requirementToComplianceRequirement(
     senderConditions,
     receiverConditions,
     id: bigNumberToU32(requirement.id, context),
-  }) as unknown as PolymeshPrimitivesComplianceManagerComplianceRequirement;
+  }) as PolymeshPrimitivesComplianceManagerComplianceRequirement;
 }
 
 /**
@@ -3496,7 +3496,7 @@ export async function fungibleMovementToPortfolioFund(
       },
     },
     memo: optionize(stringToMemo)(memo, context),
-  }) as unknown as PolymeshPrimitivesPortfolioFund;
+  }) as PolymeshPrimitivesPortfolioFund;
 }
 
 /**
@@ -3518,7 +3518,7 @@ export async function nftMovementToPortfolioFund(
       },
     },
     memo: optionize(stringToMemo)(memo, context),
-  }) as unknown as PolymeshPrimitivesPortfolioFund;
+  }) as PolymeshPrimitivesPortfolioFund;
 }
 
 /**
@@ -3630,7 +3630,7 @@ export function identitiesToBtreeSet(
   return context.createType(
     'BTreeSet<PolymeshPrimitivesIdentityId>',
     rawIds
-  ) as unknown as BTreeSet<PolymeshPrimitivesIdentityId>;
+  ) as BTreeSet<PolymeshPrimitivesIdentityId>;
 }
 
 /**
@@ -3639,7 +3639,7 @@ export function identitiesToBtreeSet(
 export function addressesToBtreeSet(addresses: string[], context: Context): BTreeSet<AccountId32> {
   const rawIds = addresses.map(address => stringToAccountId(address, context));
 
-  return context.createType('BTreeSet<AccountId32>', rawIds) as unknown as BTreeSet<AccountId32>;
+  return context.createType('BTreeSet<AccountId32>', rawIds) as BTreeSet<AccountId32>;
 }
 
 /**
@@ -3652,7 +3652,7 @@ export function assetHolderIdsToBtreeSet(
   return context.createType(
     'BTreeSet<PolymeshPrimitivesAssetAssetHolder>',
     uniqWith(rawAssetHolderIds, isEqual)
-  ) as unknown as BTreeSet<PolymeshPrimitivesAssetAssetHolder>;
+  ) as BTreeSet<PolymeshPrimitivesAssetAssetHolder>;
 }
 
 /**
@@ -4286,7 +4286,7 @@ export function statisticStatTypesToBtreeStatType(
   return context.createType(
     'BTreeSet<PolymeshPrimitivesStatisticsStatType>',
     sortedStats
-  ) as unknown as BTreeSet<PolymeshPrimitivesStatisticsStatType>;
+  ) as BTreeSet<PolymeshPrimitivesStatisticsStatType>;
 }
 
 /**
@@ -4299,7 +4299,7 @@ export function transferConditionsToBtreeTransferConditions(
   return context.createType(
     'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>',
     conditions
-  ) as unknown as BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
+  ) as BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
 }
 
 /**
@@ -4323,7 +4323,7 @@ export function statUpdatesToBtreeStatUpdate(
   return context.createType(
     'BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>',
     statUpdates
-  ) as unknown as BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>;
+  ) as BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>;
 }
 
 /**
@@ -4468,7 +4468,7 @@ export function complianceConditionsToBtreeSet(
   return context.createType(
     'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>',
     sortedConditions
-  ) as unknown as BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
+  ) as BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
 }
 
 /**
@@ -5146,7 +5146,7 @@ function middlewareExtrinsicPermissionsDataToTransactionPermissions(
 ): TransactionPermissions | null {
   const isLegacy = isMiddlewareV6Extrinsic(permissions);
 
-  let extrinsicType: PermissionType = 'nullish' as unknown as PermissionType;
+  let extrinsicType: PermissionType = 'nullish' as PermissionType;
   let rawPallets;
   if ('these' in permissions) {
     extrinsicType = PermissionType.Include;
