@@ -11,10 +11,10 @@ jobs:
     name: Docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Enable Corepack
         run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22.x'
       - name: install dependencies
@@ -24,7 +24,7 @@ jobs:
           yarn build:docs
           yarn build:sdk-docs
       - name: determine branch name
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         id: setBranch
         with:
           script: |
@@ -59,10 +59,10 @@ jobs:
     name: Readme
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Enable Corepack
         run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22.x'
       - name: install dependencies
