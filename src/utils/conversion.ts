@@ -10,7 +10,7 @@ import {
   RewardDestination,
 } from '@polkadot/types/interfaces';
 import { AccountId32, H512 } from '@polkadot/types/interfaces/runtime';
-import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
+import { DispatchError } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
@@ -113,11 +113,8 @@ import {
 } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import {
-  AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
   ComplianceReport,
-  ComplianceRequirementResult,
-  GranularCanTransferResult,
   PolymeshMoment as Moment,
   RequirementReport,
   TransferCondition,
@@ -2874,76 +2871,6 @@ function meshConditionTypeToCondition(
 
 /**
  * @hidden
- * @note - the data for this method comes from an RPC call, which hasn't been updated to the camelCase types
- */
-export function complianceRequirementResultToRequirementCompliance(
-  complianceRequirement: ComplianceRequirementResult,
-  context: Context
-): RequirementCompliance {
-  const conditions: ConditionCompliance[] = [];
-
-  const conditionCompliancesAreEqual = (
-    { condition: aCondition, complies: aComplies }: ConditionCompliance,
-    { condition: bCondition, complies: bComplies }: ConditionCompliance
-  ): boolean => conditionsAreEqual(aCondition, bCondition) && aComplies === bComplies;
-
-  complianceRequirement.senderConditions.forEach(
-    ({ condition: { conditionType, issuers }, result }) => {
-      const newCondition = {
-        condition: {
-          ...meshConditionTypeToCondition(conditionType, context),
-          target: ConditionTarget.Sender,
-          trustedClaimIssuers: issuers.map(trustedIssuer =>
-            trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
-          ),
-        },
-        complies: boolToBoolean(result),
-      };
-
-      const existingCondition = conditions.some(condition =>
-        conditionCompliancesAreEqual(condition, newCondition)
-      );
-
-      if (!existingCondition) {
-        conditions.push(newCondition);
-      }
-    }
-  );
-
-  complianceRequirement.receiverConditions.forEach(
-    ({ condition: { conditionType, issuers }, result }) => {
-      const newCondition = {
-        condition: {
-          ...meshConditionTypeToCondition(conditionType, context),
-          target: ConditionTarget.Receiver,
-          trustedClaimIssuers: issuers.map(trustedIssuer =>
-            trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
-          ),
-        },
-        complies: boolToBoolean(result),
-      };
-
-      const existingCondition = conditions.find(condition =>
-        conditionCompliancesAreEqual(condition, newCondition)
-      );
-
-      if (existingCondition && existingCondition.condition.target === ConditionTarget.Sender) {
-        existingCondition.condition.target = ConditionTarget.Both;
-      } else {
-        conditions.push(newCondition);
-      }
-    }
-  );
-
-  return {
-    id: u32ToBigNumber(complianceRequirement.id),
-    conditions,
-    complies: boolToBoolean(complianceRequirement.result),
-  };
-}
-
-/**
- * @hidden
  */
 export function complianceRequirementReportToRequirementCompliance(
   complianceRequirement: RequirementReport,
@@ -3147,24 +3074,6 @@ export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
   return {
     moduleId: moduleName!.toLowerCase() as ModuleIdEnum,
     callId: snakeCase(extrinsicName) as CallIdEnum,
-  };
-}
-
-/**
- * @hidden
- */
-export function assetComplianceResultToCompliance(
-  assetComplianceResult: AssetComplianceResult,
-  context: Context
-): Compliance {
-  const { requirements: rawRequirements, result, paused } = assetComplianceResult;
-  const requirements = rawRequirements.map(requirement =>
-    complianceRequirementResultToRequirementCompliance(requirement, context)
-  );
-
-  return {
-    requirements,
-    complies: boolToBoolean(paused) || boolToBoolean(result),
   };
 }
 
@@ -6242,92 +6151,6 @@ export function transferReportToTransferBreakdown(
   return {
     general,
     compliance: assetComplianceReportToCompliance(complianceResult, context),
-    restrictions,
-    result: canTransfer,
-  };
-}
-
-/**
- * @hidden
- */
-export function granularCanTransferResultToTransferBreakdown(
-  result: GranularCanTransferResult,
-  validateNftResult: DispatchResult | undefined,
-  context: Context
-): TransferBreakdown {
-  const {
-    invalidGranularity,
-    selfTransfer,
-    invalidReceiverCdd,
-    invalidSenderCdd,
-    senderInsufficientBalance: insufficientBalance,
-    assetFrozen,
-    portfolioValidityResult: {
-      senderPortfolioDoesNotExist,
-      receiverPortfolioDoesNotExist,
-      senderInsufficientBalance,
-    },
-    transferConditionResult,
-    complianceResult,
-    result: finalResult,
-  } = result;
-
-  const general = [];
-
-  if (boolToBoolean(invalidGranularity)) {
-    general.push(TransferError.InvalidGranularity);
-  }
-
-  if (boolToBoolean(selfTransfer)) {
-    general.push(TransferError.SelfTransfer);
-  }
-
-  if (boolToBoolean(invalidReceiverCdd)) {
-    general.push(TransferError.InvalidReceiverCdd);
-  }
-
-  if (boolToBoolean(invalidSenderCdd)) {
-    general.push(TransferError.InvalidSenderCdd);
-  }
-
-  if (boolToBoolean(insufficientBalance)) {
-    general.push(TransferError.InsufficientBalance);
-  }
-
-  if (boolToBoolean(assetFrozen)) {
-    general.push(TransferError.TransfersFrozen);
-  }
-
-  if (boolToBoolean(senderPortfolioDoesNotExist)) {
-    general.push(TransferError.InvalidSenderPortfolio);
-  }
-
-  if (boolToBoolean(receiverPortfolioDoesNotExist)) {
-    general.push(TransferError.InvalidReceiverPortfolio);
-  }
-
-  if (boolToBoolean(senderInsufficientBalance)) {
-    general.push(TransferError.InsufficientPortfolioBalance);
-  }
-
-  const restrictions = transferConditionResult.map(({ condition, result: tmResult }) => {
-    return {
-      restriction: transferConditionToTransferRestriction(condition, context),
-      result: boolToBoolean(tmResult),
-    };
-  });
-
-  let canTransfer = boolToBoolean(finalResult);
-
-  if (canTransfer && validateNftResult?.isErr) {
-    const transferError = nftDispatchErrorToTransferError(validateNftResult.asErr, context);
-    general.push(transferError);
-    canTransfer = false;
-  }
-
-  return {
-    general,
-    compliance: assetComplianceResultToCompliance(complianceResult, context),
     restrictions,
     result: canTransfer,
   };

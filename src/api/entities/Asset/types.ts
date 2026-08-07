@@ -329,25 +329,6 @@ export enum TransferError {
    */
   SelfTransfer = 'SelfTransfer',
   /**
-   * translates to TransferStatus.InvalidReceiverIdentity
-   *
-   * occurs if the receiver Identity doesn't have a valid CDD claim
-   */
-  InvalidReceiverCdd = 'InvalidReceiverCdd',
-  /**
-   * translates to TransferStatus.InvalidSenderIdentity
-   *
-   * occurs if the receiver Identity doesn't have a valid CDD claim
-   */
-  InvalidSenderCdd = 'InvalidSenderCdd',
-  /**
-   * translates to TransferStatus.ScopeClaimMissing
-   *
-   * occurs if one of the participants doesn't have a valid Investor Uniqueness Claim for
-   *   the Asset
-   */
-  ScopeClaimMissing = 'ScopeClaimMissing',
-  /**
    * translates to TransferStatus.InsufficientBalance
    *
    * occurs if the sender Identity does not have enough balance to cover the amount
