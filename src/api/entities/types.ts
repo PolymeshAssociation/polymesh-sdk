@@ -657,8 +657,8 @@ export interface TransactionPermissions extends SectionPermissions<TxTag | Modul
   /**
    * Transactions to be exempted from inclusion/exclusion. This allows more granularity when
    *   setting permissions. For example, let's say we want to include only the `asset` and `staking` modules,
-   *   but exclude the `asset.registerTicker` transaction. We could add both modules to `values`, and add
-   *   `TxTags.asset.registerTicker` to `exceptions`
+   *   but exclude the `asset.registerUniqueTicker` transaction. We could add both modules to `values`, and add
+   *   `TxTags.asset.RegisterUniqueTicker` to `exceptions`
    */
   exceptions?: TxTag[];
 }

@@ -10,7 +10,9 @@ import { asIdentity, assertIdentityExists } from '~/utils/internal';
 export async function prepareRevokeIdentityToCreatePortfolios(
   this: Procedure<RevokeIdentityToCreatePortfoliosParams, void>,
   args: RevokeIdentityToCreatePortfoliosParams
-): Promise<TransactionSpec<void, ExtrinsicParams<'portfolio', 'allowIdentityToCreatePortfolios'>>> {
+): Promise<
+  TransactionSpec<void, ExtrinsicParams<'portfolio', 'revokeCreatePortfoliosPermission'>>
+> {
   const {
     context: {
       polymeshApi: {

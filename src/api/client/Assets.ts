@@ -366,7 +366,7 @@ export class Assets {
   /**
    * Retrieve an NftCollection by Asset ID
    *
-   * @param args.assetId - Unique identifier of the NftCollection (for spec version 6.x, this is same as ticker)
+   * @param args.assetId - Unique identifier of the NftCollection
    * @param args.skipExistsCheck - When true, method will not check if the NftCollection exists before returning instance. Defaults to false
    */
   public async getNftCollection(args: {

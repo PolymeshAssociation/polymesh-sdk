@@ -108,7 +108,7 @@ Creating transactions is a two-step process. First a procedure is created, which
    * This step performs validations, and will throw an error if the transaction isn't expected to proceed, e.g., if the `ticker` is already in use
    */
   const createAssetProc = await polyClient.assets.createAsset({
-    name: 'My new asset'
+    name: 'My new asset',
     ticker: 'TICKER',
     // ... (args omitted for brevity)
   })
@@ -123,7 +123,7 @@ Creating transactions is a two-step process. First a procedure is created, which
 #### Creating MultiSig Proposals
 
 If the signingAccount is a MultiSig signer, then the transaction will need to be ran with `.runAsProposal()` instead of the usual `.run()`.
-The underlying transaction will be wrapped with `multiSig.createProposalAsKey` extrinsic and will resolve to the MultiSig proposal created.
+The underlying transaction will be wrapped with the `multiSig.createProposal` extrinsic and will resolve to the MultiSig proposal created.
 
 Approving and rejecting existing proposals are an exception and should be submitted with `.run()`. If your application supports
 MultiSig signers, then the procedure's `multiSig` param can be checked to ensure the correct method is called.
@@ -158,6 +158,6 @@ Note: Some getters require "middleware" to be configured, which is a chain index
 
 The SDK uses the class `Account` as an abstraction for a public/private key pair that is used to sign transactions. Although consistent with [Substrate](https://substrate.io/vision/substrate-and-polkadot/) (the chain's framework) naming conventions, it can be a source of confusion considering the domain. What the SDK calls an account is often referred to as a key. Public keys are often represented in [SS58 format](https://docs.substrate.io/reference/address-formats/) which is a special encoding that indicates if the key is intended for mainnet or not. In this form, it is referred to as an address and looks like: `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY` (non-mainnet keys begin with **5**, mainnet addresses will instead begin with **2**).
 
-The only thing an `Account` holds is the POLYX utility token. Ownership of any asset on the Polymesh chain requires an `Identity`. This process involves a trusted provider writing a claim to the chain, stating that this person has completed a "customer due diligence" (CDD) process. For development chains, the mnemonic `//Alice` can create CDD claims by default.
+An `Account` holds the POLYX utility token. Once linked to an `Identity` (DID) it can also hold Polymesh assets directly, in addition to holding them in the Identity's Portfolios. A DID is created either by a DID Registrar with `identities.registerDid`, or permissionlessly by the key itself with `identities.selfRegisterDid`. On development chains, transfer POLYX to a new key from a well known account such as `//Alice` so it can cover the fee to self register.
 
 Polymesh uses an `Identity` to provide flexibility in managing permissions. Portfolios can be created, and secondary keys can be granted permission to provide fine grained authorization.
