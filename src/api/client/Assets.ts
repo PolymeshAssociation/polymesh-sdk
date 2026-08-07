@@ -7,6 +7,7 @@ import {
   createNftCollection,
   FungibleAsset,
   Identity,
+  Instruction,
   NftCollection,
   PolymeshError,
   registerCustomAssetType,
@@ -520,13 +521,13 @@ export class Assets {
   }
 
   /**
-   * Transfer funds between two asset holders (Account or Portfolio) owned by same identity.
+   * Transfer funds between two asset holders (Account or Portfolio), which may be owned by the same or different identities.
    *
    * @note When `from` account is of type account and the caller is the subsidizer of `from` account, there should be allowance available for transfer and for each transfer said amount is decremented.
    *
-   * @note To transfer between asset holders owned by separate DID use settlement instructions
+   * @note When `from` and `to` belong to different identities, this creates a settlement instruction that is immediately affirmed on behalf of `from`. If the caller's identity doesn't also own `to`, the instruction remains pending until the receiver affirms it (a resolved {@link api/entities/Instruction!Instruction | Instruction} is returned in that case). If both sides are affirmed, the transfer settles immediately and `undefined` is returned.
    */
-  public transferFunds: ProcedureMethod<TransferFundsParams, void>;
+  public transferFunds: ProcedureMethod<TransferFundsParams, Instruction | undefined>;
 
   /**
    * Gets the chain-wide rules used to validate ticker registrations

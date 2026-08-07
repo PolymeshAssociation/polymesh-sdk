@@ -1,10 +1,12 @@
 import { PolymeshPrimitivesPortfolioFund } from '@polkadot/types/lookup';
 
+import { createAddInstructionResolver } from '~/api/procedures/addInstruction';
 import { getAssetHolderDid } from '~/api/procedures/utils';
 import {
   Account,
   Context,
   DefaultPortfolio,
+  Instruction,
   NumberedPortfolio,
   PolymeshError,
   Procedure,
@@ -59,19 +61,9 @@ export async function getFund(
       });
     }
 
-    // when sender and receiver DID are same we need to only check asset balance has for either account or portfolio
-    if (fromDid === signingDid) {
-      const [balance] = await fromHolder.getAssetBalances({ assets: [asset] });
-      if (!balance || balance.free.lt(amount)) {
-        throw new PolymeshError({
-          code: ErrorCode.UnmetPrerequisite,
-          message: 'Sender has insufficient balance to cover the transfer',
-          data: {
-            balance,
-          },
-        });
-      }
-    } else if (fromHolder instanceof Account) {
+    // spender mode only applies to Account sources where the signer isn't the owner; Portfolio
+    // sources are always authorized via custody on-chain, regardless of the owning DID
+    if (fromHolder instanceof Account && fromDid !== signingDid) {
       const allowance = await asset.getAllowance({ owner: fromHolder, spender: signingAccount });
 
       if (allowance.lt(amount)) {
@@ -80,6 +72,17 @@ export async function getFund(
           message: 'Spender has insufficient allowance to cover the transfer',
           data: {
             allowance,
+          },
+        });
+      }
+    } else {
+      const [balance] = await fromHolder.getAssetBalances({ assets: [asset] });
+      if (!balance || balance.free.lt(amount)) {
+        throw new PolymeshError({
+          code: ErrorCode.UnmetPrerequisite,
+          message: 'Sender has insufficient balance to cover the transfer',
+          data: {
+            balance,
           },
         });
       }
@@ -104,9 +107,11 @@ export async function getFund(
  * @hidden
  */
 export async function prepareTransferFunds(
-  this: Procedure<TransferFundsParams, void, Storage>,
+  this: Procedure<TransferFundsParams, Instruction | undefined, Storage>,
   args: TransferFundsParams
-): Promise<TransactionSpec<void, ExtrinsicParams<'settlement', 'transferFunds'>>> {
+): Promise<
+  TransactionSpec<Instruction | undefined, ExtrinsicParams<'settlement', 'transferFunds'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -141,14 +146,6 @@ export async function prepareTransferFunds(
     });
   }
 
-  if (fromDid !== toDid) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message:
-        'For transferring funds between different DIDs, use `Settlements.addInstruction` method instead.',
-    });
-  }
-
   const rawFrom = assetHolderIdToMeshAssetHolder(
     assetHolderLikeToAssetHolderId(fromHolder),
     context
@@ -159,23 +156,32 @@ export async function prepareTransferFunds(
   return {
     transaction: settlement.transferFunds,
     args: [rawFrom, rawTo, rawFund],
-    resolver: undefined,
+    resolver: (receipt): Instruction | undefined =>
+      createAddInstructionResolver(context, true)(receipt)[0],
   };
 }
 
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<TransferFundsParams, void, Storage>
-): ProcedureAuthorization {
+export async function getAuthorization(
+  this: Procedure<TransferFundsParams, Instruction | undefined, Storage>
+): Promise<ProcedureAuthorization> {
   const {
-    storage: { fromHolder, toHolder },
+    context,
+    storage: { fromHolder, toHolder, signingDid },
   } = this;
 
-  const portfolios = [fromHolder, toHolder].filter(
-    holder => !(holder instanceof Account)
-  ) as unknown as (DefaultPortfolio | NumberedPortfolio)[];
+  const toDid = await getAssetHolderDid(toHolder, context);
+
+  // the signer always authorizes/affirms the source; the destination is only auto-affirmed
+  // (and thus requires permission) when the signer's own identity also owns it
+  const holders = [fromHolder, ...(toDid === signingDid ? [toHolder] : [])];
+
+  const portfolios = holders.filter(holder => !(holder instanceof Account)) as unknown as (
+    | DefaultPortfolio
+    | NumberedPortfolio
+  )[];
 
   return {
     permissions: {
@@ -190,7 +196,7 @@ export function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<TransferFundsParams, void, Storage>,
+  this: Procedure<TransferFundsParams, Instruction | undefined, Storage>,
   { from, to }: TransferFundsParams
 ): Promise<Storage> {
   const { context } = this;
@@ -214,5 +220,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const transferFunds = (): Procedure<TransferFundsParams, void, Storage> =>
+export const transferFunds = (): Procedure<TransferFundsParams, Instruction | undefined, Storage> =>
   new Procedure(prepareTransferFunds, getAuthorization, prepareStorage);

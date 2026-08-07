@@ -128,9 +128,9 @@ type InternalAddInstructionParams = [
  * @hidden
  */
 export const createAddInstructionResolver =
-  (context: Context) =>
+  (context: Context, skipError?: true) =>
   (receipt: ISubmittableResult): Instruction[] => {
-    const events = filterEventRecords(receipt, 'settlement', 'InstructionCreated');
+    const events = filterEventRecords(receipt, 'settlement', 'InstructionCreated', skipError);
 
     const result = events.map(
       ({ data }) => new Instruction({ id: u64ToBigNumber(data[2]) }, context)

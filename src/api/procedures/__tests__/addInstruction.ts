@@ -1474,6 +1474,28 @@ describe('createAddInstructionResolver', () => {
     const result = createAddInstructionResolver(fakeContext)({} as ISubmittableResult);
 
     expect(result[0]!.id).toEqual(id);
+
+    expect(filterEventRecordsSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      'settlement',
+      'InstructionCreated',
+      undefined
+    );
+  });
+
+  it('should forward skipError to filterEventRecords, returning an empty array when no event was emitted', () => {
+    filterEventRecordsSpy.mockReturnValue([]);
+    const fakeContext = {} as Context;
+
+    const result = createAddInstructionResolver(fakeContext, true)({} as ISubmittableResult);
+
+    expect(result).toEqual([]);
+    expect(filterEventRecordsSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      'settlement',
+      'InstructionCreated',
+      true
+    );
   });
 });
 
