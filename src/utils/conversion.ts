@@ -3077,32 +3077,46 @@ export function txTagToProtocolOp(
   tag: TxTag,
   context: Context
 ): PolymeshPrimitivesProtocolFeeProtocolOp {
-  const protocolOpTags: TxTag[] = [
-    TxTags.asset.RegisterUniqueTicker,
-    TxTags.asset.RegisterTicker,
-    TxTags.asset.Issue,
-    TxTags.asset.AddDocuments,
-    TxTags.asset.CreateAsset,
-    TxTags.capitalDistribution.Distribute,
-    TxTags.checkpoint.CreateSchedule,
-    TxTags.complianceManager.AddComplianceRequirement,
-    TxTags.identity.CddRegisterDid,
-    TxTags.identity.AddClaim,
-    TxTags.identity.AddSecondaryKeysWithAuthorization,
-    TxTags.pips.Propose,
-    TxTags.corporateBallot.AttachBallot,
-    TxTags.capitalDistribution.Distribute,
-    TxTags.nft.CreateNftCollection,
-    TxTags.nft.IssueNft,
-  ];
+  /*
+   * NOTE: the chain's `ProtocolOp` variant names do not always match the extrinsic they bill for —
+   * several kept their pre-v8 names through extrinsic renames (e.g. `asset.registerUniqueTicker` is
+   * still billed as `AssetRegisterTicker`, `nft.issueNft` as `NFTMint`). Deriving the variant from
+   * the tag string therefore produces names the runtime does not know, so the mapping is explicit.
+   */
+  const protocolOpTags = new Map<TxTag, string>([
+    [TxTags.asset.RegisterUniqueTicker, 'AssetRegisterTicker'],
+    [TxTags.asset.Issue, 'AssetIssue'],
+    [TxTags.asset.AddDocuments, 'AssetAddDocuments'],
+    [TxTags.asset.CreateAsset, 'AssetCreateAsset'],
+    [TxTags.capitalDistribution.Distribute, 'CapitalDistributionDistribute'],
+    [TxTags.checkpoint.CreateSchedule, 'CheckpointCreateSchedule'],
+    [
+      TxTags.complianceManager.AddComplianceRequirement,
+      'ComplianceManagerAddComplianceRequirement',
+    ],
+    [TxTags.identity.CddRegisterDid, 'IdentityRegisterDid'],
+    [TxTags.identity.RegisterDid, 'IdentityRegisterDid'],
+    [TxTags.identity.AddClaim, 'IdentityAddClaim'],
+    [
+      TxTags.identity.AddSecondaryKeysWithAuthorization,
+      'IdentityAddSecondaryKeysWithAuthorization',
+    ],
+    [TxTags.pips.Propose, 'PipsPropose'],
+    [TxTags.corporateBallot.AttachBallot, 'CorporateBallotAttachBallot'],
+    [TxTags.nft.CreateNftCollection, 'NFTCreateCollection'],
+    [TxTags.nft.IssueNft, 'NFTMint'],
+  ]);
 
-  const [moduleName, extrinsicName] = tag.split('.');
-  const value = `${stringUpperFirst(moduleName)}${stringUpperFirst(extrinsicName)}`;
+  const value = protocolOpTags.get(tag);
 
-  if (!protocolOpTags.includes(tag)) {
+  if (!value) {
+    const [moduleName, extrinsicName] = tag.split('.');
+
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `${value} does not match any PolymeshPrimitivesProtocolFeeProtocolOp`,
+      message: `${stringUpperFirst(moduleName)}${stringUpperFirst(
+        extrinsicName
+      )} does not match any PolymeshPrimitivesProtocolFeeProtocolOp`,
     });
   }
 

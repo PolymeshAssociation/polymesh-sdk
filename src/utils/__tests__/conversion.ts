@@ -5943,7 +5943,7 @@ describe('txTagToProtocolOp', () => {
 
     const createTypeMock = context.createType;
     when(createTypeMock)
-      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'AssetRegisterUniqueTicker')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'AssetRegisterTicker')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.RegisterUniqueTicker, context)).toEqual(fakeResult);
 
@@ -5978,7 +5978,7 @@ describe('txTagToProtocolOp', () => {
     );
 
     when(createTypeMock)
-      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'IdentityCddRegisterDid')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'IdentityRegisterDid')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.CddRegisterDid, context)).toEqual(fakeResult);
 
@@ -6013,9 +6013,27 @@ describe('txTagToProtocolOp', () => {
     expect(txTagToProtocolOp(TxTags.capitalDistribution.Distribute, context)).toEqual(fakeResult);
 
     when(createTypeMock)
-      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'NftIssueNft')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'NFTMint')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.nft.IssueNft, context)).toEqual(fakeResult);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'NFTCreateCollection')
+      .mockReturnValue(fakeResult);
+    expect(txTagToProtocolOp(TxTags.nft.CreateNftCollection, context)).toEqual(fakeResult);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'IdentityRegisterDid')
+      .mockReturnValue(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.RegisterDid, context)).toEqual(fakeResult);
+  });
+
+  it('should throw for a tag whose extrinsic no longer exists on chain', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => txTagToProtocolOp(TxTags.asset.RegisterTicker, context)).toThrow(
+      'AssetRegisterTicker does not match any PolymeshPrimitivesProtocolFeeProtocolOp'
+    );
   });
 
   it('should throw an error if tag does not match any PolymeshPrimitivesProtocolFeeProtocolOp', () => {
