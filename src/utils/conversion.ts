@@ -3005,24 +3005,37 @@ export function txTagToProtocolOp(
   context: Context
 ): PolymeshPrimitivesProtocolFeeProtocolOp {
   /*
-   * NOTE: the chain's `ProtocolOp` variant names do not always match the extrinsic they bill for —
-   * several kept their pre-v8 names through extrinsic renames (e.g. `asset.registerUniqueTicker` is
-   * still billed as `AssetRegisterTicker`, `nft.issueNft` as `NFTMint`). Deriving the variant from
-   * the tag string therefore produces names the runtime does not know, so the mapping is explicit.
+   * NOTE: a tag cannot be translated into a `ProtocolOp` mechanically, for two reasons:
+   *
+   * - the variant names do not always match the extrinsic they bill for. Several kept their pre-v8
+   *   names through extrinsic renames, so `asset.registerUniqueTicker` is still billed as
+   *   `AssetRegisterTicker`. Deriving the variant from the tag string produces names the runtime
+   *   does not know.
+   * - several extrinsics bill under a variant named after a *different* extrinsic, because they
+   *   delegate to it. `corporateAction.initiateCorporateActionAndDistribute` charges
+   *   `CapitalDistributionDistribute`, and every DID registration variant charges
+   *   `IdentityRegisterDid`.
+   *
+   * The mapping is therefore explicit, and mirrors the runtime's `charge_fee` call sites.
    */
   const protocolOpTags = new Map<TxTag, string>([
     [TxTags.asset.RegisterUniqueTicker, 'AssetRegisterTicker'],
     [TxTags.asset.Issue, 'AssetIssue'],
     [TxTags.asset.AddDocuments, 'AssetAddDocuments'],
     [TxTags.asset.CreateAsset, 'AssetCreateAsset'],
+    // registers the custom type inline, and bills only the one asset creation fee
+    [TxTags.asset.CreateAssetWithCustomType, 'AssetCreateAsset'],
     [TxTags.capitalDistribution.Distribute, 'CapitalDistributionDistribute'],
+    [TxTags.corporateAction.InitiateCorporateActionAndDistribute, 'CapitalDistributionDistribute'],
     [TxTags.checkpoint.CreateSchedule, 'CheckpointCreateSchedule'],
     [
       TxTags.complianceManager.AddComplianceRequirement,
       'ComplianceManagerAddComplianceRequirement',
     ],
     [TxTags.identity.CddRegisterDid, 'IdentityRegisterDid'],
+    [TxTags.identity.CddRegisterDidWithCdd, 'IdentityRegisterDid'],
     [TxTags.identity.RegisterDid, 'IdentityRegisterDid'],
+    [TxTags.identity.SelfRegisterDid, 'IdentityRegisterDid'],
     [TxTags.identity.AddClaim, 'IdentityAddClaim'],
     [
       TxTags.identity.AddSecondaryKeysWithAuthorization,
@@ -3030,6 +3043,7 @@ export function txTagToProtocolOp(
     ],
     [TxTags.pips.Propose, 'PipsPropose'],
     [TxTags.corporateBallot.AttachBallot, 'CorporateBallotAttachBallot'],
+    [TxTags.corporateAction.InitiateCorporateActionAndBallot, 'CorporateBallotAttachBallot'],
     [TxTags.nft.CreateNftCollection, 'NFTCreateCollection'],
     [TxTags.nft.IssueNft, 'NFTMint'],
   ]);

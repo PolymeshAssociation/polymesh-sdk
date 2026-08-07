@@ -4,6 +4,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import {
+  addManualFees,
   assertAuthorizationRequestValid,
   assertCaCheckpointValid,
   assertCaTaxWithholdingsValid,
@@ -1956,5 +1957,47 @@ describe('getAssetHolderDid', () => {
 
     const result = await getAssetHolderDid(portfolio, context);
     expect(result).toBe('portfolioDid');
+  });
+});
+
+describe('addManualFees', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return undefined when fees are not being calculated manually', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const result = await addManualFees(undefined, [TxTags.asset.CreateAsset], context);
+
+    expect(result).toBeUndefined();
+    expect(context.getProtocolFees).not.toHaveBeenCalled();
+  });
+
+  it('should add the fees for the passed tags to the accumulated total', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.getProtocolFees.mockResolvedValue([
+      { tag: TxTags.asset.CreateAsset, fees: new BigNumber(250) },
+      { tag: TxTags.asset.Issue, fees: new BigNumber(100) },
+    ]);
+
+    const result = await addManualFees(
+      new BigNumber(50),
+      [TxTags.asset.CreateAsset, TxTags.asset.Issue],
+      context
+    );
+
+    expect(result).toEqual(new BigNumber(400));
   });
 });

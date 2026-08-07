@@ -4233,11 +4233,22 @@ describe('nftDispatchErrorToTransferError', () => {
       Err: { index: createMockU8(), module: createMockU8aFixed() },
     }).asErr;
 
-    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferFrozenAsset', {
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferNFTIsLocked', {
       returnValue: { is: jest.fn().mockReturnValue(true) },
     });
 
     let result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InsufficientPortfolioBalance);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferNFTIsLocked', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferFrozenAsset', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    result = nftDispatchErrorToTransferError(mockError, context);
 
     expect(result).toEqual(TransferError.TransfersFrozen);
 
@@ -5815,6 +5826,38 @@ describe('txTagToProtocolOp', () => {
       .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'IdentityRegisterDid')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.RegisterDid, context)).toEqual(fakeResult);
+  });
+
+  it('should map extrinsics that bill under a delegated ProtocolOp', () => {
+    const fakeResult = 'convertedProtocolOp' as unknown as PolymeshPrimitivesProtocolFeeProtocolOp;
+    const context = dsMockUtils.getContextInstance();
+
+    const createTypeMock = context.createType;
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'AssetCreateAsset')
+      .mockReturnValue(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.CreateAssetWithCustomType, context)).toEqual(fakeResult);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'CapitalDistributionDistribute')
+      .mockReturnValue(fakeResult);
+    expect(
+      txTagToProtocolOp(TxTags.corporateAction.InitiateCorporateActionAndDistribute, context)
+    ).toEqual(fakeResult);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'CorporateBallotAttachBallot')
+      .mockReturnValue(fakeResult);
+    expect(
+      txTagToProtocolOp(TxTags.corporateAction.InitiateCorporateActionAndBallot, context)
+    ).toEqual(fakeResult);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'IdentityRegisterDid')
+      .mockReturnValue(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.CddRegisterDidWithCdd, context)).toEqual(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.SelfRegisterDid, context)).toEqual(fakeResult);
   });
 
   it('should throw for a tag whose extrinsic no longer exists on chain', () => {

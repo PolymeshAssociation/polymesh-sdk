@@ -262,10 +262,6 @@ describe('createAsset procedure', () => {
       .calledWith({ tags: [TxTags.asset.CreateAsset] })
       .mockResolvedValue([{ tag: TxTags.asset.CreateAsset, fees: protocolFees[1]! }]);
 
-    when(mockContext.getProtocolFees)
-      .calledWith({ tags: [TxTags.asset.RegisterCustomAssetType] })
-      .mockResolvedValue([{ tag: TxTags.asset.RegisterCustomAssetType, fees: protocolFees[2]! }]);
-
     defaultPortfolioHolderKind = dsMockUtils.createMockAssetHolderKind('DefaultPortfolio');
     numberedPortfolioHolderKind = dsMockUtils.createMockAssetHolderKind({
       UserPortfolio: dsMockUtils.createMockU64(numberedPortfolioId),

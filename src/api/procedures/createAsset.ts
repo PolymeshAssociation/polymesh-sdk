@@ -112,12 +112,12 @@ function assertTickerAvailable(
  *   - otherwise, we create the asset with the id of the existing custom asset type
  * - if the passed Asset type is a fixed one, we create the asset using that Asset type
  */
-async function getCreateAssetTransaction(
+function getCreateAssetTransaction(
   customTypeData: Storage['customTypeData'],
   context: Context,
   fee: BigNumber | undefined,
   args: Params
-): Promise<TxWithArgs<unknown[]>> {
+): TxWithArgs<unknown[]> {
   const {
     polymeshApi: { tx },
   } = context;
@@ -136,11 +136,10 @@ async function getCreateAssetTransaction(
 
     if (!isAlreadyCreated) {
       /*
-       * We add the fee for registering a custom asset type in case we're calculating
-       * the Asset creation fees manually
+       * `createAssetWithCustomType` registers the custom type inline, and the runtime charges no
+       * protocol fee for that registration — the only fee due is the one asset creation fee already
+       * accounted for by the caller.
        */
-      fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
-
       return checkTxType({
         transaction: tx.asset.createAssetWithCustomType,
         fee,
@@ -287,7 +286,7 @@ export async function prepareCreateAsset(
     fee = await addManualFees(new BigNumber(0), [TxTags.asset.CreateAsset], context);
   }
 
-  transactions.push(await getCreateAssetTransaction(customTypeData, context, fee, args));
+  transactions.push(getCreateAssetTransaction(customTypeData, context, fee, args));
 
   // we need to separately register the ticker first if it doesn't exist, then link it to the asset
   transactions = [
