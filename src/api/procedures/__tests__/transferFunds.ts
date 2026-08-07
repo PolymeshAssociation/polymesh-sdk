@@ -17,10 +17,10 @@ import { isResolverFunction, MaybeResolverFunction } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as typeguardsModule from '~/utils/typeguards';
 
-const callResolver = async (
+const callResolver = (
   resolver: MaybeResolverFunction<Instruction | undefined>
 ): Promise<Instruction | undefined> =>
-  isResolverFunction(resolver) ? resolver({} as ISubmittableResult) : resolver;
+  Promise.resolve(isResolverFunction(resolver) ? resolver({} as ISubmittableResult) : resolver);
 
 jest.mock(
   '~/api/entities/NumberedPortfolio',
