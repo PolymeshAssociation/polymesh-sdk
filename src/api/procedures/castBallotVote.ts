@@ -195,12 +195,30 @@ export function getAuthorization(
   this: Procedure<Params, void>,
   { asset }: Params
 ): ProcedureAuthorization {
+  /*
+   * Voting is a holder action, so no External Agent permissions are required.
+   *
+   * `permissions` applies to both secondary Accounts and External Agent
+   * Identities, so naming the Asset there in order to scope the transaction
+   * permission also asserts that the signer is an Agent of that Asset — see
+   * `Procedure.checkRolesAndAgentPermissions`, which runs the Agent check
+   * whenever both `assets` and `transactions` are non-empty. A holder is not an
+   * Agent of the Asset they hold, so that made this Procedure unreachable for
+   * its intended callers, failing with "The Identity is not an Agent for the
+   * Asset".
+   *
+   * These are declared separately rather than by emptying `assets` (as
+   * `claimDividends` does) so that the Asset scoping of a secondary Account's
+   * permissions is preserved: a secondary key permissioned for one Asset should
+   * not be able to vote on another.
+   */
   return {
-    permissions: {
+    signerPermissions: {
       transactions: [TxTags.corporateBallot.Vote],
       assets: [asset],
       portfolios: [],
     },
+    agentPermissions: true,
   };
 }
 

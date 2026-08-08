@@ -246,11 +246,46 @@ describe('castBallotVote procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        permissions: {
+        signerPermissions: {
           transactions: [TxTags.corporateBallot.Vote],
           assets: [asset],
           portfolios: [],
         },
+        agentPermissions: true,
+      });
+    });
+
+    it('should not require External Agent permissions, since voting is a holder action', () => {
+      // A holder is not an Agent of the Asset they hold. Declaring `permissions`
+      // with a non-empty `assets` applies to Agents as well, which made this
+      // Procedure unreachable for its intended callers.
+      const boundFunc = getAuthorization.bind(proc);
+      const args = {
+        asset,
+        ballot,
+        votes: [[{ fallback: new BigNumber(0), power: new BigNumber(1) }]],
+      } as Params;
+
+      const result = boundFunc(args);
+
+      expect(result.agentPermissions).toBe(true);
+      expect(result.permissions).toBeUndefined();
+    });
+
+    it('should still scope a secondary Account permission to the Asset', () => {
+      // The Agent check is what has to go, not the Asset scoping: a secondary
+      // key permissioned for one Asset should not be able to vote on another.
+      const boundFunc = getAuthorization.bind(proc);
+      const args = {
+        asset,
+        ballot,
+        votes: [[{ fallback: new BigNumber(0), power: new BigNumber(1) }]],
+      } as Params;
+
+      expect(boundFunc(args).signerPermissions).toEqual({
+        transactions: [TxTags.corporateBallot.Vote],
+        assets: [asset],
+        portfolios: [],
       });
     });
   });
