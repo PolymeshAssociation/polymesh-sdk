@@ -3852,6 +3852,10 @@ describe('transferReportToTransferBreakdown', () => {
       NFTNotFound: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferSenderDidMatchesReceiverDid: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferCollectionNotFound: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferCountOverflow: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferInvalidReceiverDID: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferNFTIsLocked: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['nft'];
 
@@ -3864,6 +3868,7 @@ describe('transferReportToTransferBreakdown', () => {
       InvalidTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
       InvalidTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
       InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferInvalidReceiverDID: { is: jest.fn().mockReturnValue(false) },
       NoSuchAsset: { is: jest.fn().mockReturnValue(false) },
       BalanceOverflow: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['asset'];
@@ -4027,6 +4032,14 @@ describe('assetDispatchErrorToTransferError', () => {
 
     expect(result).toEqual(TransferError.ComplianceFailure);
 
+    dsMockUtils.setErrorMock('asset', 'InvalidTransferInvalidReceiverDID', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InvalidReceiverIdentity);
+
     dsMockUtils.setErrorMock('portfolio', 'PortfolioDoesNotExist', {
       returnValue: { is: jest.fn().mockReturnValueOnce(true) },
     });
@@ -4131,6 +4144,10 @@ describe('nftDispatchErrorToTransferError', () => {
       NFTNotFound: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferSenderDidMatchesReceiverDid: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferCollectionNotFound: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferCountOverflow: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferInvalidReceiverDID: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferNFTIsLocked: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['nft'];
 
@@ -4182,12 +4199,98 @@ describe('nftDispatchErrorToTransferError', () => {
     dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferSamePortfolio', {
       returnValue: { is: jest.fn().mockReturnValue(false) },
     });
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferSenderDidMatchesReceiverDid', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.SelfTransfer);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferSenderDidMatchesReceiverDid', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferNFTNotOwned', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InsufficientPortfolioBalance);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferNFTNotOwned', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferCollectionNotFound', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.AssetDoesNotExists);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferCollectionNotFound', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferCountOverflow', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.BalanceOverflow);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferCountOverflow', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferInvalidReceiverDID', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InvalidReceiverIdentity);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferInvalidReceiverDID', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
 
     return expect(() => nftDispatchErrorToTransferError(mockError, context)).toThrow(
       new PolymeshError({
         code: ErrorCode.General,
         message: 'Received unknown NFT can transfer status',
       })
+    );
+  });
+
+  it('should return the chain error name for an NFT error with no TransferError equivalent', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.polymeshApi.errors.nft = {
+      DuplicatedNFTId: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferInsufficientCount: { is: jest.fn().mockReturnValue(false) },
+      NFTNotFound: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferSenderDidMatchesReceiverDid: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferCollectionNotFound: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferCountOverflow: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferInvalidReceiverDID: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTIsLocked: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['nft'];
+
+    const mockError = dsMockUtils.createMockDispatchResult({
+      Err: { index: createMockU8(), module: createMockU8aFixed() },
+    }).asErr;
+
+    (mockError.asModule as unknown as { registry: unknown }).registry = {
+      findMetaError: (): { name: string } => ({ name: 'MaxNumberOfNFTsPerLegExceeded' }),
+    };
+
+    expect(nftDispatchErrorToTransferError(mockError, context)).toBe(
+      'MaxNumberOfNFTsPerLegExceeded'
     );
   });
 });

@@ -3585,6 +3585,7 @@ export function assetDispatchErrorToTransferError(
     [assetErrors.InvalidTransferFrozenAsset, TransferError.TransfersFrozen],
     [portfolioErrors.PortfolioDoesNotExist, TransferError.InvalidSenderPortfolio],
     [portfolioErrors.InsufficientPortfolioBalance, TransferError.InsufficientPortfolioBalance],
+    [assetErrors.InvalidTransferInvalidReceiverDID, TransferError.InvalidReceiverIdentity],
     [assetErrors.InvalidTransferComplianceFailure, TransferError.ComplianceFailure],
     [assetErrors.InvalidTransfer, TransferError.ComplianceFailure],
     [statisticsError.InvalidTransferStatisticsFailure, TransferError.TransferNotAllowed],
@@ -3619,15 +3620,19 @@ export function assetDispatchErrorToTransferError(
 export function nftDispatchErrorToTransferError(
   error: DispatchError,
   context: Context
-): TransferError {
+): TransferError | string {
   const {
     DuplicatedNFTId: duplicateErr,
+    InvalidNFTTransferCollectionNotFound: collectionNotFoundErr,
     InvalidNFTTransferComplianceFailure: complianceErr,
+    InvalidNFTTransferCountOverflow: countOverflowErr,
     InvalidNFTTransferFrozenAsset: frozenErr,
     InvalidNFTTransferInsufficientCount: insufficientErr,
+    InvalidNFTTransferInvalidReceiverDID: invalidReceiverErr,
     NFTNotFound: notFoundErr,
     InvalidNFTTransferNFTNotOwned: notOwnedErr,
     InvalidNFTTransferSamePortfolio: samePortfolioErr,
+    InvalidNFTTransferSenderDidMatchesReceiverDid: sameIdentityErr,
     InvalidNFTTransferNFTIsLocked: nftLockedErr,
   } = context.polymeshApi.errors.nft;
 
@@ -3643,8 +3648,21 @@ export function nftDispatchErrorToTransferError(
       return TransferError.TransfersFrozen;
     } else if (complianceErr.is(moduleErr)) {
       return TransferError.ComplianceFailure;
-    } else if (samePortfolioErr.is(moduleErr)) {
+    } else if ([samePortfolioErr, sameIdentityErr].some(err => err.is(moduleErr))) {
       return TransferError.SelfTransfer;
+    } else if (collectionNotFoundErr.is(moduleErr)) {
+      return TransferError.AssetDoesNotExists;
+    } else if (countOverflowErr.is(moduleErr)) {
+      return TransferError.BalanceOverflow;
+    } else if (invalidReceiverErr.is(moduleErr)) {
+      return TransferError.InvalidReceiverIdentity;
+    }
+
+    // report the chain's own name for errors with no `TransferError` equivalent
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const errorMeta = (moduleErr as any).registry?.findMetaError(moduleErr);
+    if (errorMeta) {
+      return errorMeta.name;
     }
   }
 
