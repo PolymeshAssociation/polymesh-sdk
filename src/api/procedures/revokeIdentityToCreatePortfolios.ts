@@ -1,5 +1,5 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RevokeIdentityToCreatePortfoliosParams } from '~/types';
+import { ErrorCode, RevokeIdentityToCreatePortfoliosParams, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToIdentityId } from '~/utils/conversion';
 import { asIdentity, assertIdentityExists } from '~/utils/internal';
@@ -64,6 +64,6 @@ export const revokeIdentityToCreatePortfolios = (): Procedure<
     permissions: {
       assets: [],
       portfolios: [],
-      transactions: [],
+      transactions: [TxTags.portfolio.RevokeCreatePortfoliosPermission],
     },
   });
