@@ -12,6 +12,7 @@ import {
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockBtreeSet, createMockU64 } from '~/testUtils/mocks/dataSources';
 import {
+  AssetDocumentWithId,
   CorporateActionKind,
   CorporateActionTargets,
   TargetTreatment,
@@ -297,6 +298,64 @@ describe('CorporateAction class', () => {
       schedulePointsQueryMock.mockResolvedValue([]);
 
       return expect(corporateAction.checkpoint()).rejects.toThrow('No checkpoint found');
+    });
+  });
+
+  describe('method: getDocuments', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return an empty array if the CA has no linked documents', async () => {
+      dsMockUtils.createQueryMock('corporateAction', 'caDocLink', {
+        returnValue: [],
+      });
+      dsMockUtils.createQueryMock('asset', 'assetDocuments', {
+        multi: [],
+      });
+
+      const result = await corporateAction.getDocuments();
+
+      expect(result).toEqual([]);
+    });
+
+    it('should return the documents linked to the CA, omitting any that no longer exist on the Asset', async () => {
+      const firstDocId = new BigNumber(1);
+      const secondDocId = new BigNumber(2);
+
+      dsMockUtils.createQueryMock('corporateAction', 'caDocLink', {
+        returnValue: [
+          dsMockUtils.createMockU32(firstDocId),
+          dsMockUtils.createMockU32(secondDocId),
+        ],
+      });
+
+      dsMockUtils.createQueryMock('asset', 'assetDocuments', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockDocument({
+              uri: dsMockUtils.createMockBytes('someUri'),
+              name: dsMockUtils.createMockBytes('someName'),
+              contentHash: dsMockUtils.createMockDocumentHash('None'),
+              docType: dsMockUtils.createMockOption(),
+              filingDate: dsMockUtils.createMockOption(),
+            })
+          ),
+          dsMockUtils.createMockOption(),
+        ],
+      });
+
+      const result = await corporateAction.getDocuments();
+
+      const expected: AssetDocumentWithId[] = [
+        {
+          id: firstDocId,
+          name: 'someName',
+          uri: 'someUri',
+        },
+      ];
+
+      expect(result).toEqual(expected);
     });
   });
 

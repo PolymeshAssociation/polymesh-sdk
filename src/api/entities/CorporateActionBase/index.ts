@@ -17,16 +17,19 @@ import {
   PolymeshError,
 } from '~/internal';
 import {
+  AssetDocumentWithId,
   ErrorCode,
   InputCaCheckpoint,
   LinkCaDocsParams,
   ModifyCaCheckpointParams,
   ProcedureMethod,
 } from '~/types';
-import { HumanReadableType, Modify } from '~/types/utils';
+import { HumanReadableType, Modify, tuple } from '~/types/utils';
 import {
   assetToMeshAssetId,
   bigNumberToU32,
+  corporateActionIdentifierToCaId,
+  documentToAssetDocumentWithId,
   momentToDate,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -157,6 +160,44 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
    * @note any previous links are removed in favor of the new list
    */
   public linkDocuments: ProcedureMethod<LinkCaDocsParams, void>;
+
+  /**
+   * Retrieve the documents linked to this Corporate Action
+   */
+  public async getDocuments(): Promise<AssetDocumentWithId[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { corporateAction, asset },
+        },
+      },
+      context,
+      id,
+      asset: caAsset,
+    } = this;
+
+    const rawCaId = corporateActionIdentifierToCaId({ asset: caAsset, localId: id }, context);
+    const rawAssetId = assetToMeshAssetId(caAsset, context);
+
+    const rawDocIds = await corporateAction.caDocLink(rawCaId);
+
+    const rawDocuments = await asset.assetDocuments.multi(
+      rawDocIds.map(docId => tuple(rawAssetId, docId))
+    );
+
+    return rawDocuments.reduce<AssetDocumentWithId[]>((result, rawDocumentOpt, index) => {
+      if (rawDocumentOpt.isSome) {
+        result.push(
+          documentToAssetDocumentWithId({
+            document: rawDocumentOpt.unwrap(),
+            id: rawDocIds[index]!,
+          })
+        );
+      }
+
+      return result;
+    }, []);
+  }
 
   /**
    * Modify the Corporate Action's Checkpoint
