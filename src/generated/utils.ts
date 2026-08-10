@@ -18,6 +18,8 @@ export function countryCodeToMeshCountryCode(
 /**
  * @hidden
  */
+// the generated body is one branch per CountryCode, which trips `max-lines-per-function` and
+// `complexity`. There is nothing to refactor - it is a flat lookup - so disable the rules here
 // eslint-disable-next-line
 export function meshCountryCodeToCountryCode(
   meshCountryCode: PolymeshPrimitivesJurisdictionCountryCode
