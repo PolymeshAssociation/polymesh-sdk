@@ -153,6 +153,10 @@ export async function prepareInviteExternalAgent(
 
 /**
  * @hidden
+ *
+ * The chain defers the real Agent check to acceptance: `acceptBecomeAgent` runs
+ * `ensure_agent_permissioned` against the authorization's creator, resolved against the accept
+ * call. So the caller must already hold that permission, or the invite can never be accepted.
  */
 export function getAuthorization(
   this: Procedure<Params, AuthorizationRequest, Storage>,
@@ -163,14 +167,22 @@ export function getAuthorization(
   } = this;
 
   return {
-    permissions: {
+    signerPermissions: {
       transactions: [
         matchingGroup
           ? TxTags.identity.AddAuthorization
           : TxTags.externalAgents.CreateGroupAndAddAuth,
       ],
-      assets: [asset],
+      // only `createGroupAndAddAuth` reaches `has_asset_permission` for the signing key
+      assets: matchingGroup ? [] : [asset],
       portfolios: [],
+    },
+    agentPermissions: {
+      // `createGroupAndAddAuth` is Agent checked when submitted, as well as on acceptance
+      transactions: matchingGroup
+        ? [TxTags.externalAgents.AcceptBecomeAgent]
+        : [TxTags.externalAgents.CreateGroupAndAddAuth, TxTags.externalAgents.AcceptBecomeAgent],
+      assets: [asset],
     },
   };
 }

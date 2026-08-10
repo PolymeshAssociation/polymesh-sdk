@@ -72,16 +72,24 @@ export async function prepareTransferAssetOwnership(
 
 /**
  * @hidden
+ *
+ * The chain defers the real Agent check to acceptance: `acceptAssetOwnershipTransfer` runs
+ * `ensure_agent_permissioned` against the authorization's creator, resolved against the accept
+ * call. So the caller must already hold that permission, or the offer can never be accepted.
  */
 export function getAuthorization(
   this: Procedure<Params, AuthorizationRequest>,
   { asset }: Params
 ): ProcedureAuthorization {
   return {
-    permissions: {
-      assets: [asset],
+    signerPermissions: {
       transactions: [TxTags.identity.AddAuthorization],
+      assets: [],
       portfolios: [],
+    },
+    agentPermissions: {
+      transactions: [TxTags.asset.AcceptAssetOwnershipTransfer],
+      assets: [asset],
     },
   };
 }

@@ -86,6 +86,9 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.sto.EnableOffchainFunding],
+      // `sto.enable_offchain_funding` always checks Asset permissions but exempts the Offering's
+      // creator from the Agent check. Since creating an Offering requires Agent permission in the
+      // first place, we deliberately require it here too rather than special-casing the creator
       assets: [asset],
       portfolios: [],
     },

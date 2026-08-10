@@ -185,10 +185,14 @@ describe('transferAssetOwnership procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        permissions: {
-          assets: [expect.objectContaining({ id: assetId })],
+        signerPermissions: {
           transactions: [TxTags.identity.AddAuthorization],
+          assets: [],
           portfolios: [],
+        },
+        agentPermissions: {
+          transactions: [TxTags.asset.AcceptAssetOwnershipTransfer],
+          assets: [expect.objectContaining({ id: assetId })],
         },
       });
     });

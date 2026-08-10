@@ -65,6 +65,12 @@ export class Permissions extends Namespace<BaseAsset> {
   /**
    * Invite an Identity to be an agent with permissions over this Asset
    *
+   * @note the signing Identity must be an agent of this Asset holding `externalAgents.acceptBecomeAgent`
+   *   permission — granted by `TxGroup.ExternalAgentManagement` or `PermissionGroupType.Full`. The chain
+   *   checks this when the `target` accepts, against the Identity that created the Authorization Request,
+   *   so an invitation sent without it can never be accepted. If no existing Permission Group matches the
+   *   requested permissions, `externalAgents.createGroupAndAddAuth` permission is also required
+   *
    * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
    *   An {@link api/entities/Account!Account | Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}

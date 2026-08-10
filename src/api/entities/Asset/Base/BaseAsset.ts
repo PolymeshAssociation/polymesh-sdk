@@ -91,6 +91,11 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    * Transfer ownership of the Asset to another Identity. This generates an authorization request that must be accepted
    *   by the recipient
    *
+   * @note the signing Identity must be an agent of this Asset holding `asset.acceptAssetOwnershipTransfer`
+   *   permission — granted by `TxGroup.AdvancedAssetManagement` or `PermissionGroupType.Full`. The chain
+   *   checks this when the `target` accepts, against the Identity that created the Authorization Request,
+   *   so an offer sent without it can never be accepted
+   *
    * @note this will create {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
    *   An {@link api/entities/Account!Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}

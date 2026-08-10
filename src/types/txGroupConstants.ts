@@ -304,14 +304,22 @@ export const CORPORATE_VOTING_TX_TAGS = [
  * Contains operations for managing external agents and their permissions.
  *
  * Values:
+ * - TxTags.externalAgents.AcceptBecomeAgent
  * - TxTags.externalAgents.ChangeGroup
  * - TxTags.externalAgents.CreateAndChangeCustomGroup
  * - TxTags.externalAgents.CreateGroup
  * - TxTags.externalAgents.CreateGroupAndAddAuth
  * - TxTags.externalAgents.RemoveAgent
  * - TxTags.externalAgents.SetGroupPermissions
+ *
+ * @note AcceptBecomeAgent has unique permission checking - when an invitation is accepted, the chain
+ * verifies that the identity that created the authorization was an agent with AcceptBecomeAgent
+ * permission, so an agent with this permission can invite other agents to the Asset. It is also a
+ * member of `EXTERNAL_AGENT_PARTICIPATION_TX_TAGS`, which grants a Secondary Key the ability to
+ * accept an invitation on its own Identity's behalf.
  */
 export const EXTERNAL_AGENT_MANAGEMENT_TX_TAGS = [
+  TxTags.externalAgents.AcceptBecomeAgent, // Agent (via authorization creator check)
   TxTags.externalAgents.ChangeGroup, // Agent
   TxTags.externalAgents.CreateAndChangeCustomGroup, // Agent
   TxTags.externalAgents.CreateGroup, // Agent

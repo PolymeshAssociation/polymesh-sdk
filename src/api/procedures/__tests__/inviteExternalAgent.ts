@@ -126,10 +126,14 @@ describe('inviteExternalAgent procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc({ asset } as unknown as Params)).toEqual({
-        permissions: {
+        signerPermissions: {
           transactions: [TxTags.identity.AddAuthorization],
-          assets: [asset],
+          assets: [],
           portfolios: [],
+        },
+        agentPermissions: {
+          transactions: [TxTags.externalAgents.AcceptBecomeAgent],
+          assets: [asset],
         },
       });
     });
@@ -142,10 +146,17 @@ describe('inviteExternalAgent procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc({ asset } as unknown as Params)).toEqual({
-        permissions: {
+        signerPermissions: {
           transactions: [TxTags.externalAgents.CreateGroupAndAddAuth],
           assets: [asset],
           portfolios: [],
+        },
+        agentPermissions: {
+          transactions: [
+            TxTags.externalAgents.CreateGroupAndAddAuth,
+            TxTags.externalAgents.AcceptBecomeAgent,
+          ],
+          assets: [asset],
         },
       });
     });
