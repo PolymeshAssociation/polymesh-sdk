@@ -720,6 +720,7 @@ describe('createAsset procedure', () => {
       result = boundFunc({
         ...args,
         documents: [{ uri: 'www.doc.com', name: 'myDoc' }],
+        initialSupply: new BigNumber(100),
         initialStatistics: [{ type: StatType.Count }],
       });
 
@@ -729,10 +730,10 @@ describe('createAsset procedure', () => {
           assets: [],
           portfolios: [],
           transactions: [
-            TxTags.asset.CreateAsset,
+            TxTags.asset.CreateAssetWithCustomType,
             TxTags.asset.LinkTickerToAssetId,
             TxTags.asset.AddDocuments,
-            TxTags.asset.RegisterCustomAssetType,
+            TxTags.asset.Issue,
             TxTags.statistics.SetActiveAssetStats,
           ],
         },

@@ -2,7 +2,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RegisterIdentityParams, RoleType, TxTags } from '~/types';
-import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   dateToMoment,
   identityIdToString,
@@ -93,12 +93,21 @@ export async function prepareRegisterIdentity(
 /**
  * @hidden
  */
-export const registerIdentity = (): Procedure<RegisterIdentityParams, Identity> =>
-  new Procedure(prepareRegisterIdentity, {
+export function getAuthorization({ createCdd }: RegisterIdentityParams): ProcedureAuthorization {
+  return {
     roles: [{ type: RoleType.DidRegistrar }],
     permissions: {
       assets: [],
       portfolios: [],
-      transactions: [TxTags.identity.CddRegisterDid],
+      transactions: [
+        createCdd ? TxTags.identity.CddRegisterDidWithCdd : TxTags.identity.CddRegisterDid,
+      ],
     },
-  });
+  };
+}
+
+/**
+ * @hidden
+ */
+export const registerIdentity = (): Procedure<RegisterIdentityParams, Identity> =>
+  new Procedure(prepareRegisterIdentity, getAuthorization);

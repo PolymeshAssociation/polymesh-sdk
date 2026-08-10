@@ -742,7 +742,7 @@ describe('configureDividendDistribution procedure', () => {
           },
         ],
         permissions: {
-          transactions: [TxTags.capitalDistribution.Distribute],
+          transactions: [TxTags.corporateAction.InitiateCorporateActionAndDistribute],
           assets: [asset],
           portfolios: [originPortfolio],
         },

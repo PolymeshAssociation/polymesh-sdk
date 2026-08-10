@@ -7,12 +7,13 @@ import { when } from 'jest-when';
 
 import {
   createRegisterIdentityResolver,
+  getAuthorization,
   prepareRegisterIdentity,
 } from '~/api/procedures/registerIdentity';
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, PermissionedAccount, RegisterIdentityParams } from '~/types';
+import { ErrorCode, PermissionedAccount, RegisterIdentityParams, RoleType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -222,6 +223,30 @@ describe('registerIdentity procedure', () => {
       });
 
       return expect(() => prepareRegisterIdentity.call(proc, args)).rejects.toThrow(expectedError);
+    });
+  });
+
+  describe('getAuthorization', () => {
+    it('should declare the extrinsic that matches the `createCdd` arg', () => {
+      const baseArgs = { targetAccount, secondaryAccounts } as RegisterIdentityParams;
+
+      expect(getAuthorization({ ...baseArgs, createCdd: false })).toEqual({
+        roles: [{ type: RoleType.DidRegistrar }],
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.identity.CddRegisterDid],
+        },
+      });
+
+      expect(getAuthorization({ ...baseArgs, createCdd: true })).toEqual({
+        roles: [{ type: RoleType.DidRegistrar }],
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.identity.CddRegisterDidWithCdd],
+        },
+      });
     });
   });
 });

@@ -14,6 +14,8 @@ import {
   getAuthorization,
   Params,
   prepareInviteExternalAgent,
+  prepareStorage,
+  Storage,
 } from '~/api/procedures/inviteExternalAgent';
 import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, Context, FungibleAsset, Identity } from '~/internal';
@@ -113,13 +115,35 @@ describe('inviteExternalAgent procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
+    it('should declare addAuthorization when an existing group matches', () => {
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+        mockContext,
+        {
+          matchingGroup: entityMockUtils.getKnownPermissionGroupInstance(),
+          groupTransactions: null,
+        }
+      );
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc({ asset } as unknown as Params)).toEqual({
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
+          assets: [asset],
+          portfolios: [],
+        },
+      });
+    });
+
+    it('should declare createGroupAndAddAuth when the group has to be created', () => {
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+        mockContext,
+        { matchingGroup: null, groupTransactions: null }
+      );
+      const boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc({ asset } as unknown as Params)).toEqual({
+        permissions: {
+          transactions: [TxTags.externalAgents.CreateGroupAndAddAuth],
           assets: [asset],
           portfolios: [],
         },
@@ -142,7 +166,13 @@ describe('inviteExternalAgent procedure', () => {
       permissions: entityMockUtils.getKnownPermissionGroupInstance(),
     };
 
-    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+      mockContext,
+      {
+        matchingGroup: entityMockUtils.getKnownPermissionGroupInstance(),
+        groupTransactions: null,
+      }
+    );
 
     return expect(prepareInviteExternalAgent.call(proc, args)).rejects.toThrow(
       'The target Identity is already an External Agent'
@@ -151,7 +181,13 @@ describe('inviteExternalAgent procedure', () => {
 
   it('should return an add authorization transaction spec if an existing group is passed', async () => {
     const transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
-    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+      mockContext,
+      {
+        matchingGroup: entityMockUtils.getKnownPermissionGroupInstance(),
+        groupTransactions: null,
+      }
+    );
 
     const result = await prepareInviteExternalAgent.call(proc, {
       target,
@@ -177,14 +213,6 @@ describe('inviteExternalAgent procedure', () => {
   it('should use the existing group ID if there is a group with the same permissions as the ones passed', async () => {
     const groupId = new BigNumber(10);
     const transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
-    const getGroupFromPermissionsSpy = jest
-      .spyOn(procedureUtilsModule, 'getGroupFromPermissions')
-      .mockResolvedValue(
-        entityMockUtils.getCustomPermissionGroupInstance({
-          assetId,
-          id: groupId,
-        })
-      );
 
     const args = {
       target,
@@ -197,7 +225,13 @@ describe('inviteExternalAgent procedure', () => {
       },
     };
 
-    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+      mockContext,
+      {
+        matchingGroup: entityMockUtils.getCustomPermissionGroupInstance({ assetId, id: groupId }),
+        groupTransactions: null,
+      }
+    );
 
     const result = await prepareInviteExternalAgent.call(proc, {
       ...args,
@@ -212,20 +246,15 @@ describe('inviteExternalAgent procedure', () => {
       args: [rawSignatory, rawAuthorizationData, null],
       resolver: expect.any(Function),
     });
-
-    getGroupFromPermissionsSpy.mockRestore();
   });
 
   it('should return a create group and add authorization transaction spec if the group does not exist', async () => {
     const transaction = dsMockUtils.createTxMock('externalAgents', 'createGroupAndAddAuth');
-    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+      mockContext,
+      { matchingGroup: null, groupTransactions: null }
+    );
 
-    jest.spyOn(utilsConversionModule, 'permissionsLikeToPermissions').mockClear().mockReturnValue({
-      transactions: null,
-      assets: null,
-      portfolios: null,
-      transactionGroups: [],
-    });
     const rawPermissions = dsMockUtils.createMockExtrinsicPermissions('Whole');
     jest
       .spyOn(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
@@ -255,6 +284,84 @@ describe('inviteExternalAgent procedure', () => {
       transaction,
       args: [rawAssetId, rawPermissions, rawIdentityId, null],
       resolver: expect.any(Function),
+    });
+  });
+
+  describe('prepareStorage', () => {
+    it('should return the passed Permission Group without looking one up', async () => {
+      const getGroupFromPermissionsSpy = jest.spyOn(
+        procedureUtilsModule,
+        'getGroupFromPermissions'
+      );
+      const permissions = entityMockUtils.getKnownPermissionGroupInstance();
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+        mockContext
+      );
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc({ asset, permissions } as unknown as Params);
+
+      expect(result).toEqual({ matchingGroup: permissions, groupTransactions: null });
+      expect(getGroupFromPermissionsSpy).not.toHaveBeenCalled();
+
+      getGroupFromPermissionsSpy.mockRestore();
+    });
+
+    it('should look up the group matching the passed permissions', async () => {
+      const matchingGroup = entityMockUtils.getCustomPermissionGroupInstance({ assetId });
+      const getGroupFromPermissionsSpy = jest
+        .spyOn(procedureUtilsModule, 'getGroupFromPermissions')
+        .mockResolvedValue(matchingGroup);
+      const transactions = {
+        type: PermissionType.Include,
+        values: [TxTags.asset.AcceptAssetOwnershipTransfer],
+      };
+      jest.spyOn(utilsConversionModule, 'permissionsLikeToPermissions').mockReturnValue({
+        transactions,
+        assets: null,
+        portfolios: null,
+        transactionGroups: [],
+      });
+
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+        mockContext
+      );
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc({
+        asset,
+        permissions: { transactions },
+      } as unknown as Params);
+
+      expect(result).toEqual({ matchingGroup, groupTransactions: transactions });
+
+      getGroupFromPermissionsSpy.mockRestore();
+    });
+
+    it('should return a null group when no existing group matches', async () => {
+      const getGroupFromPermissionsSpy = jest
+        .spyOn(procedureUtilsModule, 'getGroupFromPermissions')
+        .mockResolvedValue(undefined);
+      jest.spyOn(utilsConversionModule, 'permissionsLikeToPermissions').mockReturnValue({
+        transactions: null,
+        assets: null,
+        portfolios: null,
+        transactionGroups: [],
+      });
+
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+        mockContext
+      );
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc({
+        asset,
+        permissions: { transactions: null },
+      } as unknown as Params);
+
+      expect(result).toEqual({ matchingGroup: null, groupTransactions: null });
+
+      getGroupFromPermissionsSpy.mockRestore();
     });
   });
 });

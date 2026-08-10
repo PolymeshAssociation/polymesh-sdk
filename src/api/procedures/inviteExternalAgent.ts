@@ -16,6 +16,7 @@ import {
   ErrorCode,
   InviteExternalAgentParams,
   SignerType,
+  TransactionPermissions,
   TxTags,
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
@@ -52,8 +53,23 @@ export type Params = InviteExternalAgentParams & {
 /**
  * @hidden
  */
+export interface Storage {
+  /**
+   * the Permission Group the target will be invited into, or `null` if no existing Group matches the
+   *   passed permissions and one has to be created alongside the Authorization Request
+   */
+  matchingGroup: KnownPermissionGroup | CustomPermissionGroup | null;
+  /**
+   * transactions to grant the Group that has to be created. Only set when `matchingGroup` is `null`
+   */
+  groupTransactions: TransactionPermissions | null;
+}
+
+/**
+ * @hidden
+ */
 export async function prepareInviteExternalAgent(
-  this: Procedure<Params, AuthorizationRequest>,
+  this: Procedure<Params, AuthorizationRequest, Storage>,
   args: Params
 ): Promise<
   | TransactionSpec<
@@ -69,9 +85,10 @@ export async function prepareInviteExternalAgent(
       },
     },
     context,
+    storage: { matchingGroup, groupTransactions },
   } = this;
 
-  const { asset, target, permissions, expiry = null } = args;
+  const { asset, target, expiry = null } = args;
 
   const issuer = await context.getSigningIdentity();
   const targetIdentity = await context.getIdentity(target);
@@ -94,46 +111,30 @@ export async function prepareInviteExternalAgent(
     context
   );
 
-  let newAuthorizationData: Authorization;
-  let rawAuthorizationData;
-
-  // helper to transform permissions into the relevant Authorization
-  const createBecomeAgentData = (
-    value: KnownPermissionGroup | CustomPermissionGroup
-  ): Authorization => ({
-    type: AuthorizationType.BecomeAgent,
-    value,
-  });
-
-  if (permissions instanceof KnownPermissionGroup || permissions instanceof CustomPermissionGroup) {
-    newAuthorizationData = createBecomeAgentData(permissions);
-    rawAuthorizationData = authorizationToAuthorizationData(newAuthorizationData, context);
-  } else {
+  /*
+   * if there is no existing group with the passed permissions, we create it together with the Authorization Request.
+   *   Otherwise, we use the existing group's ID to create the Authorization request
+   */
+  if (!matchingGroup) {
     const rawAssetId = assetToMeshAssetId(asset, context);
-    const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-    const matchingGroup = await getGroupFromPermissions(asset, transactions);
-
-    /*
-     * if there is no existing group with the passed permissions, we create it together with the Authorization Request.
-     *   Otherwise, we use the existing group's ID to create the Authorization request
-     */
-    if (!matchingGroup) {
-      return {
-        transaction: externalAgents.createGroupAndAddAuth,
-        args: [
-          rawAssetId,
-          transactionPermissionsToExtrinsicPermissions(transactions, context),
-          stringToIdentityId(targetDid, context),
-          null,
-        ],
-        resolver: createGroupAndAuthorizationResolver(targetIdentity),
-      };
-    }
-
-    newAuthorizationData = createBecomeAgentData(matchingGroup);
-    rawAuthorizationData = authorizationToAuthorizationData(newAuthorizationData, context);
+    return {
+      transaction: externalAgents.createGroupAndAddAuth,
+      args: [
+        rawAssetId,
+        transactionPermissionsToExtrinsicPermissions(groupTransactions, context),
+        stringToIdentityId(targetDid, context),
+        null,
+      ],
+      resolver: createGroupAndAuthorizationResolver(targetIdentity),
+    };
   }
+
+  const newAuthorizationData: Authorization = {
+    type: AuthorizationType.BecomeAgent,
+    value: matchingGroup,
+  };
+  const rawAuthorizationData = authorizationToAuthorizationData(newAuthorizationData, context);
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
@@ -154,12 +155,20 @@ export async function prepareInviteExternalAgent(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, AuthorizationRequest>,
+  this: Procedure<Params, AuthorizationRequest, Storage>,
   { asset }: Params
 ): ProcedureAuthorization {
+  const {
+    storage: { matchingGroup },
+  } = this;
+
   return {
     permissions: {
-      transactions: [TxTags.identity.AddAuthorization],
+      transactions: [
+        matchingGroup
+          ? TxTags.identity.AddAuthorization
+          : TxTags.externalAgents.CreateGroupAndAddAuth,
+      ],
       assets: [asset],
       portfolios: [],
     },
@@ -169,5 +178,26 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const inviteExternalAgent = (): Procedure<Params, AuthorizationRequest> =>
-  new Procedure(prepareInviteExternalAgent, getAuthorization);
+export async function prepareStorage(
+  this: Procedure<Params, AuthorizationRequest, Storage>,
+  { asset, permissions }: Params
+): Promise<Storage> {
+  const { context } = this;
+
+  if (permissions instanceof KnownPermissionGroup || permissions instanceof CustomPermissionGroup) {
+    return { matchingGroup: permissions, groupTransactions: null };
+  }
+
+  const { transactions } = permissionsLikeToPermissions(permissions, context);
+
+  return {
+    matchingGroup: (await getGroupFromPermissions(asset, transactions)) ?? null,
+    groupTransactions: transactions,
+  };
+}
+
+/**
+ * @hidden
+ */
+export const inviteExternalAgent = (): Procedure<Params, AuthorizationRequest, Storage> =>
+  new Procedure(prepareInviteExternalAgent, getAuthorization, prepareStorage);

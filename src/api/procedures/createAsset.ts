@@ -322,13 +322,21 @@ export async function prepareCreateAsset(
  */
 export function getAuthorization(
   this: Procedure<Params, FungibleAsset, Storage>,
-  { ticker, documents, initialStatistics }: Params
+  { ticker, documents, initialStatistics, initialSupply }: Params
 ): ProcedureAuthorization {
   const {
     storage: { customTypeData, status },
   } = this;
 
-  const transactions: (AssetTx | StatisticsTx)[] = [TxTags.asset.CreateAsset];
+  /*
+   * an unregistered custom type is created together with the Asset, by a different extrinsic —
+   * the type is never registered on its own, so `asset.registerCustomAssetType` is not required
+   */
+  const transactions: (AssetTx | StatisticsTx)[] = [
+    customTypeData && !customTypeData.isAlreadyCreated
+      ? TxTags.asset.CreateAssetWithCustomType
+      : TxTags.asset.CreateAsset,
+  ];
 
   if (status === TickerReservationStatus.Free) {
     transactions.push(TxTags.asset.RegisterUniqueTicker);
@@ -341,8 +349,8 @@ export function getAuthorization(
     transactions.push(TxTags.asset.AddDocuments);
   }
 
-  if (customTypeData?.rawId.isEmpty) {
-    transactions.push(TxTags.asset.RegisterCustomAssetType);
+  if (initialSupply?.gt(0)) {
+    transactions.push(TxTags.asset.Issue);
   }
 
   if (initialStatistics?.length) {

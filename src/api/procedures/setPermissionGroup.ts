@@ -40,6 +40,15 @@ export type Params = SetPermissionGroupParams & {
  */
 export interface Storage {
   asset: BaseAsset;
+  /**
+   * the Permission Group the Agent will be moved into, or `null` if no existing Group matches the
+   *   passed permissions and one has to be created alongside the change
+   */
+  existingGroup: KnownPermissionGroup | CustomPermissionGroup | null;
+  /**
+   * transactions to grant the Group that has to be created. Only set when `existingGroup` is `null`
+   */
+  groupTransactions: TransactionPermissions | null;
 }
 
 /**
@@ -65,10 +74,10 @@ export async function prepareSetPermissionGroup(
       },
     },
     context,
-    storage: { asset },
+    storage: { asset, existingGroup, groupTransactions },
   } = this;
 
-  const { identity, group } = args;
+  const { identity } = args;
 
   const [currentGroup, currentAgents] = await Promise.all([
     identity.assetPermissions.getGroup({ asset }),
@@ -98,35 +107,20 @@ export async function prepareSetPermissionGroup(
   const rawAssetId = assetToMeshAssetId(asset, context);
   const rawIdentityId = stringToIdentityId(identity.did, context);
 
-  let existingGroup: KnownPermissionGroup | CustomPermissionGroup | undefined;
-
   /*
    * we check if the passed permissions correspond to an existing Permission Group. If they don't,
    *   we create the Group and assign the Agent to it. If they do, we just assign the Agent to the existing Group
    */
-  if (!isEntity(group)) {
-    let transactions: TransactionPermissions | null;
-    if ('transactions' in group) {
-      ({ transactions } = group);
-    } else {
-      ({ transactions } = permissionsLikeToPermissions(group, context));
-    }
-
-    existingGroup = await getGroupFromPermissions(asset, transactions);
-
-    if (!existingGroup) {
-      return {
-        transaction: externalAgents.createAndChangeCustomGroup,
-        args: [
-          rawAssetId,
-          transactionPermissionsToExtrinsicPermissions(transactions, context),
-          rawIdentityId,
-        ],
-        resolver: createCreateGroupResolver(context),
-      };
-    }
-  } else {
-    existingGroup = group;
+  if (!existingGroup) {
+    return {
+      transaction: externalAgents.createAndChangeCustomGroup,
+      args: [
+        rawAssetId,
+        transactionPermissionsToExtrinsicPermissions(groupTransactions, context),
+        rawIdentityId,
+      ],
+      resolver: createCreateGroupResolver(context),
+    };
   }
 
   if (existingGroup.isEqual(currentGroup)) {
@@ -159,11 +153,15 @@ export function getAuthorization(
   this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>
 ): ProcedureAuthorization {
   const {
-    storage: { asset },
+    storage: { asset, existingGroup },
   } = this;
   return {
     permissions: {
-      transactions: [TxTags.externalAgents.ChangeGroup],
+      transactions: [
+        existingGroup
+          ? TxTags.externalAgents.ChangeGroup
+          : TxTags.externalAgents.CreateAndChangeCustomGroup,
+      ],
       assets: [asset],
       portfolios: [],
     },
@@ -175,12 +173,27 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>,
-  { group: { asset } }: Params
+  { group }: Params
 ): Promise<Storage> {
   const { context } = this;
 
+  const asset = await asBaseAsset(group.asset, context);
+
+  if (isEntity(group)) {
+    return { asset, existingGroup: group, groupTransactions: null };
+  }
+
+  let transactions: TransactionPermissions | null;
+  if ('transactions' in group) {
+    ({ transactions } = group);
+  } else {
+    ({ transactions } = permissionsLikeToPermissions(group, context));
+  }
+
   return {
-    asset: await asBaseAsset(asset, context),
+    asset,
+    existingGroup: (await getGroupFromPermissions(asset, transactions)) ?? null,
+    groupTransactions: transactions,
   };
 }
 

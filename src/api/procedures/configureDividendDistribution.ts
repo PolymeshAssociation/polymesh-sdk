@@ -244,7 +244,7 @@ export function getAuthorization(
   return {
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(portfolio) }],
     permissions: {
-      transactions: [TxTags.capitalDistribution.Distribute],
+      transactions: [TxTags.corporateAction.InitiateCorporateActionAndDistribute],
       assets: [asset],
       portfolios: [portfolio],
     },
