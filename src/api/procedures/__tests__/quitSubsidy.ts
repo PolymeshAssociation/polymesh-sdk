@@ -5,7 +5,6 @@ import { getAuthorization, prepareQuitSubsidy } from '~/api/procedures/quitSubsi
 import { Account, Context, QuitSubsidyParams, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -99,7 +98,7 @@ describe('quitSubsidy procedure', () => {
       expect(result).toEqual({
         roles: 'Only the subsidizer or the beneficiary are allowed to quit a Subsidy',
         permissions: {
-          transactions: [TxTags.relayer.RemoveSubsidy],
+          transactions: [],
         },
       });
 
@@ -109,7 +108,7 @@ describe('quitSubsidy procedure', () => {
       expect(result).toEqual({
         roles: true,
         permissions: {
-          transactions: [TxTags.relayer.RemoveSubsidy],
+          transactions: [],
         },
       });
 
@@ -119,7 +118,7 @@ describe('quitSubsidy procedure', () => {
       expect(result).toEqual({
         roles: true,
         permissions: {
-          transactions: [TxTags.relayer.RemoveSubsidy],
+          transactions: [],
         },
       });
     });

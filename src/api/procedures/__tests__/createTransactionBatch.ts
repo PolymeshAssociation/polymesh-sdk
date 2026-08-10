@@ -123,7 +123,7 @@ describe('createTransactionBatch procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          transactions: [...tags, TxTags.utility.BatchAll],
+          transactions: tags,
         },
       });
     });

@@ -1,5 +1,5 @@
 import { PolymeshError, Procedure, Subsidy } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToAccountId } from '~/utils/conversion';
 
@@ -73,7 +73,9 @@ export async function getAuthorization(
   return {
     roles: hasRoles || 'Only the subsidizer or the beneficiary are allowed to quit a Subsidy',
     permissions: {
-      transactions: [TxTags.relayer.RemoveSubsidy],
+      // every `relayer` extrinsic is gated by `ensure_signed` alone, so the chain never
+      // consults `ExtrinsicPermissions` - no permission grant can satisfy this tag
+      transactions: [],
     },
   };
 }

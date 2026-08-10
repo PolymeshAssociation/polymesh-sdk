@@ -3,7 +3,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { identity } from 'lodash';
 
 import { PolymeshTransaction, PolymeshTransactionBatch, Procedure } from '~/internal';
-import { CreateTransactionBatchParams, TxTag, TxTags } from '~/types';
+import { CreateTransactionBatchParams, TxTag } from '~/types';
 import {
   BatchTransactionSpec,
   isResolverFunction,
@@ -65,7 +65,11 @@ export function getAuthorization<ReturnValues extends unknown[]>(
 
   return {
     permissions: {
-      transactions: [...tags, TxTags.utility.BatchAll],
+      /*
+       * `utility.batchAll` is not permission checked as the outer call - each batched call is
+       * dispatched under its own metadata and checked individually, so only the inner tags matter
+       */
+      transactions: tags,
     },
   };
 }

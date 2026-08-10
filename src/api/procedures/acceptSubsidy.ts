@@ -1,5 +1,5 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { AcceptSubsidyParams, ErrorCode, TxTags } from '~/types';
+import { AcceptSubsidyParams, ErrorCode } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToAccountId } from '~/utils/conversion';
 import { asAccount } from '~/utils/internal';
@@ -52,6 +52,8 @@ export const acceptSubsidy = (): Procedure<AcceptSubsidyParams, void> =>
     permissions: {
       assets: [],
       portfolios: [],
-      transactions: [TxTags.relayer.AcceptSubsidy],
+      // every `relayer` extrinsic is gated by `ensure_signed` alone, so the chain never
+      // consults `ExtrinsicPermissions` - no permission grant can satisfy this tag
+      transactions: [],
     },
   });
