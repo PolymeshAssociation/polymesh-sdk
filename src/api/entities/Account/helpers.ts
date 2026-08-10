@@ -122,10 +122,7 @@ export function getMissingTransactionPermissions(
     TxTags.identity.LeaveIdentityAsKey,
     TxTags.identity.JoinIdentityAsKey,
     TxTags.multiSig.AcceptMultisigSigner,
-    ...difference(Object.values(TxTags.balances), [
-      TxTags.balances.DepositBlockRewardReserveBalance,
-      TxTags.balances.BurnAccountBalance,
-    ]),
+    ModuleName.Balances,
     ModuleName.Staking,
     ModuleName.Sudo,
     ModuleName.Session,
