@@ -210,6 +210,21 @@ describe('Staking namespace', () => {
       expect(result).toBeNull();
     });
 
+    it('should return null when the Account has no payee set', async () => {
+      dsMockUtils.createQueryMock('staking', 'payee', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      jest
+        .spyOn(staking, 'getController')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockResolvedValue(entityMockUtils.getAccountInstance() as any);
+
+      const result = await staking.getPayee();
+
+      expect(result).toBeNull();
+    });
+
     it('should support subscription', async () => {
       const callback = jest.fn();
       const controllerUnsub = jest.fn();

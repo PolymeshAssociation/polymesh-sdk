@@ -114,9 +114,7 @@ export class Staking extends Namespace<Account> {
       this.getController(),
     ]);
 
-    const payee = rawPayee.unwrap();
-
-    return assembleResult(payee, controller);
+    return assembleResult(rawPayee.unwrapOr(null), controller);
   }
 
   /**
