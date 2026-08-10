@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, MultiSig, SetMultiSigAdminParams, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { ErrorCode, MultiSig, SetMultiSigAdminParams } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToAccountId, stringToIdentityId } from '~/utils/conversion';
 import { asIdentity } from '~/utils/internal';
 
@@ -97,23 +97,13 @@ export async function prepareSetMultiSigAdmin(
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<Params>, args: Params): ProcedureAuthorization {
-  const transactions = [];
-  if (args.admin) {
-    transactions.push(TxTags.multiSig.AddAdmin);
-  } else {
-    transactions.push(TxTags.multiSig.RemoveAdminViaAdmin);
-  }
-
-  return {
-    permissions: {
-      transactions,
-    },
-  };
-}
-
-/**
- * @hidden
- */
 export const setMultiSigAdmin = (): Procedure<Params> =>
-  new Procedure(prepareSetMultiSigAdmin, getAuthorization);
+  new Procedure(prepareSetMultiSigAdmin, {
+    permissions: {
+      // `multiSig.add_admin` is gated by `ensure_signed` and `multiSig.remove_admin_via_admin` by
+      // `ensure_ms_admin` -> `ensure_primary_key`; neither consults `ExtrinsicPermissions`, so no
+      // permission grant can satisfy these tags and declaring them would only make pre-flight
+      // stricter than the chain.
+      transactions: [],
+    },
+  });

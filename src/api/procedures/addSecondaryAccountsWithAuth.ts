@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure } from '~/internal';
-import { Account, AddSecondaryAccountsParams, ErrorCode, Identity, TxTags } from '~/types';
+import { Account, AddSecondaryAccountsParams, ErrorCode, Identity } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { dateToMoment, secondaryAccountWithAuthToSecondaryKeyWithAuth } from '~/utils/conversion';
 import { areSameAccounts, asAccount } from '~/utils/internal';
@@ -81,7 +81,11 @@ export async function getAuthorization(
 
   return {
     permissions: {
-      transactions: [TxTags.identity.AddSecondaryKeysWithAuthorization],
+      // `identity.add_secondary_keys_with_authorization` is gated by `ensure_primary_key`, which
+      // never consults `ExtrinsicPermissions` — no permission grant can satisfy it, so declaring
+      // the tag would only make pre-flight stricter than the chain. The primary-key requirement is
+      // enforced by the `signerPermissions` check above instead.
+      transactions: [],
       assets: [],
       portfolios: [],
     },

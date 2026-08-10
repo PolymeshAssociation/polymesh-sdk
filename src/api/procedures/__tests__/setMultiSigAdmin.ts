@@ -3,15 +3,11 @@ import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import {
-  getAuthorization,
-  Params,
-  prepareSetMultiSigAdmin,
-} from '~/api/procedures/setMultiSigAdmin';
+import { Params, prepareSetMultiSigAdmin } from '~/api/procedures/setMultiSigAdmin';
 import { Context, Identity, MultiSig, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -172,38 +168,6 @@ describe('setMultiSigAdmin procedure', () => {
       transaction: removeAdminTransaction,
       args: [rawMultiSigAddress],
       resolver: undefined,
-    });
-  });
-
-  describe('getAuthorization', () => {
-    it('should return AddAdmin transaction when adding an admin', () => {
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-      const boundFunc = getAuthorization.bind(proc);
-      const params = {
-        admin: adminIdentity,
-        multiSig,
-      };
-
-      expect(boundFunc(params)).toEqual({
-        permissions: {
-          transactions: [TxTags.multiSig.AddAdmin],
-        },
-      });
-    });
-
-    it('should return RemoveAdminViaAdmin transaction when removing an admin', () => {
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-      const boundFunc = getAuthorization.bind(proc);
-      const params = {
-        admin: null,
-        multiSig,
-      };
-
-      expect(boundFunc(params)).toEqual({
-        permissions: {
-          transactions: [TxTags.multiSig.RemoveAdminViaAdmin],
-        },
-      });
     });
   });
 });

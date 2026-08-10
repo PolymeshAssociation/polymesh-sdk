@@ -9,12 +9,7 @@ import {
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  ModifySignerPermissionsParams,
-  PermissionedAccount,
-  PermissionType,
-  TxTags,
-} from '~/types';
+import { ModifySignerPermissionsParams, PermissionedAccount, PermissionType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -209,7 +204,7 @@ describe('modifySignerPermissions procedure', () => {
       let result = await boundFunc();
       expect(result).toEqual({
         permissions: {
-          transactions: [TxTags.identity.SetSecondaryKeyPermissions],
+          transactions: [],
           assets: [],
           portfolios: [],
         },

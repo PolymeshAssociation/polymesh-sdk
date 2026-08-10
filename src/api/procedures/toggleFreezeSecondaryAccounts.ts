@@ -1,5 +1,5 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 
 export interface ToggleFreezeSecondaryAccountsParams {
@@ -55,14 +55,14 @@ export async function prepareToggleFreezeSecondaryAccounts(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<ToggleFreezeSecondaryAccountsParams, void>,
-  { freeze }: ToggleFreezeSecondaryAccountsParams
+  this: Procedure<ToggleFreezeSecondaryAccountsParams, void>
 ): ProcedureAuthorization {
   return {
     permissions: {
-      transactions: [
-        freeze ? TxTags.identity.FreezeSecondaryKeys : TxTags.identity.UnfreezeSecondaryKeys,
-      ],
+      // `identity.{freeze,unfreeze}_secondary_keys` both resolve to `ensure_primary_key`, which
+      // never consults `ExtrinsicPermissions` — no permission grant can satisfy them, so declaring
+      // the tags would only make pre-flight stricter than the chain.
+      transactions: [],
       assets: [],
       portfolios: [],
     },

@@ -5,7 +5,6 @@ import {
   ErrorCode,
   IncreaseAllowanceParams,
   SetAllowanceParams,
-  TxTags,
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, stringToAccountId } from '~/utils/conversion';
@@ -102,23 +101,20 @@ export async function getAuthorization(
   const { context } = this;
   const {
     subsidy: { subsidizer },
-    operation,
   } = args;
 
   const actingAccount = await context.getActingAccount();
 
   const hasRoles = subsidizer.isEqual(actingAccount);
 
-  const transactionMap = {
-    [AllowanceOperation.Increase]: TxTags.relayer.IncreasePolyxLimit,
-    [AllowanceOperation.Decrease]: TxTags.relayer.DecreasePolyxLimit,
-    [AllowanceOperation.Set]: TxTags.relayer.UpdatePolyxLimit,
-  };
-
   return {
     roles: hasRoles || 'Only the subsidizer is allowed to modify the allowance of a Subsidy',
     permissions: {
-      transactions: [transactionMap[operation]],
+      // every `relayer` extrinsic is gated by `ensure_signed` alone, so the chain never consults
+      // `ExtrinsicPermissions` for them — no permission grant can satisfy these tags, and
+      // declaring them would only make pre-flight stricter than the chain. Being the subsidizer,
+      // checked by `roles` above, is the real requirement.
+      transactions: [],
     },
   };
 }

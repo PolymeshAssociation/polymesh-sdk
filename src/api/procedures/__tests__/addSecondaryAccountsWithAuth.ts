@@ -13,7 +13,7 @@ import {
 import { Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Account, AddSecondaryAccountsParams, TxTags } from '~/types';
+import { Account, AddSecondaryAccountsParams } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('addSecondaryAccounts procedure', () => {
@@ -186,7 +186,7 @@ describe('addSecondaryAccounts procedure', () => {
       let result = await boundFunc();
       expect(result).toEqual({
         permissions: {
-          transactions: [TxTags.identity.AddSecondaryKeysWithAuthorization],
+          transactions: [],
           assets: [],
           portfolios: [],
         },

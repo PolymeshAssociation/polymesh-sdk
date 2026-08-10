@@ -6,7 +6,6 @@ import {
   assertNoDataChange,
   assertRequiredSignersExceedsSigners,
   assertValidRequiredSignatures,
-  getAuthorization,
   modifyMultiSig,
   prepareModifyMultiSig,
   prepareStorage,
@@ -15,7 +14,7 @@ import { Context, ModifyMultiSigStorage, MultiSig, PolymeshError, Procedure } fr
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { getAccountInstance, getIdentityInstance, MockMultiSig } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, ModifyMultiSigParams, TxTags } from '~/types';
+import { ErrorCode, ModifyMultiSigParams } from '~/types';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -354,105 +353,6 @@ describe('modifyMultiSig procedure', () => {
 
     expect(result).toEqual({
       transactions: [{ transaction: changeSigsRequiredTx, args: [rawSigsRequired] }],
-    });
-  });
-
-  describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', async () => {
-      let proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
-        mockContext,
-        {
-          signersToAdd: [newSigner1],
-          signersToRemove: [],
-          requiredSignatures: new BigNumber(1),
-          currentSignerCount: 2,
-          admin: entityMockUtils.getIdentityInstance(),
-        }
-      );
-
-      let boundFunc = getAuthorization.bind(proc);
-
-      let result = await boundFunc({});
-      expect(result).toEqual({
-        permissions: {
-          transactions: [TxTags.multiSig.AddMultisigSignersViaAdmin],
-          assets: undefined,
-          portfolios: undefined,
-        },
-      });
-
-      proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
-        mockContext,
-        {
-          signersToAdd: [],
-          signersToRemove: [oldSigner1],
-          requiredSignatures: new BigNumber(1),
-          currentSignerCount: 2,
-          admin: entityMockUtils.getIdentityInstance(),
-        }
-      );
-
-      boundFunc = getAuthorization.bind(proc);
-
-      result = await boundFunc({});
-
-      expect(result).toEqual({
-        permissions: {
-          transactions: [TxTags.multiSig.RemoveMultisigSignersViaAdmin],
-          assets: undefined,
-          portfolios: undefined,
-        },
-      });
-
-      proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
-        mockContext,
-        {
-          signersToAdd: [],
-          signersToRemove: [],
-          requiredSignatures: new BigNumber(1),
-          currentSignerCount: 2,
-          admin: entityMockUtils.getIdentityInstance(),
-        }
-      );
-
-      boundFunc = getAuthorization.bind(proc);
-
-      result = await boundFunc({ requiredSignatures: new BigNumber(2) });
-
-      expect(result).toEqual({
-        permissions: {
-          transactions: [TxTags.multiSig.ChangeSigsRequiredViaAdmin],
-          assets: undefined,
-          portfolios: undefined,
-        },
-      });
-
-      proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
-        mockContext,
-        {
-          signersToAdd: [newSigner1],
-          signersToRemove: [newSigner2],
-          requiredSignatures: new BigNumber(1),
-          currentSignerCount: 2,
-          admin: null,
-        }
-      );
-
-      boundFunc = getAuthorization.bind(proc);
-
-      result = await boundFunc({ requiredSignatures: new BigNumber(2) });
-
-      expect(result).toEqual({
-        permissions: {
-          transactions: [
-            TxTags.multiSig.AddMultisigSigners,
-            TxTags.multiSig.RemoveMultisigSigners,
-            TxTags.multiSig.ChangeSigsRequired,
-          ],
-          assets: undefined,
-          portfolios: undefined,
-        },
-      });
     });
   });
 

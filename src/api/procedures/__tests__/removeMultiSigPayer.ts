@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
-  getAuthorization,
   Params,
   prepareRemoveMultiSigPayer,
   prepareStorage,
@@ -13,7 +12,7 @@ import {
 import { Context, Identity, MultiSig, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -145,40 +144,6 @@ describe('removeMultiSigPayer procedure', () => {
         multiSig,
       })
     ).toThrow(expectedError);
-  });
-
-  describe('getAuthorization', () => {
-    it('should require no transaction permissions when removing via signer', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        currentPayer,
-        signingIdentity,
-        isMultiSigSigner: true,
-      });
-      const boundFunc = getAuthorization.bind(proc);
-
-      expect(boundFunc()).toEqual({
-        permissions: {
-          transactions: [],
-        },
-      });
-    });
-
-    it('should return RemovePayerViaPayer transaction when removing via payer', () => {
-      currentPayer = entityMockUtils.getIdentityInstance({ did: 'someOtherDid', isEqual: false });
-
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        currentPayer,
-        signingIdentity,
-        isMultiSigSigner: false,
-      });
-      const boundFunc = getAuthorization.bind(proc);
-
-      expect(boundFunc()).toEqual({
-        permissions: {
-          transactions: [TxTags.multiSig.RemovePayerViaPayer],
-        },
-      });
-    });
   });
 
   describe('prepareStorage', () => {

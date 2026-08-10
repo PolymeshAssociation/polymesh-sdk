@@ -6,7 +6,6 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
 
 describe('toggleFreezeSecondaryAccounts procedure', () => {
   let mockContext: Mocked<Context>;
@@ -114,17 +113,9 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       );
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ freeze: true })).toEqual({
+      expect(boundFunc()).toEqual({
         permissions: {
-          transactions: [TxTags.identity.FreezeSecondaryKeys],
-          assets: [],
-          portfolios: [],
-        },
-      });
-
-      expect(boundFunc({ freeze: false })).toEqual({
-        permissions: {
-          transactions: [TxTags.identity.UnfreezeSecondaryKeys],
+          transactions: [],
           assets: [],
           portfolios: [],
         },

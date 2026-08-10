@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RemoveSecondaryAccountsParams, TxTags } from '~/types';
+import { ErrorCode, RemoveSecondaryAccountsParams } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToAccountId } from '~/utils/conversion';
 import { areSameAccounts, getSecondaryAccountPermissions } from '~/utils/internal';
@@ -57,7 +57,10 @@ export async function prepareRemoveSecondaryAccounts(
 export const removeSecondaryAccounts = (): Procedure<RemoveSecondaryAccountsParams> =>
   new Procedure(prepareRemoveSecondaryAccounts, {
     permissions: {
-      transactions: [TxTags.identity.RemoveSecondaryKeys],
+      // `identity.remove_secondary_keys` is gated by `ensure_primary_key`, which never consults
+      // `ExtrinsicPermissions` — no permission grant can satisfy it, so declaring the tag would
+      // only make pre-flight stricter than the chain.
+      transactions: [],
       assets: [],
       portfolios: [],
     },

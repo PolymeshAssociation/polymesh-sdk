@@ -6,7 +6,7 @@ import { getAuthorization, prepareModifyAllowance } from '~/api/procedures/modif
 import { Context, ModifyAllowanceParams, Procedure, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AllowanceOperation, TxTags } from '~/types';
+import { AllowanceOperation } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -151,23 +151,7 @@ describe('modifyAllowance procedure', () => {
       expect(result).toEqual({
         roles: true,
         permissions: {
-          transactions: [TxTags.relayer.UpdatePolyxLimit],
-        },
-      });
-
-      result = await boundFunc({ ...args, operation: AllowanceOperation.Increase });
-      expect(result).toEqual({
-        roles: true,
-        permissions: {
-          transactions: [TxTags.relayer.IncreasePolyxLimit],
-        },
-      });
-
-      result = await boundFunc({ ...args, operation: AllowanceOperation.Decrease });
-      expect(result).toEqual({
-        roles: true,
-        permissions: {
-          transactions: [TxTags.relayer.DecreasePolyxLimit],
+          transactions: [],
         },
       });
 
@@ -177,7 +161,7 @@ describe('modifyAllowance procedure', () => {
       expect(result).toEqual({
         roles: 'Only the subsidizer is allowed to modify the allowance of a Subsidy',
         permissions: {
-          transactions: [TxTags.relayer.UpdatePolyxLimit],
+          transactions: [],
         },
       });
     });

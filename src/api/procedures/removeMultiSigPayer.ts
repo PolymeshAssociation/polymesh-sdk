@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Identity, MultiSig, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { ErrorCode, Identity, MultiSig } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToAccountId } from '~/utils/conversion';
 
 /**
@@ -96,25 +96,17 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
-  const {
-    storage: { isMultiSigSigner },
-  } = this;
-  const transactions = [];
-
-  if (!isMultiSigSigner) {
-    transactions.push(TxTags.multiSig.RemovePayerViaPayer);
-  }
-
-  return {
-    permissions: {
-      transactions,
-    },
-  };
-}
-
-/**
- * @hidden
- */
 export const removeMultiSigPayer = (): Procedure<Params, void, Storage> =>
-  new Procedure(prepareRemoveMultiSigPayer, getAuthorization, prepareStorage);
+  new Procedure(
+    prepareRemoveMultiSigPayer,
+    {
+      permissions: {
+        // `multiSig.remove_payer` is gated by `ensure_signed` (with the MultiSig account as the
+        // origin) and `multiSig.remove_payer_via_payer` by `ensure_ms_payer`; neither consults
+        // `ExtrinsicPermissions`, so no permission grant can satisfy these tags and declaring them
+        // would only make pre-flight stricter than the chain.
+        transactions: [],
+      },
+    },
+    prepareStorage
+  );

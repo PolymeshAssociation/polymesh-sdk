@@ -2,8 +2,8 @@ import { AccountId } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure } from '~/internal';
-import { Account, ErrorCode, Identity, ModifyMultiSigParams, Signer, TxTags } from '~/types';
-import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
+import { Account, ErrorCode, Identity, ModifyMultiSigParams, Signer } from '~/types';
+import { BatchTransactionSpec } from '~/types/internal';
 import { bigNumberToU64, signerToString, stringToAccountId } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
 
@@ -205,55 +205,6 @@ export async function prepareModifyMultiSig(
 /**
  * @hidden
  */
-export async function getAuthorization(
-  this: Procedure<ModifyMultiSigParams, void, Storage>,
-  { requiredSignatures: newRequiredSignatures }: Pick<ModifyMultiSigParams, 'requiredSignatures'>
-): Promise<ProcedureAuthorization> {
-  const {
-    storage: { signersToAdd, signersToRemove, admin },
-    context,
-  } = this;
-
-  const signingIdentity = await context.getSigningIdentity();
-
-  const isAdmin = admin?.isEqual(signingIdentity);
-
-  const transactions = [];
-
-  if (isAdmin) {
-    if (signersToAdd.length > 0) {
-      transactions.push(TxTags.multiSig.AddMultisigSignersViaAdmin);
-    }
-
-    if (signersToRemove.length > 0) {
-      transactions.push(TxTags.multiSig.RemoveMultisigSignersViaAdmin);
-    }
-
-    if (newRequiredSignatures) {
-      transactions.push(TxTags.multiSig.ChangeSigsRequiredViaAdmin);
-    }
-  } else {
-    if (signersToAdd.length > 0) {
-      transactions.push(TxTags.multiSig.AddMultisigSigners);
-    }
-    if (signersToRemove.length > 0) {
-      transactions.push(TxTags.multiSig.RemoveMultisigSigners);
-    }
-    if (newRequiredSignatures) {
-      transactions.push(TxTags.multiSig.ChangeSigsRequired);
-    }
-  }
-
-  return {
-    permissions: {
-      transactions,
-    },
-  };
-}
-
-/**
- * @hidden
- */
 export async function prepareStorage(
   this: Procedure<ModifyMultiSigParams, void, Storage>,
   { signers, multiSig }: ModifyMultiSigParams
@@ -274,4 +225,20 @@ export async function prepareStorage(
  * @hidden
  */
 export const modifyMultiSig = (): Procedure<ModifyMultiSigParams, void, Storage> =>
-  new Procedure(prepareModifyMultiSig, getAuthorization, prepareStorage);
+  new Procedure(
+    prepareModifyMultiSig,
+    {
+      permissions: {
+        /*
+         * None of the extrinsics this procedure submits is permission-checked: the `*_via_admin`
+         * variants resolve to `ensure_ms_admin` -> `ensure_primary_key`, and the plain
+         * `add_multisig_signers` / `remove_multisig_signers` / `change_sigs_required` are
+         * `ensure_signed` with the MultiSig account itself as the origin. None of them consults
+         * `ExtrinsicPermissions`, so no permission grant can satisfy them and declaring the tags
+         * would only make pre-flight stricter than the chain.
+         */
+        transactions: [],
+      },
+    },
+    prepareStorage
+  );

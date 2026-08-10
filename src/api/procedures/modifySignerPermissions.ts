@@ -1,6 +1,6 @@
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { Identity, Procedure } from '~/internal';
-import { Account, ModifySignerPermissionsParams, TxTags } from '~/types';
+import { Account, ModifySignerPermissionsParams } from '~/types';
 import { BatchTransactionSpec, ExtrinsicParams, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -86,7 +86,11 @@ export async function getAuthorization(
 
   return {
     permissions: {
-      transactions: [TxTags.identity.SetSecondaryKeyPermissions],
+      // `identity.set_secondary_key_permissions` is gated by `ensure_primary_key`, which never
+      // consults `ExtrinsicPermissions` — no permission grant can satisfy it, so declaring the tag
+      // would only make pre-flight stricter than the chain. The primary-key requirement is
+      // enforced by the `signerPermissions` check above instead.
+      transactions: [],
       assets: [],
       portfolios: [],
     },
