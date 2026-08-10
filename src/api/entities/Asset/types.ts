@@ -284,84 +284,39 @@ export * from './Fungible/Checkpoints/types';
 export * from './Fungible/CorporateActions/types';
 
 /**
- * ERC1400 compliant transfer status
- */
-export enum TransferStatus {
-  Failure = 'Failure', // 80
-  Success = 'Success', // 81
-  InsufficientBalance = 'InsufficientBalance', // 82
-  InsufficientAllowance = 'InsufficientAllowance', // 83
-  TransfersHalted = 'TransfersHalted', // 84
-  FundsLocked = 'FundsLocked', // 85
-  InvalidSenderAddress = 'InvalidSenderAddress', // 86
-  InvalidReceiverAddress = 'InvalidReceiverAddress', // 87
-  InvalidOperator = 'InvalidOperator', // 88
-  InvalidSenderIdentity = 'InvalidSenderIdentity', // 160
-  InvalidReceiverIdentity = 'InvalidReceiverIdentity', // 161
-  ComplianceFailure = 'ComplianceFailure', // 162
-  SmartExtensionFailure = 'SmartExtensionFailure', // 163
-  InvalidGranularity = 'InvalidGranularity', // 164
-  VolumeLimitReached = 'VolumeLimitReached', // 165
-  BlockedTransaction = 'BlockedTransaction', // 166
-  FundsLimitReached = 'FundsLimitReached', // 168
-  PortfolioFailure = 'PortfolioFailure', // 169
-  CustodianError = 'CustodianError', // 170
-  ScopeClaimMissing = 'ScopeClaimMissing', // 171
-  TransferRestrictionFailure = 'TransferRestrictionFailure', // 172
-}
-
-/**
- * Akin to TransferStatus, these are a bit more granular and specific. Every TransferError translates to
- *   a {@link TransferStatus}, but two or more TransferErrors can represent the same TransferStatus, and
- *   not all Transfer Statuses are represented by a TransferError
+ * Reasons a transfer would fail, as reported by the chain's transfer validation
  */
 export enum TransferError {
   /**
-   * translates to TransferStatus.InvalidGranularity
-   *
    * occurs if attempting to transfer decimal amounts of a non-divisible token
    */
   InvalidGranularity = 'InvalidGranularity',
   /**
-   * translates to TransferStatus.InvalidReceiverIdentity
-   *
    * occurs if the origin and destination Identities are the same
    */
   SelfTransfer = 'SelfTransfer',
   /**
-   * translates to TransferStatus.InsufficientBalance
-   *
+   * occurs if the receiving Identity is not active
+   */
+  InvalidReceiverIdentity = 'InvalidReceiverIdentity',
+  /**
    * occurs if the sender Identity does not have enough balance to cover the amount
    */
   InsufficientBalance = 'InsufficientBalance',
   /**
-   * translates to TransferStatus.TransfersHalted
-   *
    * occurs if the Asset's transfers are frozen
    */
   TransfersFrozen = 'TransfersFrozen',
   /**
-   * translates to TransferStatus.PortfolioFailure
-   *
    * occurs if the sender Portfolio doesn't exist
    */
   InvalidSenderPortfolio = 'InvalidSenderPortfolio',
   /**
-   * translates to TransferStatus.PortfolioFailure
-   *
-   * occurs if the receiver Portfolio doesn't exist
-   */
-  InvalidReceiverPortfolio = 'InvalidReceiverPortfolio',
-  /**
-   * translates to TransferStatus.PortfolioFailure
-   *
    * occurs if the sender Portfolio does not have enough balance to cover the amount
    */
   InsufficientPortfolioBalance = 'InsufficientPortfolioBalance',
 
   /**
-   * translates to TransferStatus.ComplianceFailure
-   *
    * occurs if some compliance rule would prevent the transfer
    */
   ComplianceFailure = 'ComplianceFailure',

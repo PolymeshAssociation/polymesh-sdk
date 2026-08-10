@@ -96,7 +96,6 @@ import {
   TaxWithholding,
   TickerReservationDetails,
   TickerReservationStatus,
-  TransferStatus,
   VenueDetails,
   VenueFilteringDetails,
   VenueType,
@@ -171,7 +170,6 @@ interface BaseAssetOptions extends EntityOptions {
   did?: string;
   details?: EntityGetter<AssetDetails>;
   isFrozen?: EntityGetter<boolean>;
-  transfersCanTransfer?: EntityGetter<TransferStatus>;
   getIdentifiers?: EntityGetter<SecurityIdentifier[]>;
   permissionsGetAgents?: EntityGetter<AgentWithGroup[]>;
   permissionsGetGroups?: EntityGetter<PermissionGroups>;
@@ -952,7 +950,6 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
       this.details = createEntityGetterMock(opts.details);
       this.currentFundingRound = createEntityGetterMock(opts.currentFundingRound);
       this.isFrozen = createEntityGetterMock(opts.isFrozen);
-      this.transfers.canTransfer = createEntityGetterMock(opts.transfersCanTransfer);
       this.getIdentifiers = createEntityGetterMock(opts.getIdentifiers);
       this.corporateActions.getAgents = createEntityGetterMock(opts.corporateActionsGetAgents);
       this.corporateActions.getDefaultConfig = createEntityGetterMock(
@@ -985,7 +982,6 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     },
     currentFundingRound: 'Series A',
     isFrozen: false,
-    transfersCanTransfer: TransferStatus.Success,
     getIdentifiers: [],
     transferRestrictionsCountGet: {
       restrictions: [],
@@ -1090,7 +1086,6 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       this.ticker = opts.ticker;
       this.details = createEntityGetterMock(opts.details);
       this.isFrozen = createEntityGetterMock(opts.isFrozen);
-      this.transfers.canTransfer = createEntityGetterMock(opts.transfersCanTransfer);
       this.getIdentifiers = createEntityGetterMock(opts.getIdentifiers);
       this.permissions.getGroups = createEntityGetterMock(opts.permissionsGetGroups);
       this.permissions.getAgents = createEntityGetterMock(opts.permissionsGetAgents);
@@ -1127,7 +1122,6 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       defaultTrustedClaimIssuers: [],
     },
     isFrozen: false,
-    transfersCanTransfer: TransferStatus.Success,
     getIdentifiers: [],
     getNextLocalId: new BigNumber(0),
     toHuman: '12341234-1234-1234-1234-123412341234',
@@ -1227,7 +1221,6 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       this.ticker = opts.ticker;
       this.details = createEntityGetterMock(opts.details);
       this.isFrozen = createEntityGetterMock(opts.isFrozen);
-      this.transfers.canTransfer = createEntityGetterMock(opts.transfersCanTransfer);
       this.getIdentifiers = createEntityGetterMock(opts.getIdentifiers);
       this.permissions.getAgents = createEntityGetterMock(opts.permissionsGetAgents);
       this.permissions.getGroups = createEntityGetterMock(opts.permissionsGetGroups);
@@ -1253,7 +1246,6 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       assetType: KnownAssetType.EquityCommon,
     },
     isFrozen: false,
-    transfersCanTransfer: TransferStatus.Success,
     getIdentifiers: [],
     permissionsGetAgents: [],
     permissionsGetGroups: {

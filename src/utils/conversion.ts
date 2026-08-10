@@ -301,7 +301,6 @@ import {
   TransferRestriction,
   TransferRestrictionResult,
   TransferRestrictionType,
-  TransferStatus,
   TrustedClaimIssuer,
   TrustedFor,
   TX_GROUP_TO_TAGS_MAP,
@@ -1800,46 +1799,6 @@ export function stringToMemo(value: string, context: Context): PolymeshPrimitive
   assertMemoValid(value);
 
   return context.createType('PolymeshPrimitivesMemo', padString(value, MAX_MEMO_LENGTH));
-}
-
-/**
- * @hidden
- */
-export function u8ToTransferStatus(status: u8): TransferStatus {
-  const code = status.toNumber();
-
-  const transferStatusMap = new Map<number, TransferStatus>([
-    [81, TransferStatus.Success],
-    [82, TransferStatus.InsufficientBalance],
-    [83, TransferStatus.InsufficientAllowance],
-    [84, TransferStatus.TransfersHalted],
-    [85, TransferStatus.FundsLocked],
-    [86, TransferStatus.InvalidSenderAddress],
-    [87, TransferStatus.InvalidReceiverAddress],
-    [88, TransferStatus.InvalidOperator],
-    [160, TransferStatus.InvalidSenderIdentity],
-    [161, TransferStatus.InvalidReceiverIdentity],
-    [162, TransferStatus.ComplianceFailure],
-    [163, TransferStatus.SmartExtensionFailure],
-    [164, TransferStatus.InvalidGranularity],
-    [165, TransferStatus.VolumeLimitReached],
-    [166, TransferStatus.BlockedTransaction],
-    [168, TransferStatus.FundsLimitReached],
-    [169, TransferStatus.PortfolioFailure],
-    [170, TransferStatus.CustodianError],
-    [171, TransferStatus.ScopeClaimMissing],
-    [172, TransferStatus.TransferRestrictionFailure],
-    [80, TransferStatus.Failure],
-  ]);
-
-  if (transferStatusMap.has(code)) {
-    return transferStatusMap.get(code)!;
-  }
-
-  throw new PolymeshError({
-    code: ErrorCode.UnexpectedError,
-    message: `Unsupported status code "${status.toString()}". Please report this issue to the Polymesh team`,
-  });
 }
 
 /**

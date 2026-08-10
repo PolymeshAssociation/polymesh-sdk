@@ -193,7 +193,6 @@ import {
   TransferError,
   TransferRestriction,
   TransferRestrictionType,
-  TransferStatus,
   TrustedClaimIssuer,
   TrustedFor,
   TxGroup,
@@ -418,7 +417,6 @@ import {
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToBigNumber,
-  u8ToTransferStatus,
   u16ToBigNumber,
   u32ToBigNumber,
   u64ToBigNumber,
@@ -3037,99 +3035,6 @@ describe('stringToMemo', () => {
     const context = dsMockUtils.getContextInstance();
 
     expect(() => stringToMemo(value, context)).toThrow('Max memo length exceeded');
-  });
-});
-
-describe('u8ToTransferStatus', () => {
-  it('should convert a polkadot u8 object to a TransferStatus', () => {
-    let result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(80)));
-
-    expect(result).toBe(TransferStatus.Failure);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(81)));
-
-    expect(result).toBe(TransferStatus.Success);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(82)));
-
-    expect(result).toBe(TransferStatus.InsufficientBalance);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(83)));
-
-    expect(result).toBe(TransferStatus.InsufficientAllowance);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(84)));
-
-    expect(result).toBe(TransferStatus.TransfersHalted);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(85)));
-
-    expect(result).toBe(TransferStatus.FundsLocked);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(86)));
-
-    expect(result).toBe(TransferStatus.InvalidSenderAddress);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(87)));
-
-    expect(result).toBe(TransferStatus.InvalidReceiverAddress);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(88)));
-
-    expect(result).toBe(TransferStatus.InvalidOperator);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(160)));
-
-    expect(result).toBe(TransferStatus.InvalidSenderIdentity);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(161)));
-
-    expect(result).toBe(TransferStatus.InvalidReceiverIdentity);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(162)));
-
-    expect(result).toBe(TransferStatus.ComplianceFailure);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(163)));
-
-    expect(result).toBe(TransferStatus.SmartExtensionFailure);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(164)));
-
-    expect(result).toBe(TransferStatus.InvalidGranularity);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(165)));
-
-    expect(result).toBe(TransferStatus.VolumeLimitReached);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(166)));
-
-    expect(result).toBe(TransferStatus.BlockedTransaction);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(168)));
-
-    expect(result).toBe(TransferStatus.FundsLimitReached);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(169)));
-
-    expect(result).toBe(TransferStatus.PortfolioFailure);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(170)));
-
-    expect(result).toBe(TransferStatus.CustodianError);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(171)));
-
-    expect(result).toBe(TransferStatus.ScopeClaimMissing);
-
-    result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(172)));
-
-    expect(result).toBe(TransferStatus.TransferRestrictionFailure);
-
-    const fakeStatusCode = new BigNumber(1);
-    expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
-      `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymesh team`
-    );
   });
 });
 
