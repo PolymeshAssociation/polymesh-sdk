@@ -1,11 +1,10 @@
 /*
- * This script generates the following :
- *   - the `TxTags`, `TxTag` and `ModuleName` consts
- *   - the `CountryCode` enum and the related conversion utility functions
- *     (`countryCodeToMeshCountryCode` and `meshCountryCodeToCountryCode`) from the chain metadata.
+ * This script generates the `CountryCode` enum's conversion utility functions
+ *   (`countryCodeToMeshCountryCode` and `meshCountryCodeToCountryCode`).
  *
- * NOTE: it is assumed that the metadata has been previously fetched by the `fetchMetadata.js` script, and stored
- *   in `metadata.json`
+ * NOTE: `CountryCode`, along with `TxTags`, `TxTag` and `ModuleName`, is consumed from
+ *   `@polymeshassociation/polymesh-types`, which is generated from the chain metadata. Nothing here
+ *   reads a local metadata file.
  */
 
 /* eslint-disable */
