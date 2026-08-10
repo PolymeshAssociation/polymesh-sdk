@@ -25,3 +25,29 @@ export type InputCaCheckpoint =
        */
       id: BigNumber;
     };
+
+export interface ScheduleNextCheckpoint {
+  /**
+   * identifier for the Checkpoint Schedule
+   */
+  id: BigNumber;
+  /**
+   * next Checkpoint creation date for this Schedule
+   */
+  nextAt: Date;
+}
+
+export interface NextCheckpoints {
+  /**
+   * closest upcoming Checkpoint creation date across all of the Asset's active Schedules
+   */
+  nextAt: Date;
+  /**
+   * total amount of pending Checkpoints across all of the Asset's active Schedules
+   */
+  totalPending: BigNumber;
+  /**
+   * next Checkpoint creation date for each active Schedule
+   */
+  schedules: ScheduleNextCheckpoint[];
+}

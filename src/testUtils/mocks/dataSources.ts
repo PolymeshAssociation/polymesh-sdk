@@ -97,6 +97,7 @@ import {
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesCddId,
+  PolymeshPrimitivesCheckpointNextCheckpoints,
   PolymeshPrimitivesCheckpointScheduleCheckpoints,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
@@ -3653,6 +3654,35 @@ export const createMockCheckpointSchedule = (
       pending,
     },
     !checkpointSchedule
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockNextCheckpoints = (
+  nextCheckpoints?:
+    | PolymeshPrimitivesCheckpointNextCheckpoints
+    | {
+        nextAt: Moment | Parameters<typeof createMockMoment>[0];
+        totalPending: u64 | Parameters<typeof createMockU64>[0];
+        schedules: BTreeMap<u64, u64> | Parameters<typeof createMockBtreeMap>[0];
+      }
+): MockCodec<PolymeshPrimitivesCheckpointNextCheckpoints> => {
+  const { nextAt, totalPending, schedules } = nextCheckpoints ?? {
+    nextAt: createMockMoment(),
+    totalPending: createMockU64(),
+    schedules: createMockBtreeMap(),
+  };
+
+  return createMockCodec(
+    {
+      nextAt: createMockMoment(nextAt),
+      totalPending: createMockU64(totalPending),
+      schedules,
+    },
+    !nextCheckpoints
   );
 };
 /**

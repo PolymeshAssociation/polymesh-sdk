@@ -1,6 +1,7 @@
 import { PolymeshPrimitivesCheckpointScheduleCheckpoints } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
+import { NextCheckpoints } from '~/api/entities/Asset/Fungible/Checkpoints/types';
 import {
   CheckpointSchedule,
   Context,
@@ -130,5 +131,41 @@ export class Schedules extends Namespace<FungibleAsset> {
     const complexity = await context.polymeshApi.query.checkpoint.schedulesMaxComplexity();
 
     return u64ToBigNumber(complexity);
+  }
+
+  /**
+   * Retrieve the cached next Checkpoint information for this Asset, aggregated across all of its active Schedules
+   *
+   * @returns `null` if the Asset has no active Schedules
+   */
+  public async getNextCheckpoint(): Promise<NextCheckpoints | null> {
+    const {
+      parent,
+      context: {
+        polymeshApi: {
+          query: { checkpoint },
+        },
+      },
+      context,
+    } = this;
+
+    const rawAssetId = assetToMeshAssetId(parent, context);
+
+    const rawNextCheckpointsOpt = await checkpoint.cachedNextCheckpoints(rawAssetId);
+
+    if (rawNextCheckpointsOpt.isNone) {
+      return null;
+    }
+
+    const { nextAt, totalPending, schedules } = rawNextCheckpointsOpt.unwrap();
+
+    return {
+      nextAt: momentToDate(nextAt),
+      totalPending: u64ToBigNumber(totalPending),
+      schedules: [...schedules.entries()].map(([id, scheduleNextAt]) => ({
+        id: u64ToBigNumber(id),
+        nextAt: momentToDate(scheduleNextAt),
+      })),
+    };
   }
 }
