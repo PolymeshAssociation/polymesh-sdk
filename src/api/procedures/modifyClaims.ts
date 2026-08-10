@@ -245,7 +245,14 @@ export function getAuthorization({
     assets: [],
     portfolios: [],
   };
-  if (claims.some(({ claim: { type } }) => type === ClaimType.CustomerDueDiligence)) {
+  /*
+   * only issuing a CDD claim is registrar gated. Revoking one requires being the Identity that
+   * issued it, which cannot be checked here
+   */
+  if (
+    operation !== ClaimOperation.Revoke &&
+    claims.some(({ claim: { type } }) => type === ClaimType.CustomerDueDiligence)
+  ) {
     return {
       roles: [{ type: RoleType.DidRegistrar }],
       permissions,

@@ -77,6 +77,8 @@ export const ASSET_DOCUMENT_MANAGEMENT_TX_TAGS = [
  * - TxTags.asset.RegisterAssetMetadataLocalType
  * - TxTags.asset.RemoveLocalMetadataKey
  * - TxTags.asset.RemoveMetadataValue
+ * - TxTags.asset.SetAssetMetadata
+ * - TxTags.asset.SetAssetMetadataDetails
  */
 export const ASSET_METADATA_MANAGEMENT_TX_TAGS = [
   TxTags.asset.RegisterAndSetLocalAssetMetadata, // Agent
@@ -142,7 +144,7 @@ export const CAPITAL_DISTRIBUTION_TX_TAGS = [
 
 /**
  * Transaction tags for CDD Registration operations
- * Contains operations for Customer Due Diligence registration.
+ * Contains the deprecated DID registration extrinsics.
  *
  * Values:
  * - TxTags.identity.CddRegisterDid
@@ -247,6 +249,7 @@ export const COMPLIANCE_MANAGEMENT_TX_TAGS = [
  * Values:
  * - TxTags.corporateAction.ChangeRecordDate
  * - TxTags.corporateAction.InitiateCorporateAction
+ * - TxTags.corporateAction.InitiateCorporateActionAndBallot
  * - TxTags.corporateAction.InitiateCorporateActionAndDistribute
  * - TxTags.corporateAction.LinkCaDoc
  * - TxTags.corporateAction.RemoveCa
@@ -537,8 +540,8 @@ export const TX_GROUP_TO_TAGS_MAP: Record<TxGroup, TxTag[]> = {
   [TxGroup.CorporateVoting]: CORPORATE_VOTING_TX_TAGS,
   [TxGroup.DidRegistration]: DID_REGISTRATION_TX_TAGS,
   [TxGroup.ExternalAgentManagement]: EXTERNAL_AGENT_MANAGEMENT_TX_TAGS,
-  [TxGroup.InstructionMediation]: INSTRUCTION_MEDIATION_TX_TAGS,
   [TxGroup.ExternalAgentParticipation]: EXTERNAL_AGENT_PARTICIPATION_TX_TAGS,
+  [TxGroup.InstructionMediation]: INSTRUCTION_MEDIATION_TX_TAGS,
   [TxGroup.Issuance]: ISSUANCE_TX_TAGS,
   [TxGroup.MultiSigManagement]: MULTISIG_MANAGEMENT_TX_TAGS,
   [TxGroup.PortfolioManagement]: PORTFOLIO_MANAGEMENT_TX_TAGS,

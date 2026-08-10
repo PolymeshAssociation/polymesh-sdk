@@ -977,7 +977,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    *  - all mediator affirmations are valid
    *  - all assets are in allowed venue list
    *  - all senders have the right amount of assets being transferred
-   *  - all senders and receivers are compliant and have valid CDD claims
+   *  - all senders and receivers are compliant
    *  - all assets' statistics are still valid
    *  - there are no frozen assets
    *
@@ -1376,7 +1376,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     if (!expiresAt) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: '`expiresAt` is mandatory from chain 8.x',
+        message: '`expiresAt` is required',
       });
     }
 

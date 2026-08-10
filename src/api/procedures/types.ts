@@ -1194,7 +1194,7 @@ export interface OffChainAffirmationReceipt {
    */
   metadata: string | undefined;
   /**
-   * Timestamp at which the receipt expires. Mandatory from chain 8.x onwards
+   * Timestamp at which the receipt expires
    */
   expiresAt?: Date | undefined;
 }

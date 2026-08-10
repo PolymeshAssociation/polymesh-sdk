@@ -591,5 +591,46 @@ describe('modifyClaims procedure', () => {
         },
       });
     });
+
+    it('should not require the DID Registrar role to revoke a CDD claim', () => {
+      args = {
+        claims: [
+          {
+            target: 'someDid',
+            claim: { type: ClaimType.CustomerDueDiligence },
+          },
+        ],
+        operation: ClaimOperation.Revoke,
+      } as ModifyClaimsParams;
+
+      expect(getAuthorization(args)).toEqual({
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.identity.RevokeClaim],
+        },
+      });
+    });
+
+    it('should require the DID Registrar role to edit a CDD claim', () => {
+      args = {
+        claims: [
+          {
+            target: 'someDid',
+            claim: { type: ClaimType.CustomerDueDiligence },
+          },
+        ],
+        operation: ClaimOperation.Edit,
+      } as ModifyClaimsParams;
+
+      expect(getAuthorization(args)).toEqual({
+        roles: [{ type: RoleType.DidRegistrar }],
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.identity.AddClaim],
+        },
+      });
+    });
   });
 });

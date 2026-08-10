@@ -11567,7 +11567,7 @@ describe('receiptDetailsToMeshReceiptDetails', () => {
     };
 
     expect(() => receiptDetailsToMeshReceiptDetails([receipt], instructionId, context)).toThrow(
-      '`expiresAt` is mandatory from chain 8.x'
+      '`expiresAt` is required'
     );
   });
 });

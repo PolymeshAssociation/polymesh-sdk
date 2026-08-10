@@ -5599,7 +5599,7 @@ export function receiptDetailsToMeshReceiptDetails(
       if (!expiresAt) {
         throw new PolymeshError({
           code: ErrorCode.UnmetPrerequisite,
-          message: '`expiresAt` is mandatory from chain 8.x',
+          message: '`expiresAt` is required',
         });
       }
 

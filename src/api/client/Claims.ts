@@ -121,7 +121,7 @@ export class Claims {
    * Add claims to Identities
    *
    * @note required roles:
-   *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
+   *   - DID Registrar: if there is at least one CDD claim in the arguments
    */
   public addClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
@@ -129,15 +129,14 @@ export class Claims {
    * Edit claims associated to Identities (only the expiry date can be modified)
    *
    * @note required roles:
-   *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
+   *   - DID Registrar: if there is at least one CDD claim in the arguments
    */
   public editClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
   /**
    * Revoke claims from Identities
    *
-   * @note required roles:
-   *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
+   * @note a claim can only be revoked by the Identity that issued it
    */
   public revokeClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
