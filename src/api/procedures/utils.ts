@@ -37,7 +37,6 @@ import {
   PermissionGroupType,
   PortfolioId,
   Signer,
-  SubsidyData,
   TickerReservationStatus,
   TransactionPermissions,
   TxTag,
@@ -531,53 +530,6 @@ export async function assertMultiSigSignerAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts valid add relayer paying key authorization
- */
-export async function assertOldAddRelayerPayingKeyAuthorizationValid(
-  subsidy: SubsidyData
-): Promise<void> {
-  const [beneficiaryIdentity, subsidizerIdentity] = await Promise.all([
-    subsidy.beneficiary.getIdentity(),
-    subsidy.subsidizer.getIdentity(),
-  ]);
-
-  if (!beneficiaryIdentity) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Beneficiary Account does not have an Identity',
-    });
-  }
-
-  if (!subsidizerIdentity) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Subsidizer Account does not have an Identity',
-    });
-  }
-
-  const [beneficiaryExists, subsidizerExists] = await Promise.all([
-    beneficiaryIdentity.exists(),
-    subsidizerIdentity.exists(),
-  ]);
-
-  if (!beneficiaryExists) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Beneficiary Account does not have an associated Identity',
-    });
-  }
-
-  if (!subsidizerExists) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Subsidizer Account does not have an associated Identity',
-    });
-  }
-}
-
-/**
- * @hidden
- *
  * Assert the target is an Account
  */
 function assertIsAccount(target: Signer): asserts target is Account {
@@ -677,7 +629,8 @@ export async function assertAuthorizationRequestValid(
     case AuthorizationType.JoinIdentity:
       return assertJoinOrRotateAuthorizationValid(authRequest);
     case AuthorizationType.OldAddRelayerPayingKey:
-      return assertOldAddRelayerPayingKeyAuthorizationValid(data.value);
+      // legacy auths can only be removed, never accepted, so there is nothing to validate
+      return;
     case AuthorizationType.RotatePrimaryKeyToSecondary:
       return assertJoinOrRotateAuthorizationValid(authRequest);
     default:

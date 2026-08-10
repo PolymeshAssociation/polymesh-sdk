@@ -181,12 +181,10 @@ export async function getRawLegDetails(
   const fromId = assetHolderLikeToAssetHolderId(from);
   const toId = assetHolderLikeToAssetHolderId(to);
 
-  const assertPromises = [
+  await Promise.all([
     assertAssetHolderExists(fromId, context),
     assertAssetHolderExists(toId, context),
-  ];
-
-  await Promise.all(assertPromises);
+  ]);
 
   const sender = assetHolderIdToMeshAssetHolder(fromId, context);
   const receiver = assetHolderIdToMeshAssetHolder(toId, context);

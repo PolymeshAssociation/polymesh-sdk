@@ -5665,15 +5665,13 @@ export function middlewareProposalStateToProposalStatus(
  * @hidden
  */
 export function stakingRewardDestinationToRaw(
-  destination: { staked: true } | { stash: true } | { controller: true } | { account: Account },
+  destination: { staked: true } | { stash: true } | { account: Account },
   context: Context
 ): RewardDestination {
   if ('staked' in destination) {
     return context.createType('RewardDestination', { Staked: true });
   } else if ('stash' in destination) {
     return context.createType('RewardDestination', { Stash: true });
-  } else if ('controller' in destination) {
-    return context.createType('RewardDestination', { Controller: true });
   } else {
     const rawId = stringToAccountId(destination.account.address, context);
     return context.createType('RewardDestination', { Account: rawId });

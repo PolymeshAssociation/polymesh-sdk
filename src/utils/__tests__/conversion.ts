@@ -11778,17 +11778,6 @@ describe('stakingRewardDestinationToRaw', () => {
     expect(result).toEqual(expectedResult);
   });
 
-  it('should return the controller account', () => {
-    const expectedResult = 'expectedController' as unknown as PalletStakingRewardDestination;
-    when(mockContext.createType)
-      .calledWith('RewardDestination', { Controller: true })
-      .mockReturnValue(expectedResult);
-
-    const result = stakingRewardDestinationToRaw({ controller: true }, mockContext);
-
-    expect(result).toEqual(expectedResult);
-  });
-
   it('should return an account', () => {
     const expectedResult = 'expectedDestination' as unknown as PalletStakingRewardDestination;
 

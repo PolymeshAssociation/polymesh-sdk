@@ -173,9 +173,7 @@ import {
   ConditionReport,
   ExecuteInstructionInfo,
   PolymeshMoment as Moment,
-  PortfolioValidityResult,
   RequirementReport,
-  TransferConditionResult,
 } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 // eslint-disable-next-line import/order
@@ -3885,65 +3883,6 @@ export const createMockDistribution = (distribution?: {
       expiresAt: createMockOption(expiresAt),
     },
     !distribution
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockTransferConditionResult = (transferManagerResult?: {
-  condition:
-    | PolymeshPrimitivesTransferComplianceTransferCondition
-    | Parameters<typeof createMockTransferCondition>[0];
-  result: bool | Parameters<typeof createMockBool>[0];
-}): MockCodec<TransferConditionResult> => {
-  const { condition, result } = transferManagerResult ?? {
-    condition: createMockTransferCondition(),
-    result: createMockBool(),
-  };
-  return createMockCodec(
-    {
-      condition: createMockTransferCondition(condition),
-      result: createMockBool(result),
-    },
-    !transferManagerResult
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockPortfolioValidityResult = (portfolioValidityResult?: {
-  receiverIsSamePortfolio: bool | Parameters<typeof createMockBool>[0];
-  senderPortfolioDoesNotExist: bool | Parameters<typeof createMockBool>[0];
-  receiverPortfolioDoesNotExist: bool | Parameters<typeof createMockBool>[0];
-  senderInsufficientBalance: bool | Parameters<typeof createMockBool>[0];
-  result: bool | Parameters<typeof createMockBool>[0];
-}): MockCodec<PortfolioValidityResult> => {
-  const {
-    receiverIsSamePortfolio,
-    senderPortfolioDoesNotExist,
-    receiverPortfolioDoesNotExist,
-    senderInsufficientBalance,
-    result,
-  } = portfolioValidityResult ?? {
-    receiverIsSamePortfolio: createMockBool(),
-    senderPortfolioDoesNotExist: createMockBool(),
-    receiverPortfolioDoesNotExist: createMockBool(),
-    senderInsufficientBalance: createMockBool(),
-    result: createMockBool(),
-  };
-  return createMockCodec(
-    {
-      receiverIsSamePortfolio: createMockBool(receiverIsSamePortfolio),
-      senderPortfolioDoesNotExist: createMockBool(senderPortfolioDoesNotExist),
-      receiverPortfolioDoesNotExist: createMockBool(receiverPortfolioDoesNotExist),
-      senderInsufficientBalance: createMockBool(senderInsufficientBalance),
-      result: createMockBool(result),
-    },
-    !portfolioValidityResult
   );
 };
 

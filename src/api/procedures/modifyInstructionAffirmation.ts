@@ -1,8 +1,7 @@
 /* eslint-disable max-lines-per-function */
-import { BTreeSet, Option, u64, Vec } from '@polkadot/types';
+import { Vec } from '@polkadot/types';
 import {
   PolymeshPrimitivesAssetAssetHolder,
-  PolymeshPrimitivesSettlementAffirmationCount,
   PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementReceiptDetails,
@@ -10,7 +9,6 @@ import {
 import {
   AffirmationCount,
   ExecuteInstructionInfo,
-  PolymeshMoment,
 } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 
@@ -33,12 +31,7 @@ import {
   TxTag,
   TxTags,
 } from '~/types';
-import {
-  ExtrinsicParams,
-  PolymeshTx,
-  ProcedureAuthorization,
-  TransactionSpec,
-} from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { isOffChainLeg, isPortfolioAssetHolder } from '~/utils';
 import {
@@ -341,29 +334,6 @@ function reject(
   };
 }
 
-type ModifyInstructionType =
-  | PolymeshTx<
-      [u64, BTreeSet<PolymeshPrimitivesAssetAssetHolder>, PolymeshPrimitivesSettlementAssetCount]
-    >
-  | PolymeshTx<
-      [
-        u64,
-        BTreeSet<PolymeshPrimitivesAssetAssetHolder>,
-        PolymeshPrimitivesSettlementAffirmationCount
-      ]
-    >
-  | PolymeshTx<[u64, Option<PolymeshMoment>]>
-  | PolymeshTx<[u64]>
-  | PolymeshTx<
-      [
-        u64,
-        Vec<PolymeshPrimitivesSettlementReceiptDetails>,
-        BTreeSet<PolymeshPrimitivesAssetAssetHolder>,
-        Option<PolymeshPrimitivesSettlementAffirmationCount>
-      ]
-    >
-  | null;
-
 /**
  * @hidden
  */
@@ -446,11 +416,6 @@ export async function prepareModifyInstructionAffirmation(
   const affirmationStatuses = rawAffirmationStatuses.map(meshAffirmationStatusToAffirmationStatus);
   const { status: mediatorStatus } = mediatorAffirmationStatusToStatus(rawMediatorAffirmation);
 
-  const excludeCriteria: AffirmationStatus[] = [];
-  let errorMessage: string;
-  let transaction: ModifyInstructionType = null;
-
-  let rawReceiptDetails: Vec<PolymeshPrimitivesSettlementReceiptDetails> | null = null;
   switch (operation) {
     case InstructionAffirmationOperation.AffirmAsMediator: {
       return affirmAsMediator(mediatorStatus, signer, context, instruction, args.expiry);
@@ -465,29 +430,23 @@ export async function prepareModifyInstructionAffirmation(
 
       return reject(context, instructionInfo, instruction, totalLegCount, rawAllowedAssetHolders);
     }
-
-    case InstructionAffirmationOperation.Affirm: {
-      excludeCriteria.push(AffirmationStatus.Affirmed);
-      errorMessage = 'The Instruction is already affirmed';
-      const { receipts } = rest as AffirmInstructionParams;
-      if (receipts?.length) {
-        transaction = settlementTx.affirmWithReceiptsWithCount;
-        rawReceiptDetails = await assertReceipts(receipts, offChainLegIndices, id, context);
-      } else {
-        transaction = settlementTx.affirmInstructionWithCount;
-      }
-      break;
-    }
   }
 
+  // every other operation returned above, so this is an `Affirm`
+  const { receipts } = rest as AffirmInstructionParams;
+
+  const rawReceiptDetails = receipts?.length
+    ? await assertReceipts(receipts, offChainLegIndices, id, context)
+    : null;
+
   const validAssetHolders = rawAllowedAssetHolders.filter(
-    (_, index) => !excludeCriteria.includes(affirmationStatuses[index]!)
+    (_, index) => affirmationStatuses[index] !== AffirmationStatus.Affirmed
   );
 
   if (!validAssetHolders.length && !rawReceiptDetails) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message: errorMessage,
+      message: 'The Instruction is already affirmed',
     });
   }
 
@@ -498,17 +457,16 @@ export async function prepareModifyInstructionAffirmation(
 
   const portfolioIds = assetHolderIdsToBtreeSet(validAssetHolders, context);
 
-  if (transaction === settlementTx.affirmWithReceiptsWithCount) {
+  if (rawReceiptDetails) {
     return {
-      transaction,
+      transaction: settlementTx.affirmWithReceiptsWithCount,
       resolver: instruction,
       args: [rawInstructionId, rawReceiptDetails, portfolioIds, rawAffirmCount],
     };
   }
 
   return {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transaction: transaction as any,
+    transaction: settlementTx.affirmInstructionWithCount,
     resolver: instruction,
     feeMultiplier: senderLegCount,
     args: [rawInstructionId, portfolioIds, rawAffirmCount],
