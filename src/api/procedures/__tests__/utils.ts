@@ -1117,6 +1117,31 @@ describe('authorization request validations', () => {
     });
   });
 
+  describe('OldAddRelayerPayingKey authorizations', () => {
+    it('should not throw, since a legacy authorization can only be removed', () => {
+      const data: Authorization = {
+        type: AuthorizationType.OldAddRelayerPayingKey,
+        value: {
+          beneficiary: entityMockUtils.getAccountInstance(),
+          subsidizer: entityMockUtils.getAccountInstance(),
+          allowance: new BigNumber(100),
+        },
+      };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
+    });
+  });
+
   describe('assertJoinOrRotateAuthorizationValid', () => {
     const permissions = {
       assets: null,
