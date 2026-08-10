@@ -53,7 +53,6 @@ import {
   PortfolioLike,
   PortfolioMovement,
   Requirement,
-  Scope,
   SecurityIdentifier,
   Signer,
   SignerType,
@@ -953,23 +952,6 @@ export interface RevokeClaimsParams {
 
 export type ModifyClaimsParams = AddClaimsParams | EditClaimsParams | RevokeClaimsParams;
 
-export interface ScopeClaimProof {
-  proofScopeIdWellFormed: string;
-  proofScopeIdCddIdMatch: {
-    challengeResponses: [string, string];
-    subtractExpressionsRes: string;
-    blindedScopeDidHash: string;
-  };
-}
-
-export interface AddInvestorUniquenessClaimParams {
-  scope: Scope;
-  cddId: string;
-  proof: string | ScopeClaimProof;
-  scopeId: string;
-  expiry?: Date;
-}
-
 export interface RegisterIdentityParams {
   /**
    * The Account that should function as the primary key of the newly created Identity. Can be ss58 encoded address or an instance of Account
@@ -1352,17 +1334,6 @@ export type BatchIssueNftParams = {
   portfolioId?: BigNumber;
 };
 
-export interface ModifyPrimaryIssuanceAgentParams {
-  /**
-   * Identity to be set as primary issuance agent
-   */
-  target: string | Identity;
-  /**
-   * date at which the authorization request to modify the primary issuance agent expires (optional, never expires if a date is not provided)
-   */
-  requestExpiry?: Date;
-}
-
 export interface RedeemTokensParams {
   /**
    * amount of Asset tokens to be redeemed
@@ -1468,17 +1439,6 @@ export interface ModifyAssetTrustedClaimIssuersRemoveParams {
 
 export interface RemoveCorporateActionParams {
   corporateAction: CorporateActionBase | BigNumber;
-}
-
-export interface ModifyCorporateActionsAgentParams {
-  /**
-   * Identity to be set as Corporate Actions Agent
-   */
-  target: string | Identity;
-  /**
-   * date at which the authorization request to modify the Corporate Actions Agent expires (optional, never expires if a date is not provided)
-   */
-  requestExpiry?: Date;
 }
 
 export type ModifyCaDefaultConfigParams =

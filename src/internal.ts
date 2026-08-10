@@ -143,7 +143,6 @@ export { CorporateAction } from '~/api/entities/CorporateAction';
 export { CorporateBallot } from '~/api/entities/CorporateBallot';
 export { removeCheckpointSchedule } from '~/api/procedures/removeCheckpointSchedule';
 export { DividendDistribution } from '~/api/entities/DividendDistribution';
-export { modifyCorporateActionsAgent } from '~/api/procedures/modifyCorporateActionsAgent';
 export { configureDividendDistribution } from '~/api/procedures/configureDividendDistribution';
 export { claimDividends } from '~/api/procedures/claimDividends';
 export { modifyCaCheckpoint } from '~/api/procedures/modifyCaCheckpoint';
