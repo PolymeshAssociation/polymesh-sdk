@@ -101,6 +101,10 @@ export const ASSET_METADATA_MANAGEMENT_TX_TAGS = [
  * - TxTags.asset.RegisterCustomAssetType
  * - TxTags.asset.RegisterUniqueTicker
  * - TxTags.nft.CreateNftCollection
+ *
+ * @note `TxTags.nft.CreateNftCollection` is Agent checked when the collection is created under an
+ *   existing Asset. This group is not agent grantable, so that path is covered by
+ *   `ISSUANCE_TX_TAGS` instead
  */
 export const ASSET_REGISTRATION_TX_TAGS = [
   TxTags.asset.AcceptAssetOwnershipTransfer, // Secondary Key
@@ -430,10 +434,18 @@ export const INSTRUCTION_MEDIATION_TX_TAGS = [
  *
  * Values:
  * - TxTags.asset.Issue
+ * - TxTags.nft.CreateNftCollection
  * - TxTags.nft.IssueNft
+ *
+ * @note `TxTags.nft.CreateNftCollection` is also a member of `ASSET_REGISTRATION_TX_TAGS`. The
+ *   extrinsic takes two paths on chain: creating a collection for a **new** Asset is a Secondary
+ *   Key operation (`ensure_origin_call_permissions`), while creating one under an **existing**
+ *   Asset is Agent checked (`ExternalAgents::ensure_agent_asset_perms`). `TxGroup.AssetRegistration`
+ *   is not agent grantable, so it covers only the first path - this group covers the second
  */
 export const ISSUANCE_TX_TAGS = [
   TxTags.asset.Issue, // Agent
+  TxTags.nft.CreateNftCollection, // Agent (when created under an existing Asset)
   TxTags.nft.IssueNft, // Agent
 ] as const satisfies TxTag[];
 
