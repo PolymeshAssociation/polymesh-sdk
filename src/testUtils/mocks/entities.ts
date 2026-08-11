@@ -248,6 +248,7 @@ interface AccountOptions extends EntityOptions {
   stakingGetLedger?: EntityGetter<StakingLedger | null>;
   getMultiSig?: EntityGetter<MultiSig | null>;
   getNextAssetId?: EntityGetter<string>;
+  getAssetBalances?: EntityGetter<PortfolioBalance[]>;
 }
 
 interface SubsidyOptions extends EntityOptions {
@@ -720,6 +721,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     checkPermissions!: jest.Mock;
     getMultiSig!: jest.Mock;
     getNextAssetId!: jest.Mock;
+    getAssetBalances!: jest.Mock;
     authorizations = {} as {
       getReceived: jest.Mock;
       getOne: jest.Mock;
@@ -763,11 +765,13 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
       this.staking.getNomination = createEntityGetterMock(opts.stakingGetNomination);
       this.getMultiSig = createEntityGetterMock(opts.getMultiSig);
       this.getNextAssetId = createEntityGetterMock(opts.getNextAssetId);
+      this.getAssetBalances = createEntityGetterMock(opts.getAssetBalances);
     }
   },
   () => ({
     address: 'someAddress',
     key: 'someKey',
+    getAssetBalances: [],
     getBalance: {
       free: new BigNumber(100),
       locked: new BigNumber(10),
@@ -2095,6 +2099,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     stakingGetNomination: null,
     getMultiSig: null,
     getNextAssetId: '12341234-1234-1234-1234-123412341234',
+    getAssetBalances: [],
   }),
   ['MultiSig', 'Account']
 );

@@ -9,12 +9,13 @@ import {
   Storage,
 } from '~/api/procedures/transferFunds';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Account, Context, Instruction, NumberedPortfolio } from '~/internal';
+import { Account, Context, Instruction, Nft, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, TransferFundsParams, TxTags } from '~/types';
+import { AssetHolder, PortfolioBalance, TransferFundsParams, TxTags } from '~/types';
 import { isResolverFunction, MaybeResolverFunction } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 import * as typeguardsModule from '~/utils/typeguards';
 
 const callResolver = (
@@ -60,6 +61,9 @@ describe('transferFunds procedure', () => {
   let getAssetHolderDidSpy: jest.SpyInstance;
   let isFungibleLegBuilderSpy: jest.SpyInstance;
   let createAddInstructionResolverSpy: jest.SpyInstance;
+  let asAssetIdSpy: jest.SpyInstance;
+  let getOwnerSpy: jest.SpyInstance;
+  let isLockedSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -88,6 +92,9 @@ describe('transferFunds procedure', () => {
       addInstructionModule,
       'createAddInstructionResolver'
     );
+    asAssetIdSpy = jest.spyOn(utilsInternalModule, 'asAssetId');
+    getOwnerSpy = jest.spyOn(Nft.prototype, 'getOwner');
+    isLockedSpy = jest.spyOn(Nft.prototype, 'isLocked');
   });
 
   beforeEach(() => {
@@ -306,9 +313,155 @@ describe('transferFunds procedure', () => {
       ).rejects.toThrow('Spender has insufficient allowance to cover the transfer');
     });
 
+    it('should require an allowance check whenever the signing Account differs from the source Account, even when both belong to the same DID', async () => {
+      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
+      asset.getAllowance.mockResolvedValue(new BigNumber(50));
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromAccountHolder,
+        toHolder: toPortfolioHolder,
+        // same DID as fromAccountHolder's, but a different signing key
+        signingDid: 'someDid',
+        signingAccount: 'someOtherAccount',
+      });
+
+      await expect(
+        prepareTransferFunds.call(proc, {
+          from: fromAccountHolder,
+          to: toPortfolioHolder,
+          asset,
+          amount: new BigNumber(100),
+        })
+      ).rejects.toThrow('Spender has insufficient allowance to cover the transfer');
+    });
+
+    it('should still check the source balance even when a sufficient allowance is granted', async () => {
+      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
+      asset.getAllowance.mockResolvedValue(new BigNumber(150));
+      fromAccountHolder.getAssetBalances.mockResolvedValue([
+        { free: new BigNumber(50) } as PortfolioBalance,
+      ]);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromAccountHolder,
+        toHolder: toPortfolioHolder,
+        signingDid: 'otherDid',
+        signingAccount: 'someOtherAccount',
+      });
+
+      await expect(
+        prepareTransferFunds.call(proc, {
+          from: fromAccountHolder,
+          to: toPortfolioHolder,
+          asset,
+          amount: new BigNumber(100),
+        })
+      ).rejects.toThrow('Sender has insufficient balance to cover the transfer');
+    });
+
+    it('should throw an error if a non-owning Account tries to transfer NFTs', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const asset = entityMockUtils.getNftCollectionInstance({ assetId });
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromAccountHolder,
+        toHolder: toPortfolioHolder,
+        signingDid: 'otherDid',
+        signingAccount: 'someOtherAccount',
+      });
+
+      await expect(
+        prepareTransferFunds.call(proc, {
+          from: fromAccountHolder,
+          to: toPortfolioHolder,
+          asset,
+          nfts: [new BigNumber(1)],
+        })
+      ).rejects.toThrow(
+        'Only the owning key can transfer NFTs from an Account. Allowances do not apply to NFTs'
+      );
+    });
+
+    it('should throw an error if an NFT is not owned by the sender or is locked', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const asset = entityMockUtils.getNftCollectionInstance({ assetId });
+
+      asAssetIdSpy.mockResolvedValue(assetId);
+      getOwnerSpy.mockResolvedValue(null);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
+        signingDid: 'someDid',
+        signingAccount: 'someAccount',
+      });
+
+      await expect(
+        prepareTransferFunds.call(proc, {
+          from: fromPortfolioHolder,
+          to: toPortfolioHolder,
+          asset,
+          nfts: [new BigNumber(1)],
+        })
+      ).rejects.toThrow(
+        'Some of the NFTs are not owned by the sender, are locked, or do not exist'
+      );
+    });
+
+    it('should throw an error if an owned NFT is locked', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const asset = entityMockUtils.getNftCollectionInstance({ assetId });
+
+      asAssetIdSpy.mockResolvedValue(assetId);
+      getOwnerSpy.mockResolvedValue(fromPortfolioHolder as unknown as AssetHolder);
+      isLockedSpy.mockResolvedValue(true);
+      fromPortfolioHolder.isEqual.mockImplementation(other => other === fromPortfolioHolder);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
+        signingDid: 'someDid',
+        signingAccount: 'someAccount',
+      });
+
+      await expect(
+        prepareTransferFunds.call(proc, {
+          from: fromPortfolioHolder,
+          to: toPortfolioHolder,
+          asset,
+          nfts: [new BigNumber(1)],
+        })
+      ).rejects.toThrow(
+        'Some of the NFTs are not owned by the sender, are locked, or do not exist'
+      );
+    });
+
     it('should return a transfer funds transaction spec when fromHolder is an Account with sufficient allowance', async () => {
       const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
       asset.getAllowance.mockResolvedValue(new BigNumber(150));
+      fromAccountHolder.getAssetBalances.mockResolvedValue([
+        { free: new BigNumber(150) } as PortfolioBalance,
+      ]);
 
       fungibleMovementToPortfolioFundSpy.mockResolvedValue('rawFund');
       const instruction = { id: new BigNumber(1) } as Instruction;
@@ -380,6 +533,13 @@ describe('transferFunds procedure', () => {
     it('should return a transfer funds transaction spec for NFT assets', async () => {
       const assetId = '12341234-1234-1234-1234-123412341234';
       const asset = entityMockUtils.getNftCollectionInstance({ assetId });
+
+      asAssetIdSpy.mockResolvedValue(assetId);
+      getOwnerSpy.mockResolvedValue(fromPortfolioHolder as unknown as AssetHolder);
+      isLockedSpy.mockResolvedValue(false);
+      // isEqual is also used for the "same holder" guard against toHolder, so only report
+      // equality when compared against itself (the NFT ownership check)
+      fromPortfolioHolder.isEqual.mockImplementation(other => other === fromPortfolioHolder);
 
       nftMovementToPortfolioFundSpy.mockResolvedValue('rawNftFund');
       assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someHolderId');
