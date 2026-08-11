@@ -3,16 +3,7 @@ import BigNumber from 'bignumber.js';
 
 import { createAddInstructionResolver } from '~/api/procedures/addInstruction';
 import { getAssetHolderDid } from '~/api/procedures/utils';
-import {
-  Account,
-  Context,
-  DefaultPortfolio,
-  Instruction,
-  Nft,
-  NumberedPortfolio,
-  PolymeshError,
-  Procedure,
-} from '~/internal';
+import { Account, Context, Instruction, Nft, PolymeshError, Procedure } from '~/internal';
 import { AssetHolder, ErrorCode, InstructionNftLeg, TransferFundsParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -21,13 +12,16 @@ import {
   assetHolderLikeToAssetHolderId,
   fungibleMovementToPortfolioFund,
   nftMovementToPortfolioFund,
+  stringToAssetId,
 } from '~/utils/conversion';
-import { asAssetId, asNftId, filterEventRecords } from '~/utils/internal';
-import { isFungibleLegBuilder } from '~/utils/typeguards';
+import { asAssetId, asFungibleAsset, asNftId, filterEventRecords } from '~/utils/internal';
+import { isFungibleLegBuilder, isPortfolioAssetHolder } from '~/utils/typeguards';
 
 export interface Storage {
   fromHolder: AssetHolder;
   toHolder: AssetHolder;
+  fromDid: string | undefined;
+  toDid: string | undefined;
   signingDid: string;
   signingAccount: string;
 }
@@ -59,7 +53,14 @@ export async function getFund(
     // isn't the source Account itself — even when both keys belong to the same DID. Portfolio
     // sources are always authorized via custody on-chain, regardless of the owning DID
     if (fromHolder instanceof Account && fromHolder.address !== signingAccount) {
-      const allowance = await asset.getAllowance({ owner: fromHolder, spender: signingAccount });
+      // `isFungibleLegBuilder` narrows the leg to a `FungibleLeg`, whose `asset` is a
+      // `FungibleAsset` — but the parameter accepts `string | FungibleAsset`, so an Asset ID may
+      // still be there at runtime and has to be resolved before any of its methods can be used
+      const fungibleAsset = await asFungibleAsset(asset, context);
+      const allowance = await fungibleAsset.getAllowance({
+        owner: fromHolder,
+        spender: signingAccount,
+      });
 
       if (allowance.lt(amount)) {
         throw new PolymeshError({
@@ -154,7 +155,7 @@ export async function prepareTransferFunds(
       },
     },
     context,
-    storage: { fromHolder, toHolder },
+    storage: { fromHolder, toHolder, fromDid, toDid },
     storage,
   } = this;
 
@@ -164,11 +165,6 @@ export async function prepareTransferFunds(
       message: 'from and to asset holders cannot be the same',
     });
   }
-
-  const [fromDid, toDid] = await Promise.all([
-    getAssetHolderDid(fromHolder, context),
-    getAssetHolderDid(toHolder, context),
-  ]);
 
   if (!fromDid || !toDid) {
     throw new PolymeshError({
@@ -218,29 +214,52 @@ export async function prepareTransferFunds(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<TransferFundsParams, Instruction | undefined, Storage>
+  this: Procedure<TransferFundsParams, Instruction | undefined, Storage>,
+  { asset }: TransferFundsParams
 ): Promise<ProcedureAuthorization> {
   const {
     context,
-    storage: { fromHolder, toHolder, signingDid },
+    storage: { fromHolder, toHolder, fromDid, toDid, signingDid },
   } = this;
 
-  const toDid = await getAssetHolderDid(toHolder, context);
+  // the source is authorized on every path
+  const holders: AssetHolder[] = [fromHolder];
 
-  // the signer always authorizes/affirms the source; the destination is only auto-affirmed
-  // (and thus requires permission) when the signer's own identity also owns it
-  const holders = [fromHolder, ...(toDid === signingDid ? [toHolder] : [])];
+  // the destination is only checked cross-identity, and only when the chain affirms on the
+  // receiver's behalf: that needs the caller's own Identity to own it, and the receiver to not
+  // auto-affirm (the receiver's own setting, never the signer's). Same-identity transfers move
+  // the funds directly and never look at the destination
+  if (fromDid !== toDid && toDid === signingDid) {
+    const assetId = await asAssetId(asset, context);
 
-  const portfolios = holders.filter(holder => !(holder instanceof Account)) as unknown as (
-    | DefaultPortfolio
-    | NumberedPortfolio
-  )[];
+    const { isAutomatic } =
+      await context.polymeshApi.call.settlementApi.getReceiverAffirmationRequirement(
+        assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(toHolder), context),
+        stringToAssetId(assetId, context)
+      );
+
+    if (!isAutomatic) {
+      holders.push(toHolder);
+    }
+  }
+
+  let roles: ProcedureAuthorization['roles'];
+
+  if (isPortfolioAssetHolder(fromHolder)) {
+    // a Portfolio source is custody checked on every path. Compared against the acting Identity
+    // (the MultiSig's own when signing through one); a `PortfolioCustodian` role would use the
+    // signing key's Identity instead
+    const isCustodian = await fromHolder.isCustodiedBy({ identity: signingDid });
+
+    roles = isCustodian || 'The signing Identity must be the custodian of the origin Portfolio';
+  }
 
   return {
+    roles,
     permissions: {
       transactions: [TxTags.settlement.TransferFunds],
       assets: [],
-      portfolios,
+      portfolios: holders.filter(isPortfolioAssetHolder),
     },
   };
 }
@@ -254,19 +273,36 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
-  const [identity, { address }] = await Promise.all([
-    context.getSigningIdentity(),
-    context.getActingAccount(),
-  ]);
-
   const fromHolder = assetHolderLikeToAssetHolder(from, context);
   const toHolder = assetHolderLikeToAssetHolder(to, context);
+
+  // the extrinsic is dispatched with the acting Account as its origin — a MultiSig proposal
+  // executes as the MultiSig itself — so both the allowance/ownership checks and the chain's
+  // permission checks key off that Account and the Identity it belongs to, not off the key that
+  // signs the proposal
+  const actingAccount = await context.getActingAccount();
+
+  const [identity, fromDid, toDid] = await Promise.all([
+    actingAccount.getIdentity(),
+    getAssetHolderDid(fromHolder, context),
+    getAssetHolderDid(toHolder, context),
+  ]);
+
+  if (!identity) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The acting Account does not have an associated Identity',
+      data: { actingAddress: actingAccount.address },
+    });
+  }
 
   return {
     fromHolder,
     toHolder,
+    fromDid,
+    toDid,
     signingDid: identity.did,
-    signingAccount: address,
+    signingAccount: actingAccount.address,
   };
 }
 

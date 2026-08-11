@@ -62,6 +62,8 @@ describe('transferFunds procedure', () => {
   let isFungibleLegBuilderSpy: jest.SpyInstance;
   let createAddInstructionResolverSpy: jest.SpyInstance;
   let asAssetIdSpy: jest.SpyInstance;
+  let asFungibleAssetSpy: jest.SpyInstance;
+  let stringToAssetIdSpy: jest.SpyInstance;
   let getOwnerSpy: jest.SpyInstance;
   let isLockedSpy: jest.SpyInstance;
   let filterEventRecordsSpy: jest.SpyInstance;
@@ -94,6 +96,8 @@ describe('transferFunds procedure', () => {
       'createAddInstructionResolver'
     );
     asAssetIdSpy = jest.spyOn(utilsInternalModule, 'asAssetId');
+    asFungibleAssetSpy = jest.spyOn(utilsInternalModule, 'asFungibleAsset');
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     getOwnerSpy = jest.spyOn(Nft.prototype, 'getOwner');
     isLockedSpy = jest.spyOn(Nft.prototype, 'isLocked');
     filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
@@ -107,6 +111,7 @@ describe('transferFunds procedure', () => {
     isFungibleLegBuilderSpy.mockResolvedValue((leg: any) => 'amount' in leg);
     // no `SettlementManuallyExecuted` event by default - the created instruction stays pending
     filterEventRecordsSpy.mockReturnValue([]);
+    getAssetHolderDidSpy.mockResolvedValue('someDid');
   });
 
   afterEach(() => {
@@ -120,7 +125,7 @@ describe('transferFunds procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  describe('prepareMoveFunds', () => {
+  describe('prepareTransferFunds', () => {
     let fromAccountHolder: Mocked<Account>;
     let fromPortfolioHolder: Mocked<NumberedPortfolio>;
     let toPortfolioHolder: Mocked<NumberedPortfolio>;
@@ -138,7 +143,6 @@ describe('transferFunds procedure', () => {
 
       fromPortfolioHolder.isEqual.mockReturnValue(false);
       fromAccountHolder.isEqual.mockReturnValue(false);
-      getAssetHolderDidSpy.mockResolvedValue('someDid');
     });
 
     it('should throw an error if from and to asset holders are the same', async () => {
@@ -151,6 +155,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -166,9 +172,6 @@ describe('transferFunds procedure', () => {
     });
 
     it('should throw an error if DID cannot be retrieved from one or both asset holders', async () => {
-      getAssetHolderDidSpy.mockReset();
-      getAssetHolderDidSpy.mockResolvedValueOnce('someDid').mockResolvedValueOnce(undefined);
-
       const proc = procedureMockUtils.getInstance<
         TransferFundsParams,
         Instruction | undefined,
@@ -176,6 +179,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: undefined,
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -198,6 +203,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -224,6 +231,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -248,6 +257,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -276,6 +287,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'otherDid',
         signingAccount: 'someOtherAccount',
       });
@@ -303,6 +316,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromAccountHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'otherDid',
         signingAccount: 'someOtherAccount',
       });
@@ -328,6 +343,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromAccountHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         // same DID as fromAccountHolder's, but a different signing key
         signingDid: 'someDid',
         signingAccount: 'someOtherAccount',
@@ -357,6 +374,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromAccountHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'otherDid',
         signingAccount: 'someOtherAccount',
       });
@@ -382,6 +401,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromAccountHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'otherDid',
         signingAccount: 'someOtherAccount',
       });
@@ -412,6 +433,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -444,6 +467,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -478,6 +503,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromAccountHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'otherDid',
         signingAccount: 'someOtherAccount',
       });
@@ -516,6 +543,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -557,6 +586,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -577,9 +608,6 @@ describe('transferFunds procedure', () => {
     it('should return a transfer funds transaction spec for a cross-DID portfolio transfer, leaving the instruction pending', async () => {
       const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
 
-      getAssetHolderDidSpy.mockReset();
-      getAssetHolderDidSpy.mockResolvedValueOnce('someDid').mockResolvedValueOnce('otherDid');
-
       fromPortfolioHolder.getAssetBalances.mockResolvedValue([
         { free: new BigNumber(150) } as PortfolioBalance,
       ]);
@@ -597,6 +625,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'otherDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -621,9 +651,6 @@ describe('transferFunds procedure', () => {
       // `SettlementManuallyExecuted` distinguishes an already-settled instruction from a pending one
       const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
 
-      getAssetHolderDidSpy.mockReset();
-      getAssetHolderDidSpy.mockResolvedValueOnce('someDid').mockResolvedValueOnce('otherDid');
-
       fromPortfolioHolder.getAssetBalances.mockResolvedValue([
         { free: new BigNumber(150) } as PortfolioBalance,
       ]);
@@ -644,6 +671,8 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder: fromPortfolioHolder,
         toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'otherDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
@@ -665,6 +694,122 @@ describe('transferFunds procedure', () => {
         true
       );
     });
+
+    it('should resolve the Asset before checking the allowance when an Asset ID is passed', async () => {
+      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
+      asset.getAllowance.mockResolvedValue(new BigNumber(50));
+      asFungibleAssetSpy.mockResolvedValue(asset);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromAccountHolder,
+        toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
+        signingDid: 'otherDid',
+        signingAccount: 'someOtherAccount',
+      });
+
+      await expect(
+        prepareTransferFunds.call(proc, {
+          from: fromAccountHolder,
+          to: toPortfolioHolder,
+          asset: '12341234-1234-1234-1234-123412341234',
+          amount: new BigNumber(100),
+        })
+      ).rejects.toThrow('Spender has insufficient allowance to cover the transfer');
+
+      expect(asFungibleAssetSpy).toHaveBeenCalledWith(
+        '12341234-1234-1234-1234-123412341234',
+        mockContext
+      );
+    });
+
+    it('should pass the memo to the fund for a fungible leg', async () => {
+      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
+
+      fromPortfolioHolder.getAssetBalances.mockResolvedValue([
+        { free: new BigNumber(150) } as PortfolioBalance,
+      ]);
+
+      fungibleMovementToPortfolioFundSpy.mockResolvedValue('rawFund');
+      createAddInstructionResolverSpy.mockReturnValue(() => []);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
+        signingDid: 'someDid',
+        signingAccount: 'someAccount',
+      });
+
+      dsMockUtils.createTxMock('settlement', 'transferFunds');
+
+      const amount = new BigNumber(100);
+
+      await prepareTransferFunds.call(proc, {
+        from: fromPortfolioHolder,
+        to: toPortfolioHolder,
+        asset,
+        amount,
+        memo: 'someMemo',
+      });
+
+      expect(fungibleMovementToPortfolioFundSpy).toHaveBeenCalledWith(
+        { asset, amount, memo: 'someMemo' },
+        mockContext
+      );
+    });
+
+    it('should pass the memo to the fund for an NFT leg', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const asset = entityMockUtils.getNftCollectionInstance({ assetId });
+      const nfts = [new BigNumber(1)];
+
+      asAssetIdSpy.mockResolvedValue(assetId);
+      getOwnerSpy.mockResolvedValue(fromPortfolioHolder as unknown as AssetHolder);
+      isLockedSpy.mockResolvedValue(false);
+      fromPortfolioHolder.isEqual.mockImplementation(other => other === fromPortfolioHolder);
+
+      nftMovementToPortfolioFundSpy.mockResolvedValue('rawNftFund');
+      createAddInstructionResolverSpy.mockReturnValue(() => []);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
+        signingDid: 'someDid',
+        signingAccount: 'someAccount',
+      });
+
+      dsMockUtils.createTxMock('settlement', 'transferFunds');
+
+      await prepareTransferFunds.call(proc, {
+        from: fromPortfolioHolder,
+        to: toPortfolioHolder,
+        asset,
+        nfts,
+        memo: 'someMemo',
+      });
+
+      expect(nftMovementToPortfolioFundSpy).toHaveBeenCalledWith(
+        { asset, nfts, memo: 'someMemo' },
+        mockContext
+      );
+    });
   });
 
   describe('prepareStorage', () => {
@@ -674,11 +819,13 @@ describe('transferFunds procedure', () => {
         id: new BigNumber(1),
       });
       const to = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
+        did: 'otherDid',
         id: new BigNumber(2),
       });
 
       assetHolderLikeToAssetHolderSpy.mockReturnValueOnce(from).mockReturnValueOnce(to);
+      getAssetHolderDidSpy.mockReset();
+      getAssetHolderDidSpy.mockResolvedValueOnce('someDid').mockResolvedValueOnce('otherDid');
 
       const proc = procedureMockUtils.getInstance<
         TransferFundsParams,
@@ -696,21 +843,183 @@ describe('transferFunds procedure', () => {
       expect(result).toEqual({
         fromHolder: from,
         toHolder: to,
+        fromDid: 'someDid',
+        toDid: 'otherDid',
         signingDid: 'someDid',
         signingAccount: mockContext.getSigningAccount().address,
       });
     });
-  });
 
-  describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions, excluding an Account toHolder', async () => {
-      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
+    it('should key off the acting Account and its Identity when signing through a MultiSig', async () => {
+      // a MultiSig proposal is dispatched with the MultiSig as the origin, so the chain sees the
+      // MultiSig's Identity, not the Identity of the key that signs the proposal
+      const from = entityMockUtils.getNumberedPortfolioInstance({
+        did: 'multiSigDid',
+        id: new BigNumber(1),
+      });
+      const to = entityMockUtils.getNumberedPortfolioInstance({
+        did: 'someDid',
+        id: new BigNumber(2),
+      });
+
+      assetHolderLikeToAssetHolderSpy.mockReturnValueOnce(from).mockReturnValueOnce(to);
+      getAssetHolderDidSpy.mockReset();
+      getAssetHolderDidSpy.mockResolvedValueOnce('multiSigDid').mockResolvedValueOnce('someDid');
+
+      const multiSigAccount = entityMockUtils.getAccountInstance({
+        address: 'multiSigAddress',
+        getIdentity: entityMockUtils.getIdentityInstance({ did: 'multiSigDid' }),
+      });
+      mockContext.getActingAccount.mockResolvedValue(multiSigAccount);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext);
+
+      const result = await prepareStorage.call(proc, {
+        from,
+        to,
+        asset: 'SOME_ASSET',
+        amount: new BigNumber(100),
+      });
+
+      expect(result).toEqual({
+        fromHolder: from,
+        toHolder: to,
+        fromDid: 'multiSigDid',
+        toDid: 'someDid',
+        signingDid: 'multiSigDid',
+        signingAccount: 'multiSigAddress',
+      });
+    });
+
+    it('should throw an error if the acting Account has no associated Identity', async () => {
+      const from = entityMockUtils.getNumberedPortfolioInstance({
         did: 'someDid',
         id: new BigNumber(1),
       });
-      const toHolder = entityMockUtils.getAccountInstance({ address: 'someAccount' });
+      const to = entityMockUtils.getNumberedPortfolioInstance({
+        did: 'someDid',
+        id: new BigNumber(2),
+      });
 
-      getAssetHolderDidSpy.mockResolvedValue('someDid');
+      assetHolderLikeToAssetHolderSpy.mockReturnValueOnce(from).mockReturnValueOnce(to);
+
+      const actingAccount = entityMockUtils.getAccountInstance({
+        address: 'someAddress',
+        getIdentity: null,
+      });
+      mockContext.getActingAccount.mockResolvedValue(actingAccount);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext);
+
+      await expect(
+        prepareStorage.call(proc, {
+          from,
+          to,
+          asset: 'SOME_ASSET',
+          amount: new BigNumber(100),
+        })
+      ).rejects.toThrow('The acting Account does not have an associated Identity');
+    });
+  });
+
+  describe('getAuthorization', () => {
+    const args: TransferFundsParams = {
+      from: 'someAccount',
+      to: 'someOtherAccount',
+      asset: 'SOME_ASSET',
+      amount: new BigNumber(100),
+    };
+
+    let fromPortfolioHolder: Mocked<NumberedPortfolio>;
+    let toPortfolioHolder: Mocked<NumberedPortfolio>;
+
+    beforeEach(() => {
+      fromPortfolioHolder = entityMockUtils.getNumberedPortfolioInstance({
+        did: 'someDid',
+        id: new BigNumber(1),
+        isCustodiedBy: true,
+      });
+      toPortfolioHolder = entityMockUtils.getNumberedPortfolioInstance({
+        did: 'someDid',
+        id: new BigNumber(2),
+        isCustodiedBy: true,
+      });
+
+      asAssetIdSpy.mockClear();
+      asAssetIdSpy.mockResolvedValue('12341234-1234-1234-1234-123412341234');
+      stringToAssetIdSpy.mockReturnValue('rawAssetId');
+    });
+
+    it('should require the source Portfolio permission and custody, without the destination, for a same-DID transfer', async () => {
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
+        signingDid: 'someDid',
+        signingAccount: 'someAccount',
+      });
+
+      const boundFunc = getAuthorization.bind(proc);
+
+      await expect(boundFunc(args)).resolves.toEqual({
+        roles: true,
+        permissions: {
+          transactions: [TxTags.settlement.TransferFunds],
+          portfolios: [fromPortfolioHolder],
+          assets: [],
+        },
+      });
+
+      // the destination is never checked on the same-DID path, so its affirmation requirement
+      // doesn't need to be fetched
+      expect(asAssetIdSpy).not.toHaveBeenCalled();
+    });
+
+    it('should return a failure message if the signing Identity is not the custodian of the source Portfolio', async () => {
+      fromPortfolioHolder.isCustodiedBy.mockResolvedValue(false);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
+        signingDid: 'someDid',
+        signingAccount: 'someAccount',
+      });
+
+      const boundFunc = getAuthorization.bind(proc);
+
+      await expect(boundFunc(args)).resolves.toEqual({
+        roles: 'The signing Identity must be the custodian of the origin Portfolio',
+        permissions: {
+          transactions: [TxTags.settlement.TransferFunds],
+          portfolios: [fromPortfolioHolder],
+          assets: [],
+        },
+      });
+
+      expect(fromPortfolioHolder.isCustodiedBy).toHaveBeenCalledWith({ identity: 'someDid' });
+    });
+
+    it('should not require custody when the source is an Account', async () => {
+      const fromHolder = entityMockUtils.getAccountInstance({ address: 'someAccount' });
 
       const proc = procedureMockUtils.getInstance<
         TransferFundsParams,
@@ -718,33 +1027,67 @@ describe('transferFunds procedure', () => {
         Storage
       >(mockContext, {
         fromHolder,
-        toHolder,
+        toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
 
       const boundFunc = getAuthorization.bind(proc);
 
-      await expect(boundFunc()).resolves.toEqual({
+      await expect(boundFunc(args)).resolves.toEqual({
         permissions: {
           transactions: [TxTags.settlement.TransferFunds],
-          portfolios: [fromHolder],
+          portfolios: [],
           assets: [],
         },
       });
     });
 
-    it('should exclude a Portfolio toHolder owned by a different DID than the signer', async () => {
-      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(1),
-      });
+    it('should exclude a destination owned by a different Identity than the signer', async () => {
       const toHolder = entityMockUtils.getNumberedPortfolioInstance({
         did: 'otherDid',
         id: new BigNumber(2),
       });
 
-      getAssetHolderDidSpy.mockResolvedValue('otherDid');
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromPortfolioHolder,
+        toHolder,
+        fromDid: 'someDid',
+        toDid: 'otherDid',
+        signingDid: 'someDid',
+        signingAccount: 'someAccount',
+      });
+
+      const boundFunc = getAuthorization.bind(proc);
+
+      await expect(boundFunc(args)).resolves.toEqual({
+        roles: true,
+        permissions: {
+          transactions: [TxTags.settlement.TransferFunds],
+          portfolios: [fromPortfolioHolder],
+          assets: [],
+        },
+      });
+    });
+
+    it("should include a cross-DID destination owned by the signer's Identity when the receiver has to affirm", async () => {
+      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
+        did: 'otherDid',
+        id: new BigNumber(1),
+        isCustodiedBy: true,
+      });
+
+      // the receiver has opted into mandatory affirmation, so the chain affirms on their behalf
+      // and runs the destination's custody/permission checks
+      dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
+        returnValue: { isAutomatic: false },
+      });
 
       const proc = procedureMockUtils.getInstance<
         TransferFundsParams,
@@ -752,14 +1095,55 @@ describe('transferFunds procedure', () => {
         Storage
       >(mockContext, {
         fromHolder,
-        toHolder,
+        toHolder: toPortfolioHolder,
+        fromDid: 'otherDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
 
       const boundFunc = getAuthorization.bind(proc);
 
-      await expect(boundFunc()).resolves.toEqual({
+      await expect(boundFunc(args)).resolves.toEqual({
+        roles: true,
+        permissions: {
+          transactions: [TxTags.settlement.TransferFunds],
+          portfolios: [fromHolder, toPortfolioHolder],
+          assets: [],
+        },
+      });
+    });
+
+    it("should exclude a cross-DID destination owned by the signer's Identity when it is auto-affirmed", async () => {
+      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
+        did: 'otherDid',
+        id: new BigNumber(1),
+        isCustodiedBy: true,
+      });
+
+      // auto-affirmation is decided by the receiver alone, so the chain never affirms the
+      // destination and never checks it
+      dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
+        returnValue: { isAutomatic: true },
+      });
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder,
+        toHolder: toPortfolioHolder,
+        fromDid: 'otherDid',
+        toDid: 'someDid',
+        signingDid: 'someDid',
+        signingAccount: 'someAccount',
+      });
+
+      const boundFunc = getAuthorization.bind(proc);
+
+      await expect(boundFunc(args)).resolves.toEqual({
+        roles: true,
         permissions: {
           transactions: [TxTags.settlement.TransferFunds],
           portfolios: [fromHolder],
@@ -768,17 +1152,17 @@ describe('transferFunds procedure', () => {
       });
     });
 
-    it('should include a Portfolio toHolder owned by the same DID as the signer', async () => {
+    it('should exclude an Account destination from the Portfolio permissions', async () => {
       const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
+        did: 'otherDid',
         id: new BigNumber(1),
+        isCustodiedBy: true,
       });
-      const toHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'someDid',
-        id: new BigNumber(2),
-      });
+      const toHolder = entityMockUtils.getAccountInstance({ address: 'someAccount' });
 
-      getAssetHolderDidSpy.mockResolvedValue('someDid');
+      dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
+        returnValue: { isAutomatic: false },
+      });
 
       const proc = procedureMockUtils.getInstance<
         TransferFundsParams,
@@ -787,16 +1171,19 @@ describe('transferFunds procedure', () => {
       >(mockContext, {
         fromHolder,
         toHolder,
+        fromDid: 'otherDid',
+        toDid: 'someDid',
         signingDid: 'someDid',
         signingAccount: 'someAccount',
       });
 
       const boundFunc = getAuthorization.bind(proc);
 
-      await expect(boundFunc()).resolves.toEqual({
+      await expect(boundFunc(args)).resolves.toEqual({
+        roles: true,
         permissions: {
           transactions: [TxTags.settlement.TransferFunds],
-          portfolios: [fromHolder, toHolder],
+          portfolios: [fromHolder],
           assets: [],
         },
       });
