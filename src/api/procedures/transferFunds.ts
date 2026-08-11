@@ -22,7 +22,7 @@ import {
   fungibleMovementToPortfolioFund,
   nftMovementToPortfolioFund,
 } from '~/utils/conversion';
-import { asAssetId, asNftId } from '~/utils/internal';
+import { asAssetId, asNftId, filterEventRecords } from '~/utils/internal';
 import { isFungibleLegBuilder } from '~/utils/typeguards';
 
 export interface Storage {
@@ -191,8 +191,26 @@ export async function prepareTransferFunds(
   return {
     transaction: settlement.transferFunds,
     args: [rawFrom, rawTo, rawFund],
-    resolver: (receipt): Instruction | undefined =>
-      createAddInstructionResolver(context, true)(receipt)[0],
+    resolver: (receipt): Instruction | undefined => {
+      const [instruction] = createAddInstructionResolver(context, true)(receipt);
+      if (!instruction) {
+        return undefined;
+      }
+
+      // `settlement.InstructionCreated` fires whether or not the instruction is also executed
+      // inline within this same transaction (e.g. when the caller is also the receiver and both
+      // sides end up affirmed), so a settled instruction still resolves an `Instruction` above.
+      // `SettlementManuallyExecuted` only fires on that inline-execution path, so its presence
+      // means the instruction is already done rather than still pending.
+      const [executed] = filterEventRecords(
+        receipt,
+        'settlement',
+        'SettlementManuallyExecuted',
+        true
+      );
+
+      return executed ? undefined : instruction;
+    },
   };
 }
 

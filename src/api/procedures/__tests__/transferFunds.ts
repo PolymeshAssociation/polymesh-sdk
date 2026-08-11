@@ -64,6 +64,7 @@ describe('transferFunds procedure', () => {
   let asAssetIdSpy: jest.SpyInstance;
   let getOwnerSpy: jest.SpyInstance;
   let isLockedSpy: jest.SpyInstance;
+  let filterEventRecordsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -95,6 +96,7 @@ describe('transferFunds procedure', () => {
     asAssetIdSpy = jest.spyOn(utilsInternalModule, 'asAssetId');
     getOwnerSpy = jest.spyOn(Nft.prototype, 'getOwner');
     isLockedSpy = jest.spyOn(Nft.prototype, 'isLocked');
+    filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   });
 
   beforeEach(() => {
@@ -103,6 +105,8 @@ describe('transferFunds procedure', () => {
     assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someAssetHolderId');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isFungibleLegBuilderSpy.mockResolvedValue((leg: any) => 'amount' in leg);
+    // no `SettlementManuallyExecuted` event by default - the created instruction stays pending
+    filterEventRecordsSpy.mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -609,6 +613,57 @@ describe('transferFunds procedure', () => {
       expect(result.transaction).toBe(transaction);
       expect(result.args).toEqual(['rawHolder', 'rawHolder', 'rawFund']);
       await expect(callResolver(result.resolver)).resolves.toBe(instruction);
+    });
+
+    it('should resolve to undefined when a cross-DID instruction is created but also executed inline', async () => {
+      // `InstructionCreated` fires whether or not the instruction also settles within the same
+      // transaction (e.g. the caller is also the receiver and both sides end up affirmed) - only
+      // `SettlementManuallyExecuted` distinguishes an already-settled instruction from a pending one
+      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
+
+      getAssetHolderDidSpy.mockReset();
+      getAssetHolderDidSpy.mockResolvedValueOnce('someDid').mockResolvedValueOnce('otherDid');
+
+      fromPortfolioHolder.getAssetBalances.mockResolvedValue([
+        { free: new BigNumber(150) } as PortfolioBalance,
+      ]);
+
+      fungibleMovementToPortfolioFundSpy.mockResolvedValue('rawFund');
+      assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someHolderId');
+      assetHolderIdToMeshAssetHolderSpy.mockReturnValue('rawHolder');
+      const instruction = { id: new BigNumber(1) } as Instruction;
+      createAddInstructionResolverSpy.mockReturnValue(() => [instruction]);
+      filterEventRecordsSpy.mockReturnValue([
+        dsMockUtils.createMockIEvent(['someDid', dsMockUtils.createMockU64(new BigNumber(1))]),
+      ]);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: fromPortfolioHolder,
+        toHolder: toPortfolioHolder,
+        signingDid: 'someDid',
+        signingAccount: 'someAccount',
+      });
+
+      dsMockUtils.createTxMock('settlement', 'transferFunds');
+
+      const result = await prepareTransferFunds.call(proc, {
+        from: fromPortfolioHolder,
+        to: toPortfolioHolder,
+        asset,
+        amount: new BigNumber(100),
+      });
+
+      await expect(callResolver(result.resolver)).resolves.toBeUndefined();
+      expect(filterEventRecordsSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        'settlement',
+        'SettlementManuallyExecuted',
+        true
+      );
     });
   });
 
