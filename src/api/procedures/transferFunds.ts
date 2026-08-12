@@ -4,7 +4,14 @@ import BigNumber from 'bignumber.js';
 import { createAddInstructionResolver } from '~/api/procedures/addInstruction';
 import { getAssetHolderDid } from '~/api/procedures/utils';
 import { Account, Context, Instruction, Nft, PolymeshError, Procedure } from '~/internal';
-import { AssetHolder, ErrorCode, InstructionNftLeg, TransferFundsParams, TxTags } from '~/types';
+import {
+  AssetHolder,
+  ErrorCode,
+  FungibleLeg,
+  InstructionNftLeg,
+  TransferFundsParams,
+  TxTags,
+} from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   assetHolderIdToMeshAssetHolder,
@@ -29,114 +36,133 @@ export interface Storage {
 /**
  * @hidden
  */
+async function getFungibleFund(
+  context: Context,
+  storage: Storage,
+  leg: FungibleLeg,
+  memo?: string
+): Promise<PolymeshPrimitivesPortfolioFund> {
+  const { fromHolder, signingAccount } = storage;
+  const { asset, amount } = leg;
+
+  if (amount.lte(0)) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Amount should be greater than 0',
+    });
+  }
+
+  // allowances are granted key to key, so spender mode applies whenever the submitting Account
+  // isn't the source Account itself — even when both keys belong to the same DID. Portfolio
+  // sources are always authorized via custody on-chain, regardless of the owning DID
+  if (fromHolder instanceof Account && fromHolder.address !== signingAccount) {
+    // `isFungibleLegBuilder` narrows the leg to a `FungibleLeg`, whose `asset` is a
+    // `FungibleAsset` — but the parameter accepts `string | FungibleAsset`, so an Asset ID may
+    // still be there at runtime and has to be resolved before any of its methods can be used
+    const fungibleAsset = await asFungibleAsset(asset, context);
+    const allowance = await fungibleAsset.getAllowance({
+      owner: fromHolder,
+      spender: signingAccount,
+    });
+
+    if (allowance.lt(amount)) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Spender has insufficient allowance to cover the transfer',
+        data: {
+          allowance,
+        },
+      });
+    }
+  }
+
+  const [balance] = await fromHolder.getAssetBalances({ assets: [asset] });
+  if (!balance || balance.free.lt(amount)) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Sender has insufficient balance to cover the transfer',
+      data: {
+        balance,
+      },
+    });
+  }
+
+  return fungibleMovementToPortfolioFund(
+    { asset, amount, ...(memo !== undefined && { memo }) },
+    context
+  );
+}
+
+/**
+ * @hidden
+ */
+async function getNftFund(
+  context: Context,
+  storage: Storage,
+  leg: InstructionNftLeg,
+  memo?: string
+): Promise<PolymeshPrimitivesPortfolioFund> {
+  const { fromHolder, signingAccount } = storage;
+  const { asset, nfts } = leg;
+
+  // NFTs have no allowance mechanism, so only the owning key (or the owning identity's
+  // custodied Portfolio) can authorize their transfer
+  if (fromHolder instanceof Account && fromHolder.address !== signingAccount) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message:
+        'Only the owning key can transfer NFTs from an Account. Allowances do not apply to NFTs',
+    });
+  }
+
+  const assetId = await asAssetId(asset, context);
+
+  const unavailableNfts: BigNumber[] = [];
+  await Promise.all(
+    nfts.map(async nftId => {
+      const id = asNftId(nftId);
+      const nft = new Nft({ id, assetId }, context);
+
+      const owner = await nft.getOwner();
+      if (!owner?.isEqual(fromHolder)) {
+        unavailableNfts.push(id);
+        return;
+      }
+
+      const isLocked = await nft.isLocked();
+      if (isLocked) {
+        unavailableNfts.push(id);
+      }
+    })
+  );
+
+  if (unavailableNfts.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Some of the NFTs are not owned by the sender, are locked, or do not exist',
+      data: { unavailableNfts },
+    });
+  }
+
+  return nftMovementToPortfolioFund({ asset, nfts, ...(memo !== undefined && { memo }) }, context);
+}
+
+/**
+ * @hidden
+ */
 export async function getFund(
   context: Context,
   args: TransferFundsParams,
   storage: Storage
 ): Promise<PolymeshPrimitivesPortfolioFund> {
   const { memo, ...leg } = args;
-  const { fromHolder, signingAccount } = storage;
   const isFungible = await isFungibleLegBuilder(leg, context);
 
-  let rawFund: PolymeshPrimitivesPortfolioFund;
   if (isFungible(leg)) {
-    const { asset, amount } = leg;
-
-    if (amount.lte(0)) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'Amount should be greater than 0',
-      });
-    }
-
-    // allowances are granted key to key, so spender mode applies whenever the submitting Account
-    // isn't the source Account itself — even when both keys belong to the same DID. Portfolio
-    // sources are always authorized via custody on-chain, regardless of the owning DID
-    if (fromHolder instanceof Account && fromHolder.address !== signingAccount) {
-      // `isFungibleLegBuilder` narrows the leg to a `FungibleLeg`, whose `asset` is a
-      // `FungibleAsset` — but the parameter accepts `string | FungibleAsset`, so an Asset ID may
-      // still be there at runtime and has to be resolved before any of its methods can be used
-      const fungibleAsset = await asFungibleAsset(asset, context);
-      const allowance = await fungibleAsset.getAllowance({
-        owner: fromHolder,
-        spender: signingAccount,
-      });
-
-      if (allowance.lt(amount)) {
-        throw new PolymeshError({
-          code: ErrorCode.UnmetPrerequisite,
-          message: 'Spender has insufficient allowance to cover the transfer',
-          data: {
-            allowance,
-          },
-        });
-      }
-    }
-
-    const [balance] = await fromHolder.getAssetBalances({ assets: [asset] });
-    if (!balance || balance.free.lt(amount)) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'Sender has insufficient balance to cover the transfer',
-        data: {
-          balance,
-        },
-      });
-    }
-
-    rawFund = await fungibleMovementToPortfolioFund(
-      { asset, amount, ...(memo !== undefined && { memo }) },
-      context
-    );
-  } else {
-    const { asset, nfts } = leg as InstructionNftLeg;
-
-    // NFTs have no allowance mechanism, so only the owning key (or the owning identity's
-    // custodied Portfolio) can authorize their transfer
-    if (fromHolder instanceof Account && fromHolder.address !== signingAccount) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message:
-          'Only the owning key can transfer NFTs from an Account. Allowances do not apply to NFTs',
-      });
-    }
-
-    const assetId = await asAssetId(asset, context);
-
-    const unavailableNfts: BigNumber[] = [];
-    await Promise.all(
-      nfts.map(async nftId => {
-        const id = asNftId(nftId);
-        const nft = new Nft({ id, assetId }, context);
-
-        const owner = await nft.getOwner();
-        if (!owner || !owner.isEqual(fromHolder)) {
-          unavailableNfts.push(id);
-          return;
-        }
-
-        const isLocked = await nft.isLocked();
-        if (isLocked) {
-          unavailableNfts.push(id);
-        }
-      })
-    );
-
-    if (unavailableNfts.length) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'Some of the NFTs are not owned by the sender, are locked, or do not exist',
-        data: { unavailableNfts },
-      });
-    }
-
-    rawFund = await nftMovementToPortfolioFund(
-      { asset, nfts, ...(memo !== undefined && { memo }) },
-      context
-    );
+    return getFungibleFund(context, storage, leg, memo);
   }
 
-  return rawFund;
+  return getNftFund(context, storage, leg as InstructionNftLeg, memo);
 }
 
 /**
