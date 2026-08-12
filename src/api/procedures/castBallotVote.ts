@@ -191,14 +191,11 @@ export async function prepareCastBallotVote(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params, void>,
-  { asset }: Params
-): ProcedureAuthorization {
+export function getAuthorization(this: Procedure<Params, void>): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.corporateBallot.Vote],
-      assets: [asset],
+      assets: [],
       portfolios: [],
     },
   };

@@ -239,16 +239,11 @@ describe('castBallotVote procedure', () => {
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       const boundFunc = getAuthorization.bind(proc);
-      const args = {
-        asset,
-        ballot,
-        votes: [[{ fallback: new BigNumber(0), power: new BigNumber(1) }]],
-      } as Params;
 
-      expect(boundFunc(args)).toEqual({
+      expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.corporateBallot.Vote],
-          assets: [asset],
+          assets: [],
           portfolios: [],
         },
       });
