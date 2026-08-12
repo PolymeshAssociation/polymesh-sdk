@@ -216,7 +216,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
         multiSigProposalVotes: { nodes: signerVotes },
       },
     } = await context.queryMiddleware<Ensured<Query, 'multiSigProposalVotes'>>(
-      multiSigProposalVotesQuery(context.isSqIdPadded, {
+      multiSigProposalVotesQuery({
         proposalId: `${address}/${id.toString()}`,
       })
     );
@@ -254,7 +254,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
     } = await context.queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
-      multiSigProposalQuery(context.isSqIdPadded, {
+      multiSigProposalQuery({
         multisigId: address,
         proposalId: id.toNumber(),
       })

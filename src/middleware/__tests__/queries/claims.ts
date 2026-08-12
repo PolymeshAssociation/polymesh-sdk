@@ -42,13 +42,12 @@ describe('claimsQuery', () => {
       start: 0,
     };
 
-    let result = claimsQuery(false, variables);
+    let result = claimsQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
     result = claimsQuery(
-      false,
       { ...variables, includeExpired: false },
       new BigNumber(1),
       new BigNumber(0)
@@ -65,7 +64,7 @@ describe('claimsQuery', () => {
   });
 
   it('should not include undefined values in the variables', () => {
-    const result = claimsQuery(false, { includeExpired: true, customClaimTypeIds: ['123', '456'] });
+    const result = claimsQuery({ includeExpired: true, customClaimTypeIds: ['123', '456'] });
     expect(result.variables).toEqual({
       includeExpired: true,
       size: DEFAULT_GQL_PAGE_SIZE,
@@ -82,7 +81,7 @@ describe('trustedClaimIssuerQuery', () => {
       assetId: 'SOME_TICKER',
     };
 
-    const result = trustedClaimIssuerQuery(false, variables);
+    const result = trustedClaimIssuerQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

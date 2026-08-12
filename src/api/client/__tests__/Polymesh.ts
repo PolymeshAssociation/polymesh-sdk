@@ -415,7 +415,6 @@ describe('Polymesh Class', () => {
         },
       });
       const context = dsMockUtils.getContextInstance();
-      context.isSqIdPadded = false;
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransactionBatch<
         [void, void]

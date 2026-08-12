@@ -119,7 +119,7 @@ describe('AssetPermissions class', () => {
       };
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
 
-      dsMockUtils.createApolloQueryMock(tickerExternalAgentsQuery(false, variables), {
+      dsMockUtils.createApolloQueryMock(tickerExternalAgentsQuery(variables), {
         tickerExternalAgents: {
           nodes: [
             {
@@ -144,7 +144,7 @@ describe('AssetPermissions class', () => {
         assetId: assetIdHex,
       };
 
-      dsMockUtils.createApolloQueryMock(tickerExternalAgentsQuery(false, variables), {
+      dsMockUtils.createApolloQueryMock(tickerExternalAgentsQuery(variables), {
         tickerExternalAgents: { nodes: [] },
       });
       const result = await assetPermissions.enabledAt({ asset });
@@ -496,7 +496,6 @@ describe('AssetPermissions class', () => {
 
       dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActionsQuery(
-          false,
           {
             assetId: assetIdHex,
             callerId: did,
@@ -543,7 +542,7 @@ describe('AssetPermissions class', () => {
       ]);
 
       dsMockUtils.createApolloQueryMock(
-        tickerExternalAgentActionsQuery(false, {
+        tickerExternalAgentActionsQuery({
           assetId: assetIdHex,
           callerId: did,
         }),

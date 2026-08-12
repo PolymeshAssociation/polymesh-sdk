@@ -482,7 +482,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
-      instructionsQuery(context.isSqIdPadded, {
+      instructionsQuery({
         id: id.toString(),
       })
     );
@@ -647,7 +647,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       } = await context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
         instructionAffirmationsQuery(
-          context.isSqIdPadded,
           {
             instructionId: id.toString(),
           },
@@ -1014,7 +1013,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructionEvents'>>(
       instructionEventsQuery(
-        context.isSqIdPadded,
         {
           event,
           instructionId: id.toString(),
@@ -1116,7 +1114,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       ] = await Promise.all([
         this.getInstructionFromMiddleware(),
         context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
-          instructionAffirmationsQuery(context.isSqIdPadded, {
+          instructionAffirmationsQuery({
             instructionId: id.toString(),
             isMediator: true,
           })
@@ -1191,7 +1189,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           instructionAffirmations: { nodes: offChainAffirmations },
         },
       } = await context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
-        offChainAffirmationsQuery(context.isSqIdPadded, {
+        offChainAffirmationsQuery({
           instructionId: id.toString(),
         })
       );

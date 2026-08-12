@@ -269,7 +269,6 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'investments'>>(
       investmentsQuery(
-        context.isSqIdPadded,
         {
           stoId: id.toNumber(),
           offeringAssetId: middlewareAssetId,

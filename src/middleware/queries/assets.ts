@@ -50,19 +50,16 @@ export function assetQuery(
  * Get asset held by a DID
  */
 export function assetHoldersQuery(
-  isSqIdPadded: boolean,
   filters: QueryArgs<AssetHolder, 'identityId'>,
   size?: BigNumber,
   start?: BigNumber,
   orderBy = AssetHoldersOrderBy.AssetIdAsc
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
-  if (isSqIdPadded) {
-    if (orderBy === AssetHoldersOrderBy.CreatedAtAsc) {
-      orderBy = AssetHoldersOrderBy.CreatedBlockIdAsc;
-    }
-    if (orderBy === AssetHoldersOrderBy.CreatedAtDesc) {
-      orderBy = AssetHoldersOrderBy.CreatedBlockIdDesc;
-    }
+  if (orderBy === AssetHoldersOrderBy.CreatedAtAsc) {
+    orderBy = AssetHoldersOrderBy.CreatedBlockIdAsc;
+  }
+  if (orderBy === AssetHoldersOrderBy.CreatedAtDesc) {
+    orderBy = AssetHoldersOrderBy.CreatedBlockIdDesc;
   }
 
   const query = gql`
@@ -99,19 +96,16 @@ export function assetHoldersQuery(
  * Get NFTs held by a DID
  */
 export function nftHoldersQuery(
-  isSqIdPadded: boolean,
   filters: QueryArgs<NftHolder, 'identityId'>,
   size?: BigNumber,
   start?: BigNumber,
   orderBy = NftHoldersOrderBy.AssetIdAsc
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'identityId'>>> {
-  if (isSqIdPadded) {
-    if (orderBy === NftHoldersOrderBy.CreatedAtAsc) {
-      orderBy = NftHoldersOrderBy.CreatedBlockIdAsc;
-    }
-    if (orderBy === NftHoldersOrderBy.CreatedAtDesc) {
-      orderBy = NftHoldersOrderBy.CreatedBlockIdDesc;
-    }
+  if (orderBy === NftHoldersOrderBy.CreatedAtAsc) {
+    orderBy = NftHoldersOrderBy.CreatedBlockIdAsc;
+  }
+  if (orderBy === NftHoldersOrderBy.CreatedAtDesc) {
+    orderBy = NftHoldersOrderBy.CreatedBlockIdDesc;
   }
 
   const query = gql`
@@ -146,14 +140,11 @@ export function nftHoldersQuery(
  * Get the balance history for an Asset
  */
 export function assetTransactionQuery(
-  paddedIds: boolean,
   filters: QueryArgs<AssetTransaction, 'assetId'>,
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
-  const orderBy = paddedIds
-    ? `${AssetTransactionsOrderBy.CreatedBlockIdAsc}`
-    : `${AssetTransactionsOrderBy.CreatedAtAsc}, ${AssetTransactionsOrderBy.CreatedBlockIdAsc}`;
+  const orderBy = `${AssetTransactionsOrderBy.CreatedBlockIdAsc}`;
 
   const query = gql`
     query AssetTransactionQuery($assetId: String!, $size: Int, $start: Int) {

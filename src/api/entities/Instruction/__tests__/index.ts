@@ -574,7 +574,7 @@ describe('Instruction class', () => {
           memo,
         };
         dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
+          instructionsQuery({
             id: id.toString(),
           }),
           {
@@ -600,7 +600,7 @@ describe('Instruction class', () => {
         expect(result).toEqual(expect.objectContaining(expectedDetails));
 
         dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
+          instructionsQuery({
             id: id.toString(),
           }),
           {
@@ -624,7 +624,7 @@ describe('Instruction class', () => {
         );
 
         dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
+          instructionsQuery({
             id: id.toString(),
           }),
           {
@@ -650,7 +650,7 @@ describe('Instruction class', () => {
         );
 
         dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
+          instructionsQuery({
             id: id.toString(),
           }),
           {
@@ -677,7 +677,7 @@ describe('Instruction class', () => {
         );
 
         dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
+          instructionsQuery({
             id: id.toString(),
           }),
           {
@@ -702,7 +702,7 @@ describe('Instruction class', () => {
         );
 
         dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
+          instructionsQuery({
             id: id.toString(),
           }),
           {
@@ -723,7 +723,7 @@ describe('Instruction class', () => {
         expect(result.memo).toBeNull();
 
         dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
+          instructionsQuery({
             id: id.toString(),
           }),
           {
@@ -745,7 +745,7 @@ describe('Instruction class', () => {
       });
 
       it('should throw an error if an Instruction is not yet processed by middleware', () => {
-        dsMockUtils.createApolloQueryMock(instructionsQuery(false, { id: id.toString() }), {
+        dsMockUtils.createApolloQueryMock(instructionsQuery({ id: id.toString() }), {
           instructions: { nodes: [] },
         });
 
@@ -1111,7 +1111,7 @@ describe('Instruction class', () => {
         const start = new BigNumber(0);
         const size = new BigNumber(1);
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery(false, { instructionId: id.toString() }, size, start),
+          instructionAffirmationsQuery({ instructionId: id.toString() }, size, start),
           {
             instructionAffirmations: {
               nodes: [
@@ -1137,7 +1137,7 @@ describe('Instruction class', () => {
         expect(count).toEqual(new BigNumber(1));
 
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery(false, { instructionId: id.toString() }),
+          instructionAffirmationsQuery({ instructionId: id.toString() }),
           {
             instructionAffirmations: {
               nodes: [],
@@ -1158,7 +1158,7 @@ describe('Instruction class', () => {
         const size = new BigNumber(1);
         const accountAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery(false, { instructionId: id.toString() }, size, start),
+          instructionAffirmationsQuery({ instructionId: id.toString() }, size, start),
           {
             instructionAffirmations: {
               nodes: [
@@ -1757,7 +1757,6 @@ describe('Instruction class', () => {
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionExecuted,
               instructionId: id.toString(),
@@ -1773,7 +1772,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionFailed,
               instructionId: id.toString(),
@@ -1789,7 +1787,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
               instructionId: id.toString(),
@@ -1805,7 +1802,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
@@ -1821,7 +1817,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionLocked,
               instructionId: id.toString(),
@@ -1875,7 +1870,6 @@ describe('Instruction class', () => {
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionExecuted,
               instructionId: id.toString(),
@@ -1891,7 +1885,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionFailed,
               instructionId: id.toString(),
@@ -1907,7 +1900,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
               instructionId: id.toString(),
@@ -1923,7 +1915,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
@@ -1939,7 +1930,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionLocked,
               instructionId: id.toString(),
@@ -1993,7 +1983,6 @@ describe('Instruction class', () => {
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionExecuted,
               instructionId: id.toString(),
@@ -2009,7 +1998,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionFailed,
               instructionId: id.toString(),
@@ -2025,7 +2013,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
               instructionId: id.toString(),
@@ -2041,7 +2028,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
@@ -2057,7 +2043,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionLocked,
               instructionId: id.toString(),
@@ -2082,7 +2067,6 @@ describe('Instruction class', () => {
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionExecuted,
               instructionId: id.toString(),
@@ -2098,7 +2082,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionFailed,
               instructionId: id.toString(),
@@ -2114,7 +2097,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
               instructionId: id.toString(),
@@ -2130,7 +2112,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
@@ -2146,7 +2127,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionLocked,
               instructionId: id.toString(),
@@ -2200,7 +2180,6 @@ describe('Instruction class', () => {
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionExecuted,
               instructionId: id.toString(),
@@ -2216,7 +2195,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionFailed,
               instructionId: id.toString(),
@@ -2232,7 +2210,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
               instructionId: id.toString(),
@@ -2248,7 +2225,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
@@ -2264,7 +2240,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionLocked,
               instructionId: id.toString(),
@@ -2310,7 +2285,6 @@ describe('Instruction class', () => {
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionExecuted,
               instructionId: id.toString(),
@@ -2326,7 +2300,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionFailed,
               instructionId: id.toString(),
@@ -2342,7 +2315,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
               instructionId: id.toString(),
@@ -2358,7 +2330,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
@@ -2374,7 +2345,6 @@ describe('Instruction class', () => {
         },
         {
           query: instructionEventsQuery(
-            false,
             {
               event: InstructionEventEnum.InstructionLocked,
               instructionId: id.toString(),
@@ -2485,7 +2455,7 @@ describe('Instruction class', () => {
     describe('querying the middleware', () => {
       it('should return the instruction mediators with affirmation info', async () => {
         dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
+          instructionsQuery({
             id: id.toString(),
           }),
           {
@@ -2500,7 +2470,7 @@ describe('Instruction class', () => {
         );
         const expiry = new Date('2050/01/01');
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery(false, {
+          instructionAffirmationsQuery({
             instructionId: id.toString(),
             isMediator: true,
           }),
@@ -2562,7 +2532,7 @@ describe('Instruction class', () => {
     describe('querying the middleware', () => {
       it('should return the affirmation status of offchain legs', async () => {
         dsMockUtils.createApolloQueryMock(
-          offChainAffirmationsQuery(false, {
+          offChainAffirmationsQuery({
             instructionId: id.toString(),
           }),
           {

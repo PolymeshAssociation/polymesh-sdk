@@ -169,7 +169,7 @@ export class FungibleAsset extends BaseAsset {
         tickerExternalAgentHistories: { nodes },
       },
     } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistories'>>(
-      tickerExternalAgentHistoryQuery(context.isSqIdPadded, {
+      tickerExternalAgentHistoryQuery({
         assetId: middlewareAssetId,
       })
     );
@@ -205,7 +205,6 @@ export class FungibleAsset extends BaseAsset {
       },
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
-        context.isSqIdPadded,
         {
           assetId: middlewareAssetId,
         },

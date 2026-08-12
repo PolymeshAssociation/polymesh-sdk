@@ -14,7 +14,7 @@ describe('multiSigProposalQuery', () => {
       proposalId: 1,
     };
 
-    const result = multiSigProposalQuery(false, variables);
+    const result = multiSigProposalQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
@@ -27,7 +27,7 @@ describe('multiSigProposalVotesQuery', () => {
       proposalId: 'multiSigAddress/1',
     };
 
-    const result = multiSigProposalVotesQuery(false, variables);
+    const result = multiSigProposalVotesQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

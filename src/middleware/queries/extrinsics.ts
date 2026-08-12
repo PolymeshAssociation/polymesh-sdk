@@ -55,7 +55,6 @@ type ExtrinsicArgs = 'blockId' | 'address' | 'moduleId' | 'callId' | 'success';
  * Get transactions
  */
 export function extrinsicsByArgs(
-  isSqIdPadded: boolean,
   filters: QueryArgs<Extrinsic, ExtrinsicArgs>,
   size?: BigNumber,
   start?: BigNumber,
@@ -67,13 +66,11 @@ export function extrinsicsByArgs(
     success: 'Int',
   });
 
-  if (isSqIdPadded) {
-    if (orderBy === ExtrinsicsOrderBy.CreatedAtAsc) {
-      orderBy = ExtrinsicsOrderBy.BlockIdAsc;
-    }
-    if (orderBy === ExtrinsicsOrderBy.CreatedAtDesc) {
-      orderBy = ExtrinsicsOrderBy.BlockIdDesc;
-    }
+  if (orderBy === ExtrinsicsOrderBy.CreatedAtAsc) {
+    orderBy = ExtrinsicsOrderBy.BlockIdAsc;
+  }
+  if (orderBy === ExtrinsicsOrderBy.CreatedAtDesc) {
+    orderBy = ExtrinsicsOrderBy.BlockIdDesc;
   }
 
   const query = gql`

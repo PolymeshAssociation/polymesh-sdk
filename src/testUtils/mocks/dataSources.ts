@@ -810,7 +810,6 @@ const defaultContextOptions: ContextOptions = {
     targetHeight: new BigNumber(10000),
     indexerHealthy: true,
     sqVersion: '1.0.0',
-    paddedIds: false,
   },
   sentAuthorizations: {
     data: [{} as AuthorizationRequest],

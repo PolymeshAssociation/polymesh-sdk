@@ -66,7 +66,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
         },
       },
     } = await context.queryMiddleware<Ensured<Query, 'trustedClaimIssuers'>>(
-      trustedClaimIssuerQuery(context.isSqIdPadded, {
+      trustedClaimIssuerQuery({
         assetId: middlewareAssetId,
         issuer,
       })

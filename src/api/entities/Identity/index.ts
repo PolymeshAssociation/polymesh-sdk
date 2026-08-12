@@ -408,7 +408,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'assetHolders'>>(
       assetHoldersQuery(
-        context.isSqIdPadded,
         {
           identityId: did,
         },
@@ -455,7 +454,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'nftHolders'>>(
       nftHoldersQuery(
-        context.isSqIdPadded,
         {
           identityId: did,
         },

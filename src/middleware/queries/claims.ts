@@ -112,16 +112,13 @@ export function claimsGroupingQuery(
  * Get all claims that a given target DID has, with a given scope and from one of the given trustedClaimIssuers
  */
 export function claimsQuery(
-  paddedIds: boolean,
   filters: ClaimsQueryFilter,
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<ClaimsQueryFilter>> {
   const { args, filter } = createClaimsFilters(filters);
 
-  const orderBy = paddedIds
-    ? `${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}`
-    : `${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedAtAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}`;
+  const orderBy = `${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}`;
 
   const query = gql`
     query ClaimsQuery
@@ -166,12 +163,9 @@ export function claimsQuery(
  * Get an trusted claim issuer event for an asset and an issuer
  */
 export function trustedClaimIssuerQuery(
-  paddedIds: boolean,
   variables: QueryArgs<TrustedClaimIssuer, 'issuer' | 'assetId'>
 ): QueryOptions<QueryArgs<TrustedClaimIssuer, 'issuer' | 'assetId'>> {
-  const orderBy = paddedIds
-    ? `${TrustedClaimIssuersOrderBy.CreatedBlockIdDesc}`
-    : `${TrustedClaimIssuersOrderBy.CreatedAtDesc}, ${TrustedClaimIssuersOrderBy.CreatedBlockIdDesc}`;
+  const orderBy = `${TrustedClaimIssuersOrderBy.CreatedBlockIdDesc}`;
 
   const query = gql`
     query TrustedClaimIssuerQuery($assetId: String!, $issuer: String!) {

@@ -14,7 +14,6 @@ type EventArgs = 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2
  * Get a single event by any of its indexed arguments
  */
 export function eventsByArgs(
-  paddedIds: boolean,
   filters: QueryArgs<Event, EventArgs>,
   size?: BigNumber,
   start?: BigNumber
@@ -24,9 +23,7 @@ export function eventsByArgs(
     eventId: 'EventIdEnum',
   });
 
-  const orderBy = paddedIds
-    ? `${EventsOrderBy.BlockIdAsc}`
-    : `${EventsOrderBy.CreatedAtAsc}, ${EventsOrderBy.BlockIdAsc}`;
+  const orderBy = `${EventsOrderBy.BlockIdAsc}`;
 
   const query = gql`
     query EventsQuery

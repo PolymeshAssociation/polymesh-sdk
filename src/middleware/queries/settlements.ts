@@ -103,7 +103,6 @@ type InstructionPartiesVariables = Partial<
  * Query to get event details about instruction events
  */
 export function instructionEventsQuery(
-  paddedIds: boolean,
   filters: QueryArgs<InstructionEvent, 'event' | 'instructionId'>,
   size?: BigNumber,
   start?: BigNumber
@@ -112,11 +111,7 @@ export function instructionEventsQuery(
     event: 'InstructionEventEnum',
   });
 
-  let orderBy = `[${InstructionEventsOrderBy.CreatedAtDesc}, ${InstructionEventsOrderBy.CreatedBlockIdDesc}]`;
-
-  if (paddedIds) {
-    orderBy = `[${InstructionEventsOrderBy.CreatedEventIdDesc}]`;
-  }
+  const orderBy = `[${InstructionEventsOrderBy.CreatedEventIdDesc}]`;
 
   const query = gql`
     query InstructionEventsQuery
@@ -169,7 +164,6 @@ export function instructionEventsQuery(
  * Get a specific instruction within a venue for a specific event
  */
 export function instructionsQuery(
-  paddedIds: boolean,
   filters: QueryArgs<Instruction, InstructionArgs>,
   size?: BigNumber,
   start?: BigNumber
@@ -178,11 +172,7 @@ export function instructionsQuery(
     status: 'InstructionStatusEnum',
   });
 
-  let orderBy = `[${InstructionsOrderBy.CreatedAtDesc}, ${InstructionsOrderBy.IdDesc}]`;
-
-  if (paddedIds) {
-    orderBy = `[${InstructionsOrderBy.CreatedEventIdDesc}]`;
-  }
+  const orderBy = `[${InstructionsOrderBy.CreatedEventIdDesc}]`;
 
   const query = gql`
     query InstructionsQuery
@@ -216,7 +206,6 @@ type InstructionAffirmationArgs = 'instructionId' | 'status' | 'identity' | 'isM
  * Get a specific instruction within a venue for a specific event
  */
 export function instructionAffirmationsQuery(
-  paddedIds: boolean,
   filters: QueryArgs<InstructionAffirmation, InstructionAffirmationArgs>,
   size?: BigNumber,
   start?: BigNumber
@@ -226,9 +215,7 @@ export function instructionAffirmationsQuery(
     isMediator: 'Boolean',
   });
 
-  const orderBy = paddedIds
-    ? `[${InstructionAffirmationsOrderBy.CreatedBlockIdDesc}]`
-    : `[${InstructionAffirmationsOrderBy.CreatedAtAsc}, ${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}]`;
+  const orderBy = `[${InstructionAffirmationsOrderBy.CreatedBlockIdDesc}]`;
 
   const query = gql`
     query InstructionAffirmationsQuery
@@ -264,12 +251,9 @@ export function instructionAffirmationsQuery(
  * Get a specific instruction within a venue for a specific event
  */
 export function offChainAffirmationsQuery(
-  paddedIds: boolean,
   filters: QueryArgs<InstructionAffirmation, 'instructionId'>
 ): QueryOptions<QueryArgs<InstructionAffirmation, 'instructionId'>> {
-  const orderBy = paddedIds
-    ? `${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}`
-    : `${InstructionAffirmationsOrderBy.CreatedAtAsc}, ${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}`;
+  const orderBy = `${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}`;
 
   const query = gql`
     query InstructionAffirmationsQuery($instructionId: String!) {
@@ -436,11 +420,7 @@ export async function historicalInstructionsQuery(
     context
   );
 
-  const paddedIds = context.isSqIdPadded;
-
-  const orderBy = paddedIds
-    ? `[${InstructionsOrderBy.CreatedBlockIdAsc}]`
-    : `[${InstructionsOrderBy.CreatedAtAsc}, ${InstructionsOrderBy.IdAsc}]`;
+  const orderBy = `[${InstructionsOrderBy.CreatedBlockIdAsc}]`;
 
   const query = gql`
     query InstructionsQuery
@@ -529,10 +509,8 @@ function createLegFilters(
 /**
  *  @hidden
  */
-function buildSettlementsQuery(paddedIds: boolean, args: string, filter: string): DocumentNode {
-  const orderBy = paddedIds
-    ? `[${LegsOrderBy.CreatedBlockIdAsc}]`
-    : `[${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]`;
+function buildSettlementsQuery(args: string, filter: string): DocumentNode {
+  const orderBy = `[${LegsOrderBy.CreatedBlockIdAsc}]`;
 
   return gql`
   query SettlementsQuery
@@ -558,11 +536,10 @@ function buildSettlementsQuery(paddedIds: boolean, args: string, filter: string)
  * Get Settlements where a Portfolio is involved
  */
 export function settlementsQuery(
-  paddedIds: boolean,
   filters: QuerySettlementFilters
 ): QueryOptions<QueryArgs<Leg, LegArgs>> {
   const { args, filter, variables } = createLegFilters(filters);
-  const query = buildSettlementsQuery(paddedIds, args, filter);
+  const query = buildSettlementsQuery(args, filter);
 
   return {
     query,
@@ -576,11 +553,10 @@ export function settlementsQuery(
  * Get Settlements for all Portfolios
  */
 export function settlementsForAllPortfoliosQuery(
-  paddedIds: boolean,
   filters: Omit<QuerySettlementFilters, 'portfolioId'>
 ): QueryOptions<QueryArgs<Leg, LegArgs>> {
   const { args, filter, variables } = createLegFilters(filters, true);
-  const query = buildSettlementsQuery(paddedIds, args, filter);
+  const query = buildSettlementsQuery(args, filter);
 
   return {
     query,

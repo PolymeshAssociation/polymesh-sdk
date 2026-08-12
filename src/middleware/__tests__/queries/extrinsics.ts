@@ -17,7 +17,7 @@ describe('extrinsicByHash', () => {
 
 describe('extrinsicsByArgs', () => {
   it('should pass the variables to the grapqhl query', () => {
-    let result = extrinsicsByArgs(false, {});
+    let result = extrinsicsByArgs({});
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({ size: DEFAULT_GQL_PAGE_SIZE, start: 0 });
@@ -32,7 +32,7 @@ describe('extrinsicsByArgs', () => {
       start: 0,
     };
 
-    result = extrinsicsByArgs(false, variables);
+    result = extrinsicsByArgs(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

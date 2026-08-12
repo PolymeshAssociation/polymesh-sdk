@@ -370,7 +370,6 @@ export class NftCollection extends BaseAsset {
       },
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
-        context.isSqIdPadded,
         {
           assetId: id,
         },

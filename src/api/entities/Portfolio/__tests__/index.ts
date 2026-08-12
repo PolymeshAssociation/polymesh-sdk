@@ -761,7 +761,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery(false, {
+          query: settlementsQuery({
             identityId: did,
             portfolioId: id,
             address: account,
@@ -772,7 +772,7 @@ describe('Portfolio class', () => {
           },
         },
         {
-          query: portfolioMovementsQuery(false, {
+          query: portfolioMovementsQuery({
             identityId: did,
             portfolioId: id,
             address: account,
@@ -815,7 +815,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery(false, {
+          query: settlementsQuery({
             identityId: did,
             assetId: middlewareAssetId,
           }),
@@ -826,7 +826,7 @@ describe('Portfolio class', () => {
           },
         },
         {
-          query: portfolioMovementsQuery(false, {
+          query: portfolioMovementsQuery({
             identityId: did,
             assetId: middlewareAssetId,
           }),
@@ -949,7 +949,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery(false, {
+          query: settlementsQuery({
             identityId: did,
             portfolioId: undefined,
             address: account,
@@ -960,7 +960,7 @@ describe('Portfolio class', () => {
           },
         },
         {
-          query: portfolioMovementsQuery(false, {
+          query: portfolioMovementsQuery({
             identityId: did,
             portfolioId: undefined,
             address: account,
@@ -1003,7 +1003,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery(false, {
+          query: settlementsQuery({
             identityId: did,
             assetId: middlewareAssetId,
           }),
@@ -1014,7 +1014,7 @@ describe('Portfolio class', () => {
           },
         },
         {
-          query: portfolioMovementsQuery(false, {
+          query: portfolioMovementsQuery({
             identityId: did,
             assetId: middlewareAssetId,
           }),
@@ -1073,7 +1073,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery(false, {
+          query: settlementsQuery({
             identityId: did,
             portfolioId: id,
           }),
@@ -1084,7 +1084,7 @@ describe('Portfolio class', () => {
           },
         },
         {
-          query: portfolioMovementsQuery(false, {
+          query: portfolioMovementsQuery({
             identityId: did,
             portfolioId: id,
           }),

@@ -302,7 +302,6 @@ describe('Offering class', () => {
 
       dsMockUtils.createApolloQueryMock(
         investmentsQuery(
-          false,
           {
             stoId: id.toNumber(),
             offeringAssetId: assetId,
@@ -327,7 +326,7 @@ describe('Offering class', () => {
       expect(data[0]!.investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
 
       dsMockUtils.createApolloQueryMock(
-        investmentsQuery(false, {
+        investmentsQuery({
           stoId: id.toNumber(),
           offeringAssetId: assetId,
         }),

@@ -165,7 +165,7 @@ export async function prepareModifyClaims(
     const { did: currentDid } = await context.getSigningIdentity();
 
     const result = await context.queryMiddleware<Ensured<Query, 'claims'>>(
-      claimsQuery(context.isSqIdPadded, {
+      claimsQuery({
         dids: allTargets,
         trustedClaimIssuers: [currentDid],
         includeExpired: true,

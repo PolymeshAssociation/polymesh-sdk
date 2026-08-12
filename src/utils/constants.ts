@@ -112,7 +112,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '8.0';
+export const SUPPORTED_SPEC_VERSION_RANGE = '8.0 || 8.1';
 
 /**
  * The Polymesh private chain spec version range that is compatible with this version of the SDK
@@ -152,11 +152,6 @@ export const DEFAULT_CDD_ID = '0x00000000000000000000000000000000000000000000000
  * Minimum version of Middleware V2 GraphQL Service (SubQuery) that is compatible with this version of the SDK
  */
 export const MINIMUM_SQ_VERSION = 'v19.6.0-alpha.2 ';
-
-/**
- * The first version of Subquery that pads IDs for proper lexical order
- */
-export const MINIMUM_SQ_PADDED_ID_VERSION = '19.0.0';
 
 /**
  * Global metadata key used to conventionally register an NFT image

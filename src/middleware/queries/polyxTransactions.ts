@@ -54,16 +54,13 @@ function createPolyxTransactionFilters({ identityId, addresses }: QueryPolyxTran
  * Get POLYX transactions where an Account or an Identity is involved
  */
 export function polyxTransactionsQuery(
-  paddedIds: boolean,
   filters: QueryPolyxTransactionFilters,
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<QueryPolyxTransactionFilters>> {
   const { args, filter, variables } = createPolyxTransactionFilters(filters);
 
-  const orderBy = paddedIds
-    ? `${PolyxTransactionsOrderBy.CreatedBlockIdAsc}`
-    : `${PolyxTransactionsOrderBy.CreatedAtAsc}, ${PolyxTransactionsOrderBy.CreatedBlockIdAsc}`;
+  const orderBy = `${PolyxTransactionsOrderBy.CreatedBlockIdAsc}`;
 
   const query = gql`
     query PolyxTransactionsQuery

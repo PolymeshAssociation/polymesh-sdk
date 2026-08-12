@@ -30,12 +30,12 @@ describe('assetHoldersQuery', () => {
       start: 0,
     };
 
-    let result = assetHoldersQuery(false, variables);
+    let result = assetHoldersQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
-    result = assetHoldersQuery(false, variables, new BigNumber(1), new BigNumber(0));
+    result = assetHoldersQuery(variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
@@ -54,12 +54,12 @@ describe('nftHoldersQuery', () => {
       start: 0,
     };
 
-    let result = nftHoldersQuery(false, variables);
+    let result = nftHoldersQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
-    result = nftHoldersQuery(false, variables, new BigNumber(1), new BigNumber(0));
+    result = nftHoldersQuery(variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
@@ -78,12 +78,12 @@ describe('assetTransactionQuery', () => {
       start: 0,
     };
 
-    let result = assetTransactionQuery(false, variables);
+    let result = assetTransactionQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
-    result = assetTransactionQuery(false, variables, new BigNumber(1), new BigNumber(0));
+    result = assetTransactionQuery(variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({

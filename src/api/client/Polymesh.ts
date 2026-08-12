@@ -216,8 +216,6 @@ export class Polymesh {
             message: 'Middleware V2 URL is for a different chain than the given node URL',
           });
         }
-
-        context.isSqIdPadded = middlewareMetadata.paddedIds;
       };
 
       await Promise.all([checkMiddleware(), warnUnexpectedSqVersion(context)]);

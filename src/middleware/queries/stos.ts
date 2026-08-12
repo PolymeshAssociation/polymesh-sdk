@@ -12,14 +12,11 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * Get all investments for a given offering
  */
 export function investmentsQuery(
-  paddedIds: boolean,
   filters: QueryArgs<Investment, 'stoId' | 'offeringAssetId'>,
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringAssetId'>>> {
-  const orderBy = paddedIds
-    ? `${InvestmentsOrderBy.CreatedBlockIdAsc}`
-    : `${InvestmentsOrderBy.CreatedAtAsc}, ${InvestmentsOrderBy.CreatedBlockIdAsc}`;
+  const orderBy = `${InvestmentsOrderBy.CreatedBlockIdAsc}`;
 
   const query = gql`
     query InvestmentsQuery($stoId: Int!, $offeringAssetId: String!, $size: Int, $start: Int) {

@@ -16,12 +16,9 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * Get MultiSig proposal details for a given MultiSig address and portfolio ID
  */
 export function multiSigProposalQuery(
-  paddedIds: boolean,
   variables: QueryArgs<MultiSigProposal, 'multisigId' | 'proposalId'>
 ): QueryOptions<QueryArgs<MultiSigProposal, 'multisigId' | 'proposalId'>> {
-  const orderBy = paddedIds
-    ? `${MultiSigProposalVotesOrderBy.CreatedBlockIdAsc}, ${MultiSigProposalVotesOrderBy.EventIdxAsc}`
-    : `${MultiSigProposalVotesOrderBy.CreatedAtAsc}, ${MultiSigProposalVotesOrderBy.CreatedBlockIdAsc}, ${MultiSigProposalVotesOrderBy.EventIdxAsc}`;
+  const orderBy = `${MultiSigProposalVotesOrderBy.CreatedBlockIdAsc}, ${MultiSigProposalVotesOrderBy.EventIdxAsc}`;
 
   const query = gql`
     query MultiSigProposalQuery($multisigId: String!, $proposalId: Int!) {
@@ -68,12 +65,9 @@ export function multiSigProposalQuery(
  * Get MultiSig proposal votes for a given proposalId ({multiSigAddress}/{proposalId})
  */
 export function multiSigProposalVotesQuery(
-  paddedIds: boolean,
   variables: QueryArgs<MultiSigProposalVote, 'proposalId'>
 ): QueryOptions<QueryArgs<MultiSigProposalVote, 'proposalId'>> {
-  const orderBy = paddedIds
-    ? `${MultiSigProposalVotesOrderBy.CreatedBlockIdAsc}, ${MultiSigProposalVotesOrderBy.EventIdxAsc}`
-    : `${MultiSigProposalVotesOrderBy.CreatedAtAsc}, ${MultiSigProposalVotesOrderBy.CreatedBlockIdAsc}, ${MultiSigProposalVotesOrderBy.EventIdxAsc}`;
+  const orderBy = `${MultiSigProposalVotesOrderBy.CreatedBlockIdAsc}, ${MultiSigProposalVotesOrderBy.EventIdxAsc}`;
 
   const query = gql`
     query MultiSigProposalVotesQuery($proposalId: String!) {

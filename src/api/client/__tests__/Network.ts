@@ -216,7 +216,6 @@ describe('Network Class', () => {
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
       dsMockUtils.createApolloQueryMock(
         eventsByArgs(
-          false,
           {
             ...variables,
           },
@@ -245,7 +244,6 @@ describe('Network Class', () => {
     it('should return null if the query result is empty', async () => {
       dsMockUtils.createApolloQueryMock(
         eventsByArgs(
-          false,
           {
             ...variables,
             eventArg0: 'someDid',
@@ -282,7 +280,6 @@ describe('Network Class', () => {
 
       dsMockUtils.createApolloQueryMock(
         eventsByArgs(
-          false,
           {
             ...variables,
           },
@@ -315,7 +312,7 @@ describe('Network Class', () => {
 
     it('should return null if the query result is empty', async () => {
       dsMockUtils.createApolloQueryMock(
-        eventsByArgs(false, {
+        eventsByArgs({
           ...variables,
           eventArg0: 'someDid',
         }),

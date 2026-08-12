@@ -335,7 +335,7 @@ export class AssetPermissions extends Namespace<Identity> {
         },
       },
     } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgents'>>(
-      tickerExternalAgentsQuery(context.isSqIdPadded, {
+      tickerExternalAgentsQuery({
         assetId: middlewareAssetId,
       })
     );
@@ -389,7 +389,6 @@ export class AssetPermissions extends Namespace<Identity> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
       tickerExternalAgentActionsQuery(
-        context.isSqIdPadded,
         {
           assetId: middlewareAssetId,
           callerId: did,

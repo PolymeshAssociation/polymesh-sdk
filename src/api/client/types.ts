@@ -44,7 +44,6 @@ export interface MiddlewareMetadata {
   specName: string;
   targetHeight: BigNumber;
   sqVersion: string;
-  paddedIds: boolean;
 }
 
 export interface SubmissionDetails {

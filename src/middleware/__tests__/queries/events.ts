@@ -6,7 +6,7 @@ import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 describe('eventsByArgs', () => {
   it('should pass the variables to the grapqhl query', () => {
-    let result = eventsByArgs(false, {});
+    let result = eventsByArgs({});
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({ size: DEFAULT_GQL_PAGE_SIZE, start: 0 });
@@ -19,12 +19,12 @@ describe('eventsByArgs', () => {
       start: 0,
     };
 
-    result = eventsByArgs(false, variables);
+    result = eventsByArgs(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
-    result = eventsByArgs(false, variables, new BigNumber(1), new BigNumber(0));
+    result = eventsByArgs(variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({

@@ -1511,7 +1511,6 @@ describe('Context class', () => {
 
       dsMockUtils.createApolloQueryMock(
         claimsQuery(
-          false,
           {
             dids: [targetDid],
             trustedClaimIssuers: [targetDid],
@@ -1548,7 +1547,6 @@ describe('Context class', () => {
 
       dsMockUtils.createApolloQueryMock(
         claimsQuery(
-          false,
           {
             includeExpired: true,
           },
@@ -2392,40 +2390,7 @@ describe('Context class', () => {
       jest.spyOn(utilsInternalModule, 'getLatestSqVersion').mockResolvedValue(sqVersion);
 
       const result = await context.getMiddlewareMetadata();
-      expect(result).toEqual({ paddedIds: false, ...metadata });
-    });
-
-    it('should return paddedId if sq version is greater than 19', async () => {
-      const context = await Context.create({
-        polymeshApi,
-        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
-      });
-
-      const sqVersion = '19.0.1';
-      const metadata = {
-        chain: 'Polymesh Testnet Develop',
-        specName: 'polymesh_testnet',
-        genesisHash: '0x3c3183f6d701500766ff7d147b79c4f10014a095eaaa98e960dcef6b3ead50ee',
-        lastProcessedHeight: new BigNumber(6120220),
-        lastProcessedTimestamp: new Date('01/06/2023'),
-        targetHeight: new BigNumber(6120219),
-        indexerHealthy: true,
-        sqVersion,
-      };
-
-      dsMockUtils.createApolloQueryMock(metadataQuery(), {
-        _metadata: {
-          ...metadata,
-          lastProcessedTimestamp: metadata.lastProcessedTimestamp.getTime().toString(),
-          lastProcessedHeight: metadata.lastProcessedHeight.toString(),
-          targetHeight: metadata.targetHeight.toString(),
-        },
-      });
-
-      jest.spyOn(utilsInternalModule, 'getLatestSqVersion').mockResolvedValue(sqVersion);
-
-      const result = await context.getMiddlewareMetadata();
-      expect(result).toEqual({ paddedIds: true, ...metadata });
+      expect(result).toEqual(metadata);
     });
 
     it('should return null if middleware V2 is disabled', async () => {
@@ -2525,7 +2490,6 @@ describe('Context class', () => {
 
       dsMockUtils.createApolloQueryMock(
         polyxTransactionsQuery(
-          false,
           {
             identityId: 'someDid',
             addresses: ['someAddress'],
@@ -2551,7 +2515,7 @@ describe('Context class', () => {
       expect(result.next).toBeNull();
 
       dsMockUtils.createApolloQueryMock(
-        polyxTransactionsQuery(false, {}, new BigNumber(25), new BigNumber(0)),
+        polyxTransactionsQuery({}, new BigNumber(25), new BigNumber(0)),
         {
           polyxTransactions: { nodes: [], totalCount: 0 },
         }
