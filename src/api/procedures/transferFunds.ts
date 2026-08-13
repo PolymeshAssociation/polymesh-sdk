@@ -19,7 +19,6 @@ import {
   assetHolderLikeToAssetHolderId,
   fungibleMovementToPortfolioFund,
   nftMovementToPortfolioFund,
-  stringToAssetId,
 } from '~/utils/conversion';
 import { asAssetId, asFungibleAsset, asNftId, filterEventRecords } from '~/utils/internal';
 import { isFungibleLegBuilder, isPortfolioAssetHolder } from '~/utils/typeguards';
@@ -247,34 +246,11 @@ export async function prepareTransferFunds(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<TransferFundsParams, Instruction | undefined, Storage>,
-  { asset }: TransferFundsParams
+  this: Procedure<TransferFundsParams, Instruction | undefined, Storage>
 ): Promise<ProcedureAuthorization> {
   const {
-    context,
-    storage: { fromHolder, toHolder, fromDid, toDid, signingDid },
+    storage: { fromHolder, signingDid },
   } = this;
-
-  // the source is authorized on every path
-  const holders: AssetHolder[] = [fromHolder];
-
-  // the destination is only checked cross-identity, and only when the chain affirms on the
-  // receiver's behalf: that needs the caller's own Identity to own it, and the receiver to not
-  // auto-affirm (the receiver's own setting, never the signer's). Same-identity transfers move
-  // the funds directly and never look at the destination
-  if (fromDid !== toDid && toDid === signingDid) {
-    const assetId = await asAssetId(asset, context);
-
-    const { isAutomatic } =
-      await context.polymeshApi.call.settlementApi.getReceiverAffirmationRequirement(
-        assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(toHolder), context),
-        stringToAssetId(assetId, context)
-      );
-
-    if (!isAutomatic) {
-      holders.push(toHolder);
-    }
-  }
 
   let roles: ProcedureAuthorization['roles'];
 
@@ -292,7 +268,9 @@ export async function getAuthorization(
     permissions: {
       transactions: [TxTags.settlement.TransferFunds],
       assets: [],
-      portfolios: holders.filter(isPortfolioAssetHolder),
+      // the destination is never required - the chain affirms it opportunistically, leaving the
+      // Instruction pending rather than failing when the caller can't affirm it
+      portfolios: [fromHolder].filter(isPortfolioAssetHolder),
     },
   };
 }

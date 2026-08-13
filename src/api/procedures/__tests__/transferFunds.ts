@@ -63,7 +63,6 @@ describe('transferFunds procedure', () => {
   let createAddInstructionResolverSpy: jest.SpyInstance;
   let asAssetIdSpy: jest.SpyInstance;
   let asFungibleAssetSpy: jest.SpyInstance;
-  let stringToAssetIdSpy: jest.SpyInstance;
   let getOwnerSpy: jest.SpyInstance;
   let isLockedSpy: jest.SpyInstance;
   let filterEventRecordsSpy: jest.SpyInstance;
@@ -97,7 +96,6 @@ describe('transferFunds procedure', () => {
     );
     asAssetIdSpy = jest.spyOn(utilsInternalModule, 'asAssetId');
     asFungibleAssetSpy = jest.spyOn(utilsInternalModule, 'asFungibleAsset');
-    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     getOwnerSpy = jest.spyOn(Nft.prototype, 'getOwner');
     isLockedSpy = jest.spyOn(Nft.prototype, 'isLocked');
     filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
@@ -977,13 +975,6 @@ describe('transferFunds procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    const args: TransferFundsParams = {
-      from: 'someAccount',
-      to: 'someOtherAccount',
-      asset: 'SOME_ASSET',
-      amount: new BigNumber(100),
-    };
-
     let fromPortfolioHolder: Mocked<NumberedPortfolio>;
     let toPortfolioHolder: Mocked<NumberedPortfolio>;
 
@@ -1001,10 +992,9 @@ describe('transferFunds procedure', () => {
 
       asAssetIdSpy.mockClear();
       asAssetIdSpy.mockResolvedValue('12341234-1234-1234-1234-123412341234');
-      stringToAssetIdSpy.mockReturnValue('rawAssetId');
     });
 
-    it('should require the source Portfolio permission and custody, without the destination, for a same-DID transfer', async () => {
+    it('should require the source Portfolio permission and custody, without the destination', async () => {
       const proc = procedureMockUtils.getInstance<
         TransferFundsParams,
         Instruction | undefined,
@@ -1020,7 +1010,7 @@ describe('transferFunds procedure', () => {
 
       const boundFunc = getAuthorization.bind(proc);
 
-      await expect(boundFunc(args)).resolves.toEqual({
+      await expect(boundFunc()).resolves.toEqual({
         roles: true,
         permissions: {
           transactions: [TxTags.settlement.TransferFunds],
@@ -1029,8 +1019,8 @@ describe('transferFunds procedure', () => {
         },
       });
 
-      // the destination is never checked on the same-DID path, so its affirmation requirement
-      // doesn't need to be fetched
+      // the destination is never a hard requirement, so its affirmation requirement doesn't
+      // need to be fetched
       expect(asAssetIdSpy).not.toHaveBeenCalled();
     });
 
@@ -1052,7 +1042,7 @@ describe('transferFunds procedure', () => {
 
       const boundFunc = getAuthorization.bind(proc);
 
-      await expect(boundFunc(args)).resolves.toEqual({
+      await expect(boundFunc()).resolves.toEqual({
         roles: 'The signing Identity must be the custodian of the origin Portfolio',
         permissions: {
           transactions: [TxTags.settlement.TransferFunds],
@@ -1082,7 +1072,7 @@ describe('transferFunds procedure', () => {
 
       const boundFunc = getAuthorization.bind(proc);
 
-      await expect(boundFunc(args)).resolves.toEqual({
+      await expect(boundFunc()).resolves.toEqual({
         permissions: {
           transactions: [TxTags.settlement.TransferFunds],
           portfolios: [],
@@ -1112,7 +1102,7 @@ describe('transferFunds procedure', () => {
 
       const boundFunc = getAuthorization.bind(proc);
 
-      await expect(boundFunc(args)).resolves.toEqual({
+      await expect(boundFunc()).resolves.toEqual({
         roles: true,
         permissions: {
           transactions: [TxTags.settlement.TransferFunds],
@@ -1122,19 +1112,16 @@ describe('transferFunds procedure', () => {
       });
     });
 
-    it("should include a cross-DID destination owned by the signer's Identity when the receiver has to affirm", async () => {
+    it("should exclude a cross-DID destination owned by the signer's Identity, even when the receiver has to affirm", async () => {
       const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
         did: 'otherDid',
         id: new BigNumber(1),
         isCustodiedBy: true,
       });
 
-      // the receiver has opted into mandatory affirmation, so the chain affirms on their behalf
-      // and runs the destination's custody/permission checks
-      dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
-        returnValue: { isAutomatic: false },
-      });
-
+      // the chain affirms the destination opportunistically on this path — it skips that
+      // affirmation and leaves the Instruction pending rather than rejecting the transfer, so
+      // the destination must not be demanded here
       const proc = procedureMockUtils.getInstance<
         TransferFundsParams,
         Instruction | undefined,
@@ -1150,45 +1137,7 @@ describe('transferFunds procedure', () => {
 
       const boundFunc = getAuthorization.bind(proc);
 
-      await expect(boundFunc(args)).resolves.toEqual({
-        roles: true,
-        permissions: {
-          transactions: [TxTags.settlement.TransferFunds],
-          portfolios: [fromHolder, toPortfolioHolder],
-          assets: [],
-        },
-      });
-    });
-
-    it("should exclude a cross-DID destination owned by the signer's Identity when it is auto-affirmed", async () => {
-      const fromHolder = entityMockUtils.getNumberedPortfolioInstance({
-        did: 'otherDid',
-        id: new BigNumber(1),
-        isCustodiedBy: true,
-      });
-
-      // auto-affirmation is decided by the receiver alone, so the chain never affirms the
-      // destination and never checks it
-      dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
-        returnValue: { isAutomatic: true },
-      });
-
-      const proc = procedureMockUtils.getInstance<
-        TransferFundsParams,
-        Instruction | undefined,
-        Storage
-      >(mockContext, {
-        fromHolder,
-        toHolder: toPortfolioHolder,
-        fromDid: 'otherDid',
-        toDid: 'someDid',
-        signingDid: 'someDid',
-        signingAccount: 'someAccount',
-      });
-
-      const boundFunc = getAuthorization.bind(proc);
-
-      await expect(boundFunc(args)).resolves.toEqual({
+      await expect(boundFunc()).resolves.toEqual({
         roles: true,
         permissions: {
           transactions: [TxTags.settlement.TransferFunds],
@@ -1206,10 +1155,6 @@ describe('transferFunds procedure', () => {
       });
       const toHolder = entityMockUtils.getAccountInstance({ address: 'someAccount' });
 
-      dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
-        returnValue: { isAutomatic: false },
-      });
-
       const proc = procedureMockUtils.getInstance<
         TransferFundsParams,
         Instruction | undefined,
@@ -1225,7 +1170,7 @@ describe('transferFunds procedure', () => {
 
       const boundFunc = getAuthorization.bind(proc);
 
-      await expect(boundFunc(args)).resolves.toEqual({
+      await expect(boundFunc()).resolves.toEqual({
         roles: true,
         permissions: {
           transactions: [TxTags.settlement.TransferFunds],
