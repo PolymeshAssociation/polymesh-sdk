@@ -485,6 +485,52 @@ describe('transferFunds procedure', () => {
       );
     });
 
+    it('should recognize a MultiSig as the NFT owner by address, even though `getOwner` always resolves Account holders to a plain Account', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const asset = entityMockUtils.getNftCollectionInstance({ assetId });
+      const multiSigHolder = entityMockUtils.getMultiSigInstance({ address: 'multiSigAddress' });
+      multiSigHolder.isEqual.mockReturnValue(false);
+      // `Nft.getOwner` always resolves Account-type holders to a plain `Account`, never the
+      // `MultiSig` subclass, so its `isEqual` would (correctly, matching real behavior) report
+      // no match against the MultiSig instance -- the ownership check must fall back to
+      // comparing addresses instead of relying on `isEqual` for this pairing
+      const plainAccountOwner = entityMockUtils.getAccountInstance({ address: 'multiSigAddress' });
+      plainAccountOwner.isEqual.mockReturnValue(false);
+
+      asAssetIdSpy.mockResolvedValue(assetId);
+      getOwnerSpy.mockResolvedValue(plainAccountOwner as unknown as AssetHolder);
+      isLockedSpy.mockResolvedValue(false);
+
+      nftMovementToPortfolioFundSpy.mockResolvedValue('rawNftFund');
+      assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someHolderId');
+      assetHolderIdToMeshAssetHolderSpy.mockReturnValue('rawHolder');
+      createAddInstructionResolverSpy.mockReturnValue(() => []);
+
+      const proc = procedureMockUtils.getInstance<
+        TransferFundsParams,
+        Instruction | undefined,
+        Storage
+      >(mockContext, {
+        fromHolder: multiSigHolder,
+        toHolder: toPortfolioHolder,
+        fromDid: 'someDid',
+        toDid: 'someDid',
+        signingDid: 'someDid',
+        signingAccount: multiSigHolder.address,
+      });
+
+      const transaction = dsMockUtils.createTxMock('settlement', 'transferFunds');
+
+      const result = await prepareTransferFunds.call(proc, {
+        from: multiSigHolder,
+        to: toPortfolioHolder,
+        asset,
+        nfts: [new BigNumber(1)],
+      });
+
+      expect(result.transaction).toBe(transaction);
+    });
+
     it('should return a transfer funds transaction spec when fromHolder is an Account with sufficient allowance', async () => {
       const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
       asset.getAllowance.mockResolvedValue(new BigNumber(150));

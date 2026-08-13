@@ -124,7 +124,14 @@ async function getNftFund(
       const nft = new Nft({ id, assetId }, context);
 
       const owner = await nft.getOwner();
-      if (!owner?.isEqual(fromHolder)) {
+      // `getOwner` always resolves Account holders to a plain `Account`, so comparing a MultiSig
+      // `fromHolder` via `isEqual` would incorrectly fail (its uuid is keyed by class name) even
+      // when the address matches -- compare by address for any Account/MultiSig pairing instead
+      const isOwner =
+        owner instanceof Account && fromHolder instanceof Account
+          ? owner.address === fromHolder.address
+          : !!owner?.isEqual(fromHolder);
+      if (!isOwner) {
         unavailableNfts.push(id);
         return;
       }
