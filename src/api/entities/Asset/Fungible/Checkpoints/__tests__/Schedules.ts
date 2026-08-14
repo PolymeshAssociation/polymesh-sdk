@@ -229,6 +229,32 @@ describe('Schedules class', () => {
       expect(result).toBeNull();
     });
 
+    it('should return null if every Schedule has been removed', async () => {
+      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+
+      when(assetToMeshAssetIdSpy)
+        .calledWith(expect.objectContaining({ id: assetId }), context)
+        .mockReturnValue(rawAssetId);
+
+      /*
+       * removing every Schedule leaves the cached entry in place, with no Schedules and `nextAt` set to
+       * the `u64::MAX` sentinel
+       */
+      dsMockUtils.createQueryMock('checkpoint', 'cachedNextCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockNextCheckpoints({
+            nextAt: dsMockUtils.createMockMoment(new BigNumber('18446744073709551615')),
+            totalPending: dsMockUtils.createMockU64(new BigNumber(0)),
+            schedules: dsMockUtils.createMockBtreeMap(new Map()),
+          })
+        ),
+      });
+
+      const result = await schedules.getNextCheckpoint();
+
+      expect(result).toBeNull();
+    });
+
     it('should return the cached next Checkpoint information from the chain', async () => {
       const rawAssetId = dsMockUtils.createMockAssetId(assetId);
       const nextAt = new Date('10/14/2030');

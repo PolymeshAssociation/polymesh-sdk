@@ -159,6 +159,17 @@ export class Schedules extends Namespace<FungibleAsset> {
 
     const { nextAt, totalPending, schedules } = rawNextCheckpointsOpt.unwrap();
 
+    /*
+     * removing a Schedule does not clear the cached entry, it just drops the Schedule from the map and
+     * resets `nextAt` to the `u64::MAX` sentinel (the entry is only removed once the Schedules run their
+     * course). The chain's `NextCheckpoints::is_empty` is defined as an empty `schedules` map, so that is
+     * the authoritative signal for "no active Schedules". Reading `nextAt` in that state would also
+     * overflow, since `u64::MAX` cannot be represented as a JS number
+     */
+    if (schedules.size === 0) {
+      return null;
+    }
+
     return {
       nextAt: momentToDate(nextAt),
       totalPending: u64ToBigNumber(totalPending),
