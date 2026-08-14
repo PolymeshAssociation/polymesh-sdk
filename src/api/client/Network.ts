@@ -1,9 +1,12 @@
+import { SubmittableExtrinsic } from '@polkadot/api/types';
+import { AnyJson, ISubmittableResult } from '@polkadot/types/types';
 import { compactToU8a, isHex, u8aConcat } from '@polkadot/util';
+import { HexString } from '@polkadot/util/types';
 import BigNumber from 'bignumber.js';
 
 import {
   extrinsicHashMatcher,
-  handleExtrinsicFailure,
+  getExtrinsicFailure,
   pollForTransactionFinalization,
 } from '~/base/utils';
 import { Account, Context, PolymeshError, transferPolyx } from '~/internal';
@@ -20,6 +23,7 @@ import {
   ProtocolFees,
   SubCallback,
   SubmissionDetails,
+  TransactionArgument,
   TransactionPayloadInput,
   TransferPolyxParams,
   TxTag,
@@ -36,9 +40,10 @@ import {
   moduleAddressToString,
   stringToBlockHash,
   textToString,
+  transactionHexToTxTag,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, filterEventRecords, optionize } from '~/utils/internal';
+import { createProcedureMethod, optionize } from '~/utils/internal';
 
 /**
  * Handles all Network related functionality, including querying for historical events from middleware
@@ -260,9 +265,42 @@ export class Network {
 
     const transaction = context.polymeshApi.tx(extrinsic);
 
+    return await this.broadcastExtrinsic(transaction);
+  }
+
+  /**
+   * Submits a raw, signed Ethereum transaction that carries a Polymesh runtime call through the
+   *   `revive` pallet's sentinel address. This is the SDK-broadcast submission step, reused
+   *   here to unlock Fireblocks / KMS / HSM / air-gapped custody flows for Ethereum-derived
+   *   Accounts: build the payload via
+   *   {@link base/PolymeshTransactionBase!PolymeshTransactionBase.toEthSignablePayload | transaction.toEthSignablePayload},
+   *   sign it externally, and submit the raw signed bytes here
+   *
+   * @param rawSignedTx - the raw signed Ethereum transaction, as returned by an `EthSigner`'s `signTransaction`
+   */
+  public async submitEthTransaction(rawSignedTx: HexString): Promise<SubmissionDetails> {
+    const { context } = this;
+
+    const transaction = context.polymeshApi.tx.revive.ethTransact(rawSignedTx);
+
+    return await this.broadcastExtrinsic(transaction);
+  }
+
+  /**
+   * @hidden
+   *
+   * Broadcast an already-built extrinsic (either the offline-signed native extrinsic, or the
+   *   bare `revive.ethTransact` wrapper around a raw signed Ethereum transaction) and track it
+   *   through to finalization
+   */
+  private async broadcastExtrinsic(
+    transaction: SubmittableExtrinsic<'promise', ISubmittableResult>
+  ): Promise<SubmissionDetails> {
+    const { context } = this;
+
     const submissionDetails: SubmissionDetails = {
       blockHash: '',
-      transactionHash: extrinsic.hash.toString(),
+      transactionHash: transaction.hash.toString(),
       transactionIndex: new BigNumber(-1),
     } as SubmissionDetails;
 
@@ -272,7 +310,7 @@ export class Network {
           const { status } = receipt;
           let isLastCallback = false;
           let unsubscribing = Promise.resolve();
-          let extrinsicFailedEvent;
+          let failureError: PolymeshError | undefined;
 
           // isCompleted implies status is one of: isFinalized, isInBlock or isError
           if (receipt.isCompleted) {
@@ -284,16 +322,15 @@ export class Network {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               submissionDetails.transactionIndex = new BigNumber(receipt.txIndex!);
 
-              // if the extrinsic failed due to an on-chain error, we should handle it in a special way
-              [extrinsicFailedEvent] = filterEventRecords(
-                receipt,
-                'system',
-                'ExtrinsicFailed',
-                true
-              );
+              /*
+               * if the extrinsic failed due to an on-chain error, we should handle it in a special
+               *   way. This also catches `revive.EthExtrinsicRevert`, emitted instead of
+               *   `system.ExtrinsicFailed` when the transaction was signed by an Ethereum key
+               */
+              failureError = getExtrinsicFailure(receipt);
 
               // extrinsic failed so we can unsubscribe
-              isLastCallback = !!extrinsicFailedEvent;
+              isLastCallback = !!failureError;
             } else {
               // isFinalized || isError so we know we can unsubscribe
               isLastCallback = true;
@@ -311,11 +348,10 @@ export class Network {
              */
             let finishing = Promise.resolve();
 
-            if (extrinsicFailedEvent) {
-              const { data } = extrinsicFailedEvent;
+            if (failureError) {
+              const error = failureError;
 
               finishing = Promise.all([unsubscribing]).then(() => {
-                const error = handleExtrinsicFailure(data[0]);
                 reject(error);
               });
             } else if (receipt.isFinalized) {
@@ -342,6 +378,12 @@ export class Network {
         context
       );
 
+      const failureError = getExtrinsicFailure(result);
+
+      if (failureError) {
+        throw failureError;
+      }
+
       return {
         blockHash: hashToString(result.status.asFinalized),
         transactionHash: hashToString(transaction.hash),
@@ -349,6 +391,28 @@ export class Network {
         result,
       };
     }
+  }
+
+  /**
+   * Decode the SCALE-encoded call carried by a `revive.ethTransact` transaction (or any other
+   *   Polymesh call), so a dapp can render it next to a wallet's confirmation prompt. Does not
+   *   fix in-wallet legibility (the wallet still shows raw bytes); it removes the worst of the
+   *   opacity for a dapp that cares
+   *
+   * @param hex - SCALE-encoded call, e.g. `transaction.toEthSignablePayload()`'s `transaction.data`
+   */
+  public decodeCall(hex: HexString): {
+    tag: TxTag;
+    args: TransactionArgument[];
+    humanReadable: AnyJson;
+  } {
+    const { context } = this;
+
+    const tag = transactionHexToTxTag(hex, context);
+    const args = context.getTransactionArguments({ tag });
+    const humanReadable = context.createType('Call', hex).toHuman();
+
+    return { tag, args, humanReadable };
   }
 
   /**

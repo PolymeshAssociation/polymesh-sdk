@@ -72,6 +72,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { ethAddressFromSs58, isEthDerivedAddress } from '~/utils/eth';
 import {
   areSameAccounts,
   asAssetId,
@@ -135,6 +136,20 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     this.authorizations = new Authorizations(this, context);
     this.subsidies = new Subsidies(this, context);
     this.staking = new Staking(this, context);
+  }
+
+  /**
+   * The Ethereum address controlling this Account, or `null` if it is not an Ethereum-derived
+   *   Account (i.e. the last 12 bytes of its decoded `AccountId32` are not `0xEE`)
+   */
+  public get ethAddress(): string | null {
+    const { address, context } = this;
+
+    if (!isEthDerivedAddress(address, context.ss58Format)) {
+      return null;
+    }
+
+    return ethAddressFromSs58(address, context.ss58Format);
   }
 
   /**
@@ -207,6 +222,11 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * @param filters.start - page offset
    *
    * @note uses the middleware v2
+   *
+   * @throws `NotSupported` if this Account is Ethereum-derived: the indexer records a
+   *   `revive.ethTransact` extrinsic with `address: null`, so it cannot attribute any history to
+   *   the Ethereum-derived Account. Returning an empty result set would be indistinguishable from
+   *   "no history" and read as a bug in the caller's code
    */
   public async getTransactionHistory(
     filters: {
@@ -222,6 +242,15 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const { tag, success, size, start, orderBy = ExtrinsicsOrderBy.IdAsc, blockHash } = filters;
 
     const { context, address } = this;
+
+    if (isEthDerivedAddress(address, context.ss58Format)) {
+      throw new PolymeshError({
+        code: ErrorCode.NotSupported,
+        message:
+          'Transaction history cannot be retrieved for an Ethereum-derived Account. The indexer records these transactions without attributing them to the signing Account',
+        data: { address },
+      });
+    }
 
     let moduleId;
     let callId;
@@ -531,6 +560,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     let keyType: AccountKeyType = AccountKeyType.Normal;
     if (!multiSignsRequired.isZero()) {
       keyType = AccountKeyType.MultiSig;
+    } else if (isEthDerivedAddress(address, context.ss58Format)) {
+      keyType = AccountKeyType.Ethereum;
     }
 
     if (optKeyRecord.isNone) {

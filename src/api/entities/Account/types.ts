@@ -72,6 +72,12 @@ export enum AccountKeyType {
    * Account represents a smart contract
    */
   SmartContract = 'SmartContract',
+  /**
+   * Account is controlled by an Ethereum key (the last 12 bytes of its decoded `AccountId32`
+   *   are `0xEE`). If the Account is also a MultiSig signer, `MultiSig` takes priority, since
+   *   that is the flag that changes control flow (`run` vs `runAsProposal`)
+   */
+  Ethereum = 'Ethereum',
 }
 
 /**

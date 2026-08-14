@@ -12,7 +12,14 @@ import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockCall, MockTxStatus } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, ErrorCode, MiddlewareMetadata, TransactionPayload, TxTags } from '~/types';
+import {
+  AccountBalance,
+  ErrorCode,
+  MiddlewareMetadata,
+  TransactionArgument,
+  TransactionPayload,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -718,6 +725,73 @@ describe('Network Class', () => {
         transactionIndex: new BigNumber(1),
         result: fakeReceipt,
       });
+    });
+  });
+
+  describe('offline submission failure handling', () => {
+    it('should throw when the receipt carries a revive.EthExtrinsicRevert event', async () => {
+      /*
+       * on the Ethereum path the outer extrinsic still reports `ExtrinsicSuccess`, so the revert
+       *   event is the only signal that the inner dispatch failed. Without this check a failed
+       *   transaction would be reported as a success
+       */
+      context.supportsSubscription.mockReturnValue(false);
+
+      dsMockUtils.createTxMock('revive', 'ethTransact', { autoResolve: false });
+
+      const revertError = new PolymeshError({
+        code: ErrorCode.TransactionReverted,
+        message: 'identity.AlreadyLinked: One secondary or primary key can only belong to one DID',
+      });
+
+      const fakeReceipt = new SubmittableResult({
+        blockNumber: dsMockUtils.createMockU32(new BigNumber(101)),
+        status: dsMockUtils.createMockExtrinsicStatus({
+          Finalized: dsMockUtils.createMockHash('blockHash'),
+        }),
+        txHash: dsMockUtils.createMockHash('txHash'),
+        txIndex: 1,
+      });
+
+      jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
+      jest.spyOn(baseUtils, 'getExtrinsicFailure').mockReturnValue(revertError);
+
+      await expect(network.submitEthTransaction('0xrawsigned')).rejects.toThrowError(revertError);
+    });
+  });
+
+  describe('method: submitEthTransaction', () => {
+    it('should submit the raw signed transaction as a bare revive.ethTransact extrinsic', async () => {
+      const transaction = dsMockUtils.createTxMock('revive', 'ethTransact', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+
+      const result = await network.submitEthTransaction('0xrawsigned');
+
+      expect(transaction).toHaveBeenCalledWith('0xrawsigned');
+      expect(result).toEqual(
+        expect.objectContaining({
+          result: expect.any(Object),
+        })
+      );
+    });
+  });
+
+  describe('method: decodeCall', () => {
+    it('should decode a SCALE-encoded call into its tag, arguments and human readable form', () => {
+      const tag = TxTags.identity.SelfRegisterDid;
+      const args = [{ name: 'foo', type: 'Text' }] as unknown as TransactionArgument[];
+      const humanReadable = { method: 'selfRegisterDid', section: 'identity' };
+
+      jest.spyOn(utilsConversionModule, 'transactionHexToTxTag').mockReturnValue(tag);
+      context.getTransactionArguments.mockReturnValue(args);
+      when(context.createType)
+        .calledWith('Call', '0x0719')
+        .mockReturnValue({ toHuman: () => humanReadable } as unknown as GenericExtrinsic);
+
+      const result = network.decodeCall('0x0719');
+
+      expect(result).toEqual({ tag, args, humanReadable });
     });
   });
 
