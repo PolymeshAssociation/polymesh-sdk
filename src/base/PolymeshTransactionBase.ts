@@ -10,6 +10,8 @@ import {
   getExtrinsicFailure,
   handleTransactionSubmissionError,
   pollForTransactionFinalization,
+  subscribeForTransactionFinalization,
+  TransactionInclusionInfo,
 } from '~/base/utils';
 import { Context, Identity, MultiSigProposal, PolymeshError } from '~/internal';
 import { latestBlockQuery } from '~/middleware/queries/common';
@@ -553,7 +555,26 @@ export abstract class PolymeshTransactionBase<
 
     this.setIsRunningStatus(txHash);
 
-    const finalizedReceipt = await pollForTransactionFinalization(matcher, startingBlock, context);
+    /*
+     * report inclusion as soon as the transaction lands in a block, rather than leaving the caller
+     *   with no feedback for the whole finalization window
+     */
+    const onInBlock = ({ blockHash, blockNumber, txIndex }: TransactionInclusionInfo): void => {
+      this.blockHash = blockHash;
+      this.blockNumber = blockNumber;
+      this.txIndex = new BigNumber(txIndex);
+      this.updateStatus(TransactionStatus.InBlock);
+    };
+
+    /*
+     * subscribing is strictly better where the connection allows it: blocks arrive as they are
+     *   produced instead of on a poll tick, and it removes a repeating `getHeader`/`getBlock`
+     *   cycle per in-flight transaction. Polling remains the fallback for HTTP connections, which
+     *   is what it was always intended for
+     */
+    const finalizedReceipt = context.supportsSubscription()
+      ? await subscribeForTransactionFinalization(matcher, startingBlock, context, onInBlock)
+      : await pollForTransactionFinalization(matcher, startingBlock, context, undefined, onInBlock);
 
     this.blockHash = hashToString(finalizedReceipt.status.asFinalized);
     this.blockNumber = u32ToBigNumber(finalizedReceipt.blockNumber!);

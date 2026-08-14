@@ -1,10 +1,11 @@
 import { SubmittableResult } from '@polkadot/api';
 import { GenericExtrinsic, getTypeDef, u32 } from '@polkadot/types';
-import { DispatchError, Hash, SignedBlock } from '@polkadot/types/interfaces';
+import { DispatchError, Hash, Header, SignedBlock } from '@polkadot/types/interfaces';
 import { SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { ISubmittableResult, RegistryError, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { polymesh } from '@polymeshassociation/polymesh-types/polkadot/definitions';
 import { BigNumber } from 'bignumber.js';
+import { noop } from 'lodash';
 
 import { Context, PolymeshError } from '~/internal';
 import {
@@ -17,9 +18,10 @@ import {
   TransactionArgument,
   TransactionArgumentType,
   TxTag,
+  UnsubCallback,
 } from '~/types';
 import { ROOT_TYPES } from '~/utils/constants';
-import { bigNumberToU32, createRawExtrinsicStatus } from '~/utils/conversion';
+import { bigNumberToU32, createRawExtrinsicStatus, u32ToBigNumber } from '~/utils/conversion';
 import { delay, filterEventRecords } from '~/utils/internal';
 
 const { types } = polymesh;
@@ -250,6 +252,20 @@ export type ExtrinsicMatcher = (extrinsic: GenericExtrinsic) => boolean;
 /**
  * @hidden
  *
+ * A transaction found within a block's body, along with where it was found. The height and hash
+ *   come from the scanned range rather than the block header, since they are already known there
+ *   and do not depend on the header being fully populated
+ */
+interface LocatedTransaction {
+  block: SignedBlock;
+  txIndex: number;
+  blockNumber: BigNumber;
+  blockHash: string;
+}
+
+/**
+ * @hidden
+ *
  * Build a matcher that recognizes an extrinsic by its hash. This is the native submission path
  */
 export const extrinsicHashMatcher = (txHash: Hash): ExtrinsicMatcher => {
@@ -258,46 +274,124 @@ export const extrinsicHashMatcher = (txHash: Hash): ExtrinsicMatcher => {
 
 /**
  * @hidden
+ *
+ * Where a transaction was found, reported as soon as it is included in a block — before that
+ *   block is finalized
+ */
+export interface TransactionInclusionInfo {
+  blockHash: string;
+  blockNumber: BigNumber;
+  txIndex: number;
+}
+
+/**
+ * @hidden
+ *
+ * Number of the best (not necessarily finalized) block.
+ *
+ * {@link base/Context!Context.getLatestBlock | Context.getLatestBlock} deliberately reports the
+ *   latest *finalized* block, which is the right floor for a result but lags inclusion by the
+ *   finalization window
+ */
+const getBestBlockNumber = async (context: Context): Promise<BigNumber> => {
+  const header = await context.polymeshApi.rpc.chain.getHeader();
+
+  return u32ToBigNumber(header.number.unwrap());
+};
+
+/**
+ * @hidden
  */
 async function getLocationInfoForTx(
   matcher: ExtrinsicMatcher,
   context: Context,
-  lastCheckedBlock: BigNumber
+  lastCheckedBlock: BigNumber,
+  headBlockNumber: BigNumber
 ): Promise<{
-  locationInfo: { block: SignedBlock; txIndex: number } | undefined;
+  locationInfo: LocatedTransaction | undefined;
   latestBlockNumber: BigNumber;
 }> {
-  let locationInfo: { block: SignedBlock; txIndex: number } | undefined;
-  const latestBlockNumber = await context.getLatestBlock();
-  if (!latestBlockNumber.eq(lastCheckedBlock)) {
+  let locationInfo: LocatedTransaction | undefined;
+  let highestCheckedBlock = lastCheckedBlock;
+
+  if (!headBlockNumber.eq(lastCheckedBlock)) {
     const blocksToCheck: u32[] = [];
-    const numberOfCandidateBlocks = latestBlockNumber.minus(lastCheckedBlock).toNumber();
+    const numberOfCandidateBlocks = headBlockNumber.minus(lastCheckedBlock).toNumber();
 
     for (let i = 1; i <= numberOfCandidateBlocks; i++) {
       const blockNumber = lastCheckedBlock.plus(i);
       blocksToCheck.push(bigNumberToU32(blockNumber, context));
     }
 
-    const blockHashesToCheck = await context.polymeshApi.query.system.blockHash.multi(
-      blocksToCheck
+    /*
+     * `chain_getBlockHash` is used rather than the `system.blockHash` storage map because that map
+     *   only records a block's hash once its *child* has been initialized, so the current best
+     *   block reads back from storage as the zero hash. The RPC reads the client's block database
+     *   and is correct for the best block
+     */
+    const blockHashesToCheck = await Promise.all(
+      blocksToCheck.map(blockNumber => context.polymeshApi.rpc.chain.getBlockHash(blockNumber))
     );
+
+    /*
+     * a hash can still come back empty if the block went away between the two calls. Skip those
+     *   rather than resolving them, and do not count them as checked, so the next pass sees them
+     */
+    const candidates = blockHashesToCheck
+      .map((hash, index) => ({ hash, blockNumber: lastCheckedBlock.plus(index + 1) }))
+      .filter(({ hash }) => !hash.isEmpty);
 
     const newBlocks = await Promise.all(
-      blockHashesToCheck.map(hash => context.polymeshApi.rpc.chain.getBlock(hash))
+      candidates.map(({ hash }) => context.polymeshApi.rpc.chain.getBlock(hash))
     );
 
-    for (const newBlock of newBlocks) {
+    for (const [index, newBlock] of newBlocks.entries()) {
       const txIndex = newBlock.block.extrinsics.findIndex(value => matcher(value));
       if (txIndex >= 0) {
-        locationInfo = { txIndex, block: newBlock };
+        /*
+         * the height and hash come from the scanned range rather than the block header, since both
+         *   are already known here and do not depend on the header being fully populated
+         */
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { hash, blockNumber } = candidates[index]!;
+
+        locationInfo = {
+          txIndex,
+          block: newBlock,
+          blockNumber,
+          blockHash: hash.toString(),
+        };
         break;
       }
     }
+
+    const [lastCandidate] = candidates.slice(-1);
+
+    if (lastCandidate) {
+      highestCheckedBlock = lastCandidate.blockNumber;
+    }
   }
 
-  return { locationInfo, latestBlockNumber };
+  return { locationInfo, latestBlockNumber: highestCheckedBlock };
 }
 
+/**
+ * @hidden
+ *
+ * given a way of recognizing a transaction, this will poll the chain until it is included in a
+ *   finalized block
+ *
+ * @note this method should only be used when there is no subscription support for efficiency
+ *
+ * @throws if transaction is not found after a certain amount of time
+ *
+ * @param matcher Predicate that recognizes the submitted extrinsic in a block's body. Use
+ *   {@link base/utils!extrinsicHashMatcher | extrinsicHashMatcher} for the native path
+ * @param startingBlock The block number from before the transaction was submitted
+ * @param context
+ * @param pollOptions Controls max time to poll, defaults should be OK (finalization takes ~15 seconds)
+ * @returns
+ */
 /**
  * @hidden
  *
@@ -343,10 +437,12 @@ export const pollForTransactionFinalization = async (
   matcher: ExtrinsicMatcher,
   startingBlock: BigNumber,
   context: Context,
-  pollOptions = { delayMs: 3000, maxAttempts: 10 }
+  pollOptions = { delayMs: 3000, maxAttempts: 10 },
+  onInBlock?: (info: TransactionInclusionInfo) => void
 ): Promise<SubmittableResult> => {
   let lastCheckedBlock = startingBlock;
   let locationInfo: { block: SignedBlock; txIndex: number } | undefined;
+  let notifiedInclusion = false;
 
   // Finalization is expected to take ~15 seconds
   const { delayMs, maxAttempts } = pollOptions;
@@ -354,15 +450,56 @@ export const pollForTransactionFinalization = async (
   let attemptCounter = 0;
   while (!locationInfo && attemptCounter < maxAttempts) {
     attemptCounter += 1;
-    await delay(delayMs);
 
-    const result = await getLocationInfoForTx(matcher, context, lastCheckedBlock);
+    /*
+     * The scan runs against the *best* head rather than the finalized one, so that inclusion can
+     *   be reported as soon as the transaction makes it into a block — roughly a block time,
+     *   rather than the ~15 seconds finalization takes. The result is only ever *advisory*: the
+     *   value this function returns still comes from a finalized block (see the wait below), so a
+     *   best block that is later re-orged away can do no more than fire a progress callback early
+     */
+    const [finalizedBlockNumber, bestBlockNumber] = await Promise.all([
+      context.getLatestBlock(),
+      getBestBlockNumber(context),
+    ]);
+
+    const result = await getLocationInfoForTx(
+      matcher,
+      context,
+      lastCheckedBlock,
+      // never scan behind the finalized head, which is the authoritative floor
+      BigNumber.max(bestBlockNumber, finalizedBlockNumber)
+    );
 
     if (result.locationInfo) {
-      locationInfo = result.locationInfo;
+      const includedIn = result.locationInfo.blockNumber;
+
+      if (finalizedBlockNumber.gte(includedIn)) {
+        // the containing block is already finalized, so this location is authoritative
+        locationInfo = result.locationInfo;
+      } else if (onInBlock && !notifiedInclusion) {
+        notifiedInclusion = true;
+
+        onInBlock({
+          blockHash: result.locationInfo.blockHash,
+          blockNumber: includedIn,
+          txIndex: result.locationInfo.txIndex,
+        });
+      }
+
+      /*
+       * Found but not yet finalized — do not advance `lastCheckedBlock` past it, so the next pass
+       *   re-reads the canonical block at that height. If the chain re-organised, the matcher
+       *   simply will not match there again and the search continues
+       */
+      lastCheckedBlock = includedIn.minus(1);
+    } else {
+      lastCheckedBlock = result.latestBlockNumber;
     }
 
-    lastCheckedBlock = result.latestBlockNumber;
+    if (!locationInfo) {
+      await delay(delayMs);
+    }
   }
 
   if (!locationInfo) {
@@ -373,6 +510,156 @@ export const pollForTransactionFinalization = async (
   }
 
   return buildFinalizedResult(locationInfo, context);
+};
+
+/**
+ * @hidden
+ *
+ * Locate a submitted transaction by subscribing to the chain's blocks, rather than polling for
+ *   them. Preferred whenever the connection supports subscriptions: inclusion is reported the
+ *   moment the block arrives instead of on the next poll tick, and it removes a repeating
+ *   `getHeader`/`getBlock` cycle per in-flight transaction
+ *
+ * Two independent scans run off two subscriptions:
+ *
+ * - **new heads** are advisory. They exist only to report inclusion early, via `onInBlock`. A
+ *   block seen here may still be re-organised away, which is harmless because nothing but a
+ *   progress callback depends on it
+ * - **finalized heads** are authoritative. The resolved result always comes from a finalized
+ *   block, so a re-org cannot produce a wrong result — the transaction simply will not be found
+ *   at that height on the canonical chain, and the scan continues
+ *
+ * @throws if the transaction is not found within `maxFinalizedBlocks` finalized blocks
+ */
+export const subscribeForTransactionFinalization = (
+  matcher: ExtrinsicMatcher,
+  startingBlock: BigNumber,
+  context: Context,
+  onInBlock?: (info: TransactionInclusionInfo) => void,
+  { maxFinalizedBlocks } = { maxFinalizedBlocks: 10 }
+): Promise<SubmittableResult> => {
+  const { chain } = context.polymeshApi.rpc;
+
+  return new Promise<SubmittableResult>((resolve, reject) => {
+    let lastBestBlock = startingBlock;
+    let lastFinalizedBlock = startingBlock;
+    let notifiedInclusion = false;
+    let settled = false;
+    let finalizedBlocksSeen = 0;
+    const unsubscribers: Promise<UnsubCallback>[] = [];
+
+    /*
+     * subscription callbacks can overlap, since each scan is asynchronous. Serializing them keeps
+     *   the cursors consistent and stops the same block being scanned twice
+     */
+    let scanning: Promise<void> = Promise.resolve();
+
+    /**
+     * Tear down both subscriptions
+     */
+    const cleanup = (): void => {
+      unsubscribers.forEach(getting => {
+        getting.then(unsub => unsub()).catch(noop);
+      });
+    };
+
+    /**
+     * Settle the promise exactly once, releasing both subscriptions first
+     */
+    const settle = (action: () => void): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cleanup();
+      action();
+    };
+
+    /**
+     * Surface a failure from either scan
+     */
+    const handleError = (err: Error): void => {
+      settle(() => reject(err));
+    };
+
+    /**
+     * Advisory scan of the best head — reports inclusion early and nothing more
+     */
+    const scanBest = async (header: Header): Promise<void> => {
+      if (settled || !onInBlock || notifiedInclusion) {
+        return;
+      }
+
+      const headNumber = u32ToBigNumber(header.number.unwrap());
+      const { locationInfo, latestBlockNumber } = await getLocationInfoForTx(
+        matcher,
+        context,
+        lastBestBlock,
+        headNumber
+      );
+
+      if (locationInfo) {
+        notifiedInclusion = true;
+
+        onInBlock({
+          blockHash: locationInfo.blockHash,
+          blockNumber: locationInfo.blockNumber,
+          txIndex: locationInfo.txIndex,
+        });
+      }
+
+      lastBestBlock = locationInfo ? locationInfo.blockNumber : latestBlockNumber;
+    };
+
+    /**
+     * Authoritative scan of the finalized head — the only thing that can resolve the transaction
+     */
+    const scanFinalized = async (header: Header): Promise<void> => {
+      if (settled) {
+        return;
+      }
+
+      finalizedBlocksSeen += 1;
+
+      const headNumber = u32ToBigNumber(header.number.unwrap());
+      const { locationInfo, latestBlockNumber } = await getLocationInfoForTx(
+        matcher,
+        context,
+        lastFinalizedBlock,
+        headNumber
+      );
+
+      if (locationInfo) {
+        const result = await buildFinalizedResult(locationInfo, context);
+
+        settle(() => resolve(result));
+
+        return;
+      }
+
+      lastFinalizedBlock = latestBlockNumber;
+
+      if (finalizedBlocksSeen >= maxFinalizedBlocks) {
+        settle(() =>
+          reject(
+            new PolymeshError({
+              code: ErrorCode.UnexpectedError,
+              message: 'The block containing the transaction was not found',
+            })
+          )
+        );
+      }
+    };
+
+    unsubscribers.push(
+      chain.subscribeNewHeads(header => {
+        scanning = scanning.then(() => scanBest(header)).catch(handleError);
+      }),
+      chain.subscribeFinalizedHeads(header => {
+        scanning = scanning.then(() => scanFinalized(header)).catch(handleError);
+      })
+    );
+  });
 };
 
 /**

@@ -8,6 +8,7 @@ import {
   extrinsicHashMatcher,
   pollForTransactionFinalization,
   processType,
+  subscribeForTransactionFinalization,
 } from '~/base/utils';
 import { PolymeshError } from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
@@ -147,8 +148,8 @@ describe('pollForTransactionFinalization', () => {
 
   it('should return finalized transaction info', async () => {
     context.getLatestBlock.mockResolvedValue(new BigNumber(2));
-    dsMockUtils.createQueryMock('system', 'blockHash', {
-      multi: [dsMockUtils.createMockBlockHash('someBlockHash')],
+    dsMockUtils.createRpcMock('chain', 'getBlockHash', {
+      returnValue: dsMockUtils.createMockBlockHash('someBlockHash'),
     });
 
     dsMockUtils.createRpcMock('chain', 'getBlock', {
@@ -202,8 +203,8 @@ describe('pollForTransactionFinalization', () => {
     const otherHash = dsMockUtils.createMockHash('otherHash');
 
     context.getLatestBlock.mockResolvedValue(new BigNumber(2));
-    dsMockUtils.createQueryMock('system', 'blockHash', {
-      multi: [dsMockUtils.createMockBlockHash('someBlockHash')],
+    dsMockUtils.createRpcMock('chain', 'getBlockHash', {
+      returnValue: dsMockUtils.createMockBlockHash('someBlockHash'),
     });
 
     dsMockUtils.createRpcMock('chain', 'getBlock', {
@@ -235,6 +236,242 @@ describe('pollForTransactionFinalization', () => {
         events: [],
       })
     );
+  });
+
+  it('should report inclusion before finalization, without letting it decide the result', async () => {
+    /*
+     * the extrinsic lands in block 2 while only block 1 is finalized, so inclusion is reported
+     *   straight away but the returned result must still wait for block 2 to be finalized
+     */
+    context.getLatestBlock
+      .mockResolvedValueOnce(new BigNumber(1))
+      .mockResolvedValue(new BigNumber(2));
+
+    dsMockUtils.createRpcMock('chain', 'getHeader', {
+      returnValue: dsMockUtils.createMockHeader({
+        parentHash: dsMockUtils.createMockHash(),
+        number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(2))),
+        stateRoot: dsMockUtils.createMockHash(),
+        extrinsicsRoot: dsMockUtils.createMockHash(),
+      }),
+    });
+
+    dsMockUtils.createRpcMock('chain', 'getBlockHash', {
+      returnValue: dsMockUtils.createMockBlockHash('someBlockHash'),
+    });
+
+    dsMockUtils.createRpcMock('chain', 'getBlock', {
+      returnValue: dsMockUtils.createMockSignedBlock({
+        block: dsMockUtils.createMockBlock({
+          header: dsMockUtils.createMockHeader(),
+          extrinsics: dsMockUtils.createMockExtrinsics([
+            { toHex: (): string => '0x', hash: txHash },
+          ]),
+        }),
+      }),
+    });
+
+    dsMockUtils.createQueryMock('system', 'events', { returnValue: [] });
+
+    const onInBlock = jest.fn();
+
+    const result = await pollForTransactionFinalization(
+      extrinsicHashMatcher(txHash),
+      startingBlock,
+      context,
+      { delayMs: 0, maxAttempts: 10 },
+      onInBlock
+    );
+
+    expect(onInBlock).toHaveBeenCalledTimes(1);
+    expect(onInBlock).toHaveBeenCalledWith(
+      expect.objectContaining({ blockNumber: new BigNumber(2), txIndex: 0 })
+    );
+    // the returned result is still the finalized one
+    expect(result).toEqual(expect.objectContaining({ txIndex: 0, txHash }));
+  });
+
+  it('should skip a block whose hash cannot be resolved yet, rather than fetching it', async () => {
+    /*
+     * the `system.blockHash` storage map only records a block's hash once its child is
+     *   initialized, so the current best block can read back as the zero hash. An unresolvable
+     *   hash must be skipped and retried on a later pass rather than fetched
+     */
+    context.getLatestBlock.mockResolvedValue(new BigNumber(1));
+
+    dsMockUtils.createRpcMock('chain', 'getHeader', {
+      returnValue: dsMockUtils.createMockHeader({
+        parentHash: dsMockUtils.createMockHash(),
+        number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(2))),
+        stateRoot: dsMockUtils.createMockHash(),
+        extrinsicsRoot: dsMockUtils.createMockHash(),
+      }),
+    });
+
+    // the head block's hash is not yet readable
+    dsMockUtils.createRpcMock('chain', 'getBlockHash', {
+      returnValue: dsMockUtils.createMockBlockHash(),
+    });
+
+    const getBlockMock = dsMockUtils.createRpcMock('chain', 'getBlock');
+
+    dsMockUtils.createQueryMock('system', 'events', { returnValue: [] });
+
+    await expect(
+      pollForTransactionFinalization(extrinsicHashMatcher(txHash), startingBlock, context, {
+        delayMs: 0,
+        maxAttempts: 2,
+      })
+    ).rejects.toThrow('The block containing the transaction was not found');
+
+    expect(getBlockMock).not.toHaveBeenCalled();
+  });
+
+  it('should not report inclusion when the containing block is already finalized', async () => {
+    context.getLatestBlock.mockResolvedValue(new BigNumber(2));
+
+    dsMockUtils.createRpcMock('chain', 'getBlockHash', {
+      returnValue: dsMockUtils.createMockBlockHash('someBlockHash'),
+    });
+
+    dsMockUtils.createRpcMock('chain', 'getBlock', {
+      returnValue: dsMockUtils.createMockSignedBlock({
+        block: dsMockUtils.createMockBlock({
+          header: dsMockUtils.createMockHeader(),
+          extrinsics: dsMockUtils.createMockExtrinsics([
+            { toHex: (): string => '0x', hash: txHash },
+          ]),
+        }),
+      }),
+    });
+
+    dsMockUtils.createQueryMock('system', 'events', { returnValue: [] });
+
+    const onInBlock = jest.fn();
+
+    await pollForTransactionFinalization(
+      extrinsicHashMatcher(txHash),
+      startingBlock,
+      context,
+      { delayMs: 0, maxAttempts: 10 },
+      onInBlock
+    );
+
+    expect(onInBlock).not.toHaveBeenCalled();
+  });
+
+  describe('subscribeForTransactionFinalization', () => {
+    /**
+     * Drive a head subscription, invoking its callback with each of the given block numbers
+     */
+    const mockHeadSubscription = (
+      rpcName: 'subscribeNewHeads' | 'subscribeFinalizedHeads',
+      blockNumbers: BigNumber[]
+    ): jest.Mock => {
+      const unsub = jest.fn();
+      const mock = dsMockUtils.createRpcMock('chain', rpcName);
+
+      mock.mockImplementation((callback: (header: unknown) => void) => {
+        blockNumbers.forEach(blockNumber =>
+          setImmediate(() =>
+            callback({
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
+            })
+          )
+        );
+
+        return Promise.resolve(unsub);
+      });
+
+      return unsub;
+    };
+
+    const mockBlockWithTx = (): void => {
+      dsMockUtils.createRpcMock('chain', 'getBlockHash', {
+        returnValue: dsMockUtils.createMockBlockHash('someBlockHash'),
+      });
+
+      dsMockUtils.createRpcMock('chain', 'getBlock', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: dsMockUtils.createMockBlock({
+            header: dsMockUtils.createMockHeader(),
+            extrinsics: dsMockUtils.createMockExtrinsics([
+              { toHex: (): string => '0x', hash: txHash },
+            ]),
+          }),
+        }),
+      });
+
+      dsMockUtils.createQueryMock('system', 'events', { returnValue: [] });
+    };
+
+    it('should resolve from a finalized block and report inclusion beforehand', async () => {
+      mockBlockWithTx();
+
+      // seen at the best head first, finalized a moment later
+      const unsubNew = mockHeadSubscription('subscribeNewHeads', [new BigNumber(2)]);
+      const unsubFinalized = mockHeadSubscription('subscribeFinalizedHeads', [new BigNumber(2)]);
+
+      const onInBlock = jest.fn();
+
+      const result = await subscribeForTransactionFinalization(
+        extrinsicHashMatcher(txHash),
+        startingBlock,
+        context,
+        onInBlock
+      );
+
+      expect(onInBlock).toHaveBeenCalledWith(
+        expect.objectContaining({ blockNumber: new BigNumber(2), txIndex: 0 })
+      );
+      expect(result).toEqual(expect.objectContaining({ txIndex: 0, txHash }));
+
+      // both subscriptions must be torn down once the transaction settles
+      expect(unsubNew).toHaveBeenCalled();
+      expect(unsubFinalized).toHaveBeenCalled();
+    });
+
+    it('should throw and unsubscribe if the transaction is never found', async () => {
+      dsMockUtils.createRpcMock('chain', 'getBlockHash', {
+        returnValue: dsMockUtils.createMockBlockHash('someBlockHash'),
+      });
+
+      // blocks are produced, but none of them carry the transaction
+      dsMockUtils.createRpcMock('chain', 'getBlock', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: dsMockUtils.createMockBlock({
+            header: dsMockUtils.createMockHeader(),
+            extrinsics: dsMockUtils.createMockExtrinsics([
+              { toHex: (): string => '0x', hash: dsMockUtils.createMockHash('someOtherTx') },
+            ]),
+          }),
+        }),
+      });
+
+      mockHeadSubscription('subscribeNewHeads', []);
+      const unsubFinalized = mockHeadSubscription(
+        'subscribeFinalizedHeads',
+        // more finalized blocks than the search is willing to wait for
+        [1, 2, 3].map(n => new BigNumber(n + 1))
+      );
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnexpectedError,
+        message: 'The block containing the transaction was not found',
+      });
+
+      await expect(
+        subscribeForTransactionFinalization(
+          extrinsicHashMatcher(txHash),
+          startingBlock,
+          context,
+          undefined,
+          { maxFinalizedBlocks: 3 }
+        )
+      ).rejects.toThrowError(expectedError);
+
+      expect(unsubFinalized).toHaveBeenCalled();
+    });
   });
 
   it('should throw an error if transaction location is not found within polling window', () => {
