@@ -1,8 +1,14 @@
+import { SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { extrinsicHashMatcher, pollForTransactionFinalization, processType } from '~/base/utils';
+import {
+  dispatchErrorToMessage,
+  extrinsicHashMatcher,
+  pollForTransactionFinalization,
+  processType,
+} from '~/base/utils';
 import { PolymeshError } from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
 import {
@@ -24,6 +30,95 @@ describe('Process Type', () => {
     const result = processType(rawType, name);
 
     expect(result.type).toBe(TransactionArgumentType.Unknown);
+  });
+});
+
+describe('dispatchErrorToMessage', () => {
+  /**
+   * Build a `SpRuntimeDispatchError`-shaped mock for a given variant
+   */
+  const buildDispatchError = (
+    variant: string,
+    extra: Record<string, unknown> = {}
+  ): SpRuntimeDispatchError =>
+    ({
+      isModule: false,
+      isBadOrigin: false,
+      isCannotLookup: false,
+      isToken: false,
+      isArithmetic: false,
+      isTransactional: false,
+      type: variant,
+      ...extra,
+    } as unknown as SpRuntimeDispatchError);
+
+  it('should resolve a Module error through chain metadata', () => {
+    const error = buildDispatchError('Module', {
+      isModule: true,
+      asModule: {
+        registry: {
+          findMetaError: (): unknown => ({
+            section: 'identity',
+            name: 'AlreadyLinked',
+            docs: ['One secondary or primary key can only belong to one DID'],
+          }),
+        },
+      },
+    });
+
+    expect(dispatchErrorToMessage(error)).toBe(
+      'identity.AlreadyLinked: One secondary or primary key can only belong to one DID'
+    );
+  });
+
+  it('should name a Token error rather than reporting it as unknown', () => {
+    // the common failure when an Account cannot cover a transfer
+    const error = buildDispatchError('Token', {
+      isToken: true,
+      asToken: { type: 'FundsUnavailable' },
+    });
+
+    expect(dispatchErrorToMessage(error)).toBe('Token error: FundsUnavailable');
+  });
+
+  it('should name Arithmetic and Transactional errors', () => {
+    expect(
+      dispatchErrorToMessage(
+        buildDispatchError('Arithmetic', {
+          isArithmetic: true,
+          asArithmetic: { type: 'Overflow' },
+        })
+      )
+    ).toBe('Arithmetic error: Overflow');
+
+    expect(
+      dispatchErrorToMessage(
+        buildDispatchError('Transactional', {
+          isTransactional: true,
+          asTransactional: { type: 'LimitReached' },
+        })
+      )
+    ).toBe('Transactional error: LimitReached');
+  });
+
+  it('should report BadOrigin and CannotLookup', () => {
+    expect(dispatchErrorToMessage(buildDispatchError('BadOrigin', { isBadOrigin: true }))).toBe(
+      'Bad origin'
+    );
+    expect(
+      dispatchErrorToMessage(buildDispatchError('CannotLookup', { isCannotLookup: true }))
+    ).toBe('Could not lookup information required to validate the transaction');
+  });
+
+  it('should fall back to the variant name for any other error', () => {
+    // a variant with no dedicated handling still produces something actionable
+    expect(dispatchErrorToMessage(buildDispatchError('Exhausted'))).toBe(
+      'Dispatch error: Exhausted'
+    );
+  });
+
+  it('should only report "Unknown error" when there is genuinely nothing to report', () => {
+    expect(dispatchErrorToMessage(buildDispatchError(''))).toBe('Unknown error');
   });
 });
 

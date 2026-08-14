@@ -152,21 +152,46 @@ export const processType = (rawType: TypeDef, name: string): TransactionArgument
 };
 
 export const dispatchErrorToMessage = (error: SpRuntimeDispatchError | DispatchError): string => {
-  let message: string;
   if (error.isModule) {
     // known error
     const mod = error.asModule;
 
     const { section, name, docs }: RegistryError = mod.registry.findMetaError(mod);
-    message = `${section}.${name}: ${docs.join(' ')}`;
-  } else if (error.isBadOrigin) {
-    message = 'Bad origin';
-  } else if (error.isCannotLookup) {
-    message = 'Could not lookup information required to validate the transaction';
-  } else {
-    message = 'Unknown error';
+
+    return `${section}.${name}: ${docs.join(' ')}`;
   }
-  return message;
+
+  if (error.isBadOrigin) {
+    return 'Bad origin';
+  }
+
+  if (error.isCannotLookup) {
+    return 'Could not lookup information required to validate the transaction';
+  }
+
+  /*
+   * The remaining variants carry no metadata to resolve against, but their own names are
+   *   meaningful. `Token(FundsUnavailable)` in particular is a common outcome — the Account
+   *   cannot cover the amount it is trying to move
+   */
+  if (error.isToken) {
+    return `Token error: ${error.asToken.type}`;
+  }
+
+  if (error.isArithmetic) {
+    return `Arithmetic error: ${error.asArithmetic.type}`;
+  }
+
+  if (error.isTransactional) {
+    return `Transactional error: ${error.asTransactional.type}`;
+  }
+
+  /*
+   * anything else (`Exhausted`, `Corruption`, `Unavailable`, `RootNotAllowed`, `NoProviders`, …)
+   *   is reported by name rather than swallowed, so a new runtime variant degrades to a useful
+   *   message instead of an opaque one
+   */
+  return error.type ? `Dispatch error: ${error.type}` : 'Unknown error';
 };
 
 /**
