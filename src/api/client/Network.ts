@@ -1,7 +1,11 @@
 import { compactToU8a, isHex, u8aConcat } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 
-import { handleExtrinsicFailure, pollForTransactionFinalization } from '~/base/utils';
+import {
+  extrinsicHashMatcher,
+  handleExtrinsicFailure,
+  pollForTransactionFinalization,
+} from '~/base/utils';
 import { Account, Context, PolymeshError, transferPolyx } from '~/internal';
 import { eventsByArgs } from '~/middleware/queries/events';
 import { extrinsicByHash } from '~/middleware/queries/extrinsics';
@@ -332,7 +336,11 @@ export class Network {
 
       await transaction.send();
 
-      const result = await pollForTransactionFinalization(transaction.hash, startingBlock, context);
+      const result = await pollForTransactionFinalization(
+        extrinsicHashMatcher(transaction.hash),
+        startingBlock,
+        context
+      );
 
       return {
         blockHash: hashToString(result.status.asFinalized),

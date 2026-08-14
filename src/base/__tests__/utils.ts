@@ -2,7 +2,7 @@ import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { pollForTransactionFinalization, processType } from '~/base/utils';
+import { extrinsicHashMatcher, pollForTransactionFinalization, processType } from '~/base/utils';
 import { PolymeshError } from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
 import {
@@ -88,12 +88,55 @@ describe('pollForTransactionFinalization', () => {
       ],
     });
 
-    const result = await pollForTransactionFinalization(txHash, startingBlock, context);
+    const result = await pollForTransactionFinalization(
+      extrinsicHashMatcher(txHash),
+      startingBlock,
+      context
+    );
 
     expect(result).toEqual(
       expect.objectContaining({
         txIndex: 0,
         txHash,
+        events: [],
+      })
+    );
+  });
+
+  it('should locate the extrinsic with an arbitrary matcher and read its hash back', async () => {
+    const otherHash = dsMockUtils.createMockHash('otherHash');
+
+    context.getLatestBlock.mockResolvedValue(new BigNumber(2));
+    dsMockUtils.createQueryMock('system', 'blockHash', {
+      multi: [dsMockUtils.createMockBlockHash('someBlockHash')],
+    });
+
+    dsMockUtils.createRpcMock('chain', 'getBlock', {
+      returnValue: dsMockUtils.createMockSignedBlock({
+        block: dsMockUtils.createMockBlock({
+          header: dsMockUtils.createMockHeader(),
+          extrinsics: dsMockUtils.createMockExtrinsics([
+            { toHex: (): string => '0x', hash: txHash },
+            { toHex: (): string => '0x', hash: otherHash },
+          ]),
+        }),
+      }),
+    });
+
+    dsMockUtils.createQueryMock('system', 'events', {
+      returnValue: [],
+    });
+
+    const result = await pollForTransactionFinalization(
+      extrinsic => extrinsic.hash.toString() === 'otherHash',
+      startingBlock,
+      context
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        txIndex: 1,
+        txHash: otherHash,
         events: [],
       })
     );
@@ -106,7 +149,10 @@ describe('pollForTransactionFinalization', () => {
     });
 
     return expect(
-      pollForTransactionFinalization(txHash, startingBlock, context, { delayMs: 0, maxAttempts: 0 })
+      pollForTransactionFinalization(extrinsicHashMatcher(txHash), startingBlock, context, {
+        delayMs: 0,
+        maxAttempts: 0,
+      })
     ).rejects.toThrow(expectedError);
   });
 });

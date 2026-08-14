@@ -1,8 +1,8 @@
 import { SubmittableResult } from '@polkadot/api';
-import { getTypeDef, u32 } from '@polkadot/types';
+import { GenericExtrinsic, getTypeDef, u32 } from '@polkadot/types';
 import { DispatchError, Hash, SignedBlock } from '@polkadot/types/interfaces';
 import { SpRuntimeDispatchError } from '@polkadot/types/lookup';
-import { RegistryError, TypeDef, TypeDefInfo } from '@polkadot/types/types';
+import { ISubmittableResult, RegistryError, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { polymesh } from '@polymeshassociation/polymesh-types/polkadot/definitions';
 import { BigNumber } from 'bignumber.js';
 
@@ -20,7 +20,7 @@ import {
 } from '~/types';
 import { ROOT_TYPES } from '~/utils/constants';
 import { bigNumberToU32, createRawExtrinsicStatus } from '~/utils/conversion';
-import { delay } from '~/utils/internal';
+import { delay, filterEventRecords } from '~/utils/internal';
 
 const { types } = polymesh;
 
@@ -182,6 +182,22 @@ export const handleExtrinsicFailure = (
   return new PolymeshError({ code: ErrorCode.TransactionReverted, message, ...(data && { data }) });
 };
 
+/**
+ * @hidden
+ *
+ * Inspect a transaction receipt for an on-chain failure and return the corresponding error, or
+ *   `undefined` if the transaction succeeded
+ */
+export const getExtrinsicFailure = (receipt: ISubmittableResult): PolymeshError | undefined => {
+  const [extrinsicFailedEvent] = filterEventRecords(receipt, 'system', 'ExtrinsicFailed', true);
+
+  if (extrinsicFailedEvent) {
+    return handleExtrinsicFailure(extrinsicFailedEvent.data[0]);
+  }
+
+  return undefined;
+};
+
 export const handleTransactionSubmissionError = (err: Error): PolymeshError => {
   let error;
   /* istanbul ignore else */
@@ -198,9 +214,28 @@ export const handleTransactionSubmissionError = (err: Error): PolymeshError => {
 
 /**
  * @hidden
+ *
+ * Predicate used to recognize a submitted transaction within a block's body. The native path
+ *   matches on the extrinsic hash, while Ethereum signed transactions match on the keccak hash
+ *   of the `revive.ethTransact` payload (since the extrinsic itself is unsigned and its hash is
+ *   not known to the wallet that broadcast it)
+ */
+export type ExtrinsicMatcher = (extrinsic: GenericExtrinsic) => boolean;
+
+/**
+ * @hidden
+ *
+ * Build a matcher that recognizes an extrinsic by its hash. This is the native submission path
+ */
+export const extrinsicHashMatcher = (txHash: Hash): ExtrinsicMatcher => {
+  return (extrinsic: GenericExtrinsic): boolean => txHash.eq(extrinsic.hash);
+};
+
+/**
+ * @hidden
  */
 async function getLocationInfoForTx(
-  txHash: Hash,
+  matcher: ExtrinsicMatcher,
   context: Context,
   lastCheckedBlock: BigNumber
 ): Promise<{
@@ -227,7 +262,7 @@ async function getLocationInfoForTx(
     );
 
     for (const newBlock of newBlocks) {
-      const txIndex = newBlock.block.extrinsics.findIndex(value => txHash.eq(value.hash));
+      const txIndex = newBlock.block.extrinsics.findIndex(value => matcher(value));
       if (txIndex >= 0) {
         locationInfo = { txIndex, block: newBlock };
         break;
@@ -241,20 +276,46 @@ async function getLocationInfoForTx(
 /**
  * @hidden
  *
- * given a transaction hash this will poll the chain until it is included in a finalized block
- *
- * @note this method should only be used when there is no subscription support for efficiency
- *
- * @throws if transaction is not found after a certain amount of time
- *
- * @param txHash The hash of the transaction
- * @param startingBlock The block number from before the transaction was submitted
- * @param context
- * @param pollOptions Controls max time to poll, defaults should be OK (finalization takes ~15 seconds)
- * @returns
+ * Assemble the `SubmittableResult` for a transaction that has been located in a finalized block,
+ *   reading back the events belonging to it
  */
+const buildFinalizedResult = async (
+  locationInfo: { block: SignedBlock; txIndex: number },
+  context: Context
+): Promise<SubmittableResult> => {
+  const queryAt = await context.polymeshApi.at(locationInfo.block.block.header.hash);
+  const allEvents = await queryAt.query.system.events();
+
+  const relatedEvents = allEvents.filter(event => {
+    if (event.phase.isApplyExtrinsic) {
+      return event.phase.asApplyExtrinsic.eq(locationInfo.txIndex);
+    }
+
+    return false;
+  });
+
+  const blockHash = locationInfo.block.block.header.hash;
+  const rawStatus = createRawExtrinsicStatus('Finalized', blockHash, context);
+
+  /*
+   * the hash is read back from the located extrinsic rather than taken from the caller, since
+   *   an Ethereum signed transaction is correlated by its payload and the Substrate extrinsic
+   *   hash is only known once the extrinsic has been found
+   */
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const txHash = locationInfo.block.block.extrinsics[locationInfo.txIndex]!.hash;
+
+  return new SubmittableResult({
+    blockNumber: locationInfo.block.block.header.number.unwrap(),
+    txIndex: locationInfo.txIndex,
+    txHash,
+    status: rawStatus,
+    events: relatedEvents,
+  });
+};
+
 export const pollForTransactionFinalization = async (
-  txHash: Hash,
+  matcher: ExtrinsicMatcher,
   startingBlock: BigNumber,
   context: Context,
   pollOptions = { delayMs: 3000, maxAttempts: 10 }
@@ -270,7 +331,7 @@ export const pollForTransactionFinalization = async (
     attemptCounter += 1;
     await delay(delayMs);
 
-    const result = await getLocationInfoForTx(txHash, context, lastCheckedBlock);
+    const result = await getLocationInfoForTx(matcher, context, lastCheckedBlock);
 
     if (result.locationInfo) {
       locationInfo = result.locationInfo;
@@ -286,27 +347,7 @@ export const pollForTransactionFinalization = async (
     });
   }
 
-  const queryAt = await context.polymeshApi.at(locationInfo.block.block.header.hash);
-  const allEvents = await queryAt.query.system.events();
-
-  const relatedEvents = allEvents.filter(event => {
-    if (event.phase.isApplyExtrinsic) {
-      return event.phase.asApplyExtrinsic.eq(locationInfo!.txIndex);
-    }
-
-    return false;
-  });
-
-  const blockHash = locationInfo.block.block.header.hash;
-  const rawStatus = createRawExtrinsicStatus('Finalized', blockHash, context);
-
-  return new SubmittableResult({
-    blockNumber: locationInfo.block.block.header.number.unwrap(),
-    txIndex: locationInfo.txIndex,
-    txHash,
-    status: rawStatus,
-    events: relatedEvents,
-  });
+  return buildFinalizedResult(locationInfo, context);
 };
 
 /**

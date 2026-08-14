@@ -19,6 +19,7 @@ import {
 import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
+import { ExtrinsicMatcher } from '~/base/utils';
 import { Identity, Procedure } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
@@ -35,6 +36,7 @@ import {
   SignerValue,
   SimplePermissions,
   TxData,
+  UnsubCallback,
 } from '~/types';
 
 /**
@@ -262,6 +264,37 @@ export interface TransactionConstructionData {
    * options that specify details for MultiSig proposals
    */
   multiSigOpts?: MultiSigProcedureOpt | undefined;
+}
+
+/**
+ * How a transaction is delivered to the chain when the connection supports subscriptions.
+ *
+ * `PolymeshTransactionBase` owns all of the lifecycle bookkeeping (status transitions, block
+ *   data, on-chain failure handling); a submission only describes *how* the transaction reaches
+ *   the node
+ */
+export interface SubscriptionSubmission {
+  /**
+   * submit the transaction, invoking `callback` on every status update. Resolves to the
+   *   unsubscribe function once the transaction has been accepted
+   */
+  subscribe: (callback: (receipt: ISubmittableResult) => void) => Promise<UnsubCallback>;
+  /**
+   * the hash to report via `transaction.txHash` once the transaction has been accepted
+   */
+  getTxHash: () => string;
+}
+
+/**
+ * How a transaction is delivered to the chain when the connection does not support
+ *   subscriptions and the result has to be located by polling
+ */
+export interface PollingSubmission {
+  /**
+   * submit the transaction. Resolves once it has been accepted, yielding the hash to report via
+   *   `transaction.txHash` and a predicate that recognizes the extrinsic in a block's body
+   */
+  send: () => Promise<{ txHash: string; matcher: ExtrinsicMatcher }>;
 }
 
 export interface AuthTarget {
