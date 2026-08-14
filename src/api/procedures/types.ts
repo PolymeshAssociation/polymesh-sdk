@@ -1178,7 +1178,7 @@ export interface OffChainAffirmationReceipt {
   /**
    * Timestamp at which the receipt expires
    */
-  expiresAt?: Date | undefined;
+  expiresAt: Date;
 }
 
 export type AffirmInstructionParams = {

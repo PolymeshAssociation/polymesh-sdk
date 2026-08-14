@@ -397,6 +397,7 @@ describe('modifyInstructionAffirmation procedure', () => {
           value: '0xsignature',
         },
         metadata: 'Optional metadata',
+        expiresAt: new Date('2030/01/01'),
       };
 
       offChainAffirmationsQueryMock.mockResolvedValue(

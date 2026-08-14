@@ -5596,13 +5596,6 @@ export function receiptDetailsToMeshReceiptDetails(
     ({ legId, uid, signer, signature, metadata, expiresAt }) => {
       const { address: signerAddress } = asAccount(signer, context);
 
-      if (!expiresAt) {
-        throw new PolymeshError({
-          code: ErrorCode.UnmetPrerequisite,
-          message: '`expiresAt` is required',
-        });
-      }
-
       return context.createType('PolymeshPrimitivesSettlementReceiptDetails', {
         uid: bigNumberToU64(uid, context),
         instructionId: rawInstructionId,
@@ -6176,13 +6169,14 @@ export function offChainFundingReceiptDetailsToMeshReceiptDetails(
   receiptDetails: OffChainFundingReceipt,
   context: Context
 ): PolymeshPrimitivesStoFundraiserReceiptDetails {
-  const { uid, signer, signature, metadata } = receiptDetails;
+  const { uid, signer, signature, metadata, expiresAt } = receiptDetails;
   const { address: signerAddress } = asAccount(signer, context);
 
   return context.createType('PolymeshPrimitivesStoFundraiserReceiptDetails', {
     uid: bigNumberToU64(uid, context),
     signer: stringToAccountId(signerAddress, context),
     signature: signatureToMeshRuntimeMultiSignature(signature.type, signature.value, context),
+    expiresAt: dateToMoment(expiresAt, context),
     metadata: optionize(offChainMetadataToMeshReceiptMetadata)(metadata, context),
   });
 }

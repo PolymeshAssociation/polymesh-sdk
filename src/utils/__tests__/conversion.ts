@@ -11551,25 +11551,6 @@ describe('receiptDetailsToMeshReceiptDetails', () => {
 
     expect(result).toEqual(fakeResult);
   });
-
-  it('should throw an error if expiresAt is missing', () => {
-    const context = dsMockUtils.getContextInstance();
-    const instructionId = new BigNumber(1);
-    const receipt: OffChainAffirmationReceipt = {
-      uid: new BigNumber(1),
-      legId: new BigNumber(0),
-      signer: '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
-      signature: {
-        type: SignerKeyRingType.Sr25519,
-        value: '0xsomevalue',
-      },
-      metadata: 'Random metadata',
-    };
-
-    expect(() => receiptDetailsToMeshReceiptDetails([receipt], instructionId, context)).toThrow(
-      '`expiresAt` is required'
-    );
-  });
 });
 
 describe('portfolioIdStringToPortfolio', () => {
@@ -12779,11 +12760,8 @@ describe('offChainFundingReceiptDetailsToMeshReceiptDetails', () => {
     const context = dsMockUtils.getContextInstance();
     jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
 
+    const expiresAt = new Date('2030/01/01');
     const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesStoFundraiserReceiptDetails;
-
-    when(context.createType)
-      .calledWith('PolymeshPrimitivesStoFundraiserReceiptDetails', expect.any(Object))
-      .mockReturnValue(fakeResult);
 
     const mockReceiptDetails: OffChainFundingReceipt = {
       uid: new BigNumber(1),
@@ -12793,7 +12771,25 @@ describe('offChainFundingReceiptDetailsToMeshReceiptDetails', () => {
         value: '0xsignature',
       },
       metadata: 'testMetadata',
+      expiresAt,
     };
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStoFundraiserReceiptDetails', {
+        uid: bigNumberToU64(mockReceiptDetails.uid, context),
+        signer: stringToAccountId(mockReceiptDetails.signer as string, context),
+        signature: signatureToMeshRuntimeMultiSignature(
+          mockReceiptDetails.signature.type,
+          mockReceiptDetails.signature.value,
+          context
+        ),
+        expiresAt: dateToMoment(expiresAt, context),
+        metadata: offChainMetadataToMeshReceiptMetadata(
+          mockReceiptDetails.metadata as string,
+          context
+        ),
+      })
+      .mockReturnValue(fakeResult);
 
     const result = offChainFundingReceiptDetailsToMeshReceiptDetails(mockReceiptDetails, context);
 

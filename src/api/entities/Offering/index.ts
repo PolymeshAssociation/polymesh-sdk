@@ -1,6 +1,6 @@
 import { Bytes, Option } from '@polkadot/types';
 import { PalletStoFundraiser } from '@polkadot/types/lookup';
-import { hexAddPrefix, hexStripPrefix, stringToHex } from '@polkadot/util';
+import { hexAddPrefix, hexStripPrefix, stringToHex, u8aToHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 
 import { Investment, OfferingDetails } from '~/api/entities/Offering/types';
@@ -36,7 +36,9 @@ import {
   assetToMeshAssetId,
   bigNumberToU64,
   bigNumberToU128,
+  dateToMoment,
   fundraiserToOfferingDetails,
+  stringToBytes,
   stringToIdentityId,
   stringToTicker,
   tickerToString,
@@ -360,9 +362,13 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    * @param args.metadata - (optional) additional metadata to be associated with the receipt
    * @param args.signer - (optional) authorized venue receipt signer to generate the cryptographic signature. Defaults to signing Account associated with the SDK
    * @param args.signerKeyRingType - (optional) keyring type for signature generation. Defaults to 'Sr25519'. Supported types: SR25519, ED25519, ECDSA
+   * @param args.expiresAt - timestamp at which the receipt expires and can no longer be used to invest
    *
    * @note The generated receipt contains SCALE-encoded data wrapped with `<Bytes>` tags, including:
+   * - Chain genesis hash
    * - Receipt UID
+   * - Receipt label
+   * - Receipt expiry
    * - Fundraiser ID
    * - Sender's DID (investor)
    * - Receiver's DID (raising portfolio owner)
@@ -379,6 +385,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     metadata?: string;
     signer?: string | Account;
     signerKeyRingType?: SignerKeyRingType;
+    expiresAt: Date;
   }): Promise<OffChainFundingReceipt> {
     const { id, context } = this;
 
@@ -390,6 +397,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       sender,
       offChainTicker,
       amount,
+      expiresAt,
     } = args;
 
     const rawFundraiserId = bigNumberToU64(id, context);
@@ -409,7 +417,13 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const payloadStrings = [
       stringToHex('<Bytes>'),
+      context.polymeshApi.genesisHash.toHex(),
       rawUid.toHex(true),
+      // the chain encodes the label as a SCALE `&[u8]`, which is length
+      // prefixed - `Bytes.toHex()` strips that prefix, so `toU8a()` (the
+      // full wire encoding) has to be used instead
+      u8aToHex(stringToBytes('Polymesh STO Fundraiser Receipt', context).toU8a()),
+      dateToMoment(expiresAt, context).toHex(true),
       rawFundraiserId.toHex(true),
       rawSender.toHex(),
       rawReceiver.toHex(),
@@ -430,6 +444,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
         value: signatureValue,
       },
       metadata,
+      expiresAt,
     };
   }
 }

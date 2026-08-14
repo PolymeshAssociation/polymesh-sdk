@@ -137,6 +137,7 @@ describe('investInOffering procedure', () => {
         value: '0xSomevalue',
       },
       metadata: 'Some metadata',
+      expiresAt: new Date('2030/01/01'),
     };
   });
 

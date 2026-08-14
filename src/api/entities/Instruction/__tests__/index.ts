@@ -2869,13 +2869,5 @@ describe('Instruction class', () => {
         signer,
       });
     });
-    it('should throw an error if expiresAt is not provided', () => {
-      return expect(
-        instruction.generateOffChainAffirmationReceipt({
-          legId,
-          uid,
-        })
-      ).rejects.toThrow('`expiresAt` is required');
-    });
   });
 });

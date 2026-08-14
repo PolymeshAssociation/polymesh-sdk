@@ -117,4 +117,8 @@ export interface OffChainFundingReceipt {
    * (optional) Metadata value that can be used to attach messages to the receipt
    */
   metadata: string | undefined;
+  /**
+   * Timestamp at which the receipt expires
+   */
+  expiresAt: Date;
 }

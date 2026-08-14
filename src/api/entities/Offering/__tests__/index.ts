@@ -4,6 +4,14 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { Bytes, Option, U64, U128 } from '@polkadot/types-codec';
+import {
+  hexAddPrefix,
+  hexStripPrefix,
+  stringToHex,
+  stringToU8a,
+  u8aConcat,
+  u8aToHex,
+} from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -506,7 +514,7 @@ describe('Offering class', () => {
     });
   });
 
-  describe('method: generateOffChainAffirmationReceipt', () => {
+  describe('method: generateOffChainFundingReceipt', () => {
     let uid: BigNumber;
     let id: BigNumber;
     let rawId: U64;
@@ -526,6 +534,8 @@ describe('Offering class', () => {
     let offering: Offering;
     let rawFundraiser: Option<PalletStoFundraiser>;
     let rawFundraiserName: Option<Bytes>;
+    let rawExpiresAt: ReturnType<typeof dsMockUtils.createMockMoment>;
+    let label: Uint8Array;
 
     beforeAll(() => {
       bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
@@ -538,6 +548,7 @@ describe('Offering class', () => {
       senderIdentity = '0x12'.padStart(66, '1');
       receiverIdentity = '0x01'.padStart(66, '0');
       offChainTicker = 'OFFCHAIN';
+      label = stringToU8a('Polymesh STO Fundraiser Receipt');
     });
 
     beforeEach(() => {
@@ -586,15 +597,28 @@ describe('Offering class', () => {
       dsMockUtils.createQueryMock('sto', 'fundraiserNames', {
         returnValue: rawFundraiserName,
       });
+
+      rawExpiresAt = dsMockUtils.createMockMoment(new BigNumber(1000));
+      jest.spyOn(utilsConversionModule, 'dateToMoment').mockReturnValue(rawExpiresAt);
+
+      when(context.createType)
+        .calledWith('Bytes', 'Polymesh STO Fundraiser Receipt')
+        .mockReturnValue({
+          toU8a: () => u8aConcat(new Uint8Array([label.length << 2]), label),
+        } as unknown as Bytes);
+
       offering = new Offering({ assetId: '12341234-1234-1234-1234-123412341234', id }, context);
     });
 
     it('should return the funding receipt for offchain ticker', async () => {
+      const expiresAt = new Date('2030/01/01');
+
       const result = await offering.generateOffChainFundingReceipt({
         uid,
         offChainTicker,
         amount,
         sender: senderIdentity,
+        expiresAt,
       });
 
       expect(result).toEqual({
@@ -607,12 +631,14 @@ describe('Offering class', () => {
           value: '0xsignature',
         },
         metadata: undefined,
+        expiresAt,
       });
     });
 
     it('should return the funding receipt for offchain ticker with signer', async () => {
       const signer = 'someSigner';
       const metadata = 'some metadata';
+      const expiresAt = new Date('2030/01/01');
 
       const result = await offering.generateOffChainFundingReceipt({
         uid,
@@ -622,6 +648,7 @@ describe('Offering class', () => {
         signerKeyRingType: SignerKeyRingType.Ed25519,
         signer,
         metadata,
+        expiresAt,
       });
 
       expect(result).toEqual({
@@ -632,10 +659,29 @@ describe('Offering class', () => {
           value: '0xsignature',
         },
         metadata,
+        expiresAt,
       });
 
+      /*
+       * the chain rebuilds the signed payload as `<Bytes>` + genesis hash + uid + the SCALE encoded
+       * receipt label + the receipt expiry + the receipt itself + `</Bytes>`
+       */
+      const expectedPayload = [
+        stringToHex('<Bytes>'),
+        context.polymeshApi.genesisHash.toHex(),
+        rawUid.toHex(true),
+        u8aToHex(u8aConcat(new Uint8Array([label.length << 2]), label)),
+        rawExpiresAt.toHex(true),
+        rawId.toHex(true),
+        rawSenderIdentity.toHex(),
+        rawReceiverIdentity.toHex(),
+        rawTicker.toHex(),
+        rawAmount.toHex(true),
+        stringToHex('</Bytes>'),
+      ];
+
       expect(context.getSignature).toHaveBeenCalledWith({
-        rawPayload: expect.stringMatching(/0x3c42797465733e(.*)3c2f42797465733e/),
+        rawPayload: hexAddPrefix(expectedPayload.map(e => hexStripPrefix(e)).join('')),
         signer,
       });
     });

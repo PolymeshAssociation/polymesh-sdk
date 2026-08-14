@@ -1343,6 +1343,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @param args.metadata (optional) metadata to be associated with the receipt
    * @param args.signer (optional) Signer to be used to generate receipt signature. Defaults to signing Account associated with the SDK
    * @param args.signerKeyRingType (optional) keyring type of the signer. Defaults to 'Sr25519'
+   * @param args.expiresAt timestamp at which the receipt expires and can no longer be used to affirm
    */
   public async generateOffChainAffirmationReceipt(args: {
     legId: BigNumber;
@@ -1350,7 +1351,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     metadata?: string;
     signer?: string | Account;
     signerKeyRingType?: SignerKeyRingType;
-    expiresAt?: Date;
+    expiresAt: Date;
   }): Promise<OffChainAffirmationReceipt> {
     const {
       id,
@@ -1370,13 +1371,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       signerKeyRingType = SignerKeyRingType.Sr25519,
       expiresAt,
     } = args;
-
-    if (!expiresAt) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: '`expiresAt` is required',
-      });
-    }
 
     const rawId = bigNumberToU64(id, context);
     const rawLegId = bigNumberToU64(legId, context);
