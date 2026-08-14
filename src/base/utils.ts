@@ -244,10 +244,34 @@ export const getExtrinsicFailure = (receipt: ISubmittableResult): PolymeshError 
   return undefined;
 };
 
+/**
+ * @hidden
+ *
+ * [EIP-1193](https://eips.ethereum.org/EIPS/eip-1193#provider-errors) code for "the user rejected
+ *   the request". Every injected provider produces it, so it is the reliable signal on the
+ *   Ethereum path — more so than the message, which is the wallet's to word
+ */
+const ETH_USER_REJECTED_CODE = 4001;
+
+/**
+ * @hidden
+ *
+ * Whether the error reports that the user declined to sign.
+ *
+ * Two signals, because the two signing paths report rejection differently. Polkadot signers throw
+ *   a message containing `Cancelled`, while an {@link base/types!EthSigner} is specified to throw
+ *   the EIP-1193 `code`. Checking the code as well means a third-party Ethereum signer that simply
+ *   re-throws its provider's error is understood, rather than having to format its message to suit
+ *   the SDK
+ */
+const isRejectedByUser = (err: Error): boolean =>
+  (err as Error & { code?: unknown }).code === ETH_USER_REJECTED_CODE ||
+  err.message.indexOf('Cancelled') > -1;
+
 export const handleTransactionSubmissionError = (err: Error): PolymeshError => {
   let error;
-  /* istanbul ignore else */
-  if (err.message.indexOf('Cancelled') > -1) {
+
+  if (isRejectedByUser(err)) {
     // tx rejected by signer
     error = { code: ErrorCode.TransactionRejectedByUser };
   } else {

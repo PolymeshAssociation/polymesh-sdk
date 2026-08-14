@@ -12,7 +12,8 @@ import {
   buildEthTransactionRequest,
   calculateEthGasFee,
   dryRunEthTransaction,
-  getEthSubmissionMode,
+  EthSubmissionStrategy,
+  getEthSubmissionStrategy,
   getNativeToEthRatio,
 } from '~/base/ethTransaction';
 import { EthSigner, EthTransactionPayload, EthTransactionRequest } from '~/base/types';
@@ -498,7 +499,7 @@ export abstract class PolymeshTransactionBase<
     if (isEthDerivedAddress(signingAddress, context.ss58Format)) {
       const { ethSigner, request } = await this.buildEthRequest();
 
-      return this.buildEthPollingSubmission(ethSigner, request);
+      return this.buildEthPollingSubmission(getEthSubmissionStrategy(ethSigner), request);
     }
 
     const { txWithArgs, signerOptions } = this.buildNativeSignerData();
@@ -732,16 +733,17 @@ export abstract class PolymeshTransactionBase<
 
     const { ethSigner, request } = await this.buildEthRequest();
 
-    if (getEthSubmissionMode(ethSigner) === 'sdkBroadcast' && context.supportsSubscription()) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const rawSignedTx = await ethSigner.signTransaction!(request);
+    const strategy = getEthSubmissionStrategy(ethSigner);
+
+    if (strategy.mode === 'sdkBroadcast' && context.supportsSubscription()) {
+      const rawSignedTx = await strategy.signTransaction(request);
 
       const { subscription } = buildSdkBroadcastSubmission(context, rawSignedTx);
 
       return this.runViaSubscription(subscription);
     }
 
-    return this.runViaPolling(this.buildEthPollingSubmission(ethSigner, request));
+    return this.runViaPolling(this.buildEthPollingSubmission(strategy, request));
   }
 
   /**
@@ -796,15 +798,16 @@ export abstract class PolymeshTransactionBase<
    *   signing in `sdkBroadcast`, and the sign-and-send in `walletBroadcast`
    */
   private buildEthPollingSubmission(
-    ethSigner: EthSigner,
+    strategy: EthSubmissionStrategy,
     request: EthTransactionRequest
   ): () => Promise<PollingSubmission> {
     const { context } = this;
 
-    if (getEthSubmissionMode(ethSigner) === 'sdkBroadcast') {
+    if (strategy.mode === 'sdkBroadcast') {
+      const { signTransaction } = strategy;
+
       return async () => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const rawSignedTx = await ethSigner.signTransaction!(request);
+        const rawSignedTx = await signTransaction(request);
 
         return buildSdkBroadcastSubmission(context, rawSignedTx).polling;
       };
@@ -815,7 +818,10 @@ export abstract class PolymeshTransactionBase<
      *   nothing, so there is no extrinsic-status subscription to attach to and the result has to
      *   be located by scanning blocks for the matching `revive.ethTransact` extrinsic
      */
-    const walletBroadcastSubmission = buildWalletBroadcastSubmission(ethSigner, request);
+    const walletBroadcastSubmission = buildWalletBroadcastSubmission(
+      strategy.sendTransaction,
+      request
+    );
 
     return () =>
       Promise.resolve({
@@ -1493,13 +1499,22 @@ export abstract class PolymeshTransactionBase<
    *   {@link api/client/Network!Network.submitEthTransaction | sdk.network.submitEthTransaction}
    *
    * @param metadata - Additional information attached to the payload, such as IDs or memos about the transaction
+   * @param opts.eip1559 - whether to build an EIP-1559 (type 2) transaction. Defaults to `true`;
+   *   pass `false` for a custody service or hardware signer that can only encode legacy (type 0)
+   *   transactions
+   *
+   * @note no Signing Manager is required. The whole point of this method is detached signing, so
+   *   it must work on an SDK instance connected without one — the payload is built entirely from
+   *   chain state and the signing address
    *
    * @throws `ValidationError` if the signing Account is not Ethereum-derived
    */
   public async toEthSignablePayload(
-    metadata: Record<string, string> = {}
+    metadata: Record<string, string> = {},
+    opts: { eip1559?: boolean } = {}
   ): Promise<EthTransactionPayload> {
     const { signingAddress, context } = this;
+    const { eip1559 = true } = opts;
 
     if (!isEthDerivedAddress(signingAddress, context.ss58Format)) {
       throw new PolymeshError({
@@ -1507,16 +1522,6 @@ export abstract class PolymeshTransactionBase<
         message:
           '`toEthSignablePayload` can only be used for a transaction signed by an Ethereum-derived Account. Use `toSignablePayload` instead',
         data: { signingAddress },
-      });
-    }
-
-    const ethSigner = context.getEthSigner();
-
-    if (!ethSigner) {
-      throw new PolymeshError({
-        code: ErrorCode.General,
-        message:
-          'There is no Ethereum signer associated with the SDK instance. Please report this to the Polymesh team',
       });
     }
 
@@ -1529,7 +1534,7 @@ export abstract class PolymeshTransactionBase<
       context,
       signingAddress,
       composedTx,
-      ethSigner.capabilities.eip1559,
+      eip1559,
       nonceOverride
     );
 

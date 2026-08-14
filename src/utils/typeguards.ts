@@ -466,6 +466,9 @@ export const isPortfolioAssetHolder = (
 /**
  * Return whether a Signing Manager is capable of signing Ethereum transactions, i.e. whether it
  *   exposes a `getEthSigner` method
+ *
+ * TODO: re-export from @polymeshassociation/signing-manager-types once >=3.8.0 is published, which
+ *   carries this same implementation
  */
 export function isEthSigningManager(
   manager: SigningManager | null | undefined

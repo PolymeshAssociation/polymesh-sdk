@@ -838,6 +838,43 @@ describe('Polymesh Transaction Base class', () => {
       expect(result).toBe('pollingResult');
     });
 
+    it('should broadcast a natively signed transaction without waiting for it', async () => {
+      const transaction = dsMockUtils.createTxMock('staking', 'bond', { autoResolve: false });
+      context.supportsSubscription.mockReturnValue(false);
+
+      const fakeReceipt = new SubmittableResult({
+        blockNumber: dsMockUtils.createMockU32(new BigNumber(101)),
+        status: dsMockUtils.createMockExtrinsicStatus({
+          Finalized: dsMockUtils.createMockHash('blockHash'),
+        }),
+        txHash: dsMockUtils.createMockHash('bond'),
+        txIndex: 1,
+      });
+
+      jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
+
+      const args = tuple('FOO');
+      const txWithArgsMock = transaction(...args);
+
+      const tx = new PolymeshTransaction(
+        { ...txSpec, transaction, args, resolver: 'pollingResult' },
+        context
+      );
+
+      const handle = await tx.broadcast();
+
+      // the native signer data path: signed and sent, with no Ethereum signer involved
+      expect(txWithArgsMock.signAndSend).toHaveBeenCalledWith(
+        txSpec.signingAddress,
+        expect.objectContaining({ signer: 'signer' })
+      );
+      expect(handle.ethTxHash).toBeUndefined();
+      expect(tx.status).toBe(TransactionStatus.Running);
+
+      await expect(handle.watch()).resolves.toBe('pollingResult');
+      expect(tx.status).toBe(TransactionStatus.Succeeded);
+    });
+
     it('should throw an error when polling if the finalized receipt contains an extrinsic failure', () => {
       const transaction = dsMockUtils.createTxMock('staking', 'bond', { autoResolve: false });
       context.supportsSubscription.mockReturnValue(false);
@@ -2221,26 +2258,42 @@ describe('Polymesh Transaction Base class', () => {
     const ethSs58Address = '5HYRCKHYJN9z5xUtfFkyMj4JUhsAwWyvuU8vKB1FcnYTf9ZQ';
     const sentinelAddress = '0x6d6f646c70792f70616464720000000000000000';
 
-    const buildEthSigner = (
-      capabilities: Partial<{
-        signTransaction: boolean;
-        sendTransaction: boolean;
-        eip1559: boolean;
-      }> = {}
-    ): {
-      capabilities: { signTransaction: boolean; sendTransaction: boolean; eip1559: boolean };
-      signTransaction: jest.Mock;
-      sendTransaction: jest.Mock;
+    /**
+     * `signTransaction` / `sendTransaction` control whether the signer *implements* that method,
+     *   since that is what the SDK derives its submission mode from
+     */
+    const buildEthSigner = ({
+      signTransaction = true,
+      sendTransaction = false,
+      eip1559,
+    }: {
+      signTransaction?: boolean;
+      sendTransaction?: boolean;
+      eip1559?: boolean;
+    } = {}): {
+      capabilities: { eip1559?: boolean };
+      signTransaction?: jest.Mock;
+      sendTransaction?: jest.Mock;
     } => ({
-      capabilities: {
-        signTransaction: true,
-        sendTransaction: false,
-        eip1559: true,
-        ...capabilities,
-      },
-      signTransaction: jest.fn().mockResolvedValue('0xrawsigned'),
-      sendTransaction: jest.fn().mockResolvedValue('0xethtxhash'),
+      capabilities: eip1559 === undefined ? {} : { eip1559 },
+      ...(signTransaction ? { signTransaction: jest.fn().mockResolvedValue('0xrawsigned') } : {}),
+      ...(sendTransaction ? { sendTransaction: jest.fn().mockResolvedValue('0xethtxhash') } : {}),
     });
+
+    /**
+     * The signer's `sendTransaction` mock, for tests that built a broadcasting signer. Throws
+     *   rather than asserting non-null, so a helper misuse fails as itself instead of as an
+     *   inscrutable "cannot read property of undefined"
+     */
+    const sendMockOf = (signer: ReturnType<typeof buildEthSigner>): jest.Mock => {
+      const { sendTransaction } = signer;
+
+      if (!sendTransaction) {
+        throw new Error('expected the signer to implement sendTransaction');
+      }
+
+      return sendTransaction;
+    };
 
     const mockReviveApi = (): void => {
       dsMockUtils.createCallMock('reviveApi', 'gasPrice', {
@@ -2457,7 +2510,7 @@ describe('Polymesh Transaction Base class', () => {
 
         expect(ethSigner.sendTransaction).toHaveBeenCalled();
         // the wallet owns the nonce in this mode
-        expect(ethSigner.sendTransaction.mock.calls[0][0].nonce).toBeUndefined();
+        expect(sendMockOf(ethSigner).mock.calls[0][0].nonce).toBeUndefined();
         expect(tx.ethTxHash).toBe('0xethtxhash');
         expect(tx.txHash).toBe('0xethtxhash');
         expect(tx.status).toBe(TransactionStatus.Succeeded);
@@ -2516,7 +2569,7 @@ describe('Polymesh Transaction Base class', () => {
         submission: { broadcastTimeout?: number; watchTimeout?: number } = {}
       ): PolymeshTransaction<undefined, void, [string]> => {
         const ethSigner = buildEthSigner({ signTransaction: false, sendTransaction: true });
-        ethSigner.sendTransaction.mockReturnValue(new Promise(noop));
+        sendMockOf(ethSigner).mockReturnValue(new Promise(noop));
         context.getEthSigner.mockReturnValue(ethSigner);
         context.supportsSubscription.mockReturnValue(false);
         dsMockUtils.createTxMock('revive', 'ethTransact', { autoResolve: false });
@@ -2830,8 +2883,12 @@ describe('Polymesh Transaction Base class', () => {
         expect(result.tag).toBe(tag);
       });
 
-      it('should throw if no Ethereum signer is attached to the SDK instance', async () => {
+      it('should build the payload with no Ethereum signer attached, since detached signing is the point', async () => {
         context.getEthSigner.mockReturnValue(undefined);
+        jest
+          .spyOn(utilsConversionModule, 'transactionHexToTxTag')
+          .mockReturnValue(TxTags.asset.RegisterUniqueTicker);
+        context.getTransactionArguments.mockReturnValue([]);
 
         const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
         const tx = new PolymeshTransaction(
@@ -2839,9 +2896,49 @@ describe('Polymesh Transaction Base class', () => {
           context
         );
 
-        await expect(tx.toEthSignablePayload()).rejects.toThrow(
-          'There is no Ethereum signer associated with the SDK instance'
+        const result = await tx.toEthSignablePayload();
+
+        expect(result.transaction).toEqual(
+          expect.objectContaining({ to: sentinelAddress, type: 2 })
         );
+      });
+
+      it('should default to an EIP-1559 transaction', async () => {
+        jest
+          .spyOn(utilsConversionModule, 'transactionHexToTxTag')
+          .mockReturnValue(TxTags.asset.RegisterUniqueTicker);
+        context.getTransactionArguments.mockReturnValue([]);
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        const { transaction: request } = await tx.toEthSignablePayload();
+
+        expect(request.type).toBe(2);
+        expect(request.maxFeePerGas).toBeDefined();
+        expect(request.gasPrice).toBeUndefined();
+      });
+
+      it('should build a legacy transaction when the caller asks for one', async () => {
+        jest
+          .spyOn(utilsConversionModule, 'transactionHexToTxTag')
+          .mockReturnValue(TxTags.asset.RegisterUniqueTicker);
+        context.getTransactionArguments.mockReturnValue([]);
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        const { transaction: request } = await tx.toEthSignablePayload({}, { eip1559: false });
+
+        expect(request.type).toBe(0);
+        expect(request.gasPrice).toBeDefined();
+        expect(request.maxFeePerGas).toBeUndefined();
       });
 
       it('should throw a ValidationError for a native signing Account', async () => {

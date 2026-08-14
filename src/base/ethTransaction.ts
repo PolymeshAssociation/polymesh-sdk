@@ -16,8 +16,9 @@ import { ethAddressFromSs58, parseEthTransactError } from '~/utils/eth';
 /**
  * @hidden
  *
- * Which of the two submission strategies an {@link EthSigner} supports. The SDK reads
- *   `capabilities` to make this decision; it never probes the provider itself
+ * Which of the two submission strategies an {@link EthSigner} supports. This is derived from
+ *   which methods the signer implements, so it cannot disagree with what the signer can actually
+ *   do; the SDK never probes the provider itself
  *
  * - `sdkBroadcast` (`signTransaction`): the signer returns raw signed bytes, and the SDK submits
  *   and tracks the transaction the same way it would a native one. The SDK owns the nonce
@@ -29,21 +30,55 @@ export type EthSubmissionMode = 'sdkBroadcast' | 'walletBroadcast';
 
 /**
  * @hidden
+ *
+ * The submission mode together with the signer method that implements it, already bound to the
+ *   signer. Resolving both at once is what lets the rest of the Ethereum path stay total: there is
+ *   no point downstream at which the method might turn out to be missing
  */
-export function getEthSubmissionMode(ethSigner: EthSigner): EthSubmissionMode {
-  if (ethSigner.capabilities.signTransaction) {
-    return 'sdkBroadcast';
+export type EthSubmissionStrategy =
+  | { mode: 'sdkBroadcast'; signTransaction: NonNullable<EthSigner['signTransaction']> }
+  | { mode: 'walletBroadcast'; sendTransaction: NonNullable<EthSigner['sendTransaction']> };
+
+/**
+ * @hidden
+ *
+ * Resolve how to submit for the given signer, from the methods it actually implements.
+ *
+ * `signTransaction` wins when a signer implements both, since it lets the SDK keep control of the
+ *   nonce and of the full submission lifecycle
+ *
+ * @note the returned method is bound to the signer. Callers have to destructure it to narrow the
+ *   optional property, which would otherwise silently drop `this` for any signer implementing the
+ *   interface with ordinary class methods rather than arrow function properties
+ *
+ * @throws if the signer implements neither method
+ */
+export function getEthSubmissionStrategy(ethSigner: EthSigner): EthSubmissionStrategy {
+  const { signTransaction, sendTransaction } = ethSigner;
+
+  if (signTransaction) {
+    return { mode: 'sdkBroadcast', signTransaction: signTransaction.bind(ethSigner) };
   }
 
-  if (ethSigner.capabilities.sendTransaction) {
-    return 'walletBroadcast';
+  if (sendTransaction) {
+    return { mode: 'walletBroadcast', sendTransaction: sendTransaction.bind(ethSigner) };
   }
 
   throw new PolymeshError({
     code: ErrorCode.General,
     message:
-      'The attached Ethereum signer does not support signing or sending transactions. Please report this to the Polymesh team',
+      'The attached Ethereum signer implements neither signTransaction nor sendTransaction, so it cannot submit a transaction. Please report this to the Polymesh team',
   });
+}
+
+/**
+ * @hidden
+ *
+ * Whether to build an EIP-1559 (type 2) transaction for the given signer. Defaults to `true`, so
+ *   a signer only has to declare the capability when it *cannot* encode type 2
+ */
+export function supportsEip1559(ethSigner: EthSigner): boolean {
+  return ethSigner.capabilities.eip1559 ?? true;
 }
 
 /**
@@ -182,7 +217,7 @@ export async function buildEthTransactionRequest(
     gasMultiplier = new BigNumber(1),
   } = params;
 
-  const mode = getEthSubmissionMode(ethSigner);
+  const { mode } = getEthSubmissionStrategy(ethSigner);
 
   if (mode === 'walletBroadcast' && nonceOverride) {
     throw new PolymeshError({
@@ -216,7 +251,7 @@ export async function buildEthTransactionRequest(
     }
   }
 
-  const { eip1559 } = ethSigner.capabilities;
+  const eip1559 = supportsEip1559(ethSigner);
 
   const request: EthTransactionRequest = {
     from,
@@ -414,22 +449,19 @@ export function buildSdkBroadcastSubmission(
  *
  * The block scan is shared with the native path rather than duplicated: the same
  *   {@link ExtrinsicMatcher} drives both, so there is one implementation and one set of tests
+ *
+ * @param sendTransaction - the signer's `sendTransaction`, resolved by the caller. Taking the
+ *   bound method rather than the signer is what makes this total: reaching here at all means
+ *   {@link getEthSubmissionStrategy} found the method, so there is no "signer said it could broadcast
+ *   but cannot" case left to guard against
  */
 export function buildWalletBroadcastSubmission(
-  ethSigner: EthSigner,
+  sendTransaction: NonNullable<EthSigner['sendTransaction']>,
   request: EthTransactionRequest
 ): PollingSubmission {
   return {
     send: async (): Promise<{ txHash: string; matcher: ExtrinsicMatcher }> => {
-      if (!ethSigner.sendTransaction) {
-        throw new PolymeshError({
-          code: ErrorCode.General,
-          message:
-            'The attached Ethereum signer does not implement sendTransaction. Please report this to the Polymesh team',
-        });
-      }
-
-      const ethTxHash = await ethSigner.sendTransaction(request);
+      const ethTxHash = await sendTransaction(request);
 
       return { txHash: ethTxHash, matcher: ethTransactKeccakMatcher(ethTxHash) };
     },

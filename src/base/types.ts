@@ -306,13 +306,14 @@ export type PolymeshError = PolymeshErrorClass;
  */
 export interface EthTransactionRequest {
   /** the `0x` H160 address of the Ethereum-derived Account sending the transaction */
-  from: string;
+  from: HexString;
   /** the sentinel address, i.e. `reviveApi.runtimePalletsAddress()` */
-  to: string;
+  to: HexString;
   /** SCALE-encoded `RuntimeCall` */
   data: HexString;
   value: '0x0';
   gas: HexString;
+  /** the signer must sign for exactly this chain, never the one its provider is connected to */
   chainId: HexString;
   /** set when the SDK broadcasts; omitted when the wallet broadcasts and owns the nonce */
   nonce?: HexString;
@@ -320,36 +321,41 @@ export interface EthTransactionRequest {
   maxFeePerGas?: HexString;
   maxPriorityFeePerGas?: HexString;
   gasPrice?: HexString;
-  /** EIP-4844 (3) / EIP-7702 (4) are rejected by the runtime and must never be emitted */
-  type?: 0 | 1 | 2;
+  /**
+   * only legacy (0) and EIP-1559 (2) are emitted. EIP-2930 (1) has no use on the sentinel path,
+   *   and EIP-4844 (3) / EIP-7702 (4) are rejected by the runtime
+   */
+  type: 0 | 2;
 }
 
 /**
- * Describes what an {@link EthSigner} is capable of. The SDK reads this to choose whether it
- *   broadcasts the transaction itself (`signTransaction`) or the wallet does (`sendTransaction`),
- *   and to choose the transaction type; it never probes the provider itself
+ * Describes what an {@link EthSigner} can do beyond what the presence of its methods already
+ *   says. Whether a signer can sign or broadcast is expressed by implementing `signTransaction` /
+ *   `sendTransaction`, so this covers only what cannot be derived from the object's shape
  *
  * TODO: replace with import from @polymeshassociation/signing-manager-types once >=3.8.0 is published
  */
 export interface EthSignerCapabilities {
-  /** `true` if the signer can return raw signed bytes, letting the SDK broadcast and track it */
-  signTransaction: boolean;
-  /** `true` if the signer broadcasts the transaction itself, and so owns the nonce */
-  sendTransaction: boolean;
-  /** `false` for signers that only support legacy (type 0) transactions */
-  eip1559: boolean;
+  /**
+   * whether the signer supports EIP-1559 (type 2) transactions. Defaults to `true` when omitted.
+   *   `false` for signers that can only encode legacy (type 0) transactions
+   */
+  eip1559?: boolean;
 }
 
 /**
  * An Ethereum-key signer capable of signing (and optionally broadcasting) the raw Ethereum
  *   transaction that carries a Polymesh runtime call through the `revive` pallet
  *
+ * At least one of `signTransaction` and `sendTransaction` must be implemented; the SDK chooses
+ *   how to submit from whichever is present
+ *
  * TODO: replace with import from @polymeshassociation/signing-manager-types once >=3.8.0 is published
  */
 export interface EthSigner {
   /**
-   * What this signer can do. The SDK reads this to choose who broadcasts, and
-   * the transaction type; it never probes the provider itself.
+   * What this signer can do beyond what its methods imply. The SDK reads this rather than probing
+   * the provider, since probing would mean a speculative request to the user's wallet.
    */
   readonly capabilities: EthSignerCapabilities;
   /** raw signed transaction bytes. Preferred — lets the SDK broadcast and track natively */

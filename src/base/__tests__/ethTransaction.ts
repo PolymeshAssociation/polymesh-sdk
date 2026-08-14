@@ -13,7 +13,7 @@ import {
   calculateEthGasFee,
   dryRunEthTransaction,
   ethTransactKeccakMatcher,
-  getEthSubmissionMode,
+  getEthSubmissionStrategy,
   getNativeToEthRatio,
 } from '~/base/ethTransaction';
 import { EthSigner } from '~/base/types';
@@ -42,21 +42,26 @@ describe('ethTransaction', () => {
     method: { toHex: (): string => calldata },
   } as unknown as SubmittableExtrinsic<'promise', ISubmittableResult>;
 
+  /**
+   * Build an `EthSigner` mock.
+   *
+   * `signTransaction` / `sendTransaction` control whether the signer *implements* that method,
+   *   since that is what the SDK derives its submission mode from. `eip1559` is left off the
+   *   capabilities entirely unless given, so the default (`true`) is what most tests exercise
+   */
   const buildEthSigner = (
-    capabilities: Partial<EthSigner['capabilities']> = {},
+    {
+      signTransaction = true,
+      sendTransaction = false,
+      eip1559,
+    }: { signTransaction?: boolean; sendTransaction?: boolean; eip1559?: boolean } = {},
     overrides: Partial<EthSigner> = {}
-  ): EthSigner =>
-    ({
-      capabilities: {
-        signTransaction: true,
-        sendTransaction: false,
-        eip1559: true,
-        ...capabilities,
-      },
-      signTransaction: jest.fn().mockResolvedValue('0xrawsigned'),
-      sendTransaction: jest.fn().mockResolvedValue('0xethtxhash'),
-      ...overrides,
-    } as unknown as EthSigner);
+  ): EthSigner => ({
+    capabilities: eip1559 === undefined ? {} : { eip1559 },
+    ...(signTransaction ? { signTransaction: jest.fn().mockResolvedValue('0xrawsigned') } : {}),
+    ...(sendTransaction ? { sendTransaction: jest.fn().mockResolvedValue('0xethtxhash') } : {}),
+    ...overrides,
+  });
 
   /**
    * Mock the `reviveApi` runtime calls the eth path depends on
@@ -105,25 +110,52 @@ describe('ethTransaction', () => {
     dsMockUtils.cleanup();
   });
 
-  describe('getEthSubmissionMode', () => {
+  describe('getEthSubmissionStrategy', () => {
     it('should prefer SDK broadcast when the signer can return raw signed bytes', () => {
       const signer = buildEthSigner({ signTransaction: true, sendTransaction: true });
 
-      expect(getEthSubmissionMode(signer)).toBe('sdkBroadcast');
+      expect(getEthSubmissionStrategy(signer).mode).toBe('sdkBroadcast');
     });
 
     it('should fall back to wallet broadcast when the signer can only broadcast', () => {
       const signer = buildEthSigner({ signTransaction: false, sendTransaction: true });
 
-      expect(getEthSubmissionMode(signer)).toBe('walletBroadcast');
+      expect(getEthSubmissionStrategy(signer).mode).toBe('walletBroadcast');
     });
 
-    it('should throw if the signer advertises neither capability', () => {
+    it('should throw if the signer implements neither method', () => {
       const signer = buildEthSigner({ signTransaction: false, sendTransaction: false });
 
-      expect(() => getEthSubmissionMode(signer)).toThrow(
-        'does not support signing or sending transactions'
+      expect(() => getEthSubmissionStrategy(signer)).toThrow(
+        'implements neither signTransaction nor sendTransaction'
       );
+    });
+
+    it('should bind the resolved method to the signer', async () => {
+      /**
+       * A signer implemented with ordinary class methods rather than arrow function properties.
+       *   Destructuring such a method drops `this`, so this is what proves the strategy binds it
+       */
+      class ClassBasedSigner implements EthSigner {
+        public capabilities = {};
+
+        private readonly raw = '0xboundraw' as const;
+
+        /**
+         * reading `this.raw` is the point: an unbound method would throw here
+         */
+        public signTransaction(): Promise<HexString> {
+          return Promise.resolve(this.raw);
+        }
+      }
+
+      const strategy = getEthSubmissionStrategy(new ClassBasedSigner());
+
+      if (strategy.mode !== 'sdkBroadcast') {
+        throw new Error('expected the strategy to resolve to sdkBroadcast');
+      }
+
+      await expect(strategy.signTransaction({} as never)).resolves.toBe('0xboundraw');
     });
   });
 
@@ -466,13 +498,12 @@ describe('ethTransaction', () => {
       const payloadBytes = new Uint8Array([1, 2, 3, 4]);
       const ethTxHash = keccakAsHex(payloadBytes);
       const sendTransaction = jest.fn().mockResolvedValue(ethTxHash);
-      const ethSigner = buildEthSigner(
-        { signTransaction: false, sendTransaction: true },
-        { sendTransaction }
-      );
       const request = { from: alithH160 } as never;
 
-      const { txHash, matcher } = await buildWalletBroadcastSubmission(ethSigner, request).send();
+      const { txHash, matcher } = await buildWalletBroadcastSubmission(
+        sendTransaction,
+        request
+      ).send();
 
       expect(sendTransaction).toHaveBeenCalledWith(request);
       expect(txHash).toBe(ethTxHash);
@@ -482,22 +513,6 @@ describe('ethTransaction', () => {
           args: [{ toU8a: (): Uint8Array => payloadBytes }],
         } as unknown as GenericExtrinsic)
       ).toBe(true);
-    });
-
-    it('should throw if the signer advertised sendTransaction but does not implement it', async () => {
-      const ethSigner = {
-        capabilities: { signTransaction: false, sendTransaction: true, eip1559: true },
-      } as unknown as EthSigner;
-
-      let error;
-      try {
-        await buildWalletBroadcastSubmission(ethSigner, {} as never).send();
-      } catch (err) {
-        error = err;
-      }
-
-      expect(error.code).toBe(ErrorCode.General);
-      expect(error.message).toContain('does not implement sendTransaction');
     });
   });
 });

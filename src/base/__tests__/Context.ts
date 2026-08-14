@@ -2844,7 +2844,7 @@ describe('Context class', () => {
 
     it('should return the Ethereum signer if the Signing Manager provides one', async () => {
       const ethSigner = {
-        capabilities: { signTransaction: true, sendTransaction: false, eip1559: true },
+        capabilities: { eip1559: true },
         signTransaction: jest.fn(),
       };
 

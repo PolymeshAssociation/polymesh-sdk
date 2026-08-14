@@ -6,6 +6,7 @@ import { when } from 'jest-when';
 import {
   dispatchErrorToMessage,
   extrinsicHashMatcher,
+  handleTransactionSubmissionError,
   pollForTransactionFinalization,
   processType,
   subscribeForTransactionFinalization,
@@ -120,6 +121,38 @@ describe('dispatchErrorToMessage', () => {
 
   it('should only report "Unknown error" when there is genuinely nothing to report', () => {
     expect(dispatchErrorToMessage(buildDispatchError(''))).toBe('Unknown error');
+  });
+});
+
+describe('handleTransactionSubmissionError', () => {
+  it('should map a Polkadot signer cancellation, which reports rejection in the message', () => {
+    const error = handleTransactionSubmissionError(new Error('Error: Cancelled'));
+
+    expect(error.code).toBe(ErrorCode.TransactionRejectedByUser);
+  });
+
+  it('should map an EIP-1193 rejection, which reports it as code 4001', () => {
+    const rejection = Object.assign(new Error('User rejected the request'), { code: 4001 });
+
+    const error = handleTransactionSubmissionError(rejection);
+
+    expect(error.code).toBe(ErrorCode.TransactionRejectedByUser);
+  });
+
+  it('should not treat another provider error code as a rejection', () => {
+    const disconnected = Object.assign(new Error('The wallet is disconnected'), { code: 4900 });
+
+    const error = handleTransactionSubmissionError(disconnected);
+
+    expect(error.code).toBe(ErrorCode.UnexpectedError);
+    expect(error.message).toBe('The wallet is disconnected');
+  });
+
+  it('should report anything else as an unexpected error', () => {
+    const error = handleTransactionSubmissionError(new Error('something broke'));
+
+    expect(error.code).toBe(ErrorCode.UnexpectedError);
+    expect(error.message).toBe('something broke');
   });
 });
 
