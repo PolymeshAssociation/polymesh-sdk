@@ -1,5 +1,8 @@
 /* istanbul ignore file */
 
+import { SigningManager } from '@polymeshassociation/signing-manager-types';
+
+import { EthSigningManager } from '~/base/types';
 import {
   Account,
   AuthorizationRequest,
@@ -459,3 +462,13 @@ export const isPortfolioAssetHolder = (
 ): holder is DefaultPortfolio | NumberedPortfolio => {
   return !(holder instanceof Account);
 };
+
+/**
+ * Return whether a Signing Manager is capable of signing Ethereum transactions, i.e. whether it
+ *   exposes a `getEthSigner` method
+ */
+export function isEthSigningManager(
+  manager: SigningManager | null | undefined
+): manager is EthSigningManager {
+  return !!manager && typeof (manager as Partial<EthSigningManager>).getEthSigner === 'function';
+}
