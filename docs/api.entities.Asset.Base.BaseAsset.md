@@ -1,0 +1,625 @@
+[@polymeshassociation/polymesh-sdk](../wiki/README) / api/entities/Asset/Base/BaseAsset
+
+# api/entities/Asset/Base/BaseAsset
+
+## Classes
+
+### BaseAsset
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:69](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L69)
+
+Class used to manage functionality common to all assets.
+
+#### Extends
+
+- [`Entity`](../wiki/api.entities.Entity#abstract-entity)\<[`UniqueIdentifiers`](../wiki/api.entities.Asset.types#uniqueidentifiers), `string`\>
+
+#### Extended by
+
+- [`FungibleAsset`](../wiki/api.entities.Asset.Fungible#fungibleasset)
+- [`NftCollection`](../wiki/api.entities.Asset.NonFungible.NftCollection#nftcollection)
+
+#### Properties
+
+##### compliance
+
+> **compliance**: [`Compliance`](../wiki/api.entities.Asset.Base.Compliance#compliance)
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:71](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L71)
+
+##### documents
+
+> **documents**: [`Documents`](../wiki/api.entities.Asset.Base.Documents#documents)
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:72](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L72)
+
+##### id
+
+> **id**: `string`
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:79](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L79)
+
+Unique ID of the Asset in UUID format
+
+##### metadata
+
+> **metadata**: [`Metadata`](../wiki/api.entities.Asset.Base.Metadata#metadata)
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:73](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L73)
+
+##### permissions
+
+> **permissions**: [`Permissions`](../wiki/api.entities.Asset.Base.Permissions#permissions)
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:74](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L74)
+
+##### uuid
+
+> **uuid**: `string`
+
+Defined in: [api/entities/Entity.ts:46](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Entity.ts#L46)
+
+###### Inherited from
+
+[`Entity`](../wiki/api.entities.Entity#abstract-entity).[`uuid`](../wiki/api.entities.Entity#uuid)
+
+#### Accessors
+
+##### rawId
+
+###### Get Signature
+
+> **get** **rawId**(): `string`
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:86](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L86)
+
+Unique ID of the Asset in hex format
+
+###### Note
+
+Although UUID format is the usual representation of asset IDs, generic polkadot/substrate tools usually expect it in hex format
+
+###### Returns
+
+`string`
+
+#### Methods
+
+##### addRequiredMediators()
+
+> **addRequiredMediators**(`args`, `opts?`): `Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:218](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L218)
+
+Add required mediators. Mediators must approve any trades involving the asset
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `args` | [`AssetMediatorParams`](../wiki/api.procedures.types#assetmediatorparams) |
+| `opts?` | [`ProcedureOpts`](../wiki/api.procedures.types#procedureopts) |
+
+###### Returns
+
+`Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+###### Note
+
+this method is of type [ProcedureMethod](../wiki/api.procedures.types#proceduremethod), which means you can call [addRequiredMediators.checkAuthorization](../wiki/api.procedures.types#checkauthorization-3) on it to see whether the signing Account and Identity have the required roles and permissions to run it
+
+##### currentFundingRound()
+
+###### Call Signature
+
+> **currentFundingRound**(): `Promise`\<`string` \| `null`\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:505](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L505)
+
+Retrieve the Asset's funding round
+
+###### Returns
+
+`Promise`\<`string` \| `null`\>
+
+Promise that resolves to the current funding round name or null if not set
+
+###### Call Signature
+
+> **currentFundingRound**(`callback`): `Promise`\<[`UnsubCallback`](../wiki/api.entities.types#unsubcallback)\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:515](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L515)
+
+Retrieve the Asset's funding round
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `callback` | [`SubCallback`](../wiki/api.entities.types#subcallback)\<`string` \| `null`\> | Callback function that receives funding round updates |
+
+###### Returns
+
+`Promise`\<[`UnsubCallback`](../wiki/api.entities.types#unsubcallback)\>
+
+Promise that resolves to an unsubscribe function
+
+###### Note
+
+can be subscribed to, if connected to node using a web socket
+
+##### details()
+
+###### Call Signature
+
+> **details**(): `Promise`\<[`AssetDetails`](../wiki/api.entities.Asset.types#assetdetails)\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:338](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L338)
+
+Retrieve the Asset's data
+
+###### Returns
+
+`Promise`\<[`AssetDetails`](../wiki/api.entities.Asset.types#assetdetails)\>
+
+Promise that resolves to the Asset details
+
+###### Call Signature
+
+> **details**(`callback`): `Promise`\<[`UnsubCallback`](../wiki/api.entities.types#unsubcallback)\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:348](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L348)
+
+Retrieve the Asset's data
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `callback` | [`SubCallback`](../wiki/api.entities.types#subcallback)\<[`AssetDetails`](../wiki/api.entities.Asset.types#assetdetails)\> | Callback function that receives Asset details updates |
+
+###### Returns
+
+`Promise`\<[`UnsubCallback`](../wiki/api.entities.types#unsubcallback)\>
+
+Promise that resolves to an unsubscribe function
+
+###### Note
+
+can be subscribed to, if connected to node using a web socket
+
+##### freeze()
+
+> **freeze**(`opts?`): `Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:208](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L208)
+
+Freeze transfers of the Asset
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `opts?` | [`ProcedureOpts`](../wiki/api.procedures.types#procedureopts) |
+
+###### Returns
+
+`Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+###### Note
+
+this method is of type [NoArgsProcedureMethod](../wiki/api.procedures.types#noargsproceduremethod), which means you can call [freeze.checkAuthorization](../wiki/api.procedures.types#checkauthorization-1) on it to see whether the signing Account and Identity have the required roles and permissions to run it
+
+##### getIdentifiers()
+
+###### Call Signature
+
+> **getIdentifiers**(): `Promise`\<[`SecurityIdentifier`](../wiki/api.entities.Asset.types#securityidentifier)[]\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:247](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L247)
+
+Retrieve the Asset's identifiers list
+
+###### Returns
+
+`Promise`\<[`SecurityIdentifier`](../wiki/api.entities.Asset.types#securityidentifier)[]\>
+
+Promise that resolves to the list of security identifiers
+
+###### Call Signature
+
+> **getIdentifiers**(`callback?`): `Promise`\<[`UnsubCallback`](../wiki/api.entities.types#unsubcallback)\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:257](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L257)
+
+Retrieve the Asset's identifiers list
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `callback?` | [`SubCallback`](../wiki/api.entities.types#subcallback)\<[`SecurityIdentifier`](../wiki/api.entities.Asset.types#securityidentifier)[]\> | Callback function that receives identifier updates |
+
+###### Returns
+
+`Promise`\<[`UnsubCallback`](../wiki/api.entities.types#unsubcallback)\>
+
+Promise that resolves to an unsubscribe function
+
+###### Note
+
+can be subscribed to, if connected to node using a web socket
+
+##### getIssuedInFundingRound()
+
+> **getIssuedInFundingRound**(`fundingRound`): `Promise`\<`BigNumber`\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:551](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L551)
+
+Retrieve the total amount of the Asset issued in the given funding round
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `fundingRound` | `string` | name of the funding round to query |
+
+###### Returns
+
+`Promise`\<`BigNumber`\>
+
+##### getRequiredMediators()
+
+> **getRequiredMediators**(): `Promise`\<[`Identity`](../wiki/api.entities.Identity#identity)[]\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:450](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L450)
+
+Get required Asset mediators. These Identities must approve any Instruction involving the asset
+
+###### Returns
+
+`Promise`\<[`Identity`](../wiki/api.entities.Identity#identity)[]\>
+
+##### getVenueFilteringDetails()
+
+> **getVenueFilteringDetails**(): `Promise`\<[`VenueFilteringDetails`](../wiki/api.entities.Asset.types#venuefilteringdetails)\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:470](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L470)
+
+Get venue filtering details
+
+###### Returns
+
+`Promise`\<[`VenueFilteringDetails`](../wiki/api.entities.Asset.types#venuefilteringdetails)\>
+
+##### isEqual()
+
+> **isEqual**(`entity`): `boolean`
+
+Defined in: [api/entities/Entity.ts:61](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Entity.ts#L61)
+
+Determine whether this Entity is the same as another one
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `entity` | [`Entity`](../wiki/api.entities.Entity#abstract-entity)\<`unknown`, `unknown`\> |
+
+###### Returns
+
+`boolean`
+
+###### Inherited from
+
+[`Entity`](../wiki/api.entities.Entity#abstract-entity).[`isEqual`](../wiki/api.entities.Entity#isequal)
+
+##### isFrozen()
+
+###### Call Signature
+
+> **isFrozen**(): `Promise`\<`boolean`\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:295](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L295)
+
+Check whether transfers are frozen for the Asset
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+Promise that resolves to true if transfers are frozen, false otherwise
+
+###### Call Signature
+
+> **isFrozen**(`callback`): `Promise`\<[`UnsubCallback`](../wiki/api.entities.types#unsubcallback)\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:305](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L305)
+
+Check whether transfers are frozen for the Asset
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `callback` | [`SubCallback`](../wiki/api.entities.types#subcallback)\<`boolean`\> | Callback function that receives frozen status updates |
+
+###### Returns
+
+`Promise`\<[`UnsubCallback`](../wiki/api.entities.types#unsubcallback)\>
+
+Promise that resolves to an unsubscribe function
+
+###### Note
+
+can be subscribed to, if connected to node using a web socket
+
+##### linkTicker()
+
+> **linkTicker**(`args`, `opts?`): `Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:231](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L231)
+
+Link ticker to the asset
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `args` | [`LinkTickerToAssetParams`](../wiki/api.procedures.types#linktickertoassetparams) |
+| `opts?` | [`ProcedureOpts`](../wiki/api.procedures.types#procedureopts) |
+
+###### Returns
+
+`Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+###### Note
+
+if ticker is already reserved, then required role:
+- Ticker Owner
+
+###### Note
+
+this method is of type [ProcedureMethod](../wiki/api.procedures.types#proceduremethod), which means you can call [linkTicker.checkAuthorization](../wiki/api.procedures.types#checkauthorization-3) on it to see whether the signing Account and Identity have the required roles and permissions to run it
+
+##### modify()
+
+> **modify**(`args`, `opts?`): `Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<[`Asset`](../wiki/api.entities.Asset.types#asset-3), [`Asset`](../wiki/api.entities.Asset.types#asset-3)\>\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:127](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L127)
+
+Modify some properties of the Asset
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `args` | [`ModifyAssetParams`](../wiki/api.procedures.types#modifyassetparams) |
+| `opts?` | [`ProcedureOpts`](../wiki/api.procedures.types#procedureopts) |
+
+###### Returns
+
+`Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<[`Asset`](../wiki/api.entities.Asset.types#asset-3), [`Asset`](../wiki/api.entities.Asset.types#asset-3)\>\>
+
+###### Throws
+
+if the passed values result in no changes being made to the Asset
+
+###### Throws
+
+if the passed assetType is not a known asset type or a custom type that has not been created on the chain
+
+###### Throws
+
+if trying to modify an NftCollection's assetType
+
+###### Note
+
+this method is of type [ProcedureMethod](../wiki/api.procedures.types#proceduremethod), which means you can call [modify.checkAuthorization](../wiki/api.procedures.types#checkauthorization-3) on it to see whether the signing Account and Identity have the required roles and permissions to run it
+
+##### removeRequiredMediators()
+
+> **removeRequiredMediators**(`args`, `opts?`): `Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:223](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L223)
+
+Remove required mediators
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `args` | [`AssetMediatorParams`](../wiki/api.procedures.types#assetmediatorparams) |
+| `opts?` | [`ProcedureOpts`](../wiki/api.procedures.types#procedureopts) |
+
+###### Returns
+
+`Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+###### Note
+
+this method is of type [ProcedureMethod](../wiki/api.procedures.types#proceduremethod), which means you can call [removeRequiredMediators.checkAuthorization](../wiki/api.procedures.types#checkauthorization-3) on it to see whether the signing Account and Identity have the required roles and permissions to run it
+
+##### setVenueFiltering()
+
+> **setVenueFiltering**(`args`, `opts?`): `Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:108](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L108)
+
+Enable/disable venue filtering for this Asset and/or set allowed/disallowed venues
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `args` | [`SetVenueFilteringParams`](../wiki/api.procedures.types#setvenuefilteringparams) |
+| `opts?` | [`ProcedureOpts`](../wiki/api.procedures.types#procedureopts) |
+
+###### Returns
+
+`Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+###### Note
+
+this method is of type [ProcedureMethod](../wiki/api.procedures.types#proceduremethod), which means you can call [setVenueFiltering.checkAuthorization](../wiki/api.procedures.types#checkauthorization-3) on it to see whether the signing Account and Identity have the required roles and permissions to run it
+
+##### toHuman()
+
+> **toHuman**(): `string`
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:594](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L594)
+
+Return the BaseAsset's ID
+
+###### Returns
+
+`string`
+
+###### Overrides
+
+[`Entity`](../wiki/api.entities.Entity#abstract-entity).[`toHuman`](../wiki/api.entities.Entity#tohuman)
+
+##### transferOwnership()
+
+> **transferOwnership**(`args`, `opts?`): `Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<[`AuthorizationRequest`](../wiki/api.entities.AuthorizationRequest#authorizationrequest), [`AuthorizationRequest`](../wiki/api.entities.AuthorizationRequest#authorizationrequest)\>\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:103](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L103)
+
+Transfer ownership of the Asset to another Identity. This generates an authorization request that must be accepted
+  by the recipient
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `args` | [`TransferAssetOwnershipParams`](../wiki/api.procedures.types#transferassetownershipparams) |
+| `opts?` | [`ProcedureOpts`](../wiki/api.procedures.types#procedureopts) |
+
+###### Returns
+
+`Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<[`AuthorizationRequest`](../wiki/api.entities.AuthorizationRequest#authorizationrequest), [`AuthorizationRequest`](../wiki/api.entities.AuthorizationRequest#authorizationrequest)\>\>
+
+###### Note
+
+the signing Identity must be an agent of this Asset holding `asset.acceptAssetOwnershipTransfer`
+  permission — granted by `TxGroup.AdvancedAssetManagement` or `PermissionGroupType.Full`. The chain
+  checks this when the `target` accepts, against the Identity that created the Authorization Request,
+  so an offer sent without it can never be accepted
+
+###### Note
+
+this will create [Authorization Request](../wiki/api.entities.types#authorizationrequest) which has to be accepted by the `target` Identity.
+  An [api/entities/Account!Account](../wiki/api.entities.Account#account) or [Identity](../wiki/api.entities.Identity#identity) can fetch its pending Authorization Requests by calling [authorizations.getReceived](../wiki/api.entities.common.namespaces.Authorizations#getreceived).
+  Also, an Account or Identity can directly fetch the details of an Authorization Request by calling [authorizations.getOne](../wiki/api.entities.common.namespaces.Authorizations#getone)
+
+###### Note
+
+this method is of type [ProcedureMethod](../wiki/api.procedures.types#proceduremethod), which means you can call [transferOwnership.checkAuthorization](../wiki/api.procedures.types#checkauthorization-3) on it to see whether the signing Account and Identity have the required roles and permissions to run it
+
+##### unfreeze()
+
+> **unfreeze**(`opts?`): `Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:213](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L213)
+
+Unfreeze transfers of the Asset
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `opts?` | [`ProcedureOpts`](../wiki/api.procedures.types#procedureopts) |
+
+###### Returns
+
+`Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+###### Note
+
+this method is of type [NoArgsProcedureMethod](../wiki/api.procedures.types#noargsproceduremethod), which means you can call [unfreeze.checkAuthorization](../wiki/api.procedures.types#checkauthorization-1) on it to see whether the signing Account and Identity have the required roles and permissions to run it
+
+##### unlinkTicker()
+
+> **unlinkTicker**(`opts?`): `Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+Defined in: [api/entities/Asset/Base/BaseAsset.ts:240](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Asset/Base/BaseAsset.ts#L240)
+
+Unlink ticker from the Asset
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `opts?` | [`ProcedureOpts`](../wiki/api.procedures.types#procedureopts) |
+
+###### Returns
+
+`Promise`\<[`GenericPolymeshTransaction`](../wiki/api.procedures.types#genericpolymeshtransaction)\<`void`, `void`\>\>
+
+###### Note
+
+Only the ticker owner is allowed to unlink the Asset
+
+###### Throws
+
+if there is no ticker to unlink
+
+###### Note
+
+this method is of type [NoArgsProcedureMethod](../wiki/api.procedures.types#noargsproceduremethod), which means you can call [unlinkTicker.checkAuthorization](../wiki/api.procedures.types#checkauthorization-1) on it to see whether the signing Account and Identity have the required roles and permissions to run it
+
+##### generateUuid()
+
+> `static` **generateUuid**\<`Identifiers`\>(`identifiers`): `string`
+
+Defined in: [api/entities/Entity.ts:14](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Entity.ts#L14)
+
+Generate the Entity's UUID from its identifying properties
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `Identifiers` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `identifiers` | `Identifiers` | - |
+
+###### Returns
+
+`string`
+
+###### Inherited from
+
+[`Entity`](../wiki/api.entities.Entity#abstract-entity).[`generateUuid`](../wiki/api.entities.Entity#generateuuid)
+
+##### unserialize()
+
+> `static` **unserialize**\<`Identifiers`\>(`serialized`): `Identifiers`
+
+Defined in: [api/entities/Entity.ts:23](https://github.com/PolymeshAssociation/polymesh-sdk/blob/1473bc3749248826a69330d9fc1dbaf67202c736/src/api/entities/Entity.ts#L23)
+
+Unserialize a UUID into its Unique Identifiers
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `Identifiers` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `serialized` | `string` | UUID to unserialize |
+
+###### Returns
+
+`Identifiers`
+
+###### Inherited from
+
+[`Entity`](../wiki/api.entities.Entity#abstract-entity).[`unserialize`](../wiki/api.entities.Entity#unserialize)
