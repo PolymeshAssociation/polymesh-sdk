@@ -75,6 +75,12 @@ export enum ErrorCode {
    */
   TransactionReverted = 'TransactionReverted',
   /**
+   * the SDK stopped waiting for the transaction before it reached a conclusion. This is **not**
+   *   a failure: the transaction may well have been broadcast, and may still be included in a
+   *   block. Nothing about it was cancelled — only the waiting stopped
+   */
+  TransactionTimeout = 'TransactionTimeout',
+  /**
    * error that should cause termination of the calling application
    */
   FatalError = 'FatalError',

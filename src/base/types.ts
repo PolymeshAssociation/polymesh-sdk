@@ -18,6 +18,50 @@ export type MapTxData<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
 };
 
+/**
+ * Handle to a transaction that has been broadcast but is not being tracked. Returned by
+ *   {@link base/PolymeshTransactionBase!PolymeshTransactionBase.broadcast | transaction.broadcast},
+ *   which is `run` split at its natural seam: the transaction is on its way to the chain, and
+ *   whether to wait for it is now the caller's decision
+ */
+export interface TransactionBroadcastHandle<ReturnValue> {
+  /**
+   * the hash the transaction can be looked up by. Normally the Substrate extrinsic hash, but the
+   *   Ethereum transaction hash when an Ethereum wallet broadcast it, since that is the handle the
+   *   user has and can find in a block explorer
+   */
+  txHash: string;
+
+  /**
+   * the Ethereum transaction hash, set only when an Ethereum wallet broadcast the transaction
+   *   itself. `undefined` otherwise
+   */
+  ethTxHash?: string;
+
+  /**
+   * the block height the search for this transaction has to start from. Persist this alongside
+   *   `txHash` to resume tracking later via
+   *   {@link api/client/Network!Network.watchTransaction | network.watchTransaction}, for example
+   *   after a page reload, when `watch` itself is long gone
+   */
+  startingBlock: BigNumber;
+
+  /**
+   * Wait for the transaction to be included in a finalized block and return the same value
+   *   `run` would have returned
+   *
+   * Safe to retry if it times out — nothing is resubmitted, the search simply resumes. Calling it
+   *   while a previous call is still in flight throws
+   *
+   * @param opts.timeout - milliseconds to wait before giving up. Overrides `submission.watchTimeout`
+   *   from the Procedure options. Defaults to waiting indefinitely
+   *
+   * @throws `TransactionTimeout` if the transaction is not found in time. The transaction was still
+   *   broadcast and may yet be included — this reports only that the SDK stopped looking
+   */
+  watch: (opts?: { timeout?: number }) => Promise<ReturnValue>;
+}
+
 export enum TransactionStatus {
   /**
    * the transaction is prepped to run

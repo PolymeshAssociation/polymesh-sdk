@@ -4,10 +4,13 @@ import { compactToU8a, isHex, u8aConcat } from '@polkadot/util';
 import { HexString } from '@polkadot/util/types';
 import BigNumber from 'bignumber.js';
 
+import { ethTransactKeccakMatcher } from '~/base/ethTransaction';
 import {
   extrinsicHashMatcher,
+  ExtrinsicMatcher,
   getExtrinsicFailure,
   pollForTransactionFinalization,
+  subscribeForTransactionFinalization,
 } from '~/base/utils';
 import { Account, Context, PolymeshError, transferPolyx } from '~/internal';
 import { eventsByArgs } from '~/middleware/queries/events';
@@ -23,6 +26,7 @@ import {
   ProtocolFees,
   SubCallback,
   SubmissionDetails,
+  SubmissionOpts,
   TransactionArgument,
   TransactionPayloadInput,
   TransferPolyxParams,
@@ -43,7 +47,7 @@ import {
   transactionHexToTxTag,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize } from '~/utils/internal';
+import { createProcedureMethod, optionize, withTimeout } from '~/utils/internal';
 
 /**
  * Handles all Network related functionality, including querying for historical events from middleware
@@ -216,11 +220,17 @@ export class Network {
   /**
    * Submits a transaction payload with its signature to the chain. `signature` should be hex encoded
    *
+   * @param opts - bounds on how long to wait while broadcasting and tracking the transaction.
+   *   Defaults to waiting indefinitely
+   *
    * @throws if the signature is not hex encoded
+   * @throws `TransactionTimeout` if a bound in `opts` is exceeded. The transaction is not cancelled
+   *   by this, and can be tracked afterwards with {@link watchTransaction}
    */
   public async submitTransaction(
     txPayload: TransactionPayloadInput,
-    signature: string
+    signature: string,
+    opts: SubmissionOpts = {}
   ): Promise<SubmissionDetails> {
     const { context } = this;
 
@@ -265,7 +275,7 @@ export class Network {
 
     const transaction = context.polymeshApi.tx(extrinsic);
 
-    return await this.broadcastExtrinsic(transaction);
+    return await this.broadcastExtrinsic(transaction, opts);
   }
 
   /**
@@ -277,13 +287,88 @@ export class Network {
    *   sign it externally, and submit the raw signed bytes here
    *
    * @param rawSignedTx - the raw signed Ethereum transaction, as returned by an `EthSigner`'s `signTransaction`
+   * @param opts - bounds on how long to wait while broadcasting and tracking the transaction.
+   *   Defaults to waiting indefinitely
+   *
+   * @throws `TransactionTimeout` if a bound in `opts` is exceeded. The transaction is not cancelled
+   *   by this, and can be tracked afterwards with {@link watchTransaction}
    */
-  public async submitEthTransaction(rawSignedTx: HexString): Promise<SubmissionDetails> {
+  public async submitEthTransaction(
+    rawSignedTx: HexString,
+    opts: SubmissionOpts = {}
+  ): Promise<SubmissionDetails> {
     const { context } = this;
 
     const transaction = context.polymeshApi.tx.revive.ethTransact(rawSignedTx);
 
-    return await this.broadcastExtrinsic(transaction);
+    return await this.broadcastExtrinsic(transaction, opts);
+  }
+
+  /**
+   * Track a transaction that has already been broadcast, by its hash, and wait for it to be
+   *   included in a finalized block
+   *
+   * Complements {@link base/PolymeshTransactionBase!PolymeshTransactionBase.broadcast | transaction.broadcast}
+   *   and the timeouts on {@link submitTransaction} / {@link submitEthTransaction}: each of those
+   *   can leave a transaction in flight but untracked. Since this needs nothing but a hash and a
+   *   block height, tracking can be picked back up in a later session — after a page reload, for
+   *   instance, where the original handle no longer exists
+   *
+   * @param args.startingBlock - block height to start searching from. This must be at or before the
+   *   block the transaction was submitted in, or it will not be found. `broadcast` returns the
+   *   correct value to persist
+   * @param args.txHash - hash of the transaction to look for
+   * @param args.isEthTxHash - set to `true` when `txHash` is an Ethereum transaction hash, i.e. the
+   *   transaction was broadcast by an Ethereum wallet. Those are carried on chain as an unsigned
+   *   `revive.ethTransact` extrinsic, so they are matched by their payload rather than by the
+   *   extrinsic hash
+   * @param args.timeout - milliseconds to wait before giving up. Defaults to waiting indefinitely
+   *
+   * @throws `TransactionTimeout` if the transaction is not found in time. It may still be included
+   *   afterwards — this reports only that the search stopped
+   */
+  public async watchTransaction(args: {
+    startingBlock: BigNumber;
+    txHash: string;
+    isEthTxHash?: boolean;
+    timeout?: number;
+  }): Promise<SubmissionDetails> {
+    const { context } = this;
+    const { startingBlock, txHash, isEthTxHash = false, timeout } = args;
+
+    const matcher: ExtrinsicMatcher = isEthTxHash
+      ? ethTransactKeccakMatcher(txHash)
+      : extrinsicHashMatcher(context.createType('Hash', txHash));
+
+    const scanning = context.supportsSubscription()
+      ? subscribeForTransactionFinalization(matcher, startingBlock, context)
+      : pollForTransactionFinalization(matcher, startingBlock, context);
+
+    const result = await withTimeout(
+      scanning,
+      timeout,
+      () =>
+        new PolymeshError({
+          code: ErrorCode.TransactionTimeout,
+          message:
+            'The transaction was not found in a finalized block within the allotted time. It has not been cancelled and may still be included, so this can be retried',
+          data: { txHash, startingBlock, timeout },
+        })
+    );
+
+    const failureError = getExtrinsicFailure(result);
+
+    if (failureError) {
+      throw failureError;
+    }
+
+    return {
+      blockHash: hashToString(result.status.asFinalized),
+      transactionHash: txHash,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      transactionIndex: new BigNumber(result.txIndex!),
+      result,
+    };
   }
 
   /**
@@ -292,11 +377,17 @@ export class Network {
    * Broadcast an already-built extrinsic (either the offline-signed native extrinsic, or the
    *   bare `revive.ethTransact` wrapper around a raw signed Ethereum transaction) and track it
    *   through to finalization
+   *
+   * @note the bounds in `opts` only apply to the polling path. The subscription path is driven by
+   *   the node's own status stream, which reports progress unprompted and does not risk waiting on
+   *   a signer that never responds
    */
   private async broadcastExtrinsic(
-    transaction: SubmittableExtrinsic<'promise', ISubmittableResult>
+    transaction: SubmittableExtrinsic<'promise', ISubmittableResult>,
+    opts: SubmissionOpts
   ): Promise<SubmissionDetails> {
     const { context } = this;
+    const { broadcastTimeout, watchTimeout } = opts;
 
     const submissionDetails: SubmissionDetails = {
       blockHash: '',
@@ -370,12 +461,36 @@ export class Network {
     } else {
       const startingBlock = await context.getLatestBlock();
 
-      await transaction.send();
+      await withTimeout(
+        transaction.send(),
+        broadcastTimeout,
+        () =>
+          new PolymeshError({
+            code: ErrorCode.TransactionTimeout,
+            message:
+              'The transaction was not broadcast within the allotted time. It was not cancelled — whether it ends up being submitted is unknown, so check before submitting again, or the same transaction may be submitted twice',
+            data: { transactionHash: transaction.hash.toString(), broadcastTimeout },
+          })
+      );
 
-      const result = await pollForTransactionFinalization(
-        extrinsicHashMatcher(transaction.hash),
-        startingBlock,
-        context
+      const result = await withTimeout(
+        pollForTransactionFinalization(
+          extrinsicHashMatcher(transaction.hash),
+          startingBlock,
+          context
+        ),
+        watchTimeout,
+        () =>
+          new PolymeshError({
+            code: ErrorCode.TransactionTimeout,
+            message:
+              'The transaction was broadcast but was not found in a finalized block within the allotted time. It has not been cancelled and may still be included — it can be tracked by hash with `network.watchTransaction`',
+            data: {
+              transactionHash: transaction.hash.toString(),
+              startingBlock,
+              watchTimeout,
+            },
+          })
       );
 
       const failureError = getExtrinsicFailure(result);

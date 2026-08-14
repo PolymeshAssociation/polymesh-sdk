@@ -57,6 +57,12 @@ describe('Polymesh Transaction Base class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    /*
+     * several tests stub `~/base/utils` module functions (`getExtrinsicFailure`,
+     *   `pollForTransactionFinalization`). Without this those stubs, and their call counts, leak
+     *   into every test that runs afterwards
+     */
+    jest.restoreAllMocks();
   });
 
   afterAll(() => {
@@ -2498,6 +2504,238 @@ describe('Polymesh Transaction Base class', () => {
         expect(tx.status).toBe(TransactionStatus.Failed);
         // the resolver must not run for a transaction that actually failed
         expect(resolver).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('submission timeouts', () => {
+      /**
+       * A wallet-broadcast transaction with a never-answered confirmation prompt — the case a
+       *   broadcast timeout exists for
+       */
+      const buildStalledBroadcast = (
+        submission: { broadcastTimeout?: number; watchTimeout?: number } = {}
+      ): PolymeshTransaction<undefined, void, [string]> => {
+        const ethSigner = buildEthSigner({ signTransaction: false, sendTransaction: true });
+        ethSigner.sendTransaction.mockReturnValue(new Promise(noop));
+        context.getEthSigner.mockReturnValue(ethSigner);
+        context.supportsSubscription.mockReturnValue(false);
+        dsMockUtils.createTxMock('revive', 'ethTransact', { autoResolve: false });
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+
+        return new PolymeshTransaction(
+          { ...ethTxSpec, submission, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+      };
+
+      it('should throw a TransactionTimeout if the wallet does not broadcast in time', async () => {
+        const tx = buildStalledBroadcast({ broadcastTimeout: 5000 });
+
+        const runPromise = tx.run();
+
+        await fakePromise();
+        jest.advanceTimersByTime(5000);
+
+        await expect(runPromise).rejects.toThrow(
+          expect.objectContaining({ code: ErrorCode.TransactionTimeout })
+        );
+      });
+
+      it('should wait indefinitely for the broadcast when no timeout is set', async () => {
+        const tx = buildStalledBroadcast();
+        let settled = false;
+
+        const runPromise = tx.run().catch(noop);
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        runPromise.then(() => {
+          settled = true;
+        });
+
+        await fakePromise();
+        jest.advanceTimersByTime(600000);
+        await fakePromise();
+
+        expect(settled).toBe(false);
+      });
+
+      it('should throw a TransactionTimeout if the transaction is not found in time', async () => {
+        const ethSigner = buildEthSigner({ signTransaction: false, sendTransaction: true });
+        context.getEthSigner.mockReturnValue(ethSigner);
+        context.supportsSubscription.mockReturnValue(false);
+        dsMockUtils.createTxMock('revive', 'ethTransact', { autoResolve: false });
+
+        // the transaction is broadcast, but never turns up in a block
+        jest
+          .spyOn(baseUtils, 'pollForTransactionFinalization')
+          .mockReturnValue(new Promise(noop) as never);
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          {
+            ...ethTxSpec,
+            submission: { watchTimeout: 5000 },
+            transaction,
+            args: tuple('FOO'),
+            resolver: undefined,
+          },
+          context
+        );
+
+        const runPromise = tx.run();
+
+        await fakePromise();
+        jest.advanceTimersByTime(5000);
+
+        await expect(runPromise).rejects.toThrow(
+          expect.objectContaining({ code: ErrorCode.TransactionTimeout })
+        );
+
+        /*
+         * the transaction was broadcast and may still be included — reporting `Failed` would
+         *   assert something untrue, so the last observed status has to stand
+         */
+        expect(tx.status).toBe(TransactionStatus.Running);
+        expect(tx.ethTxHash).toBe('0xethtxhash');
+      });
+    });
+
+    describe('method: broadcast', () => {
+      const buildWalletBroadcastTx = <T>(
+        resolver: T
+      ): {
+        tx: PolymeshTransaction<T, T, [string]>;
+        ethSigner: ReturnType<typeof buildEthSigner>;
+      } => {
+        const ethSigner = buildEthSigner({ signTransaction: false, sendTransaction: true });
+        context.getEthSigner.mockReturnValue(ethSigner);
+        context.supportsSubscription.mockReturnValue(false);
+        dsMockUtils.createTxMock('revive', 'ethTransact', { autoResolve: false });
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver },
+          context
+        );
+
+        return { tx, ethSigner };
+      };
+
+      const fakeReceipt = (): SubmittableResult =>
+        new SubmittableResult({
+          blockNumber: dsMockUtils.createMockU32(new BigNumber(101)),
+          status: dsMockUtils.createMockExtrinsicStatus({
+            Finalized: dsMockUtils.createMockHash('blockHash'),
+          }),
+          txHash: dsMockUtils.createMockHash('txHash'),
+          txIndex: 1,
+        });
+
+      it('should return the hashes without waiting for the transaction to be included', async () => {
+        const { tx, ethSigner } = buildWalletBroadcastTx(undefined);
+
+        const pollSpy = jest
+          .spyOn(baseUtils, 'pollForTransactionFinalization')
+          .mockReturnValue(new Promise(noop) as never);
+
+        const handle = await tx.broadcast();
+
+        expect(ethSigner.sendTransaction).toHaveBeenCalled();
+        expect(handle.txHash).toBe('0xethtxhash');
+        expect(handle.ethTxHash).toBe('0xethtxhash');
+        expect(handle.startingBlock).toEqual(new BigNumber(100));
+        expect(tx.status).toBe(TransactionStatus.Running);
+        // the whole point: no block scan was started
+        expect(pollSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return from watch the same value run would have', async () => {
+        const { tx } = buildWalletBroadcastTx('resolved value');
+
+        jest
+          .spyOn(baseUtils, 'pollForTransactionFinalization')
+          .mockResolvedValue(fakeReceipt() as never);
+
+        const handle = await tx.broadcast();
+
+        await expect(handle.watch()).resolves.toBe('resolved value');
+
+        expect(tx.status).toBe(TransactionStatus.Succeeded);
+        expect(tx.result).toBe('resolved value');
+        expect(tx.blockHash).toBe('blockHash');
+        expect(tx.txIndex).toEqual(new BigNumber(1));
+      });
+
+      it('should allow watch to be retried after it times out', async () => {
+        const { tx } = buildWalletBroadcastTx('resolved value');
+
+        const pollSpy = jest
+          .spyOn(baseUtils, 'pollForTransactionFinalization')
+          .mockReturnValue(new Promise(noop) as never);
+
+        const handle = await tx.broadcast();
+
+        const timingOut = handle.watch({ timeout: 5000 });
+
+        await fakePromise();
+        jest.advanceTimersByTime(5000);
+
+        await expect(timingOut).rejects.toThrow(
+          expect.objectContaining({ code: ErrorCode.TransactionTimeout })
+        );
+
+        // nothing is resubmitted on a retry — the scan simply starts again
+        pollSpy.mockResolvedValue(fakeReceipt() as never);
+
+        await expect(handle.watch()).resolves.toBe('resolved value');
+        expect(tx.status).toBe(TransactionStatus.Succeeded);
+      });
+
+      it('should throw if watch is called while a previous call is still in flight', async () => {
+        const { tx } = buildWalletBroadcastTx(undefined);
+
+        jest
+          .spyOn(baseUtils, 'pollForTransactionFinalization')
+          .mockReturnValue(new Promise(noop) as never);
+
+        const handle = await tx.broadcast();
+
+        // still scanning, since the mocked poll never settles
+        const inFlight = handle.watch();
+        inFlight.catch(noop);
+
+        await expect(handle.watch()).rejects.toThrow('already being watched');
+      });
+
+      it('should throw if the transaction has already been broadcast', async () => {
+        const { tx } = buildWalletBroadcastTx(undefined);
+
+        jest
+          .spyOn(baseUtils, 'pollForTransactionFinalization')
+          .mockReturnValue(new Promise(noop) as never);
+
+        await tx.broadcast();
+
+        await expect(tx.broadcast()).rejects.toThrow('Cannot re-run a Transaction');
+        await expect(tx.run()).rejects.toThrow('Cannot re-run a Transaction');
+      });
+
+      it('should throw a NotSupported error for a MultiSig signer', async () => {
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          {
+            ...txSpec,
+            multiSig: entityMockUtils.getMultiSigInstance(),
+            transaction,
+            args: tuple('FOO'),
+            resolver: undefined,
+          },
+          context
+        );
+
+        await expect(tx.broadcast()).rejects.toThrow(
+          expect.objectContaining({ code: ErrorCode.NotSupported })
+        );
       });
     });
 

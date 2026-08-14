@@ -2,8 +2,10 @@ import { SubmittableResult } from '@polkadot/api';
 import { GenericExtrinsic } from '@polkadot/types/extrinsic';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
+import { noop } from 'lodash';
 
 import { Network } from '~/api/client/Network';
+import * as ethTransactionUtils from '~/base/ethTransaction';
 import * as baseUtils from '~/base/utils';
 import { Context, PolymeshError, PolymeshTransaction } from '~/internal';
 import { eventsByArgs } from '~/middleware/queries/events';
@@ -774,6 +776,154 @@ describe('Network Class', () => {
           result: expect.any(Object),
         })
       );
+    });
+  });
+
+  describe('submission timeouts', () => {
+    beforeEach(() => {
+      context.supportsSubscription.mockReturnValue(false);
+      /*
+       * an earlier test in this file stubs this to report a revert and never restores it, which
+       *   would otherwise fail every transaction reached from here
+       */
+      jest.spyOn(baseUtils, 'getExtrinsicFailure').mockReturnValue(undefined);
+    });
+
+    it('should throw a TransactionTimeout if the transaction is not broadcast in time', async () => {
+      const transaction = dsMockUtils.createTxMock('revive', 'ethTransact', {
+        autoResolve: false,
+      });
+      /*
+       * the mock returns the same extrinsic object on every call, so overriding `send` here is
+       *   what `broadcastExtrinsic` will reach. Stands in for a node that accepts the connection
+       *   but never acknowledges the submission
+       */
+      const extrinsic = transaction('0xrawsigned') as unknown as { send: jest.Mock };
+      extrinsic.send = jest.fn().mockReturnValue(new Promise(noop));
+
+      await expect(
+        network.submitEthTransaction('0xrawsigned', { broadcastTimeout: 5 })
+      ).rejects.toThrow(expect.objectContaining({ code: ErrorCode.TransactionTimeout }));
+    });
+
+    it('should throw a TransactionTimeout if the transaction is not finalized in time', async () => {
+      dsMockUtils.createTxMock('revive', 'ethTransact', { autoResolve: false });
+
+      // broadcast fine, but never turns up in a block
+      jest
+        .spyOn(baseUtils, 'pollForTransactionFinalization')
+        .mockReturnValue(new Promise(noop) as never);
+
+      await expect(
+        network.submitEthTransaction('0xrawsigned', { watchTimeout: 5 })
+      ).rejects.toThrow(expect.objectContaining({ code: ErrorCode.TransactionTimeout }));
+    });
+  });
+
+  describe('method: watchTransaction', () => {
+    const fakeReceipt = new SubmittableResult({
+      blockNumber: dsMockUtils.createMockU32(new BigNumber(101)),
+      status: dsMockUtils.createMockExtrinsicStatus({
+        Finalized: dsMockUtils.createMockHash('blockHash'),
+      }),
+      txHash: dsMockUtils.createMockHash('txHash'),
+      txIndex: 1,
+    });
+
+    beforeEach(() => {
+      context.supportsSubscription.mockReturnValue(false);
+      jest.spyOn(baseUtils, 'getExtrinsicFailure').mockReturnValue(undefined);
+    });
+
+    it('should locate a native transaction by its extrinsic hash', async () => {
+      const matcher = jest.fn();
+      const hashMatcherSpy = jest.spyOn(baseUtils, 'extrinsicHashMatcher').mockReturnValue(matcher);
+      const pollSpy = jest
+        .spyOn(baseUtils, 'pollForTransactionFinalization')
+        .mockResolvedValue(fakeReceipt);
+
+      const result = await network.watchTransaction({
+        startingBlock: new BigNumber(100),
+        txHash: '0xtxhash',
+      });
+
+      expect(hashMatcherSpy).toHaveBeenCalled();
+      expect(pollSpy).toHaveBeenCalledWith(matcher, new BigNumber(100), context);
+      expect(result).toEqual({
+        blockHash: 'blockHash',
+        transactionHash: '0xtxhash',
+        transactionIndex: new BigNumber(1),
+        result: fakeReceipt,
+      });
+    });
+
+    it('should match an Ethereum transaction by its payload rather than its extrinsic hash', async () => {
+      /*
+       * a wallet-broadcast transaction rides on chain as an unsigned `revive.ethTransact`, whose
+       *   extrinsic hash the wallet never saw — only the keccak of the payload correlates it
+       */
+      const matcher = jest.fn();
+      const keccakMatcherSpy = jest
+        .spyOn(ethTransactionUtils, 'ethTransactKeccakMatcher')
+        .mockReturnValue(matcher);
+      // spies persist across tests in this file, so only calls made from here on count
+      const hashMatcherSpy = jest.spyOn(baseUtils, 'extrinsicHashMatcher').mockClear();
+      const pollSpy = jest
+        .spyOn(baseUtils, 'pollForTransactionFinalization')
+        .mockResolvedValue(fakeReceipt);
+
+      await network.watchTransaction({
+        startingBlock: new BigNumber(100),
+        txHash: '0xethtxhash',
+        isEthTxHash: true,
+      });
+
+      expect(keccakMatcherSpy).toHaveBeenCalledWith('0xethtxhash');
+      expect(hashMatcherSpy).not.toHaveBeenCalled();
+      expect(pollSpy).toHaveBeenCalledWith(matcher, new BigNumber(100), context);
+    });
+
+    it('should subscribe rather than poll when the connection supports it', async () => {
+      context.supportsSubscription.mockReturnValue(true);
+
+      const subscribeSpy = jest
+        .spyOn(baseUtils, 'subscribeForTransactionFinalization')
+        .mockResolvedValue(fakeReceipt);
+
+      await network.watchTransaction({
+        startingBlock: new BigNumber(100),
+        txHash: '0xtxhash',
+      });
+
+      expect(subscribeSpy).toHaveBeenCalled();
+    });
+
+    it('should throw a TransactionTimeout if the transaction is not found in time', async () => {
+      jest
+        .spyOn(baseUtils, 'pollForTransactionFinalization')
+        .mockReturnValue(new Promise(noop) as never);
+
+      await expect(
+        network.watchTransaction({
+          startingBlock: new BigNumber(100),
+          txHash: '0xtxhash',
+          timeout: 5,
+        })
+      ).rejects.toThrow(expect.objectContaining({ code: ErrorCode.TransactionTimeout }));
+    });
+
+    it('should throw if the located transaction failed on chain', async () => {
+      const revertError = new PolymeshError({
+        code: ErrorCode.TransactionReverted,
+        message: 'identity.AlreadyLinked: One secondary or primary key can only belong to one DID',
+      });
+
+      jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
+      jest.spyOn(baseUtils, 'getExtrinsicFailure').mockReturnValue(revertError);
+
+      await expect(
+        network.watchTransaction({ startingBlock: new BigNumber(100), txHash: '0xtxhash' })
+      ).rejects.toThrowError(revertError);
     });
   });
 

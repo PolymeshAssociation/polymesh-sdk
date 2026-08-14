@@ -350,6 +350,8 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
         immortal: false,
       };
 
+      const submission = opts?.submission;
+
       const ctx = await this.setup(procArgs, context, opts);
 
       // parallelize the async calls
@@ -422,6 +424,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
         signer,
         signingAddress,
         mortality,
+        submission,
         transformer,
         multiSig: this._signerMultiSig ?? null,
       };

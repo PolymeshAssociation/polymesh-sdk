@@ -11,6 +11,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import crossFetch from 'cross-fetch';
 import { when } from 'jest-when';
+import { noop } from 'lodash';
 
 import {
   Account,
@@ -148,6 +149,7 @@ import {
   toHumanReadable,
   unserialize,
   warnUnexpectedSqVersion,
+  withTimeout,
   xor,
 } from '~/utils/internal';
 
@@ -195,6 +197,74 @@ describe('delay', () => {
     jest.advanceTimersByTime(5000);
 
     expect(await delayPromise).toBeUndefined();
+  });
+});
+
+describe('withTimeout', () => {
+  const buildError = (): PolymeshError =>
+    new PolymeshError({ code: ErrorCode.TransactionTimeout, message: 'gave up waiting' });
+
+  beforeAll(() => {
+    jest.useFakeTimers({
+      legacyFakeTimers: true,
+    });
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
+  it('should return the promise untouched when no timeout is given', async () => {
+    const promise = Promise.resolve('resolved');
+
+    const result = withTimeout(promise, undefined, buildError);
+
+    expect(result).toBe(promise);
+    await expect(result).resolves.toBe('resolved');
+  });
+
+  it('should resolve with the value if it settles before the timeout', async () => {
+    const result = withTimeout(Promise.resolve('resolved'), 5000, buildError);
+
+    await expect(result).resolves.toBe('resolved');
+  });
+
+  it('should reject with the built error once the timeout elapses', async () => {
+    // never settles, standing in for a wallet prompt that is never answered
+    const result = withTimeout(new Promise<string>(noop), 5000, buildError);
+
+    jest.advanceTimersByTime(5000);
+
+    await expect(result).rejects.toThrow(
+      expect.objectContaining({ code: ErrorCode.TransactionTimeout, message: 'gave up waiting' })
+    );
+  });
+
+  it('should propagate a rejection that happens before the timeout', async () => {
+    const result = withTimeout(Promise.reject(new Error('failed')), 5000, buildError);
+
+    await expect(result).rejects.toThrow('failed');
+  });
+
+  it('should swallow a rejection arriving after the timeout, rather than leaving it unhandled', async () => {
+    let rejectLate: (err: Error) => void = noop;
+    const late = new Promise<string>((_resolve, reject) => {
+      rejectLate = reject;
+    });
+
+    const result = withTimeout(late, 5000, buildError);
+
+    jest.advanceTimersByTime(5000);
+
+    await expect(result).rejects.toThrow('gave up waiting');
+
+    /*
+     * the abandoned work is still running and may fail later. Were that rejection not handled, it
+     *   would take down a Node consumer
+     */
+    rejectLate(new Error('failed long after we stopped waiting'));
+
+    await expect(late).rejects.toThrow('failed long after we stopped waiting');
   });
 });
 

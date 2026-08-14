@@ -362,6 +362,57 @@ describe('Procedure class', () => {
       );
     });
 
+    it('should pass the submission options through to the transaction', async () => {
+      const tx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+
+      const func = function (
+        this: Procedure<typeof procArgs, string>,
+        args: typeof procArgs
+      ): Promise<TransactionSpec<string, [string]>> {
+        return Promise.resolve({
+          transaction: tx,
+          args: [args.ticker],
+          resolver: returnValue,
+        });
+      };
+
+      const submission = { broadcastTimeout: 30000, watchTimeout: 60000 };
+
+      await new Procedure(func).prepare({ args: procArgs }, context, {
+        signingAccount: entityMockUtils.getAccountInstance(),
+        submission,
+      });
+
+      expect(polymeshTransactionMockUtils.getTransactionConstructorMock()).toHaveBeenCalledWith(
+        expect.objectContaining({ submission }),
+        expect.anything()
+      );
+    });
+
+    it('should leave the submission options undefined when none are given', async () => {
+      const tx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+
+      const func = function (
+        this: Procedure<typeof procArgs, string>,
+        args: typeof procArgs
+      ): Promise<TransactionSpec<string, [string]>> {
+        return Promise.resolve({
+          transaction: tx,
+          args: [args.ticker],
+          resolver: returnValue,
+        });
+      };
+
+      await new Procedure(func).prepare({ args: procArgs }, context, {
+        signingAccount: entityMockUtils.getAccountInstance(),
+      });
+
+      expect(polymeshTransactionMockUtils.getTransactionConstructorMock()).toHaveBeenCalledWith(
+        expect.objectContaining({ submission: undefined }),
+        expect.anything()
+      );
+    });
+
     it('should prepare and return a transaction spec with the corresponding transactions, arguments, fees and return value', async () => {
       const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const tx2 = dsMockUtils.createTxMock('identity', 'cddRegisterDid');

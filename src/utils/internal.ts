@@ -163,6 +163,48 @@ export function delay(amount: number): Promise<void> {
 
 /**
  * @hidden
+ * Reject with `buildError()` if `promise` has not settled within `timeout` milliseconds. Passing
+ *   `undefined` as the timeout returns the promise untouched, so callers can hand a caller-supplied
+ *   optional value straight through without branching
+ *
+ * @note this only stops the *waiting*. The underlying work is not cancelled — there is no way to
+ *   recall a transaction handed to a wallet, or to abort an in-flight chain scan from here — so it
+ *   keeps running in the background until it settles or reaches its own internal cap. Its rejection
+ *   is swallowed for that reason: it may well reject long after this one has, and that must not
+ *   surface as an unhandled rejection
+ *
+ * @param promise - the work to bound
+ * @param timeout - milliseconds to wait, or `undefined` to wait indefinitely
+ * @param buildError - builds the error to reject with. A function rather than a value so the
+ *   message can describe state that is only known once the timeout has actually fired
+ */
+export function withTimeout<T>(
+  promise: Promise<T>,
+  timeout: number | undefined,
+  buildError: () => PolymeshError
+): Promise<T> {
+  if (timeout === undefined) {
+    return promise;
+  }
+
+  // the losing promise may reject long after this one settles; that must not go unhandled
+  promise.catch(noop);
+
+  let timer: ReturnType<typeof setTimeout>;
+
+  const timingOut = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      reject(buildError());
+    }, timeout);
+  });
+
+  return Promise.race([promise, timingOut]).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
+/**
+ * @hidden
  * Convert an entity type and its unique Identifiers to a base64 string
  */
 export function serialize<UniqueIdentifiers>(

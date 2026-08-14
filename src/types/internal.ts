@@ -35,6 +35,7 @@ import {
   Role,
   SignerValue,
   SimplePermissions,
+  SubmissionOpts,
   TxData,
   UnsubCallback,
 } from '~/types';
@@ -264,6 +265,10 @@ export interface TransactionConstructionData {
    * options that specify details for MultiSig proposals
    */
   multiSigOpts?: MultiSigProcedureOpt | undefined;
+  /**
+   * bounds on how long to wait when submitting and tracking the transaction
+   */
+  submission?: SubmissionOpts | undefined;
 }
 
 /**

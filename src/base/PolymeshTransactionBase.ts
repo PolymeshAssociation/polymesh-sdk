@@ -15,9 +15,10 @@ import {
   getEthSubmissionMode,
   getNativeToEthRatio,
 } from '~/base/ethTransaction';
-import { EthTransactionPayload } from '~/base/types';
+import { EthSigner, EthTransactionPayload, EthTransactionRequest } from '~/base/types';
 import {
   extrinsicHashMatcher,
+  ExtrinsicMatcher,
   getExtrinsicFailure,
   handleTransactionSubmissionError,
   pollForTransactionFinalization,
@@ -36,6 +37,8 @@ import {
   PayingAccount,
   PayingAccountFees,
   PayingAccountType,
+  SubmissionOpts,
+  TransactionBroadcastHandle,
   TransactionPayload,
   TransactionStatus,
   UnsubCallback,
@@ -60,7 +63,7 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEthDerivedAddress } from '~/utils/eth';
-import { defusePromise, delay, filterEventRecords, optionize } from '~/utils/internal';
+import { defusePromise, delay, filterEventRecords, optionize, withTimeout } from '~/utils/internal';
 
 /**
  * @hidden
@@ -194,6 +197,13 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
+   * Bounds on how long to wait while broadcasting and tracking this transaction
+   */
+  protected submissionOpts: SubmissionOpts;
+
+  /**
+   * @hidden
+   *
    * object that performs the payload signing logic
    */
   protected signer?: PolkadotSigner | undefined;
@@ -231,6 +241,13 @@ export abstract class PolymeshTransactionBase<
 
   /**
    * @hidden
+   * in-flight `watch` call started by {@link broadcast}, used to reject overlapping calls. Cleared
+   *   once it settles, so a `watch` that timed out can simply be retried
+   */
+  private watching: Promise<TransformedReturnValue> | undefined;
+
+  /**
+   * @hidden
    */
   constructor(
     transactionSpec: BaseTransactionSpec<ReturnValue, TransformedReturnValue> &
@@ -246,6 +263,7 @@ export abstract class PolymeshTransactionBase<
       mortality,
       multiSig,
       multiSigOpts,
+      submission,
       preRunValidation,
     } = transactionSpec;
 
@@ -253,6 +271,7 @@ export abstract class PolymeshTransactionBase<
     this.multiSig = multiSig ?? null;
     this.mortality = mortality;
     this.multiSigOpts = multiSigOpts ?? {};
+    this.submissionOpts = submission ?? {};
     this.signer = signer;
     this.context = context;
     this.paidForBy = paidForBy;
@@ -337,31 +356,184 @@ export abstract class PolymeshTransactionBase<
 
       const receipt = await this.internalRun();
 
-      this.receipt = receipt;
-
-      const {
-        resolver,
-        transformer = (val): Promise<TransformedReturnValue> =>
-          Promise.resolve(val as unknown as TransformedReturnValue),
-      } = this;
-
-      let value: ReturnValue;
-
-      if (isResolverFunction(resolver)) {
-        value = await resolver(receipt);
-      } else {
-        value = resolver;
-      }
-
-      this._result = await transformer(value);
-      this.updateStatus(TransactionStatus.Succeeded);
-
-      return this._result;
+      return await this.resolveResult(receipt);
     } catch (err) {
       this.handleRunError(err);
     } finally {
       this.markAsRan();
     }
+  }
+
+  /**
+   * Broadcast the transaction and return as soon as it has been accepted, without waiting for it
+   *   to be included in a block. This is {@link run} split at its natural seam — the returned
+   *   handle's `watch` performs the second half and yields the exact value `run` would have — so
+   *   `await (await tx.broadcast()).watch()` is equivalent to `await tx.run()`
+   *
+   * Use it when waiting is not wanted, or not safe to depend on: an Ethereum wallet that
+   *   broadcasts on the user's behalf, a long finalization window a UI should not block on, or a
+   *   flow that persists the hash and resumes tracking later via
+   *   {@link api/client/Network!Network.watchTransaction | network.watchTransaction}
+   *
+   * @note this always submits without an extrinsic status subscription, since that channel cannot
+   *   report a hash without also waiting for the result. The trade-off is that `Future` status
+   *   reporting and in-pool `Aborted` detection are unavailable — those come from the node's
+   *   status stream, which only {@link run} attaches to
+   *
+   * @throws if the transaction has already been run or broadcast
+   * @throws `NotSupported` if the signing Account is a MultiSig signer. Use `runAsProposal`, which
+   *   needs the finalized receipt to report the resulting proposal
+   */
+  public async broadcast(): Promise<TransactionBroadcastHandle<TransformedReturnValue>> {
+    const { context } = this;
+
+    if (this.hasRun) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Cannot re-run a Transaction',
+      });
+    }
+
+    if (this.multiSig) {
+      throw new PolymeshError({
+        code: ErrorCode.NotSupported,
+        message:
+          '`.broadcast` cannot be used with a MultiSig signer, since the resulting proposal can only be read from the finalized transaction. `.runAsProposal` should be called instead',
+        data: { signingAddress: this.signingAddress, multiSigAddress: this.multiSig.address },
+      });
+    }
+
+    try {
+      if (this.preRunValidation) {
+        await this.preRunValidation({ asProposal: false });
+      }
+
+      await this.assertFeesCovered();
+
+      const startingBlock = await context.getLatestBlock();
+
+      const { matcher } = await this.broadcastToChain(await this.buildPollingSubmission());
+
+      return {
+        // set by `broadcastToChain`, which cannot succeed without it
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        txHash: this.txHash!,
+        ...(this.ethTxHash !== undefined ? { ethTxHash: this.ethTxHash } : {}),
+        startingBlock,
+        watch: opts => this.watchBroadcast(matcher, startingBlock, opts?.timeout),
+      };
+    } catch (err) {
+      this.handleRunError(err);
+    } finally {
+      /*
+       * marked here rather than via `markAsRan`, which would also start the middleware sync. There
+       *   is nothing for the middleware to have synced until `watch` sees a block, so that emit
+       *   waits until then
+       */
+      this.hasRun = true;
+    }
+  }
+
+  /**
+   * @hidden
+   *
+   * The second half of {@link broadcast}: wait for inclusion, then produce the same value `run`
+   *   would have. Retryable after a timeout, since nothing is resubmitted — the block scan simply
+   *   starts over from the same point
+   */
+  private async watchBroadcast(
+    matcher: ExtrinsicMatcher,
+    startingBlock: BigNumber,
+    timeout?: number | undefined
+  ): Promise<TransformedReturnValue> {
+    if (this.isSuccess) {
+      // already watched to completion; scanning again would only rediscover the same block
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return this._result!;
+    }
+
+    if (this.watching) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'This transaction is already being watched. Await the promise returned by the previous `watch` call instead of starting another',
+      });
+    }
+
+    const watching = (async (): Promise<TransformedReturnValue> => {
+      try {
+        const receipt = await this.watchForInclusion(matcher, startingBlock, timeout);
+
+        const result = await this.resolveResult(receipt);
+
+        this.startMiddlewareSync();
+
+        return result;
+      } catch (err) {
+        this.handleRunError(err);
+      }
+    })();
+
+    this.watching = watching;
+
+    try {
+      return await watching;
+    } finally {
+      this.watching = undefined;
+    }
+  }
+
+  /**
+   * @hidden
+   *
+   * Route to the polling-style submission for whichever signing path this transaction uses. The
+   *   returned function is what actually touches the signer, so that {@link broadcastToChain} can
+   *   bound it
+   */
+  private async buildPollingSubmission(): Promise<() => Promise<PollingSubmission>> {
+    const { signingAddress, context } = this;
+
+    await context.assertHasSigningAddress(signingAddress);
+
+    if (isEthDerivedAddress(signingAddress, context.ss58Format)) {
+      const { ethSigner, request } = await this.buildEthRequest();
+
+      return this.buildEthPollingSubmission(ethSigner, request);
+    }
+
+    const { txWithArgs, signerOptions } = this.buildNativeSignerData();
+
+    return () => Promise.resolve(this.buildNativePollingSubmission(txWithArgs, signerOptions));
+  }
+
+  /**
+   * @hidden
+   *
+   * Turn a finalized receipt into the value the caller gets back, recording it and moving the
+   *   transaction to `Succeeded`. Shared by `run` and by the `watch` returned from
+   *   {@link broadcast}, so that both produce the same value for the same transaction
+   */
+  private async resolveResult(receipt: ISubmittableResult): Promise<TransformedReturnValue> {
+    this.receipt = receipt;
+
+    const {
+      resolver,
+      transformer = (val): Promise<TransformedReturnValue> =>
+        Promise.resolve(val as unknown as TransformedReturnValue),
+    } = this;
+
+    let value: ReturnValue;
+
+    if (isResolverFunction(resolver)) {
+      value = await resolver(receipt);
+    } else {
+      value = resolver;
+    }
+
+    this._result = await transformer(value);
+    this.updateStatus(TransactionStatus.Succeeded);
+
+    return this._result;
   }
 
   /**
@@ -381,6 +553,14 @@ export abstract class PolymeshTransactionBase<
         this.updateStatus(TransactionStatus.Rejected);
         break;
       }
+      case ErrorCode.TransactionTimeout: {
+        /*
+         * the transaction was not cancelled, the SDK merely stopped waiting for it. Moving to
+         *   `Failed` would assert something untrue — it may still be included in a block — so the
+         *   last observed status (`Running`, or `InBlock` if it was already seen) stands
+         */
+        break;
+      }
       case ErrorCode.TransactionReverted:
       case ErrorCode.FatalError:
       default: {
@@ -398,6 +578,18 @@ export abstract class PolymeshTransactionBase<
   private markAsRan(): void {
     this.hasRun = true;
 
+    this.startMiddlewareSync();
+  }
+
+  /**
+   * @hidden
+   *
+   * Kick off the middleware sync notification. Separate from {@link markAsRan} because
+   *   {@link broadcast} marks the transaction as ran without having waited for a block — there is
+   *   nothing for the middleware to have synced yet at that point, so the emit waits until `watch`
+   *   completes
+   */
+  private startMiddlewareSync(): void {
     /*
      * We do not await this promise because it is supposed to run in the background, and
      * any errors encountered are emitted. If the user isn't listening, they shouldn't
@@ -414,13 +606,39 @@ export abstract class PolymeshTransactionBase<
    *   throwing any pertinent errors
    */
   private async internalRun(): Promise<ISubmittableResult> {
-    const { signingAddress, signer, mortality, context } = this;
+    const { signingAddress, context } = this;
 
     await context.assertHasSigningAddress(signingAddress);
 
     if (isEthDerivedAddress(signingAddress, context.ss58Format)) {
       return this.internalRunEth();
     }
+
+    const { txWithArgs, signerOptions } = this.buildNativeSignerData();
+
+    if (context.supportsSubscription()) {
+      return this.runViaSubscription({
+        subscribe: callback => txWithArgs.signAndSend(signingAddress, signerOptions, callback),
+        getTxHash: () => txWithArgs.hash.toString(),
+      });
+    }
+
+    return this.runViaPolling(() =>
+      Promise.resolve(this.buildNativePollingSubmission(txWithArgs, signerOptions))
+    );
+  }
+
+  /**
+   * @hidden
+   *
+   * Compose the transaction and assemble the options the native signer is called with. Also moves
+   *   the transaction into `Unapproved`, since from here on the signer is what everything waits on
+   */
+  private buildNativeSignerData(): {
+    txWithArgs: SubmittableExtrinsic<'promise', ISubmittableResult>;
+    signerOptions: Record<string, unknown>;
+  } {
+    const { signer, mortality, context } = this;
 
     // era is how many blocks the transaction remains valid for, `undefined` for default
     const era = mortality.immortal ? 0 : mortality.lifetime?.toNumber();
@@ -446,15 +664,24 @@ export abstract class PolymeshTransactionBase<
       ...(era !== undefined ? { era } : {}),
     };
 
-    if (context.supportsSubscription()) {
-      return this.runViaSubscription({
-        subscribe: callback => txWithArgs.signAndSend(signingAddress, signerOptions, callback),
-        getTxHash: () => txWithArgs.hash.toString(),
-      });
-    }
+    return { txWithArgs, signerOptions };
+  }
 
-    return this.runViaPolling({
-      send: async () => {
+  /**
+   * @hidden
+   *
+   * The native "send once and correlate by hash" submission. Used when the connection has no
+   *   subscription support, and by {@link broadcast}, which cannot use the callback-driven
+   *   subscription at all since that never yields control back before the transaction resolves
+   */
+  private buildNativePollingSubmission(
+    txWithArgs: SubmittableExtrinsic<'promise', ISubmittableResult>,
+    signerOptions: Record<string, unknown>
+  ): PollingSubmission {
+    const { signingAddress } = this;
+
+    return {
+      send: async (): Promise<{ txHash: string; matcher: ExtrinsicMatcher }> => {
         /*
          * the resolved hash is used instead of `txWithArgs.hash` because a signer may return a modified
          *   `signedTransaction` (e.g. Ledger devices signing via the generic app), in which case the
@@ -467,7 +694,7 @@ export abstract class PolymeshTransactionBase<
           matcher: extrinsicHashMatcher(submittedTxHash),
         };
       },
-    });
+    };
   }
 
   /**
@@ -501,6 +728,34 @@ export abstract class PolymeshTransactionBase<
    *   `revive.ethTransact` extrinsic
    */
   private async internalRunEth(): Promise<ISubmittableResult> {
+    const { context } = this;
+
+    const { ethSigner, request } = await this.buildEthRequest();
+
+    if (getEthSubmissionMode(ethSigner) === 'sdkBroadcast' && context.supportsSubscription()) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const rawSignedTx = await ethSigner.signTransaction!(request);
+
+      const { subscription } = buildSdkBroadcastSubmission(context, rawSignedTx);
+
+      return this.runViaSubscription(subscription);
+    }
+
+    return this.runViaPolling(this.buildEthPollingSubmission(ethSigner, request));
+  }
+
+  /**
+   * @hidden
+   *
+   * The eager half of the Ethereum path: validate, compose the call and perform the mandatory dry
+   *   run pre-flight. Deliberately kept out of the broadcast phase — it is chain RPC work, not a
+   *   signer interaction, so a failure here is a real error rather than something a timeout should
+   *   describe as "state unknown"
+   */
+  private async buildEthRequest(): Promise<{
+    ethSigner: EthSigner;
+    request: EthTransactionRequest;
+  }> {
     const { context, signingAddress } = this;
 
     this.assertMortalitySupportedForEth();
@@ -530,19 +785,29 @@ export abstract class PolymeshTransactionBase<
       ...(nonceOverride ? { nonce: nonceOverride } : {}),
     });
 
-    const mode = getEthSubmissionMode(ethSigner);
+    return { ethSigner, request };
+  }
 
-    if (mode === 'sdkBroadcast') {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const rawSignedTx = await ethSigner.signTransaction!(request);
+  /**
+   * @hidden
+   *
+   * The deferred half of the Ethereum path. Everything that touches the signer lives in here, so
+   *   that the broadcast timeout covers the wallet confirmation prompt in both modes: the raw
+   *   signing in `sdkBroadcast`, and the sign-and-send in `walletBroadcast`
+   */
+  private buildEthPollingSubmission(
+    ethSigner: EthSigner,
+    request: EthTransactionRequest
+  ): () => Promise<PollingSubmission> {
+    const { context } = this;
 
-      const { subscription, polling } = buildSdkBroadcastSubmission(context, rawSignedTx);
+    if (getEthSubmissionMode(ethSigner) === 'sdkBroadcast') {
+      return async () => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const rawSignedTx = await ethSigner.signTransaction!(request);
 
-      if (context.supportsSubscription()) {
-        return this.runViaSubscription(subscription);
-      }
-
-      return this.runViaPolling(polling);
+        return buildSdkBroadcastSubmission(context, rawSignedTx).polling;
+      };
     }
 
     /*
@@ -552,15 +817,16 @@ export abstract class PolymeshTransactionBase<
      */
     const walletBroadcastSubmission = buildWalletBroadcastSubmission(ethSigner, request);
 
-    return this.runViaPolling({
-      send: async () => {
-        const result = await walletBroadcastSubmission.send();
-        // set as soon as the hash is known, even if the transaction later reverts or is not found
-        this.ethTxHash = result.txHash;
+    return () =>
+      Promise.resolve({
+        send: async (): Promise<{ txHash: string; matcher: ExtrinsicMatcher }> => {
+          const result = await walletBroadcastSubmission.send();
+          // set as soon as the hash is known, even if the transaction later reverts or is not found
+          this.ethTxHash = result.txHash;
 
-        return result;
-      },
-    });
+          return result;
+        },
+      });
   }
 
   /**
@@ -664,18 +930,84 @@ export abstract class PolymeshTransactionBase<
    *   subscriptions, or because the transaction was broadcast by an Ethereum wallet rather than
    *   by the SDK
    */
-  private async runViaPolling(submission: PollingSubmission): Promise<ISubmittableResult> {
-    const { context } = this;
+  private async runViaPolling(
+    getSubmission: () => Promise<PollingSubmission>
+  ): Promise<ISubmittableResult> {
+    const startingBlock = await this.context.getLatestBlock();
 
-    const startingBlock = await context.getLatestBlock();
+    const { matcher } = await this.broadcastToChain(getSubmission);
 
-    const { txHash, matcher } = await submission.send().catch((err: Error) => {
-      const error = handleTransactionSubmissionError(err);
+    return this.watchForInclusion(matcher, startingBlock);
+  }
 
-      throw new PolymeshError(error);
+  /**
+   * @hidden
+   *
+   * Hand the transaction to its signer and get it broadcast, yielding the hash it can be looked up
+   *   by and the predicate that recognizes it in a block. This is the phase a wallet confirmation
+   *   prompt happens in, so it is what `submission.broadcastTimeout` bounds
+   *
+   * @throws `TransactionTimeout` if the signer does not broadcast in time. Note this says nothing
+   *   about whether the transaction was broadcast — only that the SDK gave up waiting to hear
+   */
+  private async broadcastToChain(
+    getSubmission: () => Promise<PollingSubmission>
+  ): Promise<{ txHash: string; matcher: ExtrinsicMatcher }> {
+    const {
+      submissionOpts: { broadcastTimeout },
+    } = this;
+
+    const sending = (async (): Promise<{ txHash: string; matcher: ExtrinsicMatcher }> => {
+      const submission = await getSubmission();
+
+      return submission.send();
+    })();
+
+    const result = await withTimeout(
+      sending,
+      broadcastTimeout,
+      () =>
+        new PolymeshError({
+          code: ErrorCode.TransactionTimeout,
+          message:
+            'The signer did not broadcast the transaction within the allotted time. It was not cancelled — whether it ends up being broadcast is unknown, so check before submitting again, or the same transaction may be submitted twice',
+          data: { broadcastTimeout },
+        })
+    ).catch((err: Error) => {
+      /*
+       * a timeout is already a well formed error describing exactly what happened. Only genuine
+       *   submission failures need translating (e.g. a signer cancellation)
+       */
+      if (err instanceof PolymeshError && err.code === ErrorCode.TransactionTimeout) {
+        throw err;
+      }
+
+      throw handleTransactionSubmissionError(err);
     });
 
-    this.setIsRunningStatus(txHash);
+    this.setIsRunningStatus(result.txHash);
+
+    return result;
+  }
+
+  /**
+   * @hidden
+   *
+   * Locate the broadcast transaction by scanning blocks, updating this transaction's block data as
+   *   it goes. Bounded by `submission.watchTimeout`, or by the `timeout` passed to the `watch`
+   *   returned from {@link broadcast}, which takes precedence
+   *
+   * @throws `TransactionTimeout` if the transaction is not found in time. The transaction is
+   *   unaffected by this and may still be included in a block afterwards
+   */
+  private async watchForInclusion(
+    matcher: ExtrinsicMatcher,
+    startingBlock: BigNumber,
+    timeout?: number | undefined
+  ): Promise<ISubmittableResult> {
+    const { context, submissionOpts } = this;
+
+    const watchTimeout = timeout ?? submissionOpts.watchTimeout;
 
     /*
      * report inclusion as soon as the transaction lands in a block, rather than leaving the caller
@@ -696,9 +1028,26 @@ export abstract class PolymeshTransactionBase<
      *   cycle per in-flight transaction. Polling remains the fallback for HTTP connections, which
      *   is what it was always intended for
      */
-    const finalizedReceipt = context.supportsSubscription()
-      ? await subscribeForTransactionFinalization(matcher, startingBlock, context, onInBlock)
-      : await pollForTransactionFinalization(matcher, startingBlock, context, undefined, onInBlock);
+    const scanning = context.supportsSubscription()
+      ? subscribeForTransactionFinalization(matcher, startingBlock, context, onInBlock)
+      : pollForTransactionFinalization(matcher, startingBlock, context, undefined, onInBlock);
+
+    const finalizedReceipt = await withTimeout(
+      scanning,
+      watchTimeout,
+      () =>
+        new PolymeshError({
+          code: ErrorCode.TransactionTimeout,
+          message:
+            'The transaction was broadcast but was not found in a finalized block within the allotted time. It has not been cancelled and may still be included — it can be tracked by hash with `network.watchTransaction`',
+          data: {
+            txHash: this.txHash,
+            ethTxHash: this.ethTxHash,
+            startingBlock,
+            watchTimeout,
+          },
+        })
+    );
 
     this.blockHash = hashToString(finalizedReceipt.status.asFinalized);
     this.blockNumber = u32ToBigNumber(finalizedReceipt.blockNumber!);

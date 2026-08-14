@@ -146,6 +146,41 @@ export interface ProcedureOpts {
    * @note even if the checks are skipped from being validated on the SDK, they will still be validated on the chain
    */
   skipChecks?: SkipChecksOpt;
+
+  /**
+   * Bounds on how long the SDK will wait when submitting and tracking the transaction. By default
+   *   it waits indefinitely
+   */
+  submission?: SubmissionOpts;
+}
+
+/**
+ * Bounds on how long the SDK waits while submitting a transaction and tracking it to a finalized
+ *   block. Both default to waiting indefinitely
+ *
+ * @note a timeout only stops the SDK *waiting*. It never cancels the transaction — a transaction
+ *   that was already handed to a signer or broadcast may still be included in a block afterwards.
+ *   Use {@link api/client/Network!Network.watchTransaction | network.watchTransaction} to resume
+ *   tracking one that timed out
+ *
+ * @note these apply to the paths where the SDK locates the transaction by scanning blocks: any
+ *   connection without subscription support, and transactions broadcast by an Ethereum wallet.
+ *   When the SDK submits over a subscription-capable connection, the node reports status directly
+ *   and neither bound is used
+ */
+export interface SubmissionOpts {
+  /**
+   * milliseconds to wait for the signer (or Ethereum wallet) to accept the transaction and
+   *   broadcast it. This is the window that covers a wallet confirmation prompt, so it should be
+   *   generous enough for a human to respond
+   */
+  broadcastTimeout?: number;
+
+  /**
+   * milliseconds to wait, after the transaction has been broadcast, for it to appear in a
+   *   finalized block
+   */
+  watchTimeout?: number;
 }
 
 /**
