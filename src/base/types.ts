@@ -2,7 +2,12 @@
 
 import { SignerPayloadJSON, SignerPayloadRaw, TypeDef } from '@polkadot/types/types';
 import { HexString } from '@polkadot/util/types';
-import { SigningManager } from '@polymeshassociation/signing-manager-types';
+import {
+  EthSigner,
+  EthSignerCapabilities,
+  EthSigningManager,
+  EthTransactionRequest,
+} from '@polymeshassociation/signing-manager-types';
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError as PolymeshErrorClass } from '~/base/PolymeshError';
@@ -292,87 +297,13 @@ export type PolymeshError = PolymeshErrorClass;
  * -------------------------------------------------------------------------------------------
  * Ethereum key signing
  *
- * TODO: replace with imports from @polymeshassociation/signing-manager-types once >=3.8.0 is
- *   published. They mirror the interfaces being added to that package, so that any real
- *   implementation of `EthSigningManager` is usable today by structural typing.
+ * The interfaces themselves live in `@polymeshassociation/signing-manager-types`, since a
+ *   Signing Manager has to implement them without depending on the SDK. They are re-exported
+ *   here so that consumers reach them from `~/types` alongside everything else.
  * -------------------------------------------------------------------------------------------
  */
 
-/**
- * Parameters for an Ethereum transaction that dispatches a Polymesh runtime call through the
- *   `revive` pallet's sentinel address
- *
- * TODO: replace with import from @polymeshassociation/signing-manager-types once >=3.8.0 is published
- */
-export interface EthTransactionRequest {
-  /** the `0x` H160 address of the Ethereum-derived Account sending the transaction */
-  from: HexString;
-  /** the sentinel address, i.e. `reviveApi.runtimePalletsAddress()` */
-  to: HexString;
-  /** SCALE-encoded `RuntimeCall` */
-  data: HexString;
-  value: '0x0';
-  gas: HexString;
-  /** the signer must sign for exactly this chain, never the one its provider is connected to */
-  chainId: HexString;
-  /** set when the SDK broadcasts; omitted when the wallet broadcasts and owns the nonce */
-  nonce?: HexString;
-  // EIP-1559 when the signer supports it, else legacy gasPrice
-  maxFeePerGas?: HexString;
-  maxPriorityFeePerGas?: HexString;
-  gasPrice?: HexString;
-  /**
-   * only legacy (0) and EIP-1559 (2) are emitted. EIP-2930 (1) has no use on the sentinel path,
-   *   and EIP-4844 (3) / EIP-7702 (4) are rejected by the runtime
-   */
-  type: 0 | 2;
-}
-
-/**
- * Describes what an {@link EthSigner} can do beyond what the presence of its methods already
- *   says. Whether a signer can sign or broadcast is expressed by implementing `signTransaction` /
- *   `sendTransaction`, so this covers only what cannot be derived from the object's shape
- *
- * TODO: replace with import from @polymeshassociation/signing-manager-types once >=3.8.0 is published
- */
-export interface EthSignerCapabilities {
-  /**
-   * whether the signer supports EIP-1559 (type 2) transactions. Defaults to `true` when omitted.
-   *   `false` for signers that can only encode legacy (type 0) transactions
-   */
-  eip1559?: boolean;
-}
-
-/**
- * An Ethereum-key signer capable of signing (and optionally broadcasting) the raw Ethereum
- *   transaction that carries a Polymesh runtime call through the `revive` pallet
- *
- * At least one of `signTransaction` and `sendTransaction` must be implemented; the SDK chooses
- *   how to submit from whichever is present
- *
- * TODO: replace with import from @polymeshassociation/signing-manager-types once >=3.8.0 is published
- */
-export interface EthSigner {
-  /**
-   * What this signer can do beyond what its methods imply. The SDK reads this rather than probing
-   * the provider, since probing would mean a speculative request to the user's wallet.
-   */
-  readonly capabilities: EthSignerCapabilities;
-  /** raw signed transaction bytes. Preferred — lets the SDK broadcast and track natively */
-  signTransaction?(tx: EthTransactionRequest): Promise<HexString>;
-  /** wallet signs AND broadcasts; returns the Ethereum transaction hash */
-  sendTransaction?(tx: EthTransactionRequest): Promise<HexString>;
-}
-
-/**
- * A {@link SigningManager} that additionally exposes an {@link EthSigner} for its
- *   Ethereum-derived Accounts
- *
- * TODO: replace with import from @polymeshassociation/signing-manager-types once >=3.8.0 is published
- */
-export interface EthSigningManager extends SigningManager {
-  getEthSigner(): EthSigner;
-}
+export { EthSigner, EthSignerCapabilities, EthSigningManager, EthTransactionRequest };
 
 /**
  * A representation of an Ethereum transaction intended for offline/detached signing, along with
