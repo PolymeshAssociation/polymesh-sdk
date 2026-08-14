@@ -2206,4 +2206,420 @@ describe('Polymesh Transaction Base class', () => {
       expect(result.multiSig).toEqual(DUMMY_ACCOUNT_ID);
     });
   });
+
+  describe('Ethereum signing path', () => {
+    /**
+     * SS58 (format 42) encoding of `<ALITH_H160> ++ [0xEE; 12]` — the Account the `revive` pallet
+     *   dispatches as for Alith's Ethereum key
+     */
+    const ethSs58Address = '5HYRCKHYJN9z5xUtfFkyMj4JUhsAwWyvuU8vKB1FcnYTf9ZQ';
+    const sentinelAddress = '0x6d6f646c70792f70616464720000000000000000';
+
+    const buildEthSigner = (
+      capabilities: Partial<{
+        signTransaction: boolean;
+        sendTransaction: boolean;
+        eip1559: boolean;
+      }> = {}
+    ): {
+      capabilities: { signTransaction: boolean; sendTransaction: boolean; eip1559: boolean };
+      signTransaction: jest.Mock;
+      sendTransaction: jest.Mock;
+    } => ({
+      capabilities: {
+        signTransaction: true,
+        sendTransaction: false,
+        eip1559: true,
+        ...capabilities,
+      },
+      signTransaction: jest.fn().mockResolvedValue('0xrawsigned'),
+      sendTransaction: jest.fn().mockResolvedValue('0xethtxhash'),
+    });
+
+    const mockReviveApi = (): void => {
+      dsMockUtils.createCallMock('reviveApi', 'gasPrice', {
+        returnValue: { toString: () => '100000000000000' },
+      });
+      dsMockUtils.createCallMock('reviveApi', 'nonce', {
+        returnValue: { toString: () => '0' },
+      });
+      dsMockUtils.createCallMock('reviveApi', 'ethTransactWithConfig', {
+        returnValue: { isErr: false, asOk: { ethGas: { toString: () => '1842' } } },
+      });
+      dsMockUtils.setConstMock('revive', 'nativeToEthRatio', {
+        returnValue: dsMockUtils.createMockU64(new BigNumber(1000000000000)),
+      });
+    };
+
+    const ethTxSpec = { ...txSpec, signingAddress: ethSs58Address };
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance({
+        // the gas-derived fee on this path is ~184,200 base units, so fund well past it
+        balance: {
+          free: new BigNumber(10000000),
+          locked: new BigNumber(0),
+          total: new BigNumber(10000000),
+        },
+        getEthSigner: buildEthSigner() as never,
+        getEthRuntimePalletsAddress: sentinelAddress,
+        getEthChainId: new BigNumber(1641818),
+      });
+      context.ss58Format = new BigNumber(42);
+      mockReviveApi();
+
+      dsMockUtils.createRpcMock('chain', 'getBlock').mockResolvedValue(
+        dsMockUtils.createMockSignedBlock({
+          block: {
+            header: {
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(1))),
+              parentHash: 'hash',
+              stateRoot: 'hash',
+              extrinsicsRoot: 'hash',
+            },
+            extrinsics: undefined,
+          },
+        })
+      );
+    });
+
+    describe('routing', () => {
+      it('should throw if no Ethereum signer is attached to the SDK instance', async () => {
+        context.getEthSigner.mockReturnValue(undefined);
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        await expect(tx.run()).rejects.toThrow(
+          'There is no Ethereum signer associated with the SDK instance'
+        );
+      });
+
+      it('should fall back to polling when the connection has no subscription support', async () => {
+        context.supportsSubscription.mockReturnValue(false);
+        dsMockUtils.createTxMock('revive', 'ethTransact', { autoResolve: false });
+
+        const fakeReceipt = new SubmittableResult({
+          blockNumber: dsMockUtils.createMockU32(new BigNumber(101)),
+          status: dsMockUtils.createMockExtrinsicStatus({
+            Finalized: dsMockUtils.createMockHash('blockHash'),
+          }),
+          txHash: dsMockUtils.createMockHash('txHash'),
+          txIndex: 1,
+        });
+
+        // these exercise wallet-broadcast mechanics, not the scan strategy
+        context.supportsSubscription.mockReturnValue(false);
+        jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        await tx.run();
+
+        expect(tx.status).toBe(TransactionStatus.Succeeded);
+      });
+
+      it('should throw a NotSupported error if a third party is set to pay the fees', async () => {
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          {
+            ...ethTxSpec,
+            paidForBy: entityMockUtils.getIdentityInstance(),
+            transaction,
+            args: tuple('FOO'),
+            resolver: undefined,
+          },
+          context
+        );
+
+        await expect(tx.getTotalFees()).rejects.toThrow(
+          expect.objectContaining({ code: ErrorCode.NotSupported })
+        );
+      });
+
+      it('should throw a NotSupported error when acting as a MultiSig signer', async () => {
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          {
+            ...ethTxSpec,
+            multiSig: entityMockUtils.getMultiSigInstance(),
+            transaction,
+            args: tuple('FOO'),
+            resolver: undefined,
+          },
+          context
+        );
+
+        await expect(tx.runAsProposal()).rejects.toThrow(
+          expect.objectContaining({ code: ErrorCode.NotSupported })
+        );
+      });
+
+      it('should throw a ValidationError if mortality was explicitly set', async () => {
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          {
+            ...ethTxSpec,
+            mortality: { immortal: true },
+            transaction,
+            args: tuple('FOO'),
+            resolver: undefined,
+          },
+          context
+        );
+
+        await expect(tx.run()).rejects.toThrow(
+          'Mortality cannot be set for a transaction signed by an Ethereum key'
+        );
+      });
+    });
+
+    describe('when the SDK broadcasts', () => {
+      it('should sign, submit as a bare revive.ethTransact and track it like a native transaction', async () => {
+        const ethSigner = buildEthSigner();
+        context.getEthSigner.mockReturnValue(ethSigner);
+
+        const ethTransact = dsMockUtils.createTxMock('revive', 'ethTransact', {
+          autoResolve: false,
+        });
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        const runPromise = tx.run().catch(noop);
+
+        await fakePromises();
+
+        dsMockUtils.updateTxStatus(ethTransact, MockTxStatus.InBlock);
+        await fakePromise();
+        dsMockUtils.updateTxStatus(ethTransact, MockTxStatus.Succeeded);
+        await fakePromise();
+        await runPromise;
+
+        expect(ethSigner.signTransaction).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: sentinelAddress,
+            value: '0x0',
+            chainId: '0x190d5a',
+            nonce: '0x0',
+            type: 2,
+          })
+        );
+        expect(ethTransact).toHaveBeenCalledWith('0xrawsigned');
+        expect(tx.status).toBe(TransactionStatus.Succeeded);
+        // the SDK submitted this itself, so there is no separate Ethereum hash to expose
+        expect(tx.ethTxHash).toBeUndefined();
+      });
+    });
+
+    describe('when the wallet broadcasts', () => {
+      it('should broadcast through the wallet and expose the Ethereum transaction hash', async () => {
+        const ethSigner = buildEthSigner({ signTransaction: false, sendTransaction: true });
+        context.getEthSigner.mockReturnValue(ethSigner);
+        dsMockUtils.createTxMock('revive', 'ethTransact', { autoResolve: false });
+
+        const fakeReceipt = new SubmittableResult({
+          blockNumber: dsMockUtils.createMockU32(new BigNumber(101)),
+          status: dsMockUtils.createMockExtrinsicStatus({
+            Finalized: dsMockUtils.createMockHash('blockHash'),
+          }),
+          txHash: dsMockUtils.createMockHash('txHash'),
+          txIndex: 1,
+        });
+
+        // these exercise wallet-broadcast mechanics, not the scan strategy
+        context.supportsSubscription.mockReturnValue(false);
+        jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        await tx.run();
+
+        expect(ethSigner.sendTransaction).toHaveBeenCalled();
+        // the wallet owns the nonce in this mode
+        expect(ethSigner.sendTransaction.mock.calls[0][0].nonce).toBeUndefined();
+        expect(tx.ethTxHash).toBe('0xethtxhash');
+        expect(tx.txHash).toBe('0xethtxhash');
+        expect(tx.status).toBe(TransactionStatus.Succeeded);
+      });
+
+      it('should surface a reverted inner dispatch as an error rather than a success', async () => {
+        /*
+         * the outer `revive.ethTransact` extrinsic emits `ExtrinsicSuccess` even when the inner
+         *   call failed, so without the `EthExtrinsicRevert` check this would resolve successfully
+         */
+        const ethSigner = buildEthSigner({ signTransaction: false, sendTransaction: true });
+        context.getEthSigner.mockReturnValue(ethSigner);
+        dsMockUtils.createTxMock('revive', 'ethTransact', { autoResolve: false });
+
+        const fakeReceipt = new SubmittableResult({
+          blockNumber: dsMockUtils.createMockU32(new BigNumber(101)),
+          status: dsMockUtils.createMockExtrinsicStatus({
+            Finalized: dsMockUtils.createMockHash('blockHash'),
+          }),
+          txHash: dsMockUtils.createMockHash('txHash'),
+          txIndex: 1,
+        });
+
+        const revertError = new PolymeshError({
+          code: ErrorCode.TransactionReverted,
+          message:
+            'identity.AlreadyLinked: One secondary or primary key can only belong to one DID',
+        });
+
+        // these exercise wallet-broadcast mechanics, not the scan strategy
+        context.supportsSubscription.mockReturnValue(false);
+        jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
+        jest.spyOn(baseUtils, 'getExtrinsicFailure').mockReturnValue(revertError);
+
+        const resolver = jest.fn();
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver },
+          context
+        );
+
+        await expect(tx.run()).rejects.toThrowError(revertError);
+
+        expect(tx.status).toBe(TransactionStatus.Failed);
+        // the resolver must not run for a transaction that actually failed
+        expect(resolver).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('method: getTotalFees', () => {
+      it('should derive the gas fee from the dry run rather than payment_queryInfo', async () => {
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        const { fees } = await tx.getTotalFees();
+
+        // 1842 gas * 10^14 wei / 10^12 ratio = 184,200 base units = 0.1842 POLYX
+        expect(fees.gas).toEqual(new BigNumber(0.1842));
+      });
+
+      it('should report the gas fee in the same units as the native path', async () => {
+        /*
+         * the unit contract between the two branches: the Ethereum branch derives a base-unit
+         *   figure from the dry run while the native branch goes through `balanceToBigNumber`.
+         *   Both must end up as display POLYX, since `getTotalFees` sums the result with protocol
+         *   fees and `assertFeesCovered` compares it against an Account balance, both of which are
+         *   display values
+         */
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
+          // price the same call natively: 1842 gas * 10^14 / 10^12 = 184,200 base units
+          gas: dsMockUtils.createMockBalance(new BigNumber(184200)),
+        });
+
+        const ethTx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+        const { fees: ethFees } = await ethTx.getTotalFees();
+
+        const nativeContext = dsMockUtils.getContextInstance({
+          balance: {
+            free: new BigNumber(10000000),
+            locked: new BigNumber(0),
+            total: new BigNumber(10000000),
+          },
+        });
+        nativeContext.ss58Format = new BigNumber(42);
+
+        const nativeTx = new PolymeshTransaction(
+          { ...txSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          nativeContext
+        );
+        const { fees: nativeFees } = await nativeTx.getTotalFees();
+
+        expect(ethFees.gas).toEqual(nativeFees.gas);
+      });
+    });
+
+    describe('method: toSignablePayload', () => {
+      it('should throw NotSupported, since an Ethereum key cannot sign a SCALE payload', async () => {
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        await expect(tx.toSignablePayload()).rejects.toThrow(
+          'A SCALE `SignerPayload` cannot be produced for a transaction signed by an Ethereum key'
+        );
+      });
+    });
+
+    describe('method: toEthSignablePayload', () => {
+      it('should build a detached payload carrying the request and the decoded call', async () => {
+        const tag = TxTags.asset.RegisterUniqueTicker;
+        jest.spyOn(utilsConversionModule, 'transactionHexToTxTag').mockReturnValue(tag);
+        context.getTransactionArguments.mockReturnValue([]);
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        const result = await tx.toEthSignablePayload();
+
+        expect(result.transaction).toEqual(
+          expect.objectContaining({
+            to: sentinelAddress,
+            value: '0x0',
+            // a detached signer cannot own the nonce, so it is always resolved
+            nonce: '0x0',
+          })
+        );
+        expect(result.tag).toBe(tag);
+      });
+
+      it('should throw if no Ethereum signer is attached to the SDK instance', async () => {
+        context.getEthSigner.mockReturnValue(undefined);
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        await expect(tx.toEthSignablePayload()).rejects.toThrow(
+          'There is no Ethereum signer associated with the SDK instance'
+        );
+      });
+
+      it('should throw a ValidationError for a native signing Account', async () => {
+        const nativeContext = dsMockUtils.getContextInstance();
+        nativeContext.ss58Format = new BigNumber(42);
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...txSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          nativeContext
+        );
+
+        await expect(tx.toEthSignablePayload()).rejects.toThrow(
+          '`toEthSignablePayload` can only be used for a transaction signed by an Ethereum-derived Account'
+        );
+      });
+    });
+  });
 });

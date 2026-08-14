@@ -214,12 +214,31 @@ export const handleExtrinsicFailure = (
  *
  * Inspect a transaction receipt for an on-chain failure and return the corresponding error, or
  *   `undefined` if the transaction succeeded
+ *
+ * Two distinct failure shapes feed into the same {@link handleExtrinsicFailure}:
+ *
+ * - `system.ExtrinsicFailed`, the native path's failure signal
+ * - `revive.EthExtrinsicRevert`, emitted instead on the Ethereum signing path. There, the outer
+ *   `revive.ethTransact` extrinsic still emits `system.ExtrinsicSuccess` even when the inner
+ *   dispatch failed, so this check must run (and take priority) before the receipt is otherwise
+ *   treated as a success
  */
 export const getExtrinsicFailure = (receipt: ISubmittableResult): PolymeshError | undefined => {
   const [extrinsicFailedEvent] = filterEventRecords(receipt, 'system', 'ExtrinsicFailed', true);
 
   if (extrinsicFailedEvent) {
     return handleExtrinsicFailure(extrinsicFailedEvent.data[0]);
+  }
+
+  const [ethExtrinsicRevertEvent] = filterEventRecords(
+    receipt,
+    'revive',
+    'EthExtrinsicRevert',
+    true
+  );
+
+  if (ethExtrinsicRevertEvent) {
+    return handleExtrinsicFailure(ethExtrinsicRevertEvent.data[0]);
   }
 
   return undefined;

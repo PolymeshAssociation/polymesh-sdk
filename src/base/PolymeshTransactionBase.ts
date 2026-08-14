@@ -6,6 +6,17 @@ import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/ty
 import BigNumber from 'bignumber.js';
 
 import {
+  buildDetachedEthTransactionRequest,
+  buildSdkBroadcastSubmission,
+  buildWalletBroadcastSubmission,
+  buildEthTransactionRequest,
+  calculateEthGasFee,
+  dryRunEthTransaction,
+  getEthSubmissionMode,
+  getNativeToEthRatio,
+} from '~/base/ethTransaction';
+import { EthTransactionPayload } from '~/base/types';
+import {
   extrinsicHashMatcher,
   getExtrinsicFailure,
   handleTransactionSubmissionError,
@@ -48,6 +59,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { isEthDerivedAddress } from '~/utils/eth';
 import { defusePromise, delay, filterEventRecords, optionize } from '~/utils/internal';
 
 /**
@@ -99,8 +111,19 @@ export abstract class PolymeshTransactionBase<
 
   /**
    * transaction hash (status: `Running`, `Succeeded`, `Failed`)
+   *
+   * @note when this transaction was signed by an Ethereum key and the wallet broadcast it
+   *   itself, this is the Ethereum transaction hash, since that is the handle the user
+   *   has and can look up in a block explorer
    */
   public txHash?: string | undefined;
+
+  /**
+   * the Ethereum transaction hash, set only when this transaction was signed by an Ethereum key
+   *   and the wallet broadcast it itself. `undefined` for the native path, and when the SDK
+   *   submits the Ethereum transaction itself
+   */
+  public ethTxHash?: string | undefined;
 
   /**
    * transaction index within its block (status: `Succeeded`, `Failed`)
@@ -395,6 +418,10 @@ export abstract class PolymeshTransactionBase<
 
     await context.assertHasSigningAddress(signingAddress);
 
+    if (isEthDerivedAddress(signingAddress, context.ss58Format)) {
+      return this.internalRunEth();
+    }
+
     // era is how many blocks the transaction remains valid for, `undefined` for default
     const era = mortality.immortal ? 0 : mortality.lifetime?.toNumber();
     const nonce = context.getNonce().toNumber();
@@ -439,6 +466,99 @@ export abstract class PolymeshTransactionBase<
           txHash: submittedTxHash.toString(),
           matcher: extrinsicHashMatcher(submittedTxHash),
         };
+      },
+    });
+  }
+
+  /**
+   * @hidden
+   *
+   * @throws `ValidationError` if the caller explicitly requested a mortality setting.
+   *   Ethereum transactions have no era; replay protection comes from the nonce and chain id, so
+   *   `ProcedureOpts.mortality` is meaningless on this path and silently ignoring a request for
+   *   immortality that the transport cannot honour would be worse than a clear error
+   */
+  private assertMortalitySupportedForEth(): void {
+    const { mortality } = this;
+
+    const wasExplicitlySet = mortality.immortal || mortality.lifetime !== undefined;
+
+    if (wasExplicitlySet) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          'Mortality cannot be set for a transaction signed by an Ethereum key. Ethereum transactions have no era; replay protection comes from the nonce and chain id, so they are effectively immortal until the nonce is consumed',
+      });
+    }
+  }
+
+  /**
+   * @hidden
+   *
+   * Ethereum submission strategy: build the request (performing the mandatory dry run
+   *   pre-flight), then either broadcast a raw signed transaction from the SDK, or let the
+   *   wallet broadcast and correlate the result by scanning blocks for a matching
+   *   `revive.ethTransact` extrinsic
+   */
+  private async internalRunEth(): Promise<ISubmittableResult> {
+    const { context, signingAddress } = this;
+
+    this.assertMortalitySupportedForEth();
+
+    const ethSigner = context.getEthSigner();
+
+    if (!ethSigner) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'There is no Ethereum signer associated with the SDK instance. Please report this to the Polymesh team',
+      });
+    }
+
+    this.updateStatus(TransactionStatus.Unapproved);
+
+    const composedTx = this.composeTx();
+
+    const nonceValue = context.getNonce();
+    const nonceOverride = nonceValue.isNegative() ? undefined : nonceValue;
+
+    const { request } = await buildEthTransactionRequest({
+      context,
+      signingAddress,
+      composedTx,
+      ethSigner,
+      ...(nonceOverride ? { nonce: nonceOverride } : {}),
+    });
+
+    const mode = getEthSubmissionMode(ethSigner);
+
+    if (mode === 'sdkBroadcast') {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const rawSignedTx = await ethSigner.signTransaction!(request);
+
+      const { subscription, polling } = buildSdkBroadcastSubmission(context, rawSignedTx);
+
+      if (context.supportsSubscription()) {
+        return this.runViaSubscription(subscription);
+      }
+
+      return this.runViaPolling(polling);
+    }
+
+    /*
+     * The wallet broadcasts and returns the Ethereum transaction hash. The SDK submitted
+     *   nothing, so there is no extrinsic-status subscription to attach to and the result has to
+     *   be located by scanning blocks for the matching `revive.ethTransact` extrinsic
+     */
+    const walletBroadcastSubmission = buildWalletBroadcastSubmission(ethSigner, request);
+
+    return this.runViaPolling({
+      send: async () => {
+        const result = await walletBroadcastSubmission.send();
+        // set as soon as the hash is known, even if the transaction later reverts or is not found
+        this.ethTxHash = result.txHash;
+
+        return result;
       },
     });
   }
@@ -539,8 +659,10 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
-   * Submit the transaction, then poll for its finalization. Used when the
-   *   node connection does not support subscriptions
+   * Submit the transaction, then locate it by scanning the chain's blocks. Used when there is no
+   *   extrinsic status subscription to attach to — either because the connection does not support
+   *   subscriptions, or because the transaction was broadcast by an Ethereum wallet rather than
+   *   by the SDK
    */
   private async runViaPolling(submission: PollingSubmission): Promise<ISubmittableResult> {
     const { context } = this;
@@ -557,7 +679,9 @@ export abstract class PolymeshTransactionBase<
 
     /*
      * report inclusion as soon as the transaction lands in a block, rather than leaving the caller
-     *   with no feedback for the whole finalization window
+     *   with no feedback for the whole finalization window. This matters most for an Ethereum
+     *   transaction the wallet broadcast, where block scanning is the only signal
+     *   available
      */
     const onInBlock = ({ blockHash, blockNumber, txIndex }: TransactionInclusionInfo): void => {
       this.blockHash = blockHash;
@@ -629,23 +753,33 @@ export abstract class PolymeshTransactionBase<
    *
    * @note these values might be inaccurate if the transaction is run at a later time. This can be due to a governance vote or other
    *   chain related factors (like modifications to a specific subsidizer relationship or a chain upgrade)
+   * @note for a transaction signed by an Ethereum key, the `gas` component is derived from
+   *   `ethGas * gasPrice / nativeToEthRatio` (a dry run over the `revive` pallet) rather than
+   *   `payment_queryInfo`, and so may differ slightly from the equivalent native call
    */
   public async getTotalFees(asProposal = true): Promise<PayingAccountFees> {
-    const { signingAddress } = this;
+    const { signingAddress, context } = this;
 
     const composedTx = this.composeTxForFees(asProposal);
 
-    const paymentInfoPromise = composedTx.paymentInfo(signingAddress);
+    const isEthSigner = isEthDerivedAddress(signingAddress, context.ss58Format);
+
+    const gasPromise: Promise<BigNumber> = isEthSigner
+      ? dryRunEthTransaction(context, signingAddress, composedTx).then(({ rawEthGas, gasPrice }) =>
+          calculateEthGasFee(rawEthGas, gasPrice, getNativeToEthRatio(context))
+        )
+      : composedTx
+          .paymentInfo(signingAddress)
+          .then(({ partialFee }) => balanceToBigNumber(partialFee));
 
     const protocol = await this.getProtocolFees();
 
     const payingAccount = await this.getPayingAccount(asProposal);
 
-    const [{ partialFee }, { free: balance }] = await Promise.all([
-      paymentInfoPromise,
+    const [gas, { free: balance }] = await Promise.all([
+      gasPromise,
       payingAccount.account.getBalance(),
     ]);
-    const gas = balanceToBigNumber(partialFee);
 
     return {
       fees: {
@@ -943,6 +1077,15 @@ export abstract class PolymeshTransactionBase<
       context: { polymeshApi },
     } = this;
 
+    if (isEthDerivedAddress(signingAddress, context.ss58Format)) {
+      throw new PolymeshError({
+        code: ErrorCode.NotSupported,
+        message:
+          'A SCALE `SignerPayload` cannot be produced for a transaction signed by an Ethereum key, since an Ethereum key cannot sign it. Use `toEthSignablePayload` instead',
+        data: { signingAddress },
+      });
+    }
+
     const tx = this.composeTxForFees(asProposal);
 
     const [tipHash, latestBlockNumber] = await Promise.all([
@@ -995,6 +1138,59 @@ export abstract class PolymeshTransactionBase<
   }
 
   /**
+   * Returns a representation intended for offline/detached signing of a transaction signed by an
+   *   Ethereum-derived Account. Unlocks Fireblocks / KMS / HSM / air-gapped custody flows: the
+   *   caller signs the returned `transaction` and submits the raw signed bytes via
+   *   {@link api/client/Network!Network.submitEthTransaction | sdk.network.submitEthTransaction}
+   *
+   * @param metadata - Additional information attached to the payload, such as IDs or memos about the transaction
+   *
+   * @throws `ValidationError` if the signing Account is not Ethereum-derived
+   */
+  public async toEthSignablePayload(
+    metadata: Record<string, string> = {}
+  ): Promise<EthTransactionPayload> {
+    const { signingAddress, context } = this;
+
+    if (!isEthDerivedAddress(signingAddress, context.ss58Format)) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          '`toEthSignablePayload` can only be used for a transaction signed by an Ethereum-derived Account. Use `toSignablePayload` instead',
+        data: { signingAddress },
+      });
+    }
+
+    const ethSigner = context.getEthSigner();
+
+    if (!ethSigner) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'There is no Ethereum signer associated with the SDK instance. Please report this to the Polymesh team',
+      });
+    }
+
+    const composedTx = this.composeTxForFees(true);
+
+    const nonceValue = context.getNonce();
+    const nonceOverride = nonceValue.isNegative() ? undefined : nonceValue;
+
+    const transaction = await buildDetachedEthTransactionRequest(
+      context,
+      signingAddress,
+      composedTx,
+      ethSigner.capabilities.eip1559,
+      nonceOverride
+    );
+
+    const tag = transactionHexToTxTag(transaction.data, context);
+    const args = context.getTransactionArguments({ tag });
+
+    return { transaction, tag, args, metadata };
+  }
+
+  /**
    * returns true if transaction has completed successfully
    */
   get isSuccess(): boolean {
@@ -1017,7 +1213,17 @@ export abstract class PolymeshTransactionBase<
   private async getPayingAccount(asProposal: boolean): Promise<PayingAccount> {
     const { paidForBy, multiSig, context, signingAddress } = this;
 
+    const isEthSigner = isEthDerivedAddress(signingAddress, context.ss58Format);
+
     if (paidForBy) {
+      if (isEthSigner) {
+        throw new PolymeshError({
+          code: ErrorCode.NotSupported,
+          message:
+            'A third-party paying Account (`paidForBy`) is not supported for a transaction signed by an Ethereum key. The Ethereum-derived Account is both the origin and the fee payer on this transport',
+        });
+      }
+
       const { account: primaryAccount } = await paidForBy.getPrimaryAccount();
 
       return {
@@ -1026,7 +1232,9 @@ export abstract class PolymeshTransactionBase<
       };
     }
 
-    const subsidyWithAllowance = await context.accountSubsidy();
+    // subsidies are ignored on the Ethereum path: whether they apply is not established, and
+    //   ignoring one that does apply merely over-reports the fee
+    const subsidyWithAllowance = isEthSigner ? null : await context.accountSubsidy();
 
     if (subsidyWithAllowance && !this.ignoresSubsidy()) {
       const {
@@ -1097,6 +1305,20 @@ export abstract class PolymeshTransactionBase<
     } = this;
 
     if (actingMultiSig) {
+      /*
+       * MultiSig + Ethereum is a narrow, untested intersection: `getPayingAccount` resolves fees
+       *   to a *native* primary key for a MultiSig proposal, while the gas-derived fee arithmetic
+       *   describes the transaction the Ethereum key itself submits. Out of scope for now,
+       *   rather than shipping an untested combination of two fee models
+       */
+      if (isEthDerivedAddress(signingAddress, context.ss58Format)) {
+        throw new PolymeshError({
+          code: ErrorCode.NotSupported,
+          message:
+            'Using an Ethereum-derived Account as a MultiSig signer is not currently supported',
+        });
+      }
+
       const rawMultiSigId = stringToAccountId(actingMultiSig.address, context);
       const rawExpiry = optionize(dateToMoment)(multiSigOpts.expiry, context);
 
