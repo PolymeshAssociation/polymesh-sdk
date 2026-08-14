@@ -17,6 +17,7 @@ import {
   revokeSubsidy,
   subsidizeAccount,
   Subsidy,
+  toggleEvmAccountMapping,
   toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
@@ -37,7 +38,13 @@ import {
   SubsidizeAccountParams,
   UnsubCallback,
 } from '~/types';
-import { bigNumberToU64, dateToMoment, stringToIdentityId } from '~/utils/conversion';
+import {
+  accountIdToString,
+  bigNumberToU64,
+  dateToMoment,
+  stringToIdentityId,
+} from '~/utils/conversion';
+import { ss58FromEthAddress } from '~/utils/eth';
 import {
   asAccount,
   asIdentity,
@@ -121,6 +128,20 @@ export class AccountManagement {
       },
       context
     );
+    this.mapEvmAccount = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [toggleEvmAccountMapping, { map: true }],
+        voidArgs: true,
+      },
+      context
+    );
+    this.unmapEvmAccount = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [toggleEvmAccountMapping, { map: false }],
+        voidArgs: true,
+      },
+      context
+    );
     this.acceptSubsidy = createProcedureMethod(
       { getProcedureAndArgs: args => [acceptSubsidy, args] },
       context
@@ -192,6 +213,37 @@ export class AccountManagement {
    * Unfreeze all of the secondary Accounts in the signing Identity. This will restore their permissions as they were before being frozen
    */
   public unfreezeSecondaryAccounts: NoArgsProcedureMethod<void>;
+
+  /**
+   * Register the signing Account against its derived Ethereum address, so that the chain can
+   *   resolve that address back to the Account
+   *
+   * The derived address (see {@link api/entities/Account!Account.evmAddress | Account.evmAddress})
+   *   is `keccak256` of the Account, which the chain cannot invert on its own. Until it is mapped,
+   *   anything sent to the address is credited to the fallback Account reported by
+   *   {@link api/entities/Account!Account.getEvmAddressDetails | Account.getEvmAddressDetails}
+   *   instead, and recovering it needs the chain's `revive.dispatchAsFallbackAccount`. Map the
+   *   Account *before* advertising the address or receiving funds at it
+   *
+   * @note this takes a deposit from the signing Account, released by {@link unmapEvmAccount}
+   *
+   * @throws if the signing Account is Ethereum-derived — the chain resolves its address by
+   *   stripping the padding, so there is nothing to map
+   * @throws if the signing Account is already mapped
+   */
+  public mapEvmAccount: NoArgsProcedureMethod<void>;
+
+  /**
+   * Unregister the signing Account from its derived Ethereum address, releasing the deposit taken
+   *   by {@link mapEvmAccount}
+   *
+   * @note after this, the chain can no longer resolve the derived address back to the Account, so
+   *   anything sent to it is credited to the fallback Account instead. Only do this for an Account
+   *   that will no longer be used
+   *
+   * @throws if the signing Account is not mapped
+   */
+  public unmapEvmAccount: NoArgsProcedureMethod<void>;
 
   /**
    * Approves a subsidy request
@@ -301,6 +353,38 @@ export class AccountManagement {
    */
   public getAccount(args: { address: string }): Promise<Account | MultiSig> {
     return getAccount(args, this.context);
+  }
+
+  /**
+   * Return the Account the chain credits for an Ethereum (H160) address, mirroring the `revive`
+   *   pallet's address mapper
+   *
+   * - if the address has been mapped via {@link mapEvmAccount}, this is the Account that mapped it
+   * - otherwise it is the fallback Account `ss58(<address> ++ [0xEE; 12])`, which is also the
+   *   Account controlled by the Ethereum key itself when `address` is a native Ethereum address
+   *
+   * @param args.evmAddress - 20 byte hex encoded Ethereum address. Checksummed or not
+   *
+   * @note this always resolves to an Account, so the result alone does not say whether a mapping
+   *   exists. Use {@link api/entities/Account!Account.getEvmAddressDetails |
+   *   Account.getEvmAddressDetails} on the Account you expect for that
+   *
+   * @throws if `evmAddress` is not a 20 byte hex encoded address
+   */
+  public async getAccountByEvmAddress(args: { evmAddress: string }): Promise<Account | MultiSig> {
+    const { context } = this;
+    const { evmAddress } = args;
+
+    // validates `evmAddress`, so the storage query below is never handed a malformed key
+    const fallbackAddress = ss58FromEthAddress(evmAddress, context.ss58Format);
+
+    const rawOriginalAccount = await context.polymeshApi.query.revive.originalAccount(evmAddress);
+
+    const address = rawOriginalAccount.isSome
+      ? accountIdToString(rawOriginalAccount.unwrap())
+      : fallbackAddress;
+
+    return getAccount({ address }, context);
   }
 
   /**

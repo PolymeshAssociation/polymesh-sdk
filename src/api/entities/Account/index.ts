@@ -18,6 +18,8 @@ import {
   AccountIdentityRelation,
   AccountKeyType,
   AccountTypeInfo,
+  EvmAddressDetails,
+  EvmAddressType,
   HistoricPolyxTransaction,
 } from '~/api/entities/Account/types';
 import { Subsidies } from '~/api/entities/Subsidies';
@@ -72,7 +74,12 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { ethAddressFromSs58, isEthDerivedAddress } from '~/utils/eth';
+import {
+  ethAddressFromSs58,
+  evmAddressFromSs58,
+  isEthDerivedAddress,
+  ss58FromEthAddress,
+} from '~/utils/eth';
 import {
   areSameAccounts,
   asAssetId,
@@ -150,6 +157,77 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     }
 
     return ethAddressFromSs58(address, context.ss58Format);
+  }
+
+  /**
+   * The Ethereum address the chain associates with this Account, mirroring the `revive` pallet's
+   *   address mapper
+   *
+   * - for an Ethereum-derived Account, this is the Ethereum key controlling it, and is the same
+   *   value as {@link ethAddress}
+   * - for any other Account, it is derived by hashing: `keccak256(<32-byte AccountId32>)[12..]`
+   *
+   * @note this is what the address *would* be. Because hashing is one way, the chain can only
+   *   resolve a derived address back to this Account once the Account has called
+   *   {@link api/client/AccountManagement!AccountManagement.mapEvmAccount | mapEvmAccount} —
+   *   until then, anything sent to it is credited elsewhere. Use {@link getEvmAddressDetails} to
+   *   check before advertising this address
+   */
+  public get evmAddress(): string {
+    const { address, context } = this;
+
+    return evmAddressFromSs58(address, context.ss58Format);
+  }
+
+  /**
+   * Retrieve the Ethereum address the chain associates with this Account, together with whether
+   *   the chain can currently resolve that address back to this Account, and the fallback Account
+   *   credited whenever it cannot
+   *
+   * @note for a derived address the fallback Account is reported even once the Account is mapped,
+   *   since mapping does not move funds that arrived beforehand
+   */
+  public async getEvmAddressDetails(): Promise<EvmAddressDetails> {
+    const { address, context } = this;
+
+    const evmAddress = evmAddressFromSs58(address, context.ss58Format);
+
+    /*
+     * An Ethereum-derived Account's address is the Ethereum key it is padded from, which the chain
+     *   inverts by stripping the padding — there is no stored mapping to look up, and none can be
+     *   created (`revive.mapAccount` rejects an `Address20` origin)
+     */
+    if (isEthDerivedAddress(address, context.ss58Format)) {
+      return {
+        address: evmAddress,
+        type: EvmAddressType.Native,
+        isMapped: true,
+        fallbackAccount: null,
+      };
+    }
+
+    const rawOriginalAccount = await context.polymeshApi.query.revive.originalAccount(evmAddress);
+
+    /*
+     * The storage key is `keccak256` of this Account, so an entry can only have been created by
+     *   this Account mapping itself — its presence alone answers the question
+     */
+    const isMapped = rawOriginalAccount.isSome;
+
+    return {
+      address: evmAddress,
+      type: EvmAddressType.Derived,
+      isMapped,
+      /*
+       * Reported whether or not the Account is mapped: mapping does not move funds that arrived
+       *   at `evmAddress` beforehand, so this stays the only pointer to a balance stranded by the
+       *   very situation mapping exists to prevent
+       */
+      fallbackAccount: new Account(
+        { address: ss58FromEthAddress(evmAddress, context.ss58Format) },
+        context
+      ),
+    };
   }
 
   /**

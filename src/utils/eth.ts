@@ -1,6 +1,6 @@
 import { BN, hexToU8a, isHex } from '@polkadot/util';
 import { HexString } from '@polkadot/util/types';
-import { decodeAddress, encodeAddress, ethereumEncode } from '@polkadot/util-crypto';
+import { decodeAddress, encodeAddress, ethereumEncode, keccakAsU8a } from '@polkadot/util-crypto';
 import { PalletRevivePrimitivesEthTransactError } from '@polymeshassociation/polymesh-types/polkadot/types-lookup';
 import BigNumber from 'bignumber.js';
 
@@ -23,6 +23,14 @@ const ETH_SUFFIX_BYTE = 0xee;
  */
 const ACCOUNT_ID_LENGTH = 32;
 const H160_LENGTH = 20;
+
+/**
+ * @hidden
+ *
+ * Offset into a 32 byte Keccak-256 digest at which revive's derived address begins, i.e. the
+ *   digest's last 20 bytes
+ */
+const KECCAK_ADDRESS_OFFSET = 12;
 
 /**
  * Return whether the given SS58 address was derived from an Ethereum key, i.e. whether the last
@@ -104,6 +112,51 @@ export function ss58FromEthAddress(h160: string, ss58Format: BigNumber): string 
   accountId.set(new Uint8Array(ETH_SUFFIX_LENGTH).fill(ETH_SUFFIX_BYTE), H160_LENGTH);
 
   return encodeAddress(accountId, ss58Format.toNumber());
+}
+
+/**
+ * Compute the Ethereum (H160) address the chain associates with an Account, mirroring revive's
+ *   `AccountId32Mapper::to_address`:
+ *
+ * - an Ethereum-derived Account (`<h160> ++ [0xEE; 12]`) yields the Ethereum key it is padded
+ *   from. The chain can always invert this, so no on-chain mapping is involved
+ * - any other Account yields `keccak256(<32-byte AccountId32>)[12..]`. This direction is a one-way
+ *   hash, so the chain can only invert it if the Account has called `revive.mapAccount`
+ *
+ * @returns the checksummed (EIP-55) `0x`-prefixed address
+ *
+ * @throws if the address is not a validly encoded 32 byte `AccountId32`
+ */
+export function evmAddressFromSs58(address: string, ss58Format: BigNumber): HexString {
+  let decoded;
+
+  try {
+    decoded = decodeAddress(address, false, ss58Format.toNumber());
+  } catch (err) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied address is not a valid SS58 address',
+      data: { address },
+    });
+  }
+
+  /*
+   * SS58 also encodes shorter keys (1, 2, 4, 8 and 33 bytes), which the chain has no `AccountId32`
+   *   to derive an address from
+   */
+  if (decoded.length !== ACCOUNT_ID_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied address does not encode a 32 byte Account ID',
+      data: { address },
+    });
+  }
+
+  if (decoded.subarray(H160_LENGTH).every(byte => byte === ETH_SUFFIX_BYTE)) {
+    return ethereumEncode(decoded.subarray(0, H160_LENGTH)) as HexString;
+  }
+
+  return ethereumEncode(keccakAsU8a(decoded).subarray(KECCAK_ADDRESS_OFFSET)) as HexString;
 }
 
 /**

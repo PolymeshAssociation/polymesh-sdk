@@ -1,5 +1,5 @@
 import { hexToU8a } from '@polkadot/util';
-import { encodeAddress, ethereumEncode } from '@polkadot/util-crypto';
+import { encodeAddress, ethereumEncode, keccakAsU8a } from '@polkadot/util-crypto';
 import { PalletRevivePrimitivesEthTransactError } from '@polymeshassociation/polymesh-types/polkadot/types-lookup';
 import BigNumber from 'bignumber.js';
 
@@ -8,6 +8,7 @@ import { dsMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
 import {
   ethAddressFromSs58,
+  evmAddressFromSs58,
   isEthDerivedAddress,
   parseEthTransactError,
   ss58FromEthAddress,
@@ -125,6 +126,80 @@ describe('eth utils', () => {
         expect.objectContaining({
           code: ErrorCode.ValidationError,
           message: 'The supplied Ethereum address is not valid hex',
+        })
+      );
+    });
+  });
+
+  describe('evmAddressFromSs58', () => {
+    it.each([new BigNumber(42), new BigNumber(12)])(
+      'should return the padded Ethereum key for an Ethereum-derived Account (ss58Format %s)',
+      ss58Format => {
+        const address = encodeAddress(buildEthAccountId(), ss58Format.toNumber());
+
+        expect(evmAddressFromSs58(address, ss58Format)).toBe(checksummedH160);
+        // for an Ethereum-derived Account this must agree with the dedicated getter
+        expect(evmAddressFromSs58(address, ss58Format)).toBe(
+          ethAddressFromSs58(address, ss58Format)
+        );
+      }
+    );
+
+    it.each([new BigNumber(42), new BigNumber(12)])(
+      'should hash a native Account, matching revive `keccak256(<account id>)[12..]` (ss58Format %s)',
+      ss58Format => {
+        const accountId = new Uint8Array(32).fill(1);
+        const address = encodeAddress(accountId, ss58Format.toNumber());
+
+        const expected = ethereumEncode(keccakAsU8a(accountId).subarray(12));
+
+        expect(evmAddressFromSs58(address, ss58Format)).toBe(expected);
+      }
+    );
+
+    it('should be independent of the ss58 format the address is encoded in', () => {
+      const accountId = new Uint8Array(32).fill(7);
+
+      expect(evmAddressFromSs58(encodeAddress(accountId, 42), new BigNumber(42))).toBe(
+        evmAddressFromSs58(encodeAddress(accountId, 12), new BigNumber(12))
+      );
+    });
+
+    it('should not collide with the Ethereum-derived branch for a lookalike Account', () => {
+      /*
+       * An Account whose last 12 bytes are `0xEE` except for one takes the hashing branch, so it
+       *   must not be read as the padded form of the leading 20 bytes
+       */
+      const accountId = new Uint8Array(32).fill(0xee);
+      accountId.set(hexToU8a(h160), 0);
+      accountId[31] = 0x01;
+
+      const ss58Format = new BigNumber(42);
+      const address = encodeAddress(accountId, ss58Format.toNumber());
+
+      expect(evmAddressFromSs58(address, ss58Format)).not.toBe(checksummedH160);
+      expect(evmAddressFromSs58(address, ss58Format)).toBe(
+        ethereumEncode(keccakAsU8a(accountId).subarray(12))
+      );
+    });
+
+    it('should throw a ValidationError if the address is not a valid ss58 address', () => {
+      expect(() => evmAddressFromSs58('not an address', new BigNumber(42))).toThrow(
+        expect.objectContaining({
+          code: ErrorCode.ValidationError,
+          message: 'The supplied address is not a valid SS58 address',
+        })
+      );
+    });
+
+    it('should throw a ValidationError if the address does not encode 32 bytes', () => {
+      // ss58 also encodes shorter keys, which the chain has no `AccountId32` to derive from
+      const shortKey = encodeAddress(new Uint8Array(8).fill(1), 42);
+
+      expect(() => evmAddressFromSs58(shortKey, new BigNumber(42))).toThrow(
+        expect.objectContaining({
+          code: ErrorCode.ValidationError,
+          message: 'The supplied address does not encode a 32 byte Account ID',
         })
       );
     });

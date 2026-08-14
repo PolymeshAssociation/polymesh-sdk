@@ -151,6 +151,7 @@ export { modifyCaDefaultConfig } from '~/api/procedures/modifyCaDefaultConfig';
 export { removeCorporateAction } from '~/api/procedures/removeCorporateAction';
 export { reclaimDividendDistributionFunds } from '~/api/procedures/reclaimDividendDistributionFunds';
 export { transferTickerOwnership } from '~/api/procedures/transferTickerOwnership';
+export { toggleEvmAccountMapping } from '~/api/procedures/toggleEvmAccountMapping';
 export { toggleFreezeSecondaryAccounts } from '~/api/procedures/toggleFreezeSecondaryAccounts';
 export { modifyVenue } from '~/api/procedures/modifyVenue';
 export { leaveIdentity } from '~/api/procedures/leaveIdentity';

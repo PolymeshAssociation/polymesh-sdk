@@ -1,9 +1,12 @@
+import { hexToU8a } from '@polkadot/util';
+import { encodeAddress, ethereumEncode, keccakAsU8a } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
   AccountIdentityRelation,
   AccountKeyType,
+  EvmAddressType,
   HistoricPolyxTransaction,
 } from '~/api/entities/Account/types';
 import { Account, Context, Entity, PolymeshError } from '~/internal';
@@ -32,6 +35,7 @@ import {
 } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import { ss58FromEthAddress } from '~/utils/eth';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
@@ -1236,6 +1240,107 @@ describe('Account class', () => {
       result = await account.getCollections({ collections: [assetId1] });
       expect(result).toHaveLength(1);
       expect(result[0]!.collection.id).toEqual(assetId1);
+    });
+  });
+
+  describe('EVM address mapping', () => {
+    const ss58Format = new BigNumber(42);
+
+    const nativeAccountId = new Uint8Array(32).fill(1);
+    const nativeAddress = encodeAddress(nativeAccountId, ss58Format.toNumber());
+    const derivedEvmAddress = ethereumEncode(keccakAsU8a(nativeAccountId).subarray(12));
+
+    const h160 = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd';
+    const ethAccountId = new Uint8Array(32);
+    ethAccountId.set(hexToU8a(h160), 0);
+    ethAccountId.set(new Uint8Array(12).fill(0xee), 20);
+    const ethDerivedAddress = encodeAddress(ethAccountId, ss58Format.toNumber());
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance({ ss58Format });
+    });
+
+    describe('getter: evmAddress', () => {
+      it('should return the hashed address for a native Account', () => {
+        const nativeAccount = new Account({ address: nativeAddress }, context);
+
+        expect(nativeAccount.evmAddress).toBe(derivedEvmAddress);
+      });
+
+      it('should return the padded Ethereum key for an Ethereum-derived Account', () => {
+        const ethAccount = new Account({ address: ethDerivedAddress }, context);
+
+        expect(ethAccount.evmAddress).toBe(ethereumEncode(hexToU8a(h160)));
+        expect(ethAccount.evmAddress).toBe(ethAccount.ethAddress);
+      });
+    });
+
+    describe('method: getEvmAddressDetails', () => {
+      it('should report a native Account as unmapped, with the fallback Account that is credited', async () => {
+        const originalAccountMock = dsMockUtils.createQueryMock('revive', 'originalAccount', {
+          returnValue: createMockOption(),
+        });
+
+        const nativeAccount = new Account({ address: nativeAddress }, context);
+
+        const result = await nativeAccount.getEvmAddressDetails();
+
+        expect(originalAccountMock).toHaveBeenCalledWith(derivedEvmAddress);
+        expect(result.address).toBe(derivedEvmAddress);
+        expect(result.type).toBe(EvmAddressType.Derived);
+        expect(result.isMapped).toBe(false);
+        expect(result.fallbackAccount?.address).toBe(
+          ss58FromEthAddress(derivedEvmAddress, ss58Format)
+        );
+      });
+
+      it('should report a native Account as mapped once it has an entry', async () => {
+        dsMockUtils.createQueryMock('revive', 'originalAccount', {
+          returnValue: createMockOption(createMockAccountId(nativeAddress)),
+        });
+
+        const nativeAccount = new Account({ address: nativeAddress }, context);
+
+        const result = await nativeAccount.getEvmAddressDetails();
+
+        expect(result.address).toBe(derivedEvmAddress);
+        expect(result.type).toBe(EvmAddressType.Derived);
+        expect(result.isMapped).toBe(true);
+      });
+
+      it('should still report the fallback Account once mapped, since mapping does not move funds sent beforehand', async () => {
+        dsMockUtils.createQueryMock('revive', 'originalAccount', {
+          returnValue: createMockOption(createMockAccountId(nativeAddress)),
+        });
+
+        const nativeAccount = new Account({ address: nativeAddress }, context);
+
+        const result = await nativeAccount.getEvmAddressDetails();
+
+        expect(result.isMapped).toBe(true);
+        expect(result.fallbackAccount?.address).toBe(
+          ss58FromEthAddress(derivedEvmAddress, ss58Format)
+        );
+      });
+
+      it('should report an Ethereum-derived Account as natively mapped without hitting the chain', async () => {
+        const originalAccountMock = dsMockUtils.createQueryMock('revive', 'originalAccount', {
+          returnValue: createMockOption(),
+        });
+
+        const ethAccount = new Account({ address: ethDerivedAddress }, context);
+
+        const result = await ethAccount.getEvmAddressDetails();
+
+        expect(result).toEqual({
+          address: ethereumEncode(hexToU8a(h160)),
+          type: EvmAddressType.Native,
+          isMapped: true,
+          fallbackAccount: null,
+        });
+        // the chain strips the padding, so there is no stored mapping to look up
+        expect(originalAccountMock).not.toHaveBeenCalled();
+      });
     });
   });
 });

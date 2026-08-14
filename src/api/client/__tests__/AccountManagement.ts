@@ -1,3 +1,4 @@
+import { encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -7,6 +8,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, Identity, PermissionType, SubCallback } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import { ss58FromEthAddress } from '~/utils/eth';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
@@ -233,6 +235,89 @@ describe('AccountManagement class', () => {
       const tx = await accountManagement.approveSubsidy(args);
 
       expect(tx).toEqual(expectedTransaction);
+    });
+  });
+
+  describe('method: mapEvmAccount', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        map: true,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await accountManagement.mapEvmAccount();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: unmapEvmAccount', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        map: false,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await accountManagement.unmapEvmAccount();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getAccountByEvmAddress', () => {
+    const ss58Format = new BigNumber(42);
+    const evmAddress = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd';
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance({ ss58Format });
+      accountManagement = new AccountManagement(context);
+
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', { returnValue: [] });
+    });
+
+    it('should return the Account that mapped the address', async () => {
+      const mappedAddress = encodeAddress(new Uint8Array(32).fill(1), ss58Format.toNumber());
+
+      const originalAccountMock = dsMockUtils.createQueryMock('revive', 'originalAccount', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId(mappedAddress)),
+      });
+
+      const result = await accountManagement.getAccountByEvmAddress({ evmAddress });
+
+      expect(originalAccountMock).toHaveBeenCalledWith(evmAddress);
+      expect(result).toBeInstanceOf(Account);
+      expect(result.address).toBe(mappedAddress);
+    });
+
+    it('should return the 0xEE padded fallback Account when the address is not mapped', async () => {
+      dsMockUtils.createQueryMock('revive', 'originalAccount', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      const result = await accountManagement.getAccountByEvmAddress({ evmAddress });
+
+      expect(result).toBeInstanceOf(Account);
+      expect(result.address).toBe(ss58FromEthAddress(evmAddress, ss58Format));
+    });
+
+    it('should throw an error if the Ethereum address is not 20 bytes', () => {
+      dsMockUtils.createQueryMock('revive', 'originalAccount', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      return expect(
+        accountManagement.getAccountByEvmAddress({ evmAddress: '0x1234' })
+      ).rejects.toThrow('The supplied Ethereum address must be 20 bytes long');
     });
   });
 

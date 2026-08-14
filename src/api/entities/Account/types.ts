@@ -103,6 +103,61 @@ export enum AccountIdentityRelation {
 }
 
 /**
+ * How an Account's Ethereum (H160) address relates to the Account itself
+ */
+export enum EvmAddressType {
+  /**
+   * The Account is padded from a native Ethereum key (`<h160> ++ [0xEE; 12]`), so its Ethereum
+   *   address is that key. The chain can always resolve this address back to the Account, and
+   *   `revive.mapAccount` neither applies nor is needed
+   */
+  Native = 'Native',
+  /**
+   * The Account is a native Polymesh Account, so its Ethereum address is derived by hashing:
+   *   `keccak256(<32-byte AccountId32>)[12..]`. Hashing is one way, so the chain can only resolve
+   *   this address back to the Account once the Account has called `revive.mapAccount`
+   */
+  Derived = 'Derived',
+}
+
+/**
+ * The Ethereum address the chain associates with an Account, and whether the chain can resolve it
+ *   back to that Account
+ */
+export interface EvmAddressDetails {
+  /**
+   * The checksummed (EIP-55) `0x`-prefixed Ethereum address
+   */
+  address: string;
+  /**
+   * Whether `address` is the Account's own Ethereum key or is derived from it by hashing
+   */
+  type: EvmAddressType;
+  /**
+   * Whether the chain can resolve `address` back to this Account. Always `true` for
+   *   {@link EvmAddressType.Native}; for {@link EvmAddressType.Derived} it reflects whether the
+   *   Account has called `revive.mapAccount`
+   *
+   * @note while this is `false`, anything sent to `address` is credited to `fallbackAccount`
+   *   instead of to this Account
+   */
+  isMapped: boolean;
+  /**
+   * The Account credited when the chain cannot resolve `address` back to this Account, i.e. the
+   *   Account `ss58(<address> ++ [0xEE; 12])`. `null` only for {@link EvmAddressType.Native},
+   *   where this Account *is* the one the Ethereum key controls, so there is no separate fallback
+   *
+   * @note always populated for {@link EvmAddressType.Derived}, including once `isMapped` is
+   *   `true`. Mapping does not move funds that arrived before it, so this remains the place to
+   *   look for anything sent to `address` while it was still unmapped
+   *
+   * @note the chain's `revive.dispatchAsFallbackAccount` can dispatch on this Account's behalf,
+   *   which is how funds sent to an unmapped address are recovered
+   */
+  fallbackAccount: Account | null;
+}
+
+/**
  * The type of account, and its relation to an Identity
  */
 export interface AccountTypeInfo {
