@@ -186,6 +186,7 @@ import { cloneDeep, map, merge, upperFirst } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { BallotMotion } from '~/api/entities/CorporateBallot/types';
+import { EthSigner } from '~/base/types';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
@@ -488,6 +489,9 @@ interface ContextOptions {
   getSignature?: `0x${string}`;
   getNextAssetId?: string;
   getPendingSubsidies?: SubsidyWithAllowance[];
+  getEthSigner?: EthSigner | undefined;
+  getEthRuntimePalletsAddress?: string;
+  getEthChainId?: BigNumber;
 }
 
 interface SigningManagerOptions {
@@ -832,6 +836,9 @@ const defaultContextOptions: ContextOptions = {
   getSignature: '0xsignature',
   getNextAssetId: '0x12341234123412341234123412341234',
   getPendingSubsidies: [],
+  getEthSigner: undefined,
+  getEthRuntimePalletsAddress: '0x6d6f646c70792f70616464720000000000000000',
+  getEthChainId: new BigNumber(1641818),
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultSigningManagerOptions: SigningManagerOptions = {
@@ -970,6 +977,9 @@ function configureContext(opts: ContextOptions): void {
     assertSupportsSubscription: jest.fn(),
     getSignature: jest.fn().mockReturnValue(opts.getSignature),
     getPendingSubsidies: jest.fn().mockResolvedValue(opts.getPendingSubsidies),
+    getEthSigner: jest.fn().mockReturnValue(opts.getEthSigner),
+    getEthRuntimePalletsAddress: jest.fn().mockResolvedValue(opts.getEthRuntimePalletsAddress),
+    getEthChainId: jest.fn().mockReturnValue(opts.getEthChainId),
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);

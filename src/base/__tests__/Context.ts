@@ -67,6 +67,12 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockSubsidyModule('~/api/entities/Subsidy')
 );
 
+// ss58 (format 42) address of an Ethereum-derived Account (the last 12 bytes of the decoded
+//   AccountId32 are 0xEE)
+const ethSs58Address = '5FwyDndroq7u9jGc1WHAohCyYPS8xoPmiKYxJQQujkBgpP79';
+// a validly encoded, non Ethereum-derived ss58 (format 42) address
+const nativeSs58Address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+
 describe('Context class', () => {
   let polymeshApi: ApiPromise & jest.Mocked<ApiPromise> & EventEmitter;
 
@@ -247,6 +253,19 @@ describe('Context class', () => {
       context.setSigningAddress('otherAddress');
 
       expect(context.getSigningAddress()).toBe('otherAddress');
+    });
+
+    it('should allow setting an Ethereum-derived address as the signing address', async () => {
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: ['someAddress', ethSs58Address],
+        }),
+      });
+
+      expect(() => context.setSigningAddress(ethSs58Address)).not.toThrow();
+      expect(context.getSigningAddress()).toBe(ethSs58Address);
     });
   });
 
@@ -2726,6 +2745,124 @@ describe('Context class', () => {
       expect(signer.signRaw).toHaveBeenCalledTimes(2);
 
       expect(result).toEqual('0xsignature');
+    });
+
+    it('should throw a NotSupported error for an Ethereum-derived signer', async () => {
+      const signer = {
+        signRaw: jest.fn(),
+      } as unknown as PolkadotSigner;
+
+      dsMockUtils.createTxMock('revive', 'ethTransact');
+      dsMockUtils.createCallMock('reviveApi', 'ethTransactWithConfig');
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getExternalSigner: signer,
+          getAccounts: [nativeSs58Address, ethSs58Address],
+        }),
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.NotSupported,
+        message:
+          'Off-chain signatures are not supported for Ethereum-derived Accounts. The chain only accepts sr25519 and ed25519 signatures for this operation',
+        data: { address: ethSs58Address },
+      });
+
+      await expect(
+        context.getSignature({ rawPayload: '0xRawPayload', signer: ethSs58Address })
+      ).rejects.toThrow(expectedError);
+
+      expect(signer.signRaw).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('method: getEthRuntimePalletsAddress', () => {
+    it('should return the sentinel address, caching the runtime call after the first invocation', async () => {
+      const sentinelAddress = '0x6d6f646c70792f70616464720000000000000000';
+
+      const runtimePalletsAddressMock = dsMockUtils.createCallMock(
+        'reviveApi',
+        'runtimePalletsAddress',
+        {
+          returnValue: { toString: () => sentinelAddress },
+        }
+      );
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const first = await context.getEthRuntimePalletsAddress();
+      const second = await context.getEthRuntimePalletsAddress();
+
+      expect(first).toBe(sentinelAddress);
+      expect(second).toBe(sentinelAddress);
+      expect(runtimePalletsAddressMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('method: getEthChainId', () => {
+    it('should return the chain id from consts.revive.chainId', async () => {
+      dsMockUtils.setConstMock('revive', 'chainId', {
+        returnValue: dsMockUtils.createMockU64(new BigNumber(1641818)),
+      });
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      expect(context.getEthChainId()).toEqual(new BigNumber(1641818));
+    });
+  });
+
+  describe('method: getEthSigner', () => {
+    it('should return undefined if there is no Signing Manager attached', async () => {
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      expect(context.getEthSigner()).toBeUndefined();
+    });
+
+    it('should return undefined if the Signing Manager is not eth capable', async () => {
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: [nativeSs58Address],
+        }),
+      });
+
+      expect(context.getEthSigner()).toBeUndefined();
+    });
+
+    it('should return the Ethereum signer if the Signing Manager provides one', async () => {
+      const ethSigner = {
+        capabilities: { signTransaction: true, sendTransaction: false, eip1559: true },
+        signTransaction: jest.fn(),
+      };
+
+      const signingManager = {
+        getAccounts: jest.fn().mockResolvedValue([nativeSs58Address]),
+        getExternalSigner: jest.fn().mockReturnValue('signer' as PolkadotSigner),
+        setSs58Format: jest.fn(),
+        getEthSigner: jest.fn().mockReturnValue(ethSigner),
+      };
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        signingManager: signingManager as any,
+      });
+
+      expect(context.getEthSigner()).toBe(ethSigner);
     });
   });
 });

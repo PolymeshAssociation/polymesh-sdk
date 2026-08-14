@@ -22,6 +22,7 @@ import BigNumber from 'bignumber.js';
 import { chunk, clone, flattenDeep } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
+import { EthSigner } from '~/base/types';
 import { processType } from '~/base/utils';
 import {
   Account,
@@ -83,7 +84,9 @@ import {
   txTagToProtocolOp,
   u16ToBigNumber,
   u32ToBigNumber,
+  u64ToBigNumber,
 } from '~/utils/conversion';
+import { isEthDerivedAddress } from '~/utils/eth';
 import {
   asAccount,
   asDid,
@@ -93,6 +96,7 @@ import {
   getApiAtBlock,
   getLatestSqVersion,
 } from '~/utils/internal';
+import { isEthSigningManager } from '~/utils/typeguards';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -127,6 +131,10 @@ export class Context {
   private nonce?: BigNumber | undefined;
 
   private _isArchiveNodeResult?: boolean;
+
+  private _ethRuntimePalletsAddress?: Promise<string>;
+
+  private _ethChainId?: BigNumber;
 
   public specVersion: number;
 
@@ -626,6 +634,58 @@ export class Context {
     const { signingManager } = this;
 
     return signingManager?.getExternalSigner();
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve the Ethereum signer from the Signing Manager, if it has one
+   *
+   * @returns `undefined` if there is no Signing Manager attached, or it isn't capable of signing
+   *   Ethereum transactions
+   */
+  public getEthSigner(): EthSigner | undefined {
+    const { signingManager } = this;
+
+    if (!signingManager || !isEthSigningManager(signingManager)) {
+      return undefined;
+    }
+
+    return signingManager.getEthSigner();
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve the sentinel address used to dispatch runtime calls through the `revive` pallet,
+   *   i.e. `reviveApi.runtimePalletsAddress()`
+   *
+   * @note cached for the connection's lifetime; it cannot change without a runtime upgrade, and a
+   *   reconnect rebuilds the Context anyway
+   */
+  public getEthRuntimePalletsAddress(): Promise<string> {
+    if (!this._ethRuntimePalletsAddress) {
+      this._ethRuntimePalletsAddress = this.polymeshApi.call.reviveApi
+        .runtimePalletsAddress()
+        .then(address => address.toString());
+    }
+
+    return this._ethRuntimePalletsAddress;
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve the EIP-155 chain ID used to sign Ethereum transactions, i.e. `consts.revive.chainId`
+   *
+   * @note cached for the connection's lifetime; it cannot change without a runtime upgrade
+   */
+  public getEthChainId(): BigNumber {
+    if (!this._ethChainId) {
+      this._ethChainId = u64ToBigNumber(this.polymeshApi.consts.revive.chainId);
+    }
+
+    return this._ethChainId;
   }
 
   /**
@@ -1461,6 +1521,9 @@ export class Context {
 
   /**
    * Get signature for a raw payload string
+   *
+   * @throws if the resolved signer is an Ethereum-derived Account: `verify_any_signature` only
+   *   accepts sr25519 and ed25519, so no Ethereum key can produce a valid off-chain signature
    */
   public async getSignature(args: {
     rawPayload: `0x${string}`;
@@ -1485,8 +1548,19 @@ export class Context {
       account = this.getSigningAddress();
     }
 
+    const { address } = asAccount(account, this);
+
+    if (isEthDerivedAddress(address, this.ss58Format)) {
+      throw new PolymeshError({
+        code: ErrorCode.NotSupported,
+        message:
+          'Off-chain signatures are not supported for Ethereum-derived Accounts. The chain only accepts sr25519 and ed25519 signatures for this operation',
+        data: { address },
+      });
+    }
+
     const result = await externalSigner.signRaw({
-      address: asAccount(account, this).address,
+      address,
       data: rawPayload,
       type: 'bytes',
     });
