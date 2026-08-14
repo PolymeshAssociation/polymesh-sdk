@@ -1096,6 +1096,29 @@ function initTx(): void {
 function initRpc(): void {
   const mod = {} as any;
 
+  /*
+   * `chain.getHeader` reports the best (not necessarily finalized) block, and is used to detect
+   *   that a transaction has been included before its block is finalized. A real API always
+   *   exposes it, so a default keeps every suite that polls for a transaction working without
+   *   having to mock it explicitly. Override with `createRpcMock('chain', 'getHeader', ...)`
+   */
+  mod.chain = {
+    getHeader: jest.fn().mockResolvedValue(
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      createMockHeader({
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        parentHash: createMockHash(),
+        // block 0 by default, so the finalized head governs unless a test says otherwise
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        number: createMockCompact(createMockU32(new BigNumber(0))),
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        stateRoot: createMockHash(),
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        extrinsicsRoot: createMockHash(),
+      })
+    ),
+  };
+
   updateRpc(mod);
 }
 
@@ -1150,6 +1173,7 @@ function initApi(): void {
   mockInstanceContainer.apiInstance.registry = {
     get: jest.fn(),
     register: jest.fn(),
+    findMetaError: jest.fn(),
   } as unknown as Registry;
   mockInstanceContainer.apiInstance.createType = jest.fn();
   mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
@@ -1410,9 +1434,22 @@ export function createTxMock<
   });
 
   const transaction = jest.fn().mockReturnValue({
-    method: tx, // should be a `Call` object, but this is enough for testing
+    /*
+     * stands in for the `Call` object a real `SubmittableExtrinsic` exposes. `toHex` is the
+     *   SCALE encoding of the call, which the Ethereum signing path puts in the transaction's
+     *   `data` field; `toString` preserves the previous (tx name) behaviour for assertions
+     */
+    method: {
+      toHex: (): string => '0x02',
+      toString: (): string => String(tx),
+    },
     hash: tx,
     signAndSend: mockSignAndSend,
+    /*
+     * a real `SubmittableExtrinsic` can be broadcast with `send` as well as `signAndSend` — bare
+     *   (unsigned) extrinsics such as `revive.ethTransact` are submitted that way
+     */
+    send: mockSend,
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     paymentInfo: jest.fn().mockResolvedValue({ partialFee: gas }),
     toHex: jest.fn().mockReturnValue('0x02'),
@@ -3993,6 +4030,10 @@ export const createMockExtrinsics = (
     | {
         toHex: () => string;
         hash: Hash;
+        /* optional, used when a matcher inspects the call being made */
+        method?: { section: string; method: string };
+        /* optional, used by the `revive.ethTransact` keccak matcher */
+        args?: unknown[];
       }[]
 ): MockCodec<Vec<GenericExtrinsic>> => {
   const defaultExtrinsic = {
@@ -4001,16 +4042,21 @@ export const createMockExtrinsics = (
     addSignature: (): void => {},
   };
 
-  const extrinsicsArray = extrinsics ?? [defaultExtrinsic];
-  const { toHex, hash } = extrinsicsArray[0] ?? defaultExtrinsic;
+  const extrinsicsArray = (extrinsics ?? [defaultExtrinsic]) as {
+    toHex: () => string;
+    hash: Hash;
+    method?: { section: string; method: string };
+    args?: unknown[];
+  }[];
+
   return createMockCodec(
-    [
-      {
-        toHex,
-        hash,
-        addSignature: (): void => {},
-      },
-    ],
+    extrinsicsArray.map(({ toHex, hash, method, args }) => ({
+      toHex,
+      hash,
+      ...(method ? { method } : {}),
+      ...(args ? { args } : {}),
+      addSignature: (): void => {},
+    })),
     !extrinsics
   );
 };
