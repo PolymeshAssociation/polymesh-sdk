@@ -2385,7 +2385,7 @@ describe('Polymesh Transaction Base class', () => {
         expect(tx.status).toBe(TransactionStatus.Succeeded);
       });
 
-      it('should throw a NotSupported error if a third party is set to pay the fees', async () => {
+      it('should attribute fees to the caller even when a third party is set to pay them', async () => {
         const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
         const tx = new PolymeshTransaction(
           {
@@ -2398,9 +2398,9 @@ describe('Polymesh Transaction Base class', () => {
           context
         );
 
-        await expect(tx.getTotalFees()).rejects.toThrow(
-          expect.objectContaining({ code: ErrorCode.NotSupported })
-        );
+        const { payingAccountData } = await tx.getTotalFees();
+
+        expect(payingAccountData.type).toBe(PayingAccountType.Caller);
       });
 
       it('should throw a NotSupported error when acting as a MultiSig signer', async () => {

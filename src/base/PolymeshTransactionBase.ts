@@ -1569,15 +1569,15 @@ export abstract class PolymeshTransactionBase<
 
     const isEthSigner = isEthDerivedAddress(signingAddress, context.ss58Format);
 
-    if (paidForBy) {
-      if (isEthSigner) {
-        throw new PolymeshError({
-          code: ErrorCode.NotSupported,
-          message:
-            'A third-party paying Account (`paidForBy`) is not supported for a transaction signed by an Ethereum key. The Ethereum-derived Account is both the origin and the fee payer on this transport',
-        });
-      }
-
+    /*
+     * An Ethereum-derived Account always pays its own fees. `revive.ethTransact` is a bare
+     *   extrinsic, so neither `paidForBy` nor a subsidy reaches the chain's fee pipeline — gas is
+     *   charged to the signing Account.
+     *
+     * TODO: revisit both branches below if the chain ever routes third-party payment through this
+     *   transport
+     */
+    if (paidForBy && !isEthSigner) {
       const { account: primaryAccount } = await paidForBy.getPrimaryAccount();
 
       return {
@@ -1586,8 +1586,6 @@ export abstract class PolymeshTransactionBase<
       };
     }
 
-    // subsidies are ignored on the Ethereum path: whether they apply is not established, and
-    //   ignoring one that does apply merely over-reports the fee
     const subsidyWithAllowance = isEthSigner ? null : await context.accountSubsidy();
 
     if (subsidyWithAllowance && !this.ignoresSubsidy()) {
