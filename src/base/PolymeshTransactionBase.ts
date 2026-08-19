@@ -1506,6 +1506,10 @@ export abstract class PolymeshTransactionBase<
    * @note no Signing Manager is required. The whole point of this method is detached signing, so
    *   it must work on an SDK instance connected without one — the payload is built entirely from
    *   chain state and the signing address
+   * @note every field of `transaction` is 0x-prefixed hex, never a number or bigint — the only
+   *   encoding that survives being serialized and sent to a remote signer. ethers and viem both
+   *   need it converted first; `@polymeshassociation/eth-signing-manager` exports
+   *   `toEthersTransaction` / `toViemTransaction` for that, usable without the manager itself
    *
    * @throws `ValidationError` if the signing Account is not Ethereum-derived
    */

@@ -2471,7 +2471,7 @@ describe('Polymesh Transaction Base class', () => {
             value: '0x0',
             chainId: '0x190d5a',
             nonce: '0x0',
-            type: 2,
+            type: '0x2',
           })
         );
         expect(ethTransact).toHaveBeenCalledWith('0xrawsigned');
@@ -2899,7 +2899,7 @@ describe('Polymesh Transaction Base class', () => {
         const result = await tx.toEthSignablePayload();
 
         expect(result.transaction).toEqual(
-          expect.objectContaining({ to: sentinelAddress, type: 2 })
+          expect.objectContaining({ to: sentinelAddress, type: '0x2' })
         );
       });
 
@@ -2917,7 +2917,7 @@ describe('Polymesh Transaction Base class', () => {
 
         const { transaction: request } = await tx.toEthSignablePayload();
 
-        expect(request.type).toBe(2);
+        expect(request.type).toBe('0x2');
         expect(request.maxFeePerGas).toBeDefined();
         expect(request.gasPrice).toBeUndefined();
       });
@@ -2936,7 +2936,7 @@ describe('Polymesh Transaction Base class', () => {
 
         const { transaction: request } = await tx.toEthSignablePayload({}, { eip1559: false });
 
-        expect(request.type).toBe(0);
+        expect(request.type).toBe('0x0');
         expect(request.gasPrice).toBeDefined();
         expect(request.maxFeePerGas).toBeUndefined();
       });

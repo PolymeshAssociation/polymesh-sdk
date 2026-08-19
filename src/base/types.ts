@@ -310,7 +310,13 @@ export { EthSigner, EthSignerCapabilities, EthSigningManager, EthTransactionRequ
  *   the decoded call for display
  */
 export interface EthTransactionPayload {
-  /** the parameters that would be passed to `EthSigner.signTransaction` / `sendTransaction` */
+  /**
+   * the parameters that would be passed to `EthSigner.signTransaction` / `sendTransaction`
+   *
+   * @note every field is 0x-prefixed hex, never a number or bigint. ethers and viem both need it
+   *   converted first — `@polymeshassociation/eth-signing-manager` exports `toEthersTransaction` /
+   *   `toViemTransaction` for that, usable without the manager itself
+   */
   transaction: EthTransactionRequest;
   /** the transaction tag identifying the underlying Polymesh call */
   tag: TxTag;

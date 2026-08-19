@@ -225,7 +225,7 @@ describe('ethTransaction', () => {
       expect(request.gas).toBe('0x732');
       expect(request.chainId).toBe('0x190d5a');
       expect(request.nonce).toBe('0x7');
-      expect(request.type).toBe(2);
+      expect(request.type).toBe('0x2');
       expect(request.maxFeePerGas).toBe('0x5af3107a4000');
       expect(request.maxPriorityFeePerGas).toBe('0x0');
       expect(request.gasPrice).toBeUndefined();
@@ -243,7 +243,7 @@ describe('ethTransaction', () => {
         ethSigner: buildEthSigner({ eip1559: false }),
       });
 
-      expect(request.type).toBe(0);
+      expect(request.type).toBe('0x0');
       expect(request.gasPrice).toBe('0x5af3107a4000');
       expect(request.maxFeePerGas).toBeUndefined();
       expect(request.maxPriorityFeePerGas).toBeUndefined();
@@ -340,7 +340,7 @@ describe('ethTransaction', () => {
 
       expect(request.nonce).toBe('0x3');
       expect(request.gas).toBe('0x732');
-      expect(request.type).toBe(2);
+      expect(request.type).toBe('0x2');
     });
 
     it('should honour an explicitly passed nonce, and emit a legacy transaction when asked', async () => {
@@ -355,7 +355,7 @@ describe('ethTransaction', () => {
       );
 
       expect(request.nonce).toBe('0x9');
-      expect(request.type).toBe(0);
+      expect(request.type).toBe('0x0');
       expect(request.gasPrice).toBe('0x5af3107a4000');
     });
   });

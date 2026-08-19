@@ -217,6 +217,59 @@ describe('eth utils', () => {
     );
   });
 
+  describe('shared vectors', () => {
+    /*
+     * The five prefunded Moonbeam dev keys, mirroring `DEV_ACCOUNTS` in `eth-signing-manager`'s
+     *   `src/utils/__tests__/index.spec.ts`. Both repos derive these addresses separately, so one
+     *   shared table of fixed vectors is what catches drift — every other test here builds its
+     *   expectation from the same primitives as the code under test
+     */
+    const devAccounts: { h160: string; ss58Format42: string; ss58Format12: string }[] = [
+      {
+        h160: '0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac',
+        ss58Format42: '5HYRCKHYJN9z5xUtfFkyMj4JUhsAwWyvuU8vKB1FcnYTf9ZQ',
+        ss58Format12: '2HvdSZ3SmdvBQCLyVHNG2h5Z69aMJ26KFFWyrfiDj8hqDb1S',
+      },
+      {
+        h160: '0x3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0',
+        ss58Format42: '5DSSiJevXj8XQ6uKD5ZNQJEimLPWwxuW4MZE9YNcAtRsYgVG',
+        ss58Format12: '2DpexYQpzztiiLmQ37Af5GFyNn6hJU1tQ8wHh35aHEbF7FTi',
+      },
+      {
+        h160: '0x798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc',
+        ss58Format42: '5Ep5dBwRE7mhFsH69SLRTSHYJ7yugeTycZHeT8Ez4DPACvqz',
+        ss58Format12: '2FCHsRhKhPXta79AyTwi8QJnuZh639aMxLfhzcwxAZYXm6wf',
+      },
+      {
+        h160: '0x773539d4Ac0e786233D90A233654ccEE26a613D9',
+        ss58Format42: '5Em1NEHgVvpXYBEzWeNf9JzuLyvuyyn3ZLifywLQPGdqFVU2',
+        ss58Format12: '2F9DcU3ayCairR75LfywpH29xRe6LUtRu86jXS3NVcoCofey',
+      },
+      {
+        h160: '0xFf64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB',
+        ss58Format42: '5Hqa27HwFuRr2YLJHXLwrP7Q4JMftxEF1kSdFwXvoeZ1PnkA',
+        ss58Format12: '2JDnGM3qjBC3LnCP7YxEXM8efk4rFTLdMXpgoSEtuziNx1WT',
+      },
+    ];
+
+    it.each(devAccounts)(
+      'should map $h160 to and from its Account in both ss58 formats',
+      ({ h160: address, ss58Format42, ss58Format12 }) => {
+        const format42 = new BigNumber(42);
+        const format12 = new BigNumber(12);
+
+        expect(ss58FromEthAddress(address, format42)).toBe(ss58Format42);
+        expect(ss58FromEthAddress(address, format12)).toBe(ss58Format12);
+
+        expect(ethAddressFromSs58(ss58Format42, format42)).toBe(address);
+        expect(ethAddressFromSs58(ss58Format12, format12)).toBe(address);
+
+        expect(isEthDerivedAddress(ss58Format42, format42)).toBe(true);
+        expect(isEthDerivedAddress(ss58Format12, format12)).toBe(true);
+      }
+    );
+  });
+
   describe('parseEthTransactError', () => {
     it('should resolve a Module error through chain metadata, matching the exact verified string', () => {
       const context = dsMockUtils.getContextInstance();

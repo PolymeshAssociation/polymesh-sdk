@@ -3658,7 +3658,7 @@ __metadata:
     "@polkadot/util-crypto": "npm:13.5.9"
     "@polymeshassociation/local-signing-manager": "npm:^4.1.1"
     "@polymeshassociation/polymesh-types": "npm:^7.5.0"
-    "@polymeshassociation/signing-manager-types": "npm:3.8.0-beta.1"
+    "@polymeshassociation/signing-manager-types": "npm:3.8.0"
     "@semantic-release/changelog": "npm:^6.0.3"
     "@types/jest": "npm:^29.5.14"
     "@types/jest-when": "npm:^3.5.2"
@@ -3746,12 +3746,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polymeshassociation/signing-manager-types@npm:3.8.0-beta.1":
-  version: 3.8.0-beta.1
-  resolution: "@polymeshassociation/signing-manager-types@npm:3.8.0-beta.1"
+"@polymeshassociation/signing-manager-types@npm:3.8.0":
+  version: 3.8.0
+  resolution: "@polymeshassociation/signing-manager-types@npm:3.8.0"
   dependencies:
     "@polkadot/api": "npm:16.5.2"
-  checksum: 10c0/8f912d05f87a6db142391c671f061d0afb06f8f7316f68f67e444106c45426eb7455eaddf1483d18eda7da2aabc0464187aa3cf88893862b5c40f285072343c7
+  checksum: 10c0/cd936649bd3f47096056afe432a2a5251b6d3a192d08df5c35b355eb771b7e9f5db88be6e06852b141e014890b8e71c44a4771c4626340ee73a9ad1d8c06d5d9
   languageName: node
   linkType: hard
 

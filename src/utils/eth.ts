@@ -36,6 +36,12 @@ const KECCAK_ADDRESS_OFFSET = 12;
  * Return whether the given SS58 address was derived from an Ethereum key, i.e. whether the last
  *   12 bytes of the decoded `AccountId32` are `0xEE`
  *
+ * @note `@polymeshassociation/eth-signing-manager` implements this, {@link ethAddressFromSs58}
+ *   and {@link ss58FromEthAddress} separately in its `src/utils/index.ts`, since
+ *   `signing-manager-types` is a types-only devDependency here. Its `DEV_ACCOUNTS` vectors are
+ *   mirrored in `utils/__tests__/eth.ts`, so drift fails a test. Its `ss58Format` is
+ *   optional by design: a standalone manager does not know the chain's format, the SDK always does
+ *
  * @note tolerant of a malformed address: returns `false` rather than throwing, since this runs on
  *   every transaction submission
  */

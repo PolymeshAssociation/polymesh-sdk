@@ -263,12 +263,12 @@ export async function buildEthTransactionRequest(
     ...(nonce ? { nonce } : {}),
     ...(eip1559
       ? {
-          type: 2 as const,
+          type: '0x2' as const,
           maxFeePerGas: toQuantityHex(gasPrice),
           maxPriorityFeePerGas: toQuantityHex(new BigNumber(0)),
         }
       : {
-          type: 0 as const,
+          type: '0x0' as const,
           gasPrice: toQuantityHex(gasPrice),
         }),
   };
@@ -319,12 +319,12 @@ export async function buildDetachedEthTransactionRequest(
     nonce,
     ...(eip1559
       ? {
-          type: 2 as const,
+          type: '0x2' as const,
           maxFeePerGas: toQuantityHex(gasPrice),
           maxPriorityFeePerGas: toQuantityHex(new BigNumber(0)),
         }
       : {
-          type: 0 as const,
+          type: '0x0' as const,
           gasPrice: toQuantityHex(gasPrice),
         }),
   };
