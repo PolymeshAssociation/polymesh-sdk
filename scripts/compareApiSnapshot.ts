@@ -56,9 +56,21 @@ function compareOverloads(
       return;
     }
 
-    if (baseSig.parameters.length !== currSig.parameters.length) {
+    if (currSig.parameters.length < baseSig.parameters.length) {
+      logBreak(`${filePath} > ${parentName}.${methodName}: Params removed in overload #${i + 1}`);
+      return;
+    }
+
+    // adding trailing optional params is backwards compatible, adding required ones is not
+    const addedRequired = currSig.parameters
+      .slice(baseSig.parameters.length)
+      .filter(p => !p.optional);
+
+    if (addedRequired.length) {
       logBreak(
-        `${filePath} > ${parentName}.${methodName}: Param count mismatch in overload #${i + 1}`
+        `${filePath} > ${parentName}.${methodName}: Required param(s) added in overload #${
+          i + 1
+        }: ${addedRequired.map(p => p.name).join(', ')}`
       );
       return;
     }
