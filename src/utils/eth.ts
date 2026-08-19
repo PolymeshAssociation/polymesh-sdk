@@ -58,7 +58,7 @@ export function isEthDerivedAddress(address: string, ss58Format: BigNumber): boo
     }
 
     return decoded.subarray(H160_LENGTH).every(byte => byte === ETH_SUFFIX_BYTE);
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -212,7 +212,7 @@ export function parseEthTransactError(
     const [, indexString, errorBytesString] = match as [string, string, string];
     const index = new BN(indexString);
     const errorBytes = Uint8Array.from(
-      errorBytesString.split(',').map(byte => parseInt(byte.trim(), 10))
+      errorBytesString.split(',').map(byte => Number.parseInt(byte.trim(), 10))
     );
 
     try {
@@ -222,7 +222,7 @@ export function parseEthTransactError(
         code: ErrorCode.TransactionReverted,
         message: `${meta.section}.${meta.name}: ${meta.docs.join(' ')}`,
       });
-    } catch (err) {
+    } catch {
       // fall through to the generic branch below if metadata lookup itself fails
     }
   }

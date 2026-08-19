@@ -1,17 +1,19 @@
 import { SpRuntimeDispatchError } from '@polkadot/types/lookup';
-import { TypeDef } from '@polkadot/types/types';
+import { ISubmittableResult, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
   dispatchErrorToMessage,
   extrinsicHashMatcher,
+  getExtrinsicFailure,
   handleTransactionSubmissionError,
   pollForTransactionFinalization,
   processType,
   subscribeForTransactionFinalization,
 } from '~/base/utils';
 import { PolymeshError } from '~/internal';
+import { fakePromise } from '~/testUtils';
 import { dsMockUtils } from '~/testUtils/mocks';
 import {
   createMockEventRecord,
@@ -153,6 +155,57 @@ describe('handleTransactionSubmissionError', () => {
 
     expect(error.code).toBe(ErrorCode.UnexpectedError);
     expect(error.message).toBe('something broke');
+  });
+});
+
+describe('getExtrinsicFailure', () => {
+  /**
+   * Build a receipt whose `filterRecords` answers for the given `module.event` keys only
+   */
+  const buildReceipt = ({
+    extrinsicFailed,
+    ethExtrinsicRevert,
+  }: {
+    extrinsicFailed?: SpRuntimeDispatchError;
+    ethExtrinsicRevert?: SpRuntimeDispatchError;
+  }): ISubmittableResult =>
+    ({
+      filterRecords: (mod: string, eventName: string) => {
+        const error =
+          mod === 'system' && eventName === 'ExtrinsicFailed'
+            ? extrinsicFailed
+            : ethExtrinsicRevert;
+
+        return error ? [{ event: { data: [error] } }] : [];
+      },
+    } as unknown as ISubmittableResult);
+
+  const badOrigin = {
+    isModule: false,
+    isBadOrigin: true,
+    isCannotLookup: false,
+    isToken: false,
+    isArithmetic: false,
+    isTransactional: false,
+    type: 'BadOrigin',
+  } as unknown as SpRuntimeDispatchError;
+
+  it('should return undefined when the receipt carries neither failure event', () => {
+    expect(getExtrinsicFailure(buildReceipt({}))).toBeUndefined();
+  });
+
+  it('should report a native `system.ExtrinsicFailed`', () => {
+    const error = getExtrinsicFailure(buildReceipt({ extrinsicFailed: badOrigin }));
+
+    expect(error?.code).toBe(ErrorCode.TransactionReverted);
+    expect(error?.message).toBe('Bad origin');
+  });
+
+  it('should report a `revive.EthExtrinsicRevert`, which the Ethereum path emits instead', () => {
+    const error = getExtrinsicFailure(buildReceipt({ ethExtrinsicRevert: badOrigin }));
+
+    expect(error?.code).toBe(ErrorCode.TransactionReverted);
+    expect(error?.message).toBe('Bad origin');
   });
 });
 
@@ -461,6 +514,102 @@ describe('pollForTransactionFinalization', () => {
 
       // both subscriptions must be torn down once the transaction settles
       expect(unsubNew).toHaveBeenCalled();
+      expect(unsubFinalized).toHaveBeenCalled();
+    });
+
+    it('should ignore any head that arrives after the transaction has settled', async () => {
+      mockBlockWithTx();
+
+      // a second head of each kind arrives once the transaction has already been located
+      const unsubNew = mockHeadSubscription('subscribeNewHeads', [
+        new BigNumber(2),
+        new BigNumber(3),
+      ]);
+      mockHeadSubscription('subscribeFinalizedHeads', [new BigNumber(2), new BigNumber(3)]);
+
+      const onInBlock = jest.fn();
+
+      const result = await subscribeForTransactionFinalization(
+        extrinsicHashMatcher(txHash),
+        startingBlock,
+        context,
+        onInBlock
+      );
+
+      // let the trailing callbacks drain, so a second settle would be observed if it happened
+      await fakePromise(3);
+
+      expect(result).toEqual(expect.objectContaining({ txIndex: 0, txHash }));
+      // inclusion is reported exactly once, no matter how many best heads follow
+      expect(onInBlock).toHaveBeenCalledTimes(1);
+      expect(unsubNew).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not scan the best head when no inclusion callback was passed', async () => {
+      mockBlockWithTx();
+
+      mockHeadSubscription('subscribeNewHeads', [new BigNumber(2)]);
+      mockHeadSubscription('subscribeFinalizedHeads', [new BigNumber(2)]);
+
+      const result = await subscribeForTransactionFinalization(
+        extrinsicHashMatcher(txHash),
+        startingBlock,
+        context
+      );
+
+      expect(result).toEqual(expect.objectContaining({ txIndex: 0, txHash }));
+    });
+
+    it('should keep scanning the best head while it does not carry the transaction', async () => {
+      dsMockUtils.createRpcMock('chain', 'getBlockHash', {
+        returnValue: dsMockUtils.createMockBlockHash('someBlockHash'),
+      });
+
+      dsMockUtils.createRpcMock('chain', 'getBlock', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: dsMockUtils.createMockBlock({
+            header: dsMockUtils.createMockHeader(),
+            extrinsics: dsMockUtils.createMockExtrinsics([
+              { toHex: (): string => '0x', hash: dsMockUtils.createMockHash('someOtherTx') },
+            ]),
+          }),
+        }),
+      });
+
+      dsMockUtils.createQueryMock('system', 'events', { returnValue: [] });
+
+      mockHeadSubscription('subscribeNewHeads', [new BigNumber(2)]);
+      const unsubNew = mockHeadSubscription('subscribeFinalizedHeads', [new BigNumber(2)]);
+
+      const onInBlock = jest.fn();
+
+      await expect(
+        subscribeForTransactionFinalization(
+          extrinsicHashMatcher(txHash),
+          startingBlock,
+          context,
+          onInBlock,
+          { maxFinalizedBlocks: 1 }
+        )
+      ).rejects.toThrowError('The block containing the transaction was not found');
+
+      // the best head moved on without the transaction, so nothing was reported as included
+      expect(onInBlock).not.toHaveBeenCalled();
+      expect(unsubNew).toHaveBeenCalled();
+    });
+
+    it('should reject and unsubscribe if a scan fails', async () => {
+      const scanError = new Error('the node went away');
+
+      dsMockUtils.createRpcMock('chain', 'getBlockHash').mockRejectedValue(scanError);
+
+      mockHeadSubscription('subscribeNewHeads', []);
+      const unsubFinalized = mockHeadSubscription('subscribeFinalizedHeads', [new BigNumber(2)]);
+
+      await expect(
+        subscribeForTransactionFinalization(extrinsicHashMatcher(txHash), startingBlock, context)
+      ).rejects.toThrowError(scanError);
+
       expect(unsubFinalized).toHaveBeenCalled();
     });
 

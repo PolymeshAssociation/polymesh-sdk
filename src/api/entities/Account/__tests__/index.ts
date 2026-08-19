@@ -1275,6 +1275,53 @@ describe('Account class', () => {
       });
     });
 
+    describe('getter: ethAddress', () => {
+      it('should return null for an Account that is not Ethereum-derived', () => {
+        const nativeAccount = new Account({ address: nativeAddress }, context);
+
+        expect(nativeAccount.ethAddress).toBeNull();
+      });
+
+      it('should return the controlling Ethereum address for an Ethereum-derived Account', () => {
+        const ethAccount = new Account({ address: ethDerivedAddress }, context);
+
+        expect(ethAccount.ethAddress).toBe(ethereumEncode(hexToU8a(h160)));
+      });
+    });
+
+    describe('method: getTransactionHistory', () => {
+      it('should throw a NotSupported error for an Ethereum-derived Account', async () => {
+        const ethAccount = new Account({ address: ethDerivedAddress }, context);
+
+        await expect(ethAccount.getTransactionHistory()).rejects.toThrow(
+          expect.objectContaining({ code: ErrorCode.NotSupported })
+        );
+      });
+    });
+
+    describe('method: getTypeInfo', () => {
+      it('should report an Ethereum-derived Account as an Ethereum key', async () => {
+        dsMockUtils.createQueryMock('identity', 'keyRecords', { returnValue: createMockOption() });
+        dsMockUtils.createQueryMock('multiSig', 'multiSigSignsRequired', {
+          returnValue: createMockU64(new BigNumber(0)),
+        });
+
+        (context.polymeshApi.queryMulti as unknown as jest.Mock).mockResolvedValue([
+          createMockOption(),
+          createMockU64(new BigNumber(0)),
+        ]);
+
+        const ethAccount = new Account({ address: ethDerivedAddress }, context);
+
+        const result = await ethAccount.getTypeInfo();
+
+        expect(result).toEqual({
+          keyType: AccountKeyType.Ethereum,
+          relation: AccountIdentityRelation.Unassigned,
+        });
+      });
+    });
+
     describe('method: getEvmAddressDetails', () => {
       it('should report a native Account as unmapped, with the fallback Account that is credited', async () => {
         const originalAccountMock = dsMockUtils.createQueryMock('revive', 'originalAccount', {

@@ -1578,8 +1578,8 @@ export abstract class PolymeshTransactionBase<
      *   extrinsic, so neither `paidForBy` nor a subsidy reaches the chain's fee pipeline — gas is
      *   charged to the signing Account.
      *
-     * TODO: revisit both branches below if the chain ever routes third-party payment through this
-     *   transport
+     * Both branches below would need revisiting if the chain ever routes third-party payment
+     *   through this transport
      */
     if (paidForBy && !isEthSigner) {
       const { account: primaryAccount } = await paidForBy.getPrimaryAccount();

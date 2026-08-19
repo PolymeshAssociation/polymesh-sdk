@@ -1433,6 +1433,37 @@ describe('Polymesh Transaction Base class', () => {
       expect(listenerMock.mock.calls[2][0]).toBe(TransactionStatus.Succeeded);
     });
 
+    it('should emit an Idle status change without an error', () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args: tuple('IDLE'),
+          resolver: undefined,
+        },
+        context
+      );
+
+      const listenerMock = jest.fn();
+
+      tx.onStatusChange(listenerMock);
+
+      /*
+       * `Idle` is the status a transaction is constructed with, so nothing drives it through
+       *   `updateStatus` on its own. It is still emitted as a non-error status, which is what
+       *   this asserts
+       */
+      (tx as unknown as { updateStatus: (status: TransactionStatus) => void }).updateStatus(
+        TransactionStatus.Idle
+      );
+
+      expect(tx.status).toBe(TransactionStatus.Idle);
+      // called with the transaction alone — an error argument is reserved for the failure statuses
+      expect(listenerMock).toHaveBeenCalledWith(tx);
+    });
+
     it('should return an unsubscribe function', async () => {
       const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
@@ -2479,6 +2510,37 @@ describe('Polymesh Transaction Base class', () => {
         // the SDK submitted this itself, so there is no separate Ethereum hash to expose
         expect(tx.ethTxHash).toBeUndefined();
       });
+
+      it('should sign with the nonce set through `ProcedureOpts` rather than the on-chain one', async () => {
+        const ethSigner = buildEthSigner();
+        context.getEthSigner.mockReturnValue(ethSigner);
+        context.getNonce.mockReturnValue(new BigNumber(9));
+
+        const ethTransact = dsMockUtils.createTxMock('revive', 'ethTransact', {
+          autoResolve: false,
+        });
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        const runPromise = tx.run().catch(noop);
+
+        await fakePromises();
+
+        dsMockUtils.updateTxStatus(ethTransact, MockTxStatus.InBlock);
+        await fakePromise();
+        dsMockUtils.updateTxStatus(ethTransact, MockTxStatus.Succeeded);
+        await fakePromise();
+        await runPromise;
+
+        // the caller's nonce is used verbatim, rather than the `0x0` the chain reports
+        expect(ethSigner.signTransaction).toHaveBeenCalledWith(
+          expect.objectContaining({ nonce: '0x9' })
+        );
+      });
     });
 
     describe('when the wallet broadcasts', () => {
@@ -2655,7 +2717,8 @@ describe('Polymesh Transaction Base class', () => {
 
     describe('method: broadcast', () => {
       const buildWalletBroadcastTx = <T>(
-        resolver: T
+        resolver: T,
+        preRunValidation?: jest.Mock
       ): {
         tx: PolymeshTransaction<T, T, [string]>;
         ethSigner: ReturnType<typeof buildEthSigner>;
@@ -2667,7 +2730,7 @@ describe('Polymesh Transaction Base class', () => {
 
         const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
         const tx = new PolymeshTransaction(
-          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver },
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver, preRunValidation },
           context
         );
 
@@ -2771,6 +2834,93 @@ describe('Polymesh Transaction Base class', () => {
 
         await expect(tx.broadcast()).rejects.toThrow('Cannot re-run a Transaction');
         await expect(tx.run()).rejects.toThrow('Cannot re-run a Transaction');
+      });
+
+      it('should run preRunValidation before anything is submitted', async () => {
+        const preRunValidation = jest.fn().mockResolvedValue(undefined);
+        const { tx, ethSigner } = buildWalletBroadcastTx(undefined, preRunValidation);
+
+        jest
+          .spyOn(baseUtils, 'pollForTransactionFinalization')
+          .mockReturnValue(new Promise(noop) as never);
+
+        await tx.broadcast();
+
+        expect(preRunValidation).toHaveBeenCalledWith({ asProposal: false });
+        expect(ethSigner.sendTransaction).toHaveBeenCalled();
+      });
+
+      it('should mark the transaction as failed if the broadcast itself fails', async () => {
+        const validationError = new PolymeshError({
+          code: ErrorCode.InsufficientBalance,
+          message: 'Insufficient balance',
+        });
+        const preRunValidation = jest.fn().mockRejectedValue(validationError);
+        const { tx, ethSigner } = buildWalletBroadcastTx(undefined, preRunValidation);
+
+        await expect(tx.broadcast()).rejects.toThrow(validationError);
+
+        expect(tx.status).toBe(TransactionStatus.Failed);
+        expect(ethSigner.sendTransaction).not.toHaveBeenCalled();
+      });
+
+      it('should report inclusion as soon as the transaction lands in a block', async () => {
+        const { tx } = buildWalletBroadcastTx(undefined);
+
+        jest
+          .spyOn(baseUtils, 'pollForTransactionFinalization')
+          .mockImplementation((_matcher, _startingBlock, _context, _pollOptions, onInBlock) => {
+            onInBlock?.({
+              blockHash: 'inBlockHash',
+              blockNumber: new BigNumber(100),
+              txIndex: 3,
+            });
+
+            // the finalized result never arrives, leaving the transaction at its InBlock state
+            return new Promise(noop);
+          });
+
+        const handle = await tx.broadcast();
+
+        handle.watch().catch(noop);
+        await fakePromise();
+
+        expect(tx.status).toBe(TransactionStatus.InBlock);
+        expect(tx.blockHash).toBe('inBlockHash');
+        expect(tx.blockNumber).toEqual(new BigNumber(100));
+        expect(tx.txIndex).toEqual(new BigNumber(3));
+      });
+
+      it('should subscribe for the block scan where the connection supports it', async () => {
+        const { tx } = buildWalletBroadcastTx('resolved value');
+        context.supportsSubscription.mockReturnValue(true);
+
+        const subscribeSpy = jest
+          .spyOn(baseUtils, 'subscribeForTransactionFinalization')
+          .mockResolvedValue(fakeReceipt() as never);
+        const pollSpy = jest.spyOn(baseUtils, 'pollForTransactionFinalization');
+
+        const handle = await tx.broadcast();
+
+        await expect(handle.watch()).resolves.toBe('resolved value');
+
+        expect(subscribeSpy).toHaveBeenCalled();
+        expect(pollSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return the result already watched to completion rather than scanning again', async () => {
+        const { tx } = buildWalletBroadcastTx('resolved value');
+
+        const pollSpy = jest
+          .spyOn(baseUtils, 'pollForTransactionFinalization')
+          .mockResolvedValue(fakeReceipt() as never);
+
+        const handle = await tx.broadcast();
+
+        await expect(handle.watch()).resolves.toBe('resolved value');
+        await expect(handle.watch()).resolves.toBe('resolved value');
+
+        expect(pollSpy).toHaveBeenCalledTimes(1);
       });
 
       it('should throw a NotSupported error for a MultiSig signer', async () => {
@@ -2939,6 +3089,24 @@ describe('Polymesh Transaction Base class', () => {
         expect(request.type).toBe('0x0');
         expect(request.gasPrice).toBeDefined();
         expect(request.maxFeePerGas).toBeUndefined();
+      });
+
+      it('should carry the nonce set through `ProcedureOpts` rather than the on-chain one', async () => {
+        jest
+          .spyOn(utilsConversionModule, 'transactionHexToTxTag')
+          .mockReturnValue(TxTags.asset.RegisterUniqueTicker);
+        context.getTransactionArguments.mockReturnValue([]);
+        context.getNonce.mockReturnValue(new BigNumber(7));
+
+        const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+        const tx = new PolymeshTransaction(
+          { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+          context
+        );
+
+        const { transaction: request } = await tx.toEthSignablePayload();
+
+        expect(request.nonce).toBe('0x7');
       });
 
       it('should throw a ValidationError for a native signing Account', async () => {

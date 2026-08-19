@@ -266,7 +266,7 @@ const ETH_USER_REJECTED_CODE = 4001;
  */
 const isRejectedByUser = (err: Error): boolean =>
   (err as Error & { code?: unknown }).code === ETH_USER_REJECTED_CODE ||
-  err.message.indexOf('Cancelled') > -1;
+  err.message.includes('Cancelled');
 
 export const handleTransactionSubmissionError = (err: Error): PolymeshError => {
   let error;
@@ -476,18 +476,24 @@ const buildFinalizedResult = async (
   });
 };
 
+/**
+ * @hidden
+ *
+ * Finalization is expected to take ~15 seconds, so the defaults allow for twice that
+ */
+const DEFAULT_POLL_OPTIONS = { delayMs: 3000, maxAttempts: 10 };
+
 export const pollForTransactionFinalization = async (
   matcher: ExtrinsicMatcher,
   startingBlock: BigNumber,
   context: Context,
-  pollOptions = { delayMs: 3000, maxAttempts: 10 },
+  pollOptions = DEFAULT_POLL_OPTIONS,
   onInBlock?: (info: TransactionInclusionInfo) => void
 ): Promise<SubmittableResult> => {
   let lastCheckedBlock = startingBlock;
   let locationInfo: { block: SignedBlock; txIndex: number } | undefined;
   let notifiedInclusion = false;
 
-  // Finalization is expected to take ~15 seconds
   const { delayMs, maxAttempts } = pollOptions;
 
   let attemptCounter = 0;
@@ -558,6 +564,13 @@ export const pollForTransactionFinalization = async (
 /**
  * @hidden
  *
+ * How many finalized blocks the scan is willing to wait for before giving up
+ */
+const DEFAULT_SUBSCRIPTION_OPTIONS = { maxFinalizedBlocks: 10 };
+
+/**
+ * @hidden
+ *
  * Locate a submitted transaction by subscribing to the chain's blocks, rather than polling for
  *   them. Preferred whenever the connection supports subscriptions: inclusion is reported the
  *   moment the block arrives instead of on the next poll tick, and it removes a repeating
@@ -579,7 +592,7 @@ export const subscribeForTransactionFinalization = (
   startingBlock: BigNumber,
   context: Context,
   onInBlock?: (info: TransactionInclusionInfo) => void,
-  { maxFinalizedBlocks } = { maxFinalizedBlocks: 10 }
+  { maxFinalizedBlocks } = DEFAULT_SUBSCRIPTION_OPTIONS
 ): Promise<SubmittableResult> => {
   const { chain } = context.polymeshApi.rpc;
 
@@ -607,12 +620,9 @@ export const subscribeForTransactionFinalization = (
     };
 
     /**
-     * Settle the promise exactly once, releasing both subscriptions first
+     * Settle the promise, releasing both subscriptions first
      */
     const settle = (action: () => void): void => {
-      if (settled) {
-        return;
-      }
       settled = true;
       cleanup();
       action();

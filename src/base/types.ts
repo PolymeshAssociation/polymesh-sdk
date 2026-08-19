@@ -2,12 +2,7 @@
 
 import { SignerPayloadJSON, SignerPayloadRaw, TypeDef } from '@polkadot/types/types';
 import { HexString } from '@polkadot/util/types';
-import {
-  EthSigner,
-  EthSignerCapabilities,
-  EthSigningManager,
-  EthTransactionRequest,
-} from '@polymeshassociation/signing-manager-types';
+import { EthTransactionRequest } from '@polymeshassociation/signing-manager-types';
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError as PolymeshErrorClass } from '~/base/PolymeshError';
@@ -303,7 +298,12 @@ export type PolymeshError = PolymeshErrorClass;
  * -------------------------------------------------------------------------------------------
  */
 
-export { EthSigner, EthSignerCapabilities, EthSigningManager, EthTransactionRequest };
+export {
+  EthSigner,
+  EthSignerCapabilities,
+  EthSigningManager,
+} from '@polymeshassociation/signing-manager-types';
+export { EthTransactionRequest };
 
 /**
  * A representation of an Ethereum transaction intended for offline/detached signing, along with
