@@ -12,11 +12,12 @@ import {
   meshNftToNftId,
   nftInputToNftMetadataVec,
 } from '~/utils/conversion';
-import { checkTxType, filterEventRecords } from '~/utils/internal';
+import { asAccount, checkTxType, filterEventRecords } from '~/utils/internal';
 
 export type Params = {
   metadataList: NftMetadataInput[][];
   portfolioId?: BigNumber | undefined;
+  account?: string | undefined;
   collection: NftCollection;
 };
 
@@ -85,7 +86,21 @@ export async function prepareIssueNft(
     },
     context,
   } = this;
-  const { portfolioId, metadataList: nftParams, collection } = args;
+  const { portfolioId, account, metadataList: nftParams, collection } = args;
+
+  if (portfolioId && account) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Only one of portfolioId or account can be provided to issue NFTs',
+    });
+  }
+
+  if (account && context.getSigningAccount().address !== account) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Account should be same as the signing account',
+    });
+  }
 
   const rawMetadataValues = nftParams.map(metadata => nftInputToNftMetadataVec(metadata, context));
 
@@ -93,14 +108,20 @@ export async function prepareIssueNft(
 
   nftParams.forEach(metadata => validateNftParams(metadata, [...neededMetadata], collection.id));
 
-  const signingIdentity = await context.getSigningIdentity();
+  let rawAssetHolder;
+  if (account) {
+    rawAssetHolder = assetHolderToAssetHolderKind(asAccount(account, context), context);
+  } else {
+    const signingIdentity = await context.getSigningIdentity();
 
-  const portfolio = portfolioId
-    ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
-    : await signingIdentity.portfolios.getPortfolio();
+    const portfolio = portfolioId
+      ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
+      : await signingIdentity.portfolios.getPortfolio();
+
+    rawAssetHolder = assetHolderToAssetHolderKind(portfolio, context);
+  }
 
   const rawAssetId = assetToMeshAssetId(collection, context);
-  const rawAssetHolder = assetHolderToAssetHolderKind(portfolio, context);
 
   const transactions = rawMetadataValues.map(metadata =>
     checkTxType({

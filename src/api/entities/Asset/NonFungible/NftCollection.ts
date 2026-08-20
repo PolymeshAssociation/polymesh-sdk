@@ -111,9 +111,9 @@ export class NftCollection extends BaseAsset {
 
     this.issue = createProcedureMethod(
       {
-        getProcedureAndArgs: ({ metadata, portfolioId }) => [
+        getProcedureAndArgs: ({ metadata, portfolioId, account }) => [
           issueNft,
-          { collection: this, metadataList: [metadata], portfolioId },
+          { collection: this, metadataList: [metadata], portfolioId, account },
         ],
         transformer: issueNftTransformer,
       },

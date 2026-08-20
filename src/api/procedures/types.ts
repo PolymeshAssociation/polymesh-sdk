@@ -1356,6 +1356,13 @@ export type IssueNftParams = {
    * portfolio to which the NFTCollection will be issued (optional, default is the default portfolio)
    */
   portfolioId?: BigNumber;
+
+  /**
+   * (optional) Account to which the NFT will be issued
+   *
+   * @note only one of `portfolioId` or `account` can be provided. If both are not provided, the NFT is issued in the default portfolio
+   */
+  account?: string;
 };
 
 export type BatchIssueNftParams = {
@@ -1367,6 +1374,13 @@ export type BatchIssueNftParams = {
    * portfolio to which the NFTCollection will be issued (optional, default is the default portfolio)
    */
   portfolioId?: BigNumber;
+
+  /**
+   * (optional) Account to which the NFTs will be issued
+   *
+   * @note only one of `portfolioId` or `account` can be provided. If both are not provided, the NFTs are issued in the default portfolio
+   */
+  account?: string;
 };
 
 export interface RedeemTokensParams {

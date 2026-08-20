@@ -516,7 +516,46 @@ describe('NftCollection class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { collection, metadataList: [args.metadata], portfolioId: args.portfolioId },
+            args: {
+              collection,
+              metadataList: [args.metadata],
+              portfolioId: args.portfolioId,
+              account: undefined,
+            },
+            transformer: issueNftTransformer,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await collection.issue(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+
+    it('should prepare the procedure with the account argument when it is provided', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const context = dsMockUtils.getContextInstance();
+      const collection = new NftCollection({ assetId }, context);
+
+      const args = {
+        metadata: [],
+        account: 'someAddress',
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NftCollection>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: {
+              collection,
+              metadataList: [args.metadata],
+              portfolioId: undefined,
+              account: args.account,
+            },
             transformer: issueNftTransformer,
           },
           context,

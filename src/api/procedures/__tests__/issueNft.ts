@@ -36,6 +36,7 @@ describe('issueNft procedure', () => {
   let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let assetHolderToAssetHolderKindSpy: jest.SpyInstance;
   let nftInputToMetadataValueSpy: jest.SpyInstance;
+  let asAccountSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -47,6 +48,7 @@ describe('issueNft procedure', () => {
       utilsConversionModule,
       'assetHolderToAssetHolderKind'
     );
+    asAccountSpy = jest.spyOn(utilsInternalModule, 'asAccount');
     assetId = '12341234-1234-1234-1234-123412341234';
     collection = entityMockUtils.getNftCollectionInstance({ assetId });
     rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
@@ -77,14 +79,20 @@ describe('issueNft procedure', () => {
       UserPortfolio: dsMockUtils.createMockU64(numberedPortfolioId),
     });
 
+    const signingAddress = '0xdummy';
+    const accountHolderKind = dsMockUtils.createMockAssetHolderKind('Account');
+
     const getPortfolio: EntityGetter<Portfolio> = jest.fn();
     const mockDefaultPortfolio = entityMockUtils.getDefaultPortfolioInstance();
     const mockNumberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({
       did: 'did',
       id: numberedPortfolioId,
     });
+    const mockAccount = entityMockUtils.getAccountInstance({ address: signingAddress });
 
     beforeEach(() => {
+      when(asAccountSpy).calledWith(signingAddress, mockContext).mockReturnValue(mockAccount);
+
       when(getPortfolio)
         .calledWith()
         .mockResolvedValue(mockDefaultPortfolio)
@@ -97,7 +105,9 @@ describe('issueNft procedure', () => {
         .calledWith(mockDefaultPortfolio, mockContext)
         .mockReturnValue(defaultPortfolioHolderKind)
         .calledWith(mockNumberedPortfolio, mockContext)
-        .mockReturnValue(numberedPortfolioHolderKind);
+        .mockReturnValue(numberedPortfolioHolderKind)
+        .calledWith(mockAccount, mockContext)
+        .mockReturnValue(accountHolderKind);
     });
 
     it('should return an issueNft transaction spec', async () => {
@@ -198,6 +208,68 @@ describe('issueNft procedure', () => {
           {
             transaction,
             args: [rawAssetId, [], numberedPortfolioHolderKind],
+          },
+        ],
+        resolver: expect.any(Function),
+      });
+    });
+
+    it('should throw an error if both portfolioId and account are provided', () => {
+      const args = {
+        metadataList: [[]],
+        collection,
+        portfolioId: numberedPortfolioId,
+        account: signingAddress,
+      };
+
+      const proc = procedureMockUtils.getInstance<Params, Nft[]>(mockContext);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Only one of portfolioId or account can be provided to issue NFTs',
+      });
+
+      return expect(prepareIssueNft.call(proc, args)).rejects.toThrow(expectedError);
+    });
+
+    it('should throw an error if account is provided but does not match the signing account', () => {
+      const args = {
+        metadataList: [[]],
+        collection,
+        account: 'someOtherAddress',
+      };
+
+      const proc = procedureMockUtils.getInstance<Params, Nft[]>(mockContext);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Account should be same as the signing account',
+      });
+
+      return expect(prepareIssueNft.call(proc, args)).rejects.toThrow(expectedError);
+    });
+
+    it('should issue the Nft to the signing Account when account is provided', async () => {
+      const args = {
+        metadataList: [[]],
+        collection,
+        account: signingAddress,
+      };
+
+      nftInputToMetadataValueSpy.mockReturnValue([]);
+
+      const transaction = dsMockUtils.createTxMock('nft', 'issueNft');
+      const proc = procedureMockUtils.getInstance<Params, Nft[]>(mockContext);
+
+      const result = await prepareIssueNft.call(proc, args);
+
+      expect(asAccountSpy).toHaveBeenCalledWith(signingAddress, mockContext);
+      expect(mockContext.getSigningIdentity).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        transactions: [
+          {
+            transaction,
+            args: [rawAssetId, [], accountHolderKind],
           },
         ],
         resolver: expect.any(Function),
