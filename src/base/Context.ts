@@ -17,6 +17,7 @@ import {
   PolymeshPrimitivesProtocolFeeProtocolOp,
 } from '@polkadot/types/lookup';
 import { CallFunction, Codec, DetectCodec, Signer as PolkadotSigner } from '@polkadot/types/types';
+import { cryptoWaitReady } from '@polkadot/util-crypto';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import BigNumber from 'bignumber.js';
 import { chunk, clone, flattenDeep } from 'lodash';
@@ -241,6 +242,8 @@ export class Context {
    *
    * @note the signing Account will be set to the Signing Manager's first Account. If the Signing Manager has
    *   no Accounts yet, the signing Account will be left empty
+   *
+   * @note this initializes the WASM crypto backend, which is a no-op once it is up
    */
   public async setSigningManager(signingManager: SigningManager | null): Promise<void> {
     if (signingManager === null) {
@@ -249,6 +252,13 @@ export class Context {
       this.polymeshApi.setSigner(undefined);
 
       return;
+    }
+
+    // polkadot initializes the WASM backend lazily via this call, and `sr25519` has no JS fallback
+    if (!(await cryptoWaitReady())) {
+      console.warn(
+        'The WASM crypto backend could not be initialized in this environment. Signing with an sr25519 key will not work'
+      );
     }
 
     this._signingManager = signingManager;

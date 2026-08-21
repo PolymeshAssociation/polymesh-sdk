@@ -1,6 +1,7 @@
 import { QueryOptions } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
+import { cryptoWaitReady } from '@polkadot/util-crypto';
 // eslint-disable-next-line import/order
 import BigNumber from 'bignumber.js';
 // eslint-disable-next-line import/order
@@ -36,6 +37,10 @@ jest.mock(
   '@polkadot/api',
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
 );
+jest.mock('@polkadot/util-crypto', () => ({
+  ...jest.requireActual('@polkadot/util-crypto'),
+  cryptoWaitReady: jest.fn(),
+}));
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
@@ -270,12 +275,58 @@ describe('Context class', () => {
   });
 
   describe('method: setSigningManager', () => {
+    const cryptoWaitReadyMock = cryptoWaitReady as jest.Mock;
+
     beforeAll(() => {
       jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
+    beforeEach(() => {
+      cryptoWaitReadyMock.mockReset().mockResolvedValue(true);
+    });
+
     afterAll(() => {
       jest.restoreAllMocks();
+    });
+
+    it('should initialize the WASM crypto backend', async () => {
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      await context.setSigningManager(dsMockUtils.getSigningManagerInstance());
+
+      expect(cryptoWaitReadyMock).toHaveBeenCalled();
+    });
+
+    it('should warn if the WASM crypto backend is unavailable', async () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      cryptoWaitReadyMock.mockResolvedValue(false);
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      await context.setSigningManager(dsMockUtils.getSigningManagerInstance());
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('sr25519'));
+
+      warnSpy.mockRestore();
+    });
+
+    it('should not initialize the WASM crypto backend when unsetting the Signing Manager', async () => {
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      cryptoWaitReadyMock.mockClear();
+
+      await context.setSigningManager(null);
+
+      expect(cryptoWaitReadyMock).not.toHaveBeenCalled();
     });
 
     it('should set the passed value as Signing Manager', async () => {
