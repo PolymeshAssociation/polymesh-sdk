@@ -122,7 +122,6 @@
     "@polkadot/util-crypto": "13.5.9",
     "@polymeshassociation/polymesh-types": "^7.5.0",
     "bignumber.js": "9.0.1",
-    "cross-fetch": "^4.0.0",
     "dayjs": "1.11.9",
     "graphql": "^16.8.0",
     "graphql-tag": "2.12.6",

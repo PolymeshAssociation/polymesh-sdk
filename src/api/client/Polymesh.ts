@@ -8,7 +8,6 @@ import { ApiPromise, HttpProvider, WsProvider } from '@polkadot/api';
 import { DefinitionsCall } from '@polkadot/types/types';
 import schema from '@polymeshassociation/polymesh-types/polkadot/schema';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import fetch from 'cross-fetch';
 
 import { AccountManagement } from '~/api/client/AccountManagement';
 import { Assets } from '~/api/client/Assets';
@@ -156,7 +155,7 @@ export class Polymesh {
     let context: Context;
     let polymeshApi: ApiPromise;
 
-    const { metadata, noInitWarn, typesBundle } = polkadot ?? {};
+    const { metadata, noInitWarn, typesBundle, initWasm } = polkadot ?? {};
 
     await assertExpectedChainVersion(nodeUrl);
     try {
@@ -178,6 +177,8 @@ export class Polymesh {
         ...(metadata ? { metadata } : {}),
         ...(noInitWarn ? { noInitWarn } : {}),
         ...(typesBundle ? { typesBundle } : {}),
+        /* `false` is the meaningful value, so this cannot be a truthiness check */
+        ...(initWasm !== undefined ? { initWasm } : {}),
       });
       context = await Context.create({
         polymeshApi,

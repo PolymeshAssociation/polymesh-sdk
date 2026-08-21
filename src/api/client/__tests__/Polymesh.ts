@@ -134,6 +134,39 @@ describe('Polymesh Class', () => {
       });
     });
 
+    it('should forward `initWasm: false` so that connecting does not wait on the WASM backend', async () => {
+      const apiPromiseCreateSpy = jest.spyOn(polkadotRef.ApiPromise, 'create');
+      dsMockUtils.getContextCreateMock();
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        polkadot: {
+          initWasm: false,
+        },
+      });
+
+      expect(apiPromiseCreateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          initWasm: false,
+        })
+      );
+    });
+
+    it('should not pass `initWasm` when it is not supplied, leaving the polkadot default in place', async () => {
+      const apiPromiseCreateSpy = jest.spyOn(polkadotRef.ApiPromise, 'create');
+      dsMockUtils.getContextCreateMock();
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+      });
+
+      expect(apiPromiseCreateSpy).toHaveBeenCalledWith(
+        expect.not.objectContaining({
+          initWasm: expect.anything(),
+        })
+      );
+    });
+
     it('should instantiate Context with middleware V2 URL and return a Polymesh instance', async () => {
       const createMock = dsMockUtils.getContextCreateMock();
 

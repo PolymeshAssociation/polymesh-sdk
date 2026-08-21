@@ -9,7 +9,6 @@ import {
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import crossFetch from 'cross-fetch';
 import { when } from 'jest-when';
 import { noop } from 'lodash';
 
@@ -171,14 +170,6 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 jest.mock('ws', require('~/testUtils/mocks/dataSources').mockWebSocketModule());
-
-jest.mock('cross-fetch', () => {
-  return {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    __esModule: true,
-    default: jest.fn(),
-  };
-});
 
 describe('delay', () => {
   beforeAll(() => {
@@ -1371,8 +1362,11 @@ describe('assertExpectedChainVersion', () => {
 
   describe('with http:// connection', () => {
     const originalFetch = global.fetch;
+    let fetchMock: jest.Mock;
+
     beforeAll(() => {
-      global.fetch = jest.fn();
+      fetchMock = jest.fn();
+      global.fetch = fetchMock;
     });
 
     afterAll(() => {
@@ -1384,7 +1378,7 @@ describe('assertExpectedChainVersion', () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const requestBase = { headers: { 'Content-Type': 'application/json' }, method: 'POST' };
 
-      when(crossFetch)
+      when(fetchMock)
         .calledWith(url, {
           ...requestBase,
           body: JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL),
@@ -1396,7 +1390,7 @@ describe('assertExpectedChainVersion', () => {
           }),
         } as unknown as Response);
 
-      when(crossFetch)
+      when(fetchMock)
         .calledWith(url, {
           ...requestBase,
           body: JSON.stringify(STATE_RUNTIME_VERSION_CALL),
@@ -1418,7 +1412,7 @@ describe('assertExpectedChainVersion', () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const requestBase = { headers: { 'Content-Type': 'application/json' }, method: 'POST' };
 
-      when(crossFetch)
+      when(fetchMock)
         .calledWith(url, {
           ...requestBase,
           body: JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL),
@@ -1437,7 +1431,7 @@ describe('assertExpectedChainVersion', () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const requestBase = { headers: { 'Content-Type': 'application/json' }, method: 'POST' };
 
-      when(crossFetch)
+      when(fetchMock)
         .calledWith(url, {
           ...requestBase,
           body: JSON.stringify(STATE_RUNTIME_VERSION_CALL),

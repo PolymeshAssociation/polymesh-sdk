@@ -175,6 +175,18 @@ export interface PolkadotConfig {
   noInitWarn?: boolean;
 
   /**
+   * set to `false` to stop `ApiPromise` waiting on the WASM crypto backend before becoming ready
+   *
+   * @note runtimes that forbid WASM compilation (e.g. Cloudflare Workers) otherwise hang on
+   *   connect, since `cryptoWaitReady()` resolves to `false` instead of rejecting
+   *
+   * @note this also leaves the backend uninitialized, since `cryptoWaitReady()` is what
+   *   initializes it. Read only usage is unaffected, but `sr25519` has no JS fallback, so a
+   *   signing manager using it must call `cryptoWaitReady()` itself (`LocalSigningManager` does)
+   */
+  initWasm?: boolean;
+
+  /**
    * allows for types to be provided for multiple chain specs at once
    *
    * @note shouldn't be needed for most use cases
