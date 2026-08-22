@@ -28,6 +28,7 @@ describe('withdrawUnbondedPolyx procedure', () => {
 
   let bigNumberToU32Spy: jest.SpyInstance;
   let rawSpanCount: u32;
+  let stashAddress: string;
 
   let storage: Storage;
 
@@ -40,11 +41,13 @@ describe('withdrawUnbondedPolyx procedure', () => {
     bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
     bigNumberToU32Spy.mockReturnValue(rawSpanCount);
 
+    stashAddress = 'someStashAddress';
+
     storage = {
       actingAccount,
       optSpans: dsMockUtils.createMockOption(),
       controllerEntry: {
-        stash: entityMockUtils.getAccountInstance(),
+        stash: entityMockUtils.getAccountInstance({ address: stashAddress }),
         total: new BigNumber(100),
         active: new BigNumber(100),
         unlocking: [],
@@ -84,6 +87,22 @@ describe('withdrawUnbondedPolyx procedure', () => {
 
       const result = await prepareWithdrawUnbondedPolyx.call(proc);
 
+      expect(result).toEqual({
+        transaction: withdrawUnbondedTx,
+        args: [rawSpanCount],
+        resolver: undefined,
+      });
+    });
+
+    it('should count no spans when the slashing spans were not fetched', async () => {
+      const proc = procedureMockUtils.getInstance<void, void, Storage>(mockContext, {
+        ...storage,
+        optSpans: null,
+      });
+
+      const result = await prepareWithdrawUnbondedPolyx.call(proc);
+
+      expect(bigNumberToU32Spy).toHaveBeenCalledWith(new BigNumber(0), mockContext);
       expect(result).toEqual({
         transaction: withdrawUnbondedTx,
         args: [rawSpanCount],
@@ -144,6 +163,56 @@ describe('withdrawUnbondedPolyx procedure', () => {
           controllerEntry: null,
         })
       );
+    });
+
+    it('should not fetch slashing spans if the acting account is not a controller', async () => {
+      const slashingSpansMock = dsMockUtils.createQueryMock('staking', 'slashingSpans', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+      mockContext.getActingAccount.mockResolvedValue(actingAccount);
+      const proc = procedureMockUtils.getInstance<void, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc();
+
+      expect(slashingSpansMock).not.toHaveBeenCalled();
+      expect(result.optSpans).toBeNull();
+    });
+
+    it('should fetch the slashing spans of the stash, not of the signing controller', async () => {
+      const rawStashAddress = dsMockUtils.createMockAccountId(stashAddress);
+      const optSpans = dsMockUtils.createMockOption(
+        dsMockUtils.createMockSlashingSpans({
+          spanIndex: dsMockUtils.createMockU32(),
+          prior: dsMockUtils.createMockVec<u32>([dsMockUtils.createMockU32(new BigNumber(3))]),
+          lastStart: dsMockUtils.createMockU32(),
+          lastNonzeroSlash: dsMockUtils.createMockU32(),
+        })
+      );
+
+      const slashingSpansMock = dsMockUtils.createQueryMock('staking', 'slashingSpans', {
+        returnValue: optSpans,
+      });
+
+      jest
+        .spyOn(utilsConversionModule, 'stringToAccountId')
+        .mockImplementation(address =>
+          address === stashAddress ? rawStashAddress : dsMockUtils.createMockAccountId(address)
+        );
+
+      actingAccount = entityMockUtils.getAccountInstance({
+        address: DUMMY_ACCOUNT_ID,
+        stakingGetLedger: storage.controllerEntry,
+      });
+      mockContext.getActingAccount.mockResolvedValue(actingAccount);
+
+      const proc = procedureMockUtils.getInstance<void, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc();
+
+      expect(slashingSpansMock).toHaveBeenCalledWith(rawStashAddress);
+      expect(result.optSpans).toBe(optSpans);
     });
   });
 });

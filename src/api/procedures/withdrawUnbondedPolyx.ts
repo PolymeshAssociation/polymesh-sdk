@@ -13,7 +13,8 @@ import { bigNumberToU32, stringToAccountId } from '~/utils/conversion';
 export interface Storage {
   actingAccount: Account;
   controllerEntry: StakingLedger | null;
-  optSpans: Option<PalletStakingSlashingSlashingSpans>;
+  /** `null` if there is no `controllerEntry`, since the query is keyed by its stash */
+  optSpans: Option<PalletStakingSlashingSlashingSpans> | null;
 }
 
 /**
@@ -42,9 +43,9 @@ export function prepareWithdrawUnbondedPolyx(
     });
   }
 
-  const spanCount = optSpans.isNone
-    ? new BigNumber(0)
-    : new BigNumber(optSpans.unwrap().prior.length + 1);
+  const spanCount = optSpans?.isSome
+    ? new BigNumber(optSpans.unwrap().prior.length + 1)
+    : new BigNumber(0);
   const rawSpanCount = bigNumberToU32(spanCount, context);
 
   return Promise.resolve({
@@ -84,17 +85,18 @@ export async function prepareStorage(this: Procedure<void, void, Storage>): Prom
   } = this;
 
   const actingAccount = await context.getActingAccount();
-  const rawActingAddress = stringToAccountId(actingAccount.address, context);
 
-  const [controllerEntry, spans] = await Promise.all([
-    actingAccount.staking.getLedger(),
-    slashingSpans(rawActingAddress),
-  ]);
+  const controllerEntry = await actingAccount.staking.getLedger();
+
+  // `slashingSpans` is keyed by the stash, which can differ from the signing controller
+  const optSpans = controllerEntry
+    ? await slashingSpans(stringToAccountId(controllerEntry.stash.address, context))
+    : null;
 
   return {
     actingAccount,
     controllerEntry,
-    optSpans: spans,
+    optSpans,
   };
 }
 
