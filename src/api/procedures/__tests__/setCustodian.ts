@@ -17,6 +17,7 @@ import {
   RoleType,
   SignerType,
   SignerValue,
+  SimplePermissions,
   TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -198,14 +199,16 @@ describe('setCustodian procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const id = new BigNumber(1);
       const did = 'someDid';
-      let args = {
+      const args = {
         id,
         did,
       } as Params;
 
-      let portfolioId = { did: args.did, number: args.id } as PortfolioId;
+      const portfolioId = { did: args.did, number: args.id } as PortfolioId;
 
-      expect(boundFunc(args)).toEqual({
+      const result = boundFunc(args);
+
+      expect(result).toEqual({
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
@@ -214,20 +217,11 @@ describe('setCustodian procedure', () => {
         },
       });
 
-      args = {
-        did,
-      } as Params;
-
-      portfolioId = { did: args.did, number: new BigNumber(0) };
-
-      expect(boundFunc(args)).toEqual({
-        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        permissions: {
-          transactions: [TxTags.identity.AddAuthorization],
-          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
-          assets: [],
-        },
-      });
+      /*
+       * a numbered Portfolio is the only kind the chain lets have a custodian, so the resolved
+       * Portfolio must carry the id it was given rather than falling back to Portfolio 0
+       */
+      expect((result.permissions as SimplePermissions).portfolios?.[0]).toHaveProperty('id', id);
     });
   });
 });

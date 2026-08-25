@@ -152,6 +152,10 @@ export class NumberedPortfolio extends Portfolio {
   /**
    * Send an invitation to an Identity to assign it as custodian for this Numbered Portfolio
    *
+   * @note only a numbered Portfolio can have a custodian. The chain rejects custody of a default
+   *   Portfolio with `DefaultPortfoliosCannotHaveCustodians`, so this is deliberately not on the
+   *   {@link api/entities/Portfolio!Portfolio | Portfolio} base class
+   *
    * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `targetIdentity`.
    *   An {@link api/entities/Account!Account | Account} or {@link api/entities/Identity!Identity | Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}

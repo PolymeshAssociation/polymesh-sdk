@@ -23,8 +23,12 @@ import { assertNoPendingAuthorizationExists, optionize } from '~/utils/internal'
 
 /**
  * @hidden
+ *
+ * @note `id` is required: the chain's `accept_portfolio_custody` rejects a default Portfolio with
+ *   `DefaultPortfoliosCannotHaveCustodians`, and `add_authorization` does not check, so allowing
+ *   one here would only produce an Authorization Request that can never be accepted
  */
-export type Params = { did: string; id?: BigNumber | undefined } & SetCustodianParams;
+export type Params = { did: string; id: BigNumber } & SetCustodianParams;
 
 /**
  * @hidden
@@ -96,12 +100,13 @@ export function getAuthorization(
   { did, id }: Params
 ): ProcedureAuthorization {
   const { context } = this;
-  const portfolioId: PortfolioId = { did, number: id ?? new BigNumber(0) };
+
+  const portfolioId: PortfolioId = { did, number: id };
   return {
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
-      portfolios: [portfolioIdToPortfolio({ did, number: id ?? new BigNumber(0) }, context)],
+      portfolios: [portfolioIdToPortfolio(portfolioId, context)],
       assets: [],
     },
   };
