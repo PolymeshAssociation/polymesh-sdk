@@ -847,7 +847,8 @@ describe('Staking Class', () => {
       );
       rawCurrentEra = dsMockUtils.createMockOption(dsMockUtils.createMockU32(new BigNumber(2)));
       rawPlannedSession = dsMockUtils.createMockU32(new BigNumber(3));
-      rawTotal = dsMockUtils.createMockU128(new BigNumber(1000));
+      // the chain returns a Balance in the smallest unit; 1e9 base units is 1,000 POLYX
+      rawTotal = dsMockUtils.createMockU128(new BigNumber(1_000_000_000));
 
       activeEraQueryMock = dsMockUtils.createQueryMock('staking', 'activeEra', {
         returnValue: rawActiveEra,

@@ -47,7 +47,6 @@ import {
   stringToAccountId,
   u32ToBigNumber,
   u64ToBigNumber,
-  u128ToBigNumber,
 } from '~/utils/conversion';
 import {
   asAccount,
@@ -371,7 +370,8 @@ export class Staking {
       }
 
       const plannedSession = u32ToBigNumber(rawPlannedSession);
-      const totalStaked = u128ToBigNumber(rawTotalStaked);
+      // `erasTotalStake` is a `Balance`, so it needs the POLYX shift rather than a plain u128 read
+      const totalStaked = balanceToBigNumber(rawTotalStaked);
 
       return {
         activeEra: activeEra.index,
