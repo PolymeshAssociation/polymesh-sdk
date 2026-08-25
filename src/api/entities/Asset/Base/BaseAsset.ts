@@ -391,7 +391,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       const { value, type } = assetTypeToKnownOrId(rawAssetType);
 
       let assetType: string;
-      if (value instanceof BigNumber) {
+      if (BigNumber.isBigNumber(value)) {
         const customType = await asset.customTypes(bigNumberToU32(value, context));
         assetType = bytesToString(customType);
       } else {

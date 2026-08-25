@@ -27,7 +27,7 @@ export async function prepareRemoveCheckpointSchedule(
   } = this;
   const { asset, schedule } = args;
 
-  const scheduleId = schedule instanceof BigNumber ? schedule : schedule.id;
+  const scheduleId = BigNumber.isBigNumber(schedule) ? schedule : schedule.id;
   const rawAssetId = assetToMeshAssetId(asset, context);
 
   const rawScheduleId = bigNumberToU64(scheduleId, context);

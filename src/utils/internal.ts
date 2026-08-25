@@ -1265,7 +1265,7 @@ export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
     return obj.toHuman();
   }
 
-  if (obj instanceof BigNumber) {
+  if (BigNumber.isBigNumber(obj)) {
     return obj.toString() as HumanReadableType<T>;
   }
 
@@ -2043,7 +2043,7 @@ export function assembleAssetQuery(
  * @hidden
  */
 export function asNftId(nft: Nft | BigNumber): BigNumber {
-  if (nft instanceof BigNumber) {
+  if (BigNumber.isBigNumber(nft)) {
     return nft;
   } else {
     return nft.id;
@@ -2245,7 +2245,7 @@ export async function prepareStorageForCustomType(
 ): Promise<Storage['customTypeData']> {
   let customTypeData: Storage['customTypeData'];
 
-  if (customType instanceof BigNumber) {
+  if (BigNumber.isBigNumber(customType)) {
     const rawId = bigNumberToU32(customType, context);
     const rawValue = await context.polymeshApi.query.asset.customTypes(rawId);
 

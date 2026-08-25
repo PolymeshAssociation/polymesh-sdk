@@ -65,7 +65,7 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id, assetId, type } = identifier as UniqueIdentifiers;
 
-    return id instanceof BigNumber && typeof assetId === 'string' && type in MetadataType;
+    return BigNumber.isBigNumber(id) && typeof assetId === 'string' && type in MetadataType;
   }
 
   /**

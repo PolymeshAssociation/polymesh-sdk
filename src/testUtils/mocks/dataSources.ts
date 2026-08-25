@@ -2103,7 +2103,7 @@ export const createMockBtreeSet = <T extends Codec>(
       return createMockStringCodec(item);
     }
 
-    if (typeof item === 'number' || item instanceof BigNumber) {
+    if (typeof item === 'number' || BigNumber.isBigNumber(item)) {
       return createMockNumberCodec(new BigNumber(item));
     }
 
@@ -2153,7 +2153,7 @@ export const createMockVec = <T extends Codec>(
       return createMockStringCodec(item);
     }
 
-    if (typeof item === 'number' || item instanceof BigNumber) {
+    if (typeof item === 'number' || BigNumber.isBigNumber(item)) {
       return createMockNumberCodec(new BigNumber(item));
     }
 

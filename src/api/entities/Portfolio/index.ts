@@ -81,7 +81,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { did, id } = identifier as UniqueIdentifiers;
 
-    return typeof did === 'string' && (id === undefined || id instanceof BigNumber);
+    return typeof did === 'string' && (id === undefined || BigNumber.isBigNumber(id));
   }
 
   /**

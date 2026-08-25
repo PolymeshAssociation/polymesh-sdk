@@ -73,7 +73,7 @@ export async function prepareStorage(
   const getAuthRequest = (
     auth: BigNumber | AuthorizationRequest
   ): Promise<AuthorizationRequest> => {
-    if (auth && auth instanceof BigNumber) {
+    if (auth && BigNumber.isBigNumber(auth)) {
       return actingAccount.authorizations.getOne({ id: auth });
     }
     return Promise.resolve(auth);

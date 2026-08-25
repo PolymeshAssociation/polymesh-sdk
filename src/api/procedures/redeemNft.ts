@@ -118,7 +118,7 @@ export async function prepareStorage(
     fromAssetHolder = asAccount(fromAccount, context);
   } else if (!from) {
     fromAssetHolder = new DefaultPortfolio({ did }, context);
-  } else if (from instanceof BigNumber) {
+  } else if (BigNumber.isBigNumber(from)) {
     fromAssetHolder = new NumberedPortfolio({ did, id: from }, context);
   } else {
     fromAssetHolder = from;

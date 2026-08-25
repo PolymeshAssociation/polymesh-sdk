@@ -41,7 +41,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id, assetId } = identifier as UniqueIdentifiers;
 
-    return id instanceof BigNumber && typeof assetId === 'string';
+    return BigNumber.isBigNumber(id) && typeof assetId === 'string';
   }
 
   /**

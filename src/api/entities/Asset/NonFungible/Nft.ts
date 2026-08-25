@@ -64,7 +64,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
   ): identifier is NftUniqueIdentifiers {
     const { assetId, id } = identifier as NftUniqueIdentifiers;
 
-    return typeof assetId === 'string' && id instanceof BigNumber;
+    return typeof assetId === 'string' && BigNumber.isBigNumber(id);
   }
 
   /**

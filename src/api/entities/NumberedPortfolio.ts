@@ -36,7 +36,7 @@ export class NumberedPortfolio extends Portfolio {
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { did, id } = identifier as UniqueIdentifiers;
 
-    return typeof did === 'string' && id instanceof BigNumber;
+    return typeof did === 'string' && BigNumber.isBigNumber(id);
   }
 
   /**

@@ -45,7 +45,7 @@ export class Portfolios extends Namespace<Identity> {
       {
         getProcedureAndArgs: args => {
           const { portfolio } = args;
-          const id = portfolio instanceof BigNumber ? portfolio : portfolio.id;
+          const id = BigNumber.isBigNumber(portfolio) ? portfolio : portfolio.id;
 
           return [deletePortfolio, { id, did }];
         },

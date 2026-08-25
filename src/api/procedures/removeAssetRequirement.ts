@@ -31,7 +31,7 @@ export async function prepareRemoveAssetRequirement(
 
   const rawAssetId = assetToMeshAssetId(asset, context);
 
-  const reqId = requirement instanceof BigNumber ? requirement : requirement.id;
+  const reqId = BigNumber.isBigNumber(requirement) ? requirement : requirement.id;
 
   const { requirements } = await query.complianceManager.assetCompliances(rawAssetId);
 

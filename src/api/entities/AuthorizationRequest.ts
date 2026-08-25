@@ -56,7 +56,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { authId } = identifier as UniqueIdentifiers;
 
-    return authId instanceof BigNumber;
+    return BigNumber.isBigNumber(authId);
   }
 
   /**

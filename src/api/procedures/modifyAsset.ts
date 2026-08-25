@@ -171,7 +171,7 @@ function getTxForAssetTypeChange(
   /* eslint-enable max-params */
   if (
     (typeof newType === 'string' && newType === assetType) ||
-    (newType instanceof BigNumber && newType.eq(assetType))
+    (BigNumber.isBigNumber(newType) && newType.eq(assetType))
   ) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,

@@ -41,14 +41,14 @@ const assertCaIsRemovable = async (
   const distribution = await query.capitalDistribution.distributions(rawCaId);
   const exists = distribution.isSome;
 
-  if (!exists && !(corporateAction instanceof BigNumber)) {
+  if (!exists && !BigNumber.isBigNumber(corporateAction)) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
       message: "The Distribution doesn't exist",
     });
   }
 
-  if (corporateAction instanceof BigNumber) {
+  if (BigNumber.isBigNumber(corporateAction)) {
     const CA = await query.corporateAction.corporateActions(
       assetToMeshAssetId(asset, context),
       bigNumberToU32(corporateAction, context)
@@ -91,7 +91,7 @@ export async function prepareRemoveCorporateAction(
     corporateAction instanceof CorporateActionBase ? corporateAction.id : corporateAction;
   const rawCaId = corporateActionIdentifierToCaId({ asset, localId }, context);
 
-  if (corporateAction instanceof DividendDistribution || corporateAction instanceof BigNumber) {
+  if (corporateAction instanceof DividendDistribution || BigNumber.isBigNumber(corporateAction)) {
     await assertCaIsRemovable(rawCaId, query, asset, context, corporateAction);
   } else {
     const exists = await corporateAction.exists();

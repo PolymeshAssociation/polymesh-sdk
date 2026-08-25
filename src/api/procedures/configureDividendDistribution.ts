@@ -193,7 +193,7 @@ export async function prepareConfigureDividendDistribution(
   const rawPortfolioNumber =
     originPortfolio &&
     optionize(bigNumberToU64)(
-      originPortfolio instanceof BigNumber ? originPortfolio : originPortfolio.id,
+      BigNumber.isBigNumber(originPortfolio) ? originPortfolio : originPortfolio.id,
       context
     );
   const rawCurrency = assetToMeshAssetId(currencyAsset, context);
@@ -264,7 +264,7 @@ export async function prepareStorage(
 
   let portfolio = originPortfolio || new DefaultPortfolio({ did }, context);
 
-  if (portfolio instanceof BigNumber) {
+  if (BigNumber.isBigNumber(portfolio)) {
     portfolio = new NumberedPortfolio({ id: portfolio, did }, context);
   }
 

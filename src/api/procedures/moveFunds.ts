@@ -114,7 +114,7 @@ export async function prepareMoveFunds(
   let toPortfolio;
   if (!to) {
     toPortfolio = new DefaultPortfolio({ did: fromDid }, context);
-  } else if (to instanceof BigNumber) {
+  } else if (BigNumber.isBigNumber(to)) {
     toPortfolio = new NumberedPortfolio({ did: fromDid, id: to }, context);
   } else {
     toPortfolio = to;
@@ -240,7 +240,7 @@ export function getAuthorization(
   let toPortfolio;
   if (!to) {
     toPortfolio = new DefaultPortfolio({ did }, context);
-  } else if (to instanceof BigNumber) {
+  } else if (BigNumber.isBigNumber(to)) {
     toPortfolio = new NumberedPortfolio({ did, id: to }, context);
   } else {
     toPortfolio = to;

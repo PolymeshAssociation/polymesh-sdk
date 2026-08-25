@@ -99,6 +99,13 @@
     "no-shadow": "off",
     "arrow-parens": "off",
     "camelcase": "off",
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "BinaryExpression[operator='instanceof'][right.name='BigNumber']",
+        "message": "`instanceof BigNumber` fails when the value comes from a second copy of bignumber.js (dual-package hazard). Use `BigNumber.isBigNumber(value)` instead"
+      }
+    ],
     "no-restricted-imports": [
       "error",
       {
