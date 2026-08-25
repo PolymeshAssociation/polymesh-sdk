@@ -37,7 +37,10 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
    * Fetch all pending Authorization Requests for which this Signer is the target
    *
    * @param opts.type - fetch only authorizations of this type. Fetches all types if not passed
-   * @param opts.includeExpired - whether to include expired authorizations. Defaults to true
+   * @param opts.includeExpired - whether to include expired authorizations. Defaults to true.
+   *   The chain applies this filter, against the timestamp of the last block
+   *
+   * @note expired Authorization Requests can be told apart with {@link api/entities/AuthorizationRequest!AuthorizationRequest.isExpired | isExpired}
    */
   public async getReceived(opts?: {
     type?: AuthorizationType;
@@ -76,6 +79,9 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
    * Retrieve a single Authorization Request targeting this Signer by its ID
    *
    * @throws if there is no Authorization Request with the passed ID targeting this Signer
+   *
+   * @note an expired Authorization Request is still returned — it exists on chain until it is
+   *   consumed or removed. Check {@link api/entities/AuthorizationRequest!AuthorizationRequest.isExpired | isExpired} before acting on it
    */
   public async getOne(args: { id: BigNumber }): Promise<AuthorizationRequest> {
     const {
@@ -107,6 +113,10 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
    * @hidden
    *
    * Create an array of AuthorizationRequests from an array of on-chain Authorizations
+   *
+   * @note expired Authorizations are **not** filtered out here. Filtering made `getReceived`'s
+   *   `includeExpired` inert (the chain already applies it), turned an expired `getOne` into an
+   *   `undefined` behind a non-null assertion, and made `getSent` return short pages with a live cursor
    */
   protected createAuthorizationRequests(
     auths: { auth: PolymeshPrimitivesAuthorization; target: SignerValue }[]
@@ -130,7 +140,6 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
           issuer: new Identity({ did: identityIdToString(issuer) }, context),
         };
       })
-      .filter(({ expiry }) => expiry === null || expiry > new Date())
       .map(args => {
         return new AuthorizationRequest(args, context);
       });

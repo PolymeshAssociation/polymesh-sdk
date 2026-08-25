@@ -14,6 +14,8 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
    * Fetch all pending authorization requests issued by this Identity
    *
    * @note supports pagination
+   * @note expired requests are included, so that a page holds as many entries as it says it does.
+   *   Use {@link api/entities/AuthorizationRequest!AuthorizationRequest.isExpired | isExpired} to skip them
    */
   public async getSent(
     paginationOpts?: PaginationOptions
@@ -56,6 +58,9 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
    * Retrieve a single Authorization Request targeting or issued by this Identity by its ID
    *
    * @throws if there is no Authorization Request with the passed ID targeting or issued by this Identity
+   *
+   * @note an expired Authorization Request is still returned. Check
+   *   {@link api/entities/AuthorizationRequest!AuthorizationRequest.isExpired | isExpired} before acting on it
    */
   public override async getOne(args: { id: BigNumber }): Promise<AuthorizationRequest> {
     const {

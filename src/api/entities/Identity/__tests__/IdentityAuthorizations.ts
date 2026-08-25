@@ -162,6 +162,59 @@ describe('IdentityAuthorizations class', () => {
     });
   });
 
+  describe('method: getSent', () => {
+    it('should return a full page, including expired requests, so the cursor stays honest', async () => {
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockImplementation();
+      dsMockUtils.createQueryMock('identity', 'authorizationsGiven');
+
+      const requestPaginatedSpy = jest.spyOn(utilsInternalModule, 'requestPaginated');
+
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance({ did });
+      const identity = entityMockUtils.getIdentityInstance({ did });
+      const authsNamespace = new IdentityAuthorizations(identity, context);
+
+      entityMockUtils.configureMocks({ authorizationRequestOptions: { isExpired: true } });
+
+      const rawAuthorization = dsMockUtils.createMockAuthorization({
+        authId: dsMockUtils.createMockU64(new BigNumber(1)),
+        expiry: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(new Date('10/14/1987').getTime()))
+        ),
+        authorizationData: dsMockUtils.createMockAuthorizationData({
+          TransferAssetOwnership: dsMockUtils.createMockAssetId(
+            '0x12341234123412341234123412341234'
+          ),
+        }),
+        authorizedBy: dsMockUtils.createMockIdentityId(did),
+      });
+
+      requestPaginatedSpy.mockResolvedValue({
+        entries: [
+          tuple(
+            {
+              args: [rawAuthorization.authorizedBy, rawAuthorization.authId],
+            } as unknown as StorageKey,
+            dsMockUtils.createMockSignatory({
+              Identity: dsMockUtils.createMockIdentityId('alice'),
+            })
+          ),
+        ],
+        lastKey: 'someKey',
+      });
+
+      const authorizationsMock = dsMockUtils.createQueryMock('identity', 'authorizations');
+      authorizationsMock.multi.mockResolvedValue([dsMockUtils.createMockOption(rawAuthorization)]);
+
+      const result = await authsNamespace.getSent();
+
+      expect(result.data).toHaveLength(1);
+      expect(result.next).toBe('someKey');
+
+      requestPaginatedSpy.mockRestore();
+    });
+  });
+
   describe('method: getOne', () => {
     afterAll(() => {
       jest.restoreAllMocks();
@@ -248,6 +301,44 @@ describe('IdentityAuthorizations class', () => {
 
       expect(result).toBe(mockAuthRequest);
       spy.mockRestore();
+    });
+
+    it('should return an expired Authorization Request issued by the parent Identity', async () => {
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance({ did });
+      const identity = entityMockUtils.getIdentityInstance({ did });
+      const authsNamespace = new IdentityAuthorizations(identity, context);
+      const id = new BigNumber(1);
+
+      entityMockUtils.configureMocks({ authorizationRequestOptions: { isExpired: true } });
+
+      dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
+        returnValue: dsMockUtils.createMockSignatory({
+          Identity: dsMockUtils.createMockIdentityId('alice'),
+        }),
+      });
+
+      dsMockUtils.createQueryMock('identity', 'authorizations', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAuthorization({
+            authId: dsMockUtils.createMockU64(id),
+            authorizationData: dsMockUtils.createMockAuthorizationData({
+              TransferAssetOwnership: dsMockUtils.createMockAssetId(
+                '0x12341234123412341234123412341234'
+              ),
+            }),
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(new Date('10/14/1987').getTime()))
+            ),
+            authorizedBy: dsMockUtils.createMockIdentityId(did),
+          })
+        ),
+      });
+
+      const result = await authsNamespace.getOne({ id });
+
+      expect(result.authId).toEqual(id);
+      expect(result.isExpired()).toBe(true);
     });
 
     it('should throw an error if the Authorization Request does not exist', async () => {

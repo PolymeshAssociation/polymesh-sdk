@@ -70,7 +70,7 @@ describe('Authorizations class', () => {
       );
     });
 
-    it('should retrieve all pending authorizations received by the Identity and filter out expired ones', async () => {
+    it('should retrieve all pending authorizations received by the Identity', async () => {
       const did = 'someDid';
       const filter = AuthorizationType.RotatePrimaryKey;
       const context = dsMockUtils.getContextInstance({ did });
@@ -152,6 +152,54 @@ describe('Authorizations class', () => {
       expect(JSON.stringify(result)).toBe(JSON.stringify(expectedAuthorizations));
     });
 
+    it('should leave the expiry filter to the chain and return what it sends back', async () => {
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance({ did });
+      const identity = entityMockUtils.getIdentityInstance({ did });
+      const authsNamespace = new Authorizations(identity, context);
+
+      const rawSignatory = dsMockUtils.createMockSignatory();
+      const rawTrue = dsMockUtils.createMockBool(true);
+      const rawFalse = dsMockUtils.createMockBool(false);
+
+      when(signerValueToSignatorySpy).mockReturnValue(rawSignatory);
+      when(booleanToBoolSpy).calledWith(true, context).mockReturnValue(rawTrue);
+      when(booleanToBoolSpy).calledWith(false, context).mockReturnValue(rawFalse);
+
+      const expiredAuth = dsMockUtils.createMockAuthorization({
+        authId: dsMockUtils.createMockU64(new BigNumber(1)),
+        expiry: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(new Date('10/14/1987').getTime()))
+        ),
+        authorizationData: dsMockUtils.createMockAuthorizationData({
+          TransferAssetOwnership: dsMockUtils.createMockAssetId(
+            '0x12341234123412341234123412341234'
+          ),
+        }),
+        authorizedBy: dsMockUtils.createMockIdentityId('alice'),
+      });
+
+      const callMock = dsMockUtils.createCallMock('identityApi', 'getFilteredAuthorizations');
+
+      /*
+       * `getFilteredAuthorizations` applies the expiry filter itself, so an expired request coming
+       * back means the chain meant to send it. It must not be dropped a second time client-side
+       */
+      callMock.mockResolvedValue([expiredAuth]);
+
+      const withExpired = await authsNamespace.getReceived();
+
+      expect(callMock).toHaveBeenLastCalledWith(rawSignatory, rawTrue, null);
+      expect(withExpired).toHaveLength(1);
+
+      callMock.mockResolvedValue([]);
+
+      const withoutExpired = await authsNamespace.getReceived({ includeExpired: false });
+
+      expect(callMock).toHaveBeenLastCalledWith(rawSignatory, rawFalse, null);
+      expect(withoutExpired).toEqual([]);
+    });
+
     it('should fetch authorizations of the OldAddRelayerPayingKey type', async () => {
       const did = 'someDid';
       const context = dsMockUtils.getContextInstance({ did });
@@ -227,6 +275,40 @@ describe('Authorizations class', () => {
       });
       expect((result.target as Identity).did).toEqual(did);
       expect(result.issuer.did).toEqual(issuerDid);
+    });
+
+    it('should return an expired Authorization Request, rather than undefined', async () => {
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance({ did });
+      const identity = entityMockUtils.getIdentityInstance({ did });
+      const authsNamespace = new Authorizations(identity, context);
+
+      const expiry = new Date('10/14/1987');
+
+      entityMockUtils.configureMocks({ authorizationRequestOptions: { isExpired: true } });
+
+      dsMockUtils.createQueryMock('identity', 'authorizations', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAuthorization({
+            authId: dsMockUtils.createMockU64(new BigNumber(1)),
+            authorizationData: dsMockUtils.createMockAuthorizationData({
+              TransferAssetOwnership: dsMockUtils.createMockAssetId(
+                '0x12341234123412341234123412341234'
+              ),
+            }),
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()))
+            ),
+            authorizedBy: dsMockUtils.createMockIdentityId('alice'),
+          })
+        ),
+      });
+
+      const result = await authsNamespace.getOne({ id: new BigNumber(1) });
+
+      expect(result.authId).toEqual(new BigNumber(1));
+      expect(result.expiry).toEqual(expiry);
+      expect(result.isExpired()).toBe(true);
     });
 
     it('should throw an error if the Authorization Request does not exist', () => {
