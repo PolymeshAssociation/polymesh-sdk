@@ -520,50 +520,55 @@ describe('Assets Class', () => {
         .mockImplementation();
     });
 
+    const rawFungibleDetails = (): unknown =>
+      dsMockUtils.createMockOption(
+        dsMockUtils.createMockSecurityToken({
+          ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+          assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+          divisible: dsMockUtils.createMockBool(false),
+          totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+        })
+      );
+
+    const rawNftDetails = (): unknown =>
+      dsMockUtils.createMockOption(
+        dsMockUtils.createMockSecurityToken({
+          ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+          assetType: dsMockUtils.createMockAssetType({
+            NonFungible: dsMockUtils.createMockNftType(KnownAssetType.Derivative),
+          }),
+          divisible: dsMockUtils.createMockBool(false),
+          totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+        })
+      );
+
+    let assetsMock: ReturnType<typeof dsMockUtils.createQueryMock<'asset', 'assets'>>;
+
     beforeEach(() => {
-      dsMockUtils.createQueryMock('asset', 'assetNames');
+      assetsMock = dsMockUtils.createQueryMock('asset', 'assets');
     });
 
     afterAll(() => {
       jest.restoreAllMocks();
     });
 
-    it('should retrieve all Assets on the chain', async () => {
-      const entries = expectedAssets.map(({ name, id }) =>
+    it('should page asset.assets and take the details from the same response', async () => {
+      const details = [rawFungibleDetails(), rawNftDetails()];
+      const entries = expectedAssets.map(({ id }, index) =>
         tuple(
           {
             args: [dsMockUtils.createMockAssetId(uuidToHex(id))],
           } as unknown as StorageKey,
-          dsMockUtils.createMockBytes(name)
+          details[index]
         )
       );
-
-      dsMockUtils.createQueryMock('asset', 'assets', {
-        multi: [
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockSecurityToken({
-              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
-              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
-              divisible: dsMockUtils.createMockBool(false),
-              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
-            })
-          ),
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockSecurityToken({
-              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
-              assetType: dsMockUtils.createMockAssetType({
-                NonFungible: dsMockUtils.createMockNftType(KnownAssetType.Derivative),
-              }),
-              divisible: dsMockUtils.createMockBool(false),
-              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
-            })
-          ),
-        ],
-      });
 
       requestPaginatedSpy.mockResolvedValue({ entries, lastKey: null });
 
       const result = await assets.get();
+
+      expect(requestPaginatedSpy).toHaveBeenCalledWith(assetsMock, expect.anything());
+      expect(assetsMock.multi).not.toHaveBeenCalled();
 
       const expectedData = expectedAssets.map(({ id }) => expect.objectContaining({ id }));
       expect(result).toEqual({ data: expect.arrayContaining(expectedData), next: null });
@@ -575,22 +580,9 @@ describe('Assets Class', () => {
           {
             args: [dsMockUtils.createMockAssetId(uuidToHex(expectedAssets[0]!.id))],
           } as unknown as StorageKey,
-          dsMockUtils.createMockBytes(expectedAssets[0]!.name)
+          rawFungibleDetails()
         ),
       ];
-
-      dsMockUtils.createQueryMock('asset', 'assets', {
-        multi: [
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockSecurityToken({
-              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
-              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
-              divisible: dsMockUtils.createMockBool(false),
-              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
-            })
-          ),
-        ],
-      });
 
       requestPaginatedSpy.mockResolvedValue({ entries, lastKey: 'someKey' });
 

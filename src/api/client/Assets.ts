@@ -1,4 +1,5 @@
-import { PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { Option } from '@polkadot/types';
+import { PalletAssetAssetDetails, PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -420,25 +421,24 @@ export class Assets {
       context,
     } = this;
 
-    const { entries, lastKey: next } = await requestPaginated(asset.assetNames, {
+    const { entries, lastKey: next } = await requestPaginated(asset.assets, {
       paginationOpts,
     });
 
     const assetIds: string[] = [];
-    const rawAssetIds: (PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetId)[] = [];
+    const details: Option<PalletAssetAssetDetails>[] = [];
 
     entries.forEach(
       ([
         {
           args: [rawAssetId],
         },
+        rawDetails,
       ]) => {
-        rawAssetIds.push(rawAssetId);
         assetIds.push(assetIdToString(rawAssetId));
+        details.push(rawDetails);
       }
     );
-
-    const details = await asset.assets.multi(rawAssetIds);
 
     const data = assembleAssetQuery(details, assetIds, context);
 
