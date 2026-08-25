@@ -29,6 +29,7 @@ describe('updateBondedPolyx procedure', () => {
   let mockContext: Mocked<Context>;
   let unbondTx: PolymeshTx<[Balance]>;
   let bondExtraTx: PolymeshTx<[Balance]>;
+  let rebondTx: PolymeshTx<[Balance]>;
   let actingAccount: Account;
   let rawAmount: Balance;
 
@@ -39,6 +40,7 @@ describe('updateBondedPolyx procedure', () => {
   beforeEach(() => {
     unbondTx = dsMockUtils.createTxMock('staking', 'unbond');
     bondExtraTx = dsMockUtils.createTxMock('staking', 'bondExtra');
+    rebondTx = dsMockUtils.createTxMock('staking', 'rebond');
     mockContext = dsMockUtils.getContextInstance();
     actingAccount = entityMockUtils.getAccountInstance({ address: DUMMY_ACCOUNT_ID });
     rawAmount = dsMockUtils.createMockBalance(amount);
@@ -206,6 +208,82 @@ describe('updateBondedPolyx procedure', () => {
     });
   });
 
+  describe('rebond', () => {
+    it('should throw an error if the acting account is not a controller', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        ...storage,
+        controllerEntry: null,
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The caller must be a controller account',
+      });
+
+      expect(() => prepareUnbondPolyx.call(proc, { type: 'rebond', amount })).toThrow(
+        expectedError
+      );
+    });
+
+    it('should throw an error if there is insufficient unbonding POLYX', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        ...storage,
+        controllerEntry: {
+          ...storage.controllerEntry!,
+          unlocking: [{ value: new BigNumber(4), era: new BigNumber(1) }],
+        },
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.InsufficientBalance,
+        message: 'Insufficient unbonding POLYX',
+      });
+
+      expect(() => prepareUnbondPolyx.call(proc, { type: 'rebond', amount })).toThrow(
+        expectedError
+      );
+    });
+
+    it('should sum every unlocking chunk when checking the amount', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        ...storage,
+        controllerEntry: {
+          ...storage.controllerEntry!,
+          unlocking: [
+            { value: new BigNumber(4), era: new BigNumber(1) },
+            { value: new BigNumber(6), era: new BigNumber(2) },
+          ],
+        },
+      });
+
+      const result = await prepareUnbondPolyx.call(proc, { type: 'rebond', amount });
+
+      expect(result).toEqual({
+        transaction: rebondTx,
+        args: [rawAmount],
+        resolver: undefined,
+      });
+    });
+
+    it('should return a rebond transaction spec', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        ...storage,
+        controllerEntry: {
+          ...storage.controllerEntry!,
+          unlocking: [{ value: new BigNumber(100), era: new BigNumber(1) }],
+        },
+      });
+
+      const result = await prepareUnbondPolyx.call(proc, { type: 'rebond', amount });
+
+      expect(result).toEqual({
+        transaction: rebondTx,
+        args: [rawAmount],
+        resolver: undefined,
+      });
+    });
+  });
+
   describe('getAuthorization', () => {
     it('should return the Unbond TxTag', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
@@ -227,6 +305,19 @@ describe('updateBondedPolyx procedure', () => {
       expect(boundFunc({ amount: new BigNumber(1), type: 'bondExtra' })).toEqual({
         permissions: {
           transactions: [TxTags.staking.BondExtra],
+          assets: [],
+          portfolios: [],
+        },
+      });
+    });
+
+    it('should return the Rebond TxTag', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+      const boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc({ amount: new BigNumber(1), type: 'rebond' })).toEqual({
+        permissions: {
+          transactions: [TxTags.staking.Rebond],
           assets: [],
           portfolios: [],
         },

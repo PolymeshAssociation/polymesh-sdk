@@ -1960,7 +1960,7 @@ export interface SetStakingPayeeParams {
 
 export interface UpdatePolyxBondParams {
   /**
-   * The amount of POLYX to unbond from staking
+   * The amount of POLYX to bond, unbond or rebond, depending on the operation
    */
   amount: BigNumber;
 }

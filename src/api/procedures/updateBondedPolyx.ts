@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { PolymeshError, Procedure } from '~/internal';
 import { Account, Balance, ErrorCode, StakingLedger, TxTags, UpdatePolyxBondParams } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
@@ -16,7 +18,8 @@ export interface Storage {
 /**
  * @hidden
  */
-export type Params = UpdatePolyxBondParams & ({ type: 'unbond' } | { type: 'bondExtra' });
+export type Params = UpdatePolyxBondParams &
+  ({ type: 'unbond' } | { type: 'bondExtra' } | { type: 'rebond' });
 
 /**
  * @hidden
@@ -27,12 +30,13 @@ export function prepareUnbondPolyx(
 ): Promise<
   | TransactionSpec<void, ExtrinsicParams<'staking', 'unbond'>>
   | TransactionSpec<void, ExtrinsicParams<'staking', 'bondExtra'>>
+  | TransactionSpec<void, ExtrinsicParams<'staking', 'rebond'>>
 > {
   const {
     context: {
       polymeshApi: {
         tx: {
-          staking: { bondExtra, unbond },
+          staking: { bondExtra, rebond, unbond },
         },
       },
     },
@@ -42,9 +46,36 @@ export function prepareUnbondPolyx(
 
   const { amount, type } = args;
 
-  let transaction: typeof bondExtra | typeof unbond;
+  let transaction: typeof bondExtra | typeof rebond | typeof unbond;
 
-  if (type === 'unbond') {
+  if (type === 'rebond') {
+    transaction = rebond;
+
+    if (!controllerEntry) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The caller must be a controller account',
+        data: { actingAccount: actingAccount.address },
+      });
+    }
+
+    const unlockingTotal = controllerEntry.unlocking.reduce(
+      (total, { value }) => total.plus(value),
+      new BigNumber(0)
+    );
+
+    if (unlockingTotal.lt(amount)) {
+      throw new PolymeshError({
+        code: ErrorCode.InsufficientBalance,
+        message: 'Insufficient unbonding POLYX',
+        data: {
+          amount: amount.toString(),
+          unlocking: unlockingTotal.toString(),
+          actingAccount: actingAccount.address,
+        },
+      });
+    }
+  } else if (type === 'unbond') {
     transaction = unbond;
 
     if (!controllerEntry) {
@@ -108,12 +139,16 @@ export function getAuthorization(
   args: Params
 ): ProcedureAuthorization {
   const { type } = args;
-  const txTag = type === 'unbond' ? TxTags.staking.Unbond : TxTags.staking.BondExtra;
+  const txTagByType = {
+    unbond: TxTags.staking.Unbond,
+    bondExtra: TxTags.staking.BondExtra,
+    rebond: TxTags.staking.Rebond,
+  } as const;
 
   return {
     permissions: {
       assets: [],
-      transactions: [txTag],
+      transactions: [txTagByType[type]],
       portfolios: [],
     },
   };

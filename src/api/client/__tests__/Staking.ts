@@ -124,6 +124,41 @@ describe('Staking Class', () => {
     });
   });
 
+  describe('method: rebond', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const amount = new BigNumber(3);
+
+      const args = {
+        amount,
+        type: 'rebond',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, mockContext, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await staking.rebond({ amount });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: chill', () => {
+    it('should prepare the procedure with the correct context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: undefined, transformer: undefined }, mockContext, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await staking.chill();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: withdraw', () => {
     it('should prepare the procedure with the correct context, and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;

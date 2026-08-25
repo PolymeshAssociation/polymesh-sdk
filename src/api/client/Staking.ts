@@ -5,6 +5,7 @@ import BigNumber from 'bignumber.js';
 import {
   Account,
   bondPolyx,
+  chillStaking,
   Context,
   nominateValidators,
   setStakingController,
@@ -69,6 +70,21 @@ export class Staking {
       context
     );
 
+    this.rebond = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [updateBondedPolyx, { ...args, type: 'rebond' } as const],
+      },
+      context
+    );
+
+    this.chill = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [chillStaking, undefined],
+        voidArgs: true,
+      },
+      context
+    );
+
     this.withdraw = createProcedureMethod(
       {
         getProcedureAndArgs: () => [withdrawUnbondedPolyx, undefined],
@@ -118,6 +134,21 @@ export class Staking {
    * Unbond POLYX for staking. The unbonded amount can be withdrawn after the lockup period
    */
   public unbond: ProcedureMethod<UpdatePolyxBondParams, void>;
+
+  /**
+   * Rebond POLYX that is currently unbonding, without waiting for the lockup period to elapse
+   *
+   * @note this transaction must be signed by a controller
+   */
+  public rebond: ProcedureMethod<UpdatePolyxBondParams, void>;
+
+  /**
+   * Stop nominating validators, without unbonding any POLYX
+   *
+   * @note the bonded POLYX stays bonded. Use `unbond` to begin withdrawing it
+   * @note this transaction must be signed by a controller
+   */
+  public chill: NoArgsProcedureMethod<void>;
 
   /**
    * Withdraw unbonded POLYX to free it for the stash account
