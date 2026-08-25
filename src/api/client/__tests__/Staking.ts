@@ -124,6 +124,544 @@ describe('Staking Class', () => {
     });
   });
 
+  describe('method: getConstants', () => {
+    const setConsts = (): void => {
+      dsMockUtils.setConstMock('staking', 'sessionsPerEra', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
+      });
+      dsMockUtils.setConstMock('staking', 'bondingDuration', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(7)),
+      });
+      dsMockUtils.setConstMock('staking', 'historyDepth', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(84)),
+      });
+      dsMockUtils.setConstMock('babe', 'epochDuration', {
+        returnValue: dsMockUtils.createMockU64(new BigNumber(300)),
+      });
+      dsMockUtils.setConstMock('babe', 'expectedBlockTime', {
+        returnValue: dsMockUtils.createMockU64(new BigNumber(6000)),
+      });
+      dsMockUtils.setConstMock('validators', 'fixedYearlyReward', {
+        returnValue: dsMockUtils.createMockBalance(new BigNumber(140000000000000)),
+      });
+      dsMockUtils.setConstMock('validators', 'maxVariableInflationTotalIssuance', {
+        returnValue: dsMockUtils.createMockBalance(new BigNumber(1000000000000000)),
+      });
+    };
+
+    it('should return the staking constants', () => {
+      setConsts();
+
+      const result = staking.getConstants();
+
+      expect(result.sessionsPerEra).toEqual(new BigNumber(3));
+      expect(result.historyDepth).toEqual(new BigNumber(84));
+      expect(result.slotsPerSession).toEqual(new BigNumber(300));
+      expect(result.expectedBlockTime).toEqual(new BigNumber(6000));
+      expect(result.bondingDuration).toEqual(new BigNumber(7));
+      // returned as POLYX, not base units — mainnet's 140M POLYX yearly cap
+      expect(result.fixedYearlyReward).toEqual(new BigNumber(140000000));
+      expect(result.maxVariableInflationTotalIssuance).toEqual(new BigNumber(1000000000));
+    });
+
+    it('should derive the era duration from the block time, session and era constants', () => {
+      setConsts();
+
+      // 6000ms * 300 slots * 3 sessions = 90 minutes
+      expect(staking.getConstants().eraDuration).toEqual(new BigNumber(5400000));
+    });
+
+    it('should count eras per year against the Julian year the chain uses', () => {
+      setConsts();
+
+      const { erasPerYear } = staking.getConstants();
+
+      // 365.25 days of 90 minute eras, not 365
+      expect(erasPerYear).toEqual(new BigNumber(31557600000).dividedBy(5400000));
+      expect(erasPerYear.toNumber()).toBeCloseTo(5844, 0);
+    });
+  });
+
+  describe('method: eraProgress', () => {
+    /*
+     * 300 slots per session, 3 sessions per era, so 900 slots per era. Genesis at slot 1000, and
+     *   the active era anchored to session 30 — so the era opened at epoch 40, slot 13000
+     */
+    const genesisSlot = 1000;
+    const slotsPerSession = 300;
+    const eraStartSession = 30;
+    const eraStartEpoch = 40;
+    const eraStartSlot = genesisSlot + eraStartEpoch * slotsPerSession;
+    const eraStartedAt = 1_700_000_000_000;
+
+    let queryMultiMock: jest.Mock;
+
+    beforeEach(() => {
+      dsMockUtils.setConstMock('staking', 'sessionsPerEra', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
+      });
+      dsMockUtils.setConstMock('staking', 'bondingDuration', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(7)),
+      });
+      dsMockUtils.setConstMock('staking', 'historyDepth', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(84)),
+      });
+      dsMockUtils.setConstMock('babe', 'epochDuration', {
+        returnValue: dsMockUtils.createMockU64(new BigNumber(slotsPerSession)),
+      });
+      dsMockUtils.setConstMock('babe', 'expectedBlockTime', {
+        returnValue: dsMockUtils.createMockU64(new BigNumber(6000)),
+      });
+      dsMockUtils.setConstMock('validators', 'fixedYearlyReward', {
+        returnValue: dsMockUtils.createMockBalance(new BigNumber(140000000000000)),
+      });
+      dsMockUtils.setConstMock('validators', 'maxVariableInflationTotalIssuance', {
+        returnValue: dsMockUtils.createMockBalance(new BigNumber(1000000000000000)),
+      });
+
+      dsMockUtils.createQueryMock('staking', 'erasStartSessionIndex', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockU32(new BigNumber(eraStartSession))
+        ),
+      });
+
+      /* the values come back through `queryMulti`, but the entries must exist to be passed to it */
+      dsMockUtils.createQueryMock('staking', 'activeEra');
+      dsMockUtils.createQueryMock('staking', 'currentEra');
+      dsMockUtils.createQueryMock('session', 'currentIndex');
+      dsMockUtils.createQueryMock('babe', 'epochIndex');
+      dsMockUtils.createQueryMock('babe', 'currentSlot');
+      dsMockUtils.createQueryMock('babe', 'genesisSlot');
+
+      queryMultiMock = dsMockUtils.getQueryMultiMock();
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    /**
+     * @param sessionsIn - how many sessions of the era are already behind the chain
+     * @param slotsIntoSession - how far into the current session the chain is
+     */
+    const mockProgress = (
+      sessionsIn: number,
+      slotsIntoSession: number,
+      opts: { start?: number | null; activeEra?: number; plannedEra?: number } = {}
+    ): void => {
+      const { start = eraStartedAt, activeEra = 7131, plannedEra = activeEra } = opts;
+
+      queryMultiMock.mockResolvedValue([
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockActiveEraInfo({
+            index: dsMockUtils.createMockU32(new BigNumber(activeEra)),
+            start:
+              start === null
+                ? dsMockUtils.createMockOption()
+                : dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(start))),
+          })
+        ),
+        dsMockUtils.createMockOption(dsMockUtils.createMockU32(new BigNumber(plannedEra))),
+        dsMockUtils.createMockU32(new BigNumber(eraStartSession + sessionsIn)),
+        dsMockUtils.createMockU64(new BigNumber(eraStartEpoch + sessionsIn)),
+        dsMockUtils.createMockU64(
+          new BigNumber(eraStartSlot + sessionsIn * slotsPerSession + slotsIntoSession)
+        ),
+        dsMockUtils.createMockU64(new BigNumber(genesisSlot)),
+      ]);
+    };
+
+    it('should count era and session progress in slots', async () => {
+      // one full session done, plus 150 slots into the second: 450 of 900 slots
+      mockProgress(1, 150);
+
+      const result = await staking.eraProgress();
+
+      expect(result.era.index).toEqual(new BigNumber(7131));
+      expect(result.era.start).toEqual(new Date(eraStartedAt));
+      expect(result.era.progress.elapsed).toEqual(new BigNumber(450));
+      expect(result.era.progress.total).toEqual(new BigNumber(900));
+      expect(result.era.progress.progress).toEqual(new BigNumber(0.5));
+      expect(result.era.progress.remaining).toEqual(new BigNumber(450 * 6000));
+
+      expect(result.session.index).toEqual(new BigNumber(eraStartSession + 1));
+      expect(result.session.inEra).toEqual(new BigNumber(2));
+      expect(result.session.perEra).toEqual(new BigNumber(3));
+      expect(result.session.progress.elapsed).toEqual(new BigNumber(150));
+      expect(result.session.progress.total).toEqual(new BigNumber(300));
+      expect(result.session.progress.progress).toEqual(new BigNumber(0.5));
+      expect(result.session.progress.remaining).toEqual(new BigNumber(150 * 6000));
+    });
+
+    it('should report zero progress at the very start of an era', async () => {
+      mockProgress(0, 0);
+
+      const result = await staking.eraProgress();
+
+      expect(result.era.progress.progress).toEqual(new BigNumber(0));
+      expect(result.era.progress.remaining).toEqual(new BigNumber(900 * 6000));
+      expect(result.session.inEra).toEqual(new BigNumber(1));
+    });
+
+    it('should clamp an overdue era rather than reporting past the end', async () => {
+      // a fourth session in a three session era, which happens when the rotation is late
+      mockProgress(3, 200);
+
+      const result = await staking.eraProgress();
+
+      expect(result.era.progress.elapsed).toEqual(new BigNumber(1100));
+      expect(result.era.progress.progress).toEqual(new BigNumber(1));
+      expect(result.era.progress.remaining).toEqual(new BigNumber(0));
+      expect(result.session.inEra).toEqual(new BigNumber(3));
+    });
+
+    it('should report progress for an era whose start the chain has not recorded', async () => {
+      mockProgress(1, 150, { start: null });
+
+      const result = await staking.eraProgress();
+
+      expect(result.era.start).toBeNull();
+      expect(result.era.progress.progress).toEqual(new BigNumber(0.5));
+    });
+
+    it('should report the planned era separately from the active one', async () => {
+      mockProgress(2, 0, { activeEra: 7131, plannedEra: 7132 });
+
+      const result = await staking.eraProgress();
+
+      expect(result.era.index).toEqual(new BigNumber(7131));
+      expect(result.era.planned).toEqual(new BigNumber(7132));
+    });
+
+    it('should anchor to session 0 where the chain has pruned the era start', async () => {
+      dsMockUtils.createQueryMock('staking', 'erasStartSessionIndex', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+      mockProgress(1, 150);
+
+      const result = await staking.eraProgress();
+
+      // without an anchor every session since genesis counts, so the era reads as overdue
+      expect(result.era.progress.progress).toEqual(new BigNumber(1));
+    });
+
+    it('should throw if there is no active era', () => {
+      queryMultiMock.mockResolvedValue([
+        dsMockUtils.createMockOption(),
+        dsMockUtils.createMockOption(),
+        dsMockUtils.createMockU32(new BigNumber(0)),
+        dsMockUtils.createMockU64(new BigNumber(0)),
+        dsMockUtils.createMockU64(new BigNumber(0)),
+        dsMockUtils.createMockU64(new BigNumber(0)),
+      ]);
+
+      return expect(staking.eraProgress()).rejects.toThrow('There is no active staking era');
+    });
+
+    it('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = jest.fn();
+
+      queryMultiMock.mockImplementation(async (_, cb) => {
+        await cb([
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockActiveEraInfo({
+              index: dsMockUtils.createMockU32(new BigNumber(7131)),
+              start: dsMockUtils.createMockOption(
+                dsMockUtils.createMockU64(new BigNumber(eraStartedAt))
+              ),
+            })
+          ),
+          dsMockUtils.createMockOption(dsMockUtils.createMockU32(new BigNumber(7131))),
+          dsMockUtils.createMockU32(new BigNumber(eraStartSession + 1)),
+          dsMockUtils.createMockU64(new BigNumber(eraStartEpoch + 1)),
+          dsMockUtils.createMockU64(new BigNumber(eraStartSlot + slotsPerSession + 150)),
+          dsMockUtils.createMockU64(new BigNumber(genesisSlot)),
+        ]);
+
+        return unsubCallback;
+      });
+
+      const result = await staking.eraProgress(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          era: expect.objectContaining({ index: new BigNumber(7131) }),
+          session: expect.objectContaining({ inEra: new BigNumber(2) }),
+        })
+      );
+    });
+  });
+
+  describe('per-era reads', () => {
+    const era = new BigNumber(7131);
+
+    beforeEach(() => {
+      // the entity mock's address is not a real SS58 string, so the codec conversion is stubbed
+      when(jest.spyOn(utilsConversionModule, 'stringToAccountId'))
+        .calledWith(account.address, mockContext)
+        .mockReturnValue(rawAddress);
+    });
+
+    const mockActiveEraIndex = (index: number): void => {
+      dsMockUtils.createQueryMock('staking', 'activeEra', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockActiveEraInfo({
+            index: dsMockUtils.createMockU32(new BigNumber(index)),
+            start: dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(1))),
+          })
+        ),
+      });
+    };
+
+    describe('method: getEraRewardPoints', () => {
+      it('should return the total and each validator that authored a block', async () => {
+        const individual = new Map([[rawAddress, dsMockUtils.createMockU32(new BigNumber(120))]]);
+
+        dsMockUtils.createQueryMock('staking', 'erasRewardPoints', {
+          returnValue: dsMockUtils.createMockEraRewardPoints({
+            total: dsMockUtils.createMockU32(new BigNumber(500)),
+            individual: individual as never,
+          }),
+        });
+
+        const result = await staking.getEraRewardPoints(era);
+
+        expect(result.total).toEqual(new BigNumber(500));
+        expect(result.individual).toHaveLength(1);
+        expect(result.individual[0]?.points).toEqual(new BigNumber(120));
+        expect(result.individual[0]?.account.address).toBe(account.address);
+      });
+
+      it('should allow subscription to the active era', async () => {
+        const unsubCallback = 'unsubCallback';
+        const callback = jest.fn();
+
+        mockActiveEraIndex(era.toNumber());
+
+        dsMockUtils
+          .createQueryMock('staking', 'erasRewardPoints')
+          .mockImplementation((_rawEra: unknown, cb: (points: unknown) => void) => {
+            cb(
+              dsMockUtils.createMockEraRewardPoints({
+                total: dsMockUtils.createMockU32(new BigNumber(500)),
+                individual: new Map([
+                  [rawAddress, dsMockUtils.createMockU32(new BigNumber(120))],
+                ]) as never,
+              })
+            );
+
+            return unsubCallback;
+          });
+
+        const result = await staking.getEraRewardPoints(callback);
+
+        expect(result).toEqual(unsubCallback);
+        expect(callback).toHaveBeenCalledWith(
+          expect.objectContaining({ total: new BigNumber(500) })
+        );
+      });
+
+      it('should allow subscription to a specific era', async () => {
+        const unsubCallback = 'unsubCallback';
+        const callback = jest.fn();
+
+        dsMockUtils
+          .createQueryMock('staking', 'erasRewardPoints')
+          .mockImplementation((_rawEra: unknown, cb: (points: unknown) => void) => {
+            cb(
+              dsMockUtils.createMockEraRewardPoints({
+                total: dsMockUtils.createMockU32(new BigNumber(42)),
+                individual: new Map() as never,
+              })
+            );
+
+            return unsubCallback;
+          });
+
+        const result = await staking.getEraRewardPoints(era, callback);
+
+        expect(result).toEqual(unsubCallback);
+        expect(callback).toHaveBeenCalledWith(
+          expect.objectContaining({ total: new BigNumber(42) })
+        );
+      });
+
+      it('should default to the active era', async () => {
+        mockActiveEraIndex(42);
+
+        const pointsMock = dsMockUtils.createQueryMock('staking', 'erasRewardPoints', {
+          returnValue: dsMockUtils.createMockEraRewardPoints({
+            total: dsMockUtils.createMockU32(new BigNumber(1)),
+            individual: new Map() as never,
+          }),
+        });
+
+        await staking.getEraRewardPoints();
+
+        expect(pointsMock).toHaveBeenCalledWith(
+          expect.objectContaining({ toString: expect.anything() })
+        );
+      });
+
+      it('should throw if defaulting to the active era when there is none', () => {
+        dsMockUtils.createQueryMock('staking', 'activeEra', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+
+        return expect(staking.getEraRewardPoints()).rejects.toThrow(
+          'There is no active staking era'
+        );
+      });
+    });
+
+    describe('method: getEraValidatorReward', () => {
+      it('should return the payout for the era', async () => {
+        dsMockUtils.createQueryMock('staking', 'erasValidatorReward', {
+          returnValue: dsMockUtils.createMockOption(
+            dsMockUtils.createMockBalance(new BigNumber(3000000))
+          ),
+        });
+
+        // returned as POLYX, not base units
+        await expect(staking.getEraValidatorReward(era)).resolves.toEqual(new BigNumber(3));
+      });
+
+      it('should return null for an era with no recorded payout', async () => {
+        dsMockUtils.createQueryMock('staking', 'erasValidatorReward', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+
+        await expect(staking.getEraValidatorReward(era)).resolves.toBeNull();
+      });
+    });
+
+    describe('method: getEraStartSession', () => {
+      it('should return the session the era began at', async () => {
+        dsMockUtils.createQueryMock('staking', 'erasStartSessionIndex', {
+          returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockU32(new BigNumber(900))),
+        });
+
+        await expect(staking.getEraStartSession(era)).resolves.toEqual(new BigNumber(900));
+      });
+
+      it('should return null outside the history depth', async () => {
+        dsMockUtils.createQueryMock('staking', 'erasStartSessionIndex', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+
+        await expect(staking.getEraStartSession(era)).resolves.toBeNull();
+      });
+    });
+
+    describe('method: getEraExposure', () => {
+      it('should return the exposure split', async () => {
+        dsMockUtils.createQueryMock('staking', 'erasStakersOverview', {
+          returnValue: dsMockUtils.createMockOption(
+            dsMockUtils.createMockPagedExposureMetadata({
+              total: dsMockUtils.createMockCompact(
+                dsMockUtils.createMockU128(new BigNumber(5000000))
+              ),
+              own: dsMockUtils.createMockCompact(
+                dsMockUtils.createMockU128(new BigNumber(1000000))
+              ),
+              nominatorCount: dsMockUtils.createMockU32(new BigNumber(12)),
+              pageCount: dsMockUtils.createMockU32(new BigNumber(2)),
+            })
+          ),
+        });
+
+        const result = await staking.getEraExposure({ validator: account, era });
+
+        expect(result).toEqual({
+          total: new BigNumber(5),
+          own: new BigNumber(1),
+          nominatorCount: new BigNumber(12),
+          pageCount: new BigNumber(2),
+        });
+      });
+
+      it('should return null if the account was not in the validator set', async () => {
+        dsMockUtils.createQueryMock('staking', 'erasStakersOverview', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+
+        await expect(staking.getEraExposure({ validator: account, era })).resolves.toBeNull();
+      });
+    });
+
+    describe('method: getEraNominators', () => {
+      it('should return one page of nominators', async () => {
+        dsMockUtils.createQueryMock('staking', 'erasStakersPaged', {
+          returnValue: dsMockUtils.createMockOption(
+            dsMockUtils.createMockExposurePage({
+              pageTotal: dsMockUtils.createMockCompact(
+                dsMockUtils.createMockU128(new BigNumber(4000000))
+              ),
+              others: [
+                dsMockUtils.createMockIndividualExposure({
+                  who: rawAddress,
+                  value: dsMockUtils.createMockCompact(
+                    dsMockUtils.createMockU128(new BigNumber(4000000))
+                  ),
+                }),
+              ],
+            })
+          ),
+        });
+
+        const result = await staking.getEraNominators({ validator: account, era });
+
+        expect(result?.pageTotal).toEqual(new BigNumber(4));
+        expect(result?.nominators).toHaveLength(1);
+        expect(result?.nominators[0]?.value).toEqual(new BigNumber(4));
+        expect(result?.nominators[0]?.account.address).toBe(account.address);
+      });
+
+      it('should return null for a page that does not exist', async () => {
+        dsMockUtils.createQueryMock('staking', 'erasStakersPaged', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+
+        await expect(
+          staking.getEraNominators({ validator: account, era, page: new BigNumber(9) })
+        ).resolves.toBeNull();
+      });
+    });
+  });
+
+  describe('method: getElectionPhase', () => {
+    it.each(['Off', 'Signed', 'Unsigned', 'Emergency'] as const)(
+      'should return the %s phase',
+      async phase => {
+        dsMockUtils.createQueryMock('electionProviderMultiPhase', 'currentPhase', {
+          returnValue: dsMockUtils.createMockElectionPhase(phase),
+        });
+
+        await expect(staking.getElectionPhase()).resolves.toBe(phase);
+      }
+    );
+
+    it('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = jest.fn();
+
+      dsMockUtils
+        .createQueryMock('electionProviderMultiPhase', 'currentPhase')
+        .mockImplementation((cb: (phase: unknown) => void) => {
+          cb(dsMockUtils.createMockElectionPhase('Signed'));
+
+          return unsubCallback;
+        });
+
+      const result = await staking.getElectionPhase(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toHaveBeenCalledWith('Signed');
+    });
+  });
+
   describe('method: rebond', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const amount = new BigNumber(3);

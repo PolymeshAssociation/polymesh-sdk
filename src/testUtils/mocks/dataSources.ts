@@ -70,9 +70,11 @@ import {
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
   PalletCorporateActionsTargetTreatment,
+  PalletElectionProviderMultiPhasePhase,
   PalletIdentityClaim1stKey,
   PalletRelayerSubsidy,
   PalletStakingActiveEraInfo,
+  PalletStakingEraRewardPoints,
   PalletStakingNominations,
   PalletStakingSlashingSlashingSpans,
   PalletStakingStakingLedger,
@@ -154,6 +156,9 @@ import {
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
+  SpStakingExposurePage,
+  SpStakingIndividualExposure,
+  SpStakingPagedExposureMetadata,
 } from '@polkadot/types/lookup';
 import {
   Codec,
@@ -4953,6 +4958,76 @@ export const createMockActiveEraInfo = (
 
   return createMockCodec<PalletStakingActiveEraInfo>({ index, start }, !activeEra);
 };
+
+export const createMockEraRewardPoints = (
+  points?: { total: u32; individual: BTreeMap<AccountId32, u32> } | PalletStakingEraRewardPoints
+): MockCodec<PalletStakingEraRewardPoints> => {
+  const { total, individual } = points ?? {
+    total: createMockU32(),
+    individual: new Map() as unknown as BTreeMap<AccountId32, u32>,
+  };
+
+  return createMockCodec<PalletStakingEraRewardPoints>({ total, individual }, !points);
+};
+
+export const createMockPagedExposureMetadata = (
+  metadata?:
+    | {
+        total: Compact<u128>;
+        own: Compact<u128>;
+        nominatorCount: u32;
+        pageCount: u32;
+      }
+    | SpStakingPagedExposureMetadata
+): MockCodec<SpStakingPagedExposureMetadata> => {
+  const { total, own, nominatorCount, pageCount } = metadata ?? {
+    total: createMockCompact(),
+    own: createMockCompact(),
+    nominatorCount: createMockU32(),
+    pageCount: createMockU32(),
+  };
+
+  return createMockCodec<SpStakingPagedExposureMetadata>(
+    { total, own, nominatorCount, pageCount },
+    !metadata
+  );
+};
+
+export const createMockIndividualExposure = (
+  exposure?: { who: AccountId32; value: Compact<u128> } | SpStakingIndividualExposure
+): MockCodec<SpStakingIndividualExposure> => {
+  const { who, value } = exposure ?? {
+    who: createMockAccountId(),
+    value: createMockCompact(),
+  };
+
+  return createMockCodec<SpStakingIndividualExposure>({ who, value }, !exposure);
+};
+
+export const createMockExposurePage = (
+  page?: { pageTotal: Compact<u128>; others: SpStakingIndividualExposure[] } | SpStakingExposurePage
+): MockCodec<SpStakingExposurePage> => {
+  const { pageTotal, others } = page ?? {
+    pageTotal: createMockCompact(),
+    others: [],
+  };
+
+  return createMockCodec<SpStakingExposurePage>({ pageTotal, others }, !page);
+};
+
+export const createMockElectionPhase = (
+  phase: 'Off' | 'Signed' | 'Unsigned' | 'Emergency' = 'Off'
+): MockCodec<PalletElectionProviderMultiPhasePhase> =>
+  createMockCodec<PalletElectionProviderMultiPhasePhase>(
+    {
+      type: phase,
+      isOff: phase === 'Off',
+      isSigned: phase === 'Signed',
+      isUnsigned: phase === 'Unsigned',
+      isEmergency: phase === 'Emergency',
+    },
+    false
+  );
 
 export const createMockUnlockChunk = (
   chunk?: { value: Compact<u128>; era: Compact<u32> } | PalletStakingUnlockChunk

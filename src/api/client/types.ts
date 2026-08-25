@@ -2,7 +2,7 @@ import { ApiOptions } from '@polkadot/api/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
-import { Asset, Identity, InstructionStatusEnum, TxTag } from '~/types';
+import { Account, Asset, Identity, InstructionStatusEnum, TxTag } from '~/types';
 
 export { InstructionStatusEnum };
 
@@ -283,15 +283,28 @@ export interface HistoricalInstructionFilters {
  */
 export interface StakingEraInfo {
   /**
-   * The active era. This is the era whose rewards and slashes are being processed and may lag the current era
+   * The era whose validator set is in force, and whose rewards and slashes are being processed
+   *
+   * @note this is the era to use for anything describing what the chain is doing *now*. It lags
+   *   {@link StakingEraInfo.currentEra | currentEra} between an election and the session rotation
+   *   that brings the newly elected set into force
    */
   activeEra: BigNumber;
   /**
-   * The block in which the active era began
+   * The moment the active era began, as milliseconds since the Unix epoch
+   *
+   * @note this is `0` where the chain holds no start for the active era. The chain creates the
+   *   active era at session rotation and records its start on the following block, so the gap is
+   *   brief — but it recurs at every era change, not only before the first era
    */
   activeEraStart: BigNumber;
   /**
-   * The current era
+   * The latest era the chain has *planned*
+   *
+   * @note a validator set has been elected for this era, but the Session pallet may not have
+   *   brought it into force yet, so this runs ahead of
+   *   {@link StakingEraInfo.activeEra | activeEra} between the election and the rotation. The two
+   *   are equal the rest of the time, and `currentEra` is never behind
    */
   currentEra: BigNumber;
   /**
@@ -302,4 +315,241 @@ export interface StakingEraInfo {
    * The total amount of POLYX staked
    */
   totalStaked: BigNumber;
+}
+
+export interface StakingConstants {
+  /**
+   * The number of sessions in an era
+   */
+  sessionsPerEra: BigNumber;
+
+  /**
+   * The number of slots in a session
+   */
+  slotsPerSession: BigNumber;
+
+  /**
+   * The average time the chain is expected to take to produce a block, in milliseconds
+   */
+  expectedBlockTime: BigNumber;
+
+  /**
+   * How long an era is expected to last, in milliseconds
+   *
+   * @note this is `expectedBlockTime * slotsPerSession * sessionsPerEra`. It is what an era is
+   *   expected to take, not what any particular era took — the chain pays rewards against the
+   *   duration an era actually ran for
+   */
+  eraDuration: BigNumber;
+
+  /**
+   * How many eras are expected in a year
+   *
+   * @note the year here is the Julian year of 365.25 days, which is what the chain's reward
+   *   calculation uses
+   */
+  erasPerYear: BigNumber;
+
+  /**
+   * The number of eras that must pass before unbonded POLYX can be withdrawn
+   */
+  bondingDuration: BigNumber;
+
+  /**
+   * How many past eras the chain keeps data for
+   *
+   * @note the per-era reads return `null` for anything older than this many eras before the active
+   *   one, because the chain has pruned it
+   */
+  historyDepth: BigNumber;
+
+  /**
+   * The amount of POLYX issued per year once total issuance reaches
+   *   {@link StakingConstants.maxVariableInflationTotalIssuance}
+   */
+  fixedYearlyReward: BigNumber;
+
+  /**
+   * The total issuance at which rewards stop following the inflation curve and become
+   *   {@link StakingConstants.fixedYearlyReward}
+   */
+  maxVariableInflationTotalIssuance: BigNumber;
+}
+
+/**
+ * The phase of the validator election
+ */
+export enum ElectionPhase {
+  /**
+   * No election is in progress
+   */
+  Off = 'Off',
+  /**
+   * Signed solutions are being accepted
+   */
+  Signed = 'Signed',
+  /**
+   * Unsigned solutions are being accepted
+   */
+  Unsigned = 'Unsigned',
+  /**
+   * The election failed and is being resolved by governance
+   */
+  Emergency = 'Emergency',
+}
+
+export interface EraRewardPoints {
+  /**
+   * The total points awarded across all validators in the era
+   */
+  total: BigNumber;
+
+  /**
+   * The points awarded to each validator that authored at least one block in the era
+   */
+  individual: {
+    account: Account;
+    points: BigNumber;
+  }[];
+}
+
+export interface EraExposure {
+  /**
+   * The total POLYX backing the validator, its own stake included
+   */
+  total: BigNumber;
+
+  /**
+   * The POLYX the validator bonded itself
+   */
+  own: BigNumber;
+
+  /**
+   * How many Accounts nominated the validator in this era
+   */
+  nominatorCount: BigNumber;
+
+  /**
+   * How many pages the nominators are split across
+   *
+   * @note nominators are paged so a payout fits in a block. Use
+   *   {@link api/client/Staking!Staking.getEraNominators | getEraNominators} to read one page
+   */
+  pageCount: BigNumber;
+}
+
+export interface EraNominators {
+  /**
+   * The total POLYX nominated on this page
+   */
+  pageTotal: BigNumber;
+
+  /**
+   * The nominators on this page and what each of them staked
+   */
+  nominators: {
+    account: Account;
+    value: BigNumber;
+  }[];
+}
+
+/**
+ * How far through a period the chain is
+ *
+ * @note `elapsed`, `total` and `progress` are **exact** — they are counted in slots, which is how
+ *   the chain itself measures a period. `remaining` and `end` are **projections** from
+ *   {@link StakingConstants.expectedBlockTime}, so they move as block production drifts. Render a
+ *   bar from `progress` and a countdown from `remaining`
+ */
+export interface PeriodProgress {
+  /**
+   * Slots elapsed so far
+   */
+  elapsed: BigNumber;
+
+  /**
+   * Slots in the whole period
+   */
+  total: BigNumber;
+
+  /**
+   * How far through the period the chain is, from 0 to 1
+   *
+   * @note clamped to 1. A period that has run past its expected length has not ended — the chain
+   *   rolls it over when it rolls over
+   */
+  progress: BigNumber;
+
+  /**
+   * Projected milliseconds until the period ends
+   *
+   * @note `0` once the period has run past its expected length
+   */
+  remaining: BigNumber;
+
+  /**
+   * Projected moment the period ends
+   */
+  end: Date;
+}
+
+/**
+ * A live view of where the chain is in the staking cycle
+ *
+ * @note an era is divided into sessions (BABE calls them epochs), and both advance every block.
+ *   Subscribe with {@link api/client/Staking!Staking.eraProgress | eraProgress} to drive a progress
+ *   bar without polling
+ */
+export interface EraProgress {
+  era: {
+    /**
+     * The active era — the one whose validator set is in force and whose rewards are being
+     *   processed
+     */
+    index: BigNumber;
+
+    /**
+     * The latest era the chain has *planned*
+     *
+     * @note runs ahead of `index` between an election and the session rotation that brings the
+     *   newly elected set into force, and equals it the rest of the time
+     */
+    planned: BigNumber;
+
+    /**
+     * When the active era began
+     *
+     * @note `null` in the brief window between the chain creating the era at session rotation and
+     *   recording its start on the following block. Progress is unaffected — it is counted in
+     *   slots, which are always available
+     */
+    start: Date | null;
+
+    /**
+     * How far through the active era the chain is
+     */
+    progress: PeriodProgress;
+  };
+
+  session: {
+    /**
+     * The absolute session index, counting from genesis
+     */
+    index: BigNumber;
+
+    /**
+     * Which session of the active era this is, counting from 1
+     */
+    inEra: BigNumber;
+
+    /**
+     * How many sessions there are in an era
+     */
+    perEra: BigNumber;
+
+    /**
+     * How far through the current session the chain is
+     */
+    progress: PeriodProgress;
+  };
 }

@@ -178,3 +178,12 @@ export const ASSET_ID_PREFIX = 'modlpy/pallet_asset';
 export const TX_TAG_VALUES: string[] = Object.values(TxTags).flatMap(v => Object.values(v));
 
 export const MODULE_NAMES: string[] = Object.values(ModuleName);
+
+/**
+ * Milliseconds in a year, as the chain counts one: the Julian year of 365.25 days
+ *
+ * @note the reward calculation in `pallets/validators/src/inflation.rs` uses
+ *   `1000 * 3600 * 24 * 36525 / 100`, so anything annualised against a 365 day year overstates the
+ *   result by 0.0685%
+ */
+export const MILLISECONDS_PER_YEAR = new BigNumber(1000 * 3600 * 24 * 36525).dividedBy(100);

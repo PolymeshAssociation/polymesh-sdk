@@ -228,7 +228,7 @@ export interface StakingNomination {
 
 export interface ActiveEraInfo {
   /**
-   * The block number in which this era became active
+   * The moment this era became active, as milliseconds since the Unix epoch
    */
   start: BigNumber;
 
