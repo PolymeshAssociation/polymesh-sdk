@@ -12,7 +12,7 @@ import {
 import { Account, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -285,43 +285,16 @@ describe('updateBondedPolyx procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    it('should return the Unbond TxTag', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+    it('should require no permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ amount: new BigNumber(1), type: 'unbond' })).toEqual({
-        permissions: {
-          transactions: [TxTags.staking.Unbond],
-          assets: [],
-          portfolios: [],
-        },
-      });
-    });
-
-    it('should return the BondExtra TxTag', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
-      const boundFunc = getAuthorization.bind(proc);
-
-      expect(boundFunc({ amount: new BigNumber(1), type: 'bondExtra' })).toEqual({
-        permissions: {
-          transactions: [TxTags.staking.BondExtra],
-          assets: [],
-          portfolios: [],
-        },
-      });
-    });
-
-    it('should return the Rebond TxTag', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
-      const boundFunc = getAuthorization.bind(proc);
-
-      expect(boundFunc({ amount: new BigNumber(1), type: 'rebond' })).toEqual({
-        permissions: {
-          transactions: [TxTags.staking.Rebond],
-          assets: [],
-          portfolios: [],
-        },
-      });
+      /*
+       * `true`, not empty arrays: the staking pallet consults no `ExtrinsicPermissions`, and an
+       *   empty `SimplePermissions` would still read the key's permissions from chain — which
+       *   throws for an Account with no Identity
+       */
+      expect(boundFunc()).toEqual({ permissions: true });
     });
   });
 

@@ -177,13 +177,16 @@ describe('nominateValidators procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+    it('should require no permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc()).toEqual({
-        signerPermissions: true,
-      });
+      /*
+       * `true`, not empty arrays: the staking pallet consults no `ExtrinsicPermissions`, and an
+       *   empty `SimplePermissions` would still read the key's permissions from chain — which
+       *   throws for an Account with no Identity
+       */
+      expect(boundFunc()).toEqual({ permissions: true });
     });
   });
 

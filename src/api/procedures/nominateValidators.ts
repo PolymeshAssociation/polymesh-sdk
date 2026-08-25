@@ -117,11 +117,16 @@ export async function prepareNominateValidators(
 /**
  * @hidden
  *
- * @note the staking module is exempt from permission checks
+ * The staking pallet does not consult a signer's `ExtrinsicPermissions` — no Substrate pallet in
+ *   the Polymesh runtime does — so no permission is required to run this, for a secondary key or
+ *   an external agent alike.
+ *
+ * `permissions` rather than `signerPermissions`: the latter only overrides the secondary-key
+ *   branch, which reads as though external agents were restricted when they are not.
  */
 export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
   return {
-    signerPermissions: true,
+    permissions: true,
   };
 }
 

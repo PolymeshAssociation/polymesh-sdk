@@ -64,15 +64,19 @@ export async function prepareBondPolyx(
 
 /**
  * @hidden
- * @note the staking module is exempt from permission checks
+ *
+ * The staking pallet does not consult a signer's `ExtrinsicPermissions` — no Substrate pallet in
+ *   the Polymesh runtime does — so no permission is required to run this, for a secondary key or
+ *   an external agent alike.
+ *
+ * `true` rather than empty arrays: an empty `SimplePermissions` still routes through
+ *   `Account.checkPermissions`, which reads the key's permissions from chain and **throws** for an
+ *   Account with no Identity. That turns a check that should be a no-op into a failure, and costs
+ *   a query either way.
  */
 export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
   return {
-    permissions: {
-      assets: [],
-      transactions: [],
-      portfolios: [],
-    },
+    permissions: true,
   };
 }
 

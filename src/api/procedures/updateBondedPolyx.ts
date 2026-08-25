@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure } from '~/internal';
-import { Account, Balance, ErrorCode, StakingLedger, TxTags, UpdatePolyxBondParams } from '~/types';
+import { Account, Balance, ErrorCode, StakingLedger, UpdatePolyxBondParams } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance } from '~/utils/conversion';
 
@@ -133,24 +133,19 @@ export function prepareUnbondPolyx(
 
 /**
  * @hidden
+ *
+ * The staking pallet does not consult a signer's `ExtrinsicPermissions` — no Substrate pallet in
+ *   the Polymesh runtime does — so no permission is required to run this, for a secondary key or
+ *   an external agent alike.
+ *
+ * `true` rather than empty arrays: an empty `SimplePermissions` still routes through
+ *   `Account.checkPermissions`, which reads the key's permissions from chain and **throws** for an
+ *   Account with no Identity. That turns a check that should be a no-op into a failure, and costs
+ *   a query either way.
  */
-export function getAuthorization(
-  this: Procedure<Params, void, Storage>,
-  args: Params
-): ProcedureAuthorization {
-  const { type } = args;
-  const txTagByType = {
-    unbond: TxTags.staking.Unbond,
-    bondExtra: TxTags.staking.BondExtra,
-    rebond: TxTags.staking.Rebond,
-  } as const;
-
+export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
   return {
-    permissions: {
-      assets: [],
-      transactions: [txTagByType[type]],
-      portfolios: [],
-    },
+    permissions: true,
   };
 }
 
