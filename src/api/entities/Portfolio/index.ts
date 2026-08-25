@@ -35,7 +35,7 @@ import {
   ProcedureMethod,
   ResultSet,
 } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, tuple } from '~/types/utils';
 import {
   assetIdToString,
   assetToMeshAssetId,
@@ -43,6 +43,7 @@ import {
   boolToBoolean,
   identityIdToString,
   portfolioIdToMeshPortfolioId,
+  stringToAssetId,
   toHistoricalSettlements,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -224,9 +225,60 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
+   * @hidden
+   *
+   * Retrieve the balances of a known set of Assets by reading their storage keys directly
+   *
+   * @note this is what makes a fully specified request cost a lookup per Asset rather than a scan
+   *   of every Asset the Portfolio holds
+   */
+  private async getBalancesForAssets(
+    rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId,
+    assets: (string | FungibleAsset)[]
+  ): Promise<PortfolioBalance[]> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+    } = this;
+
+    const requestedAssets = await Promise.all(assets.map(asset => asFungibleAsset(asset, context)));
+
+    const keys = requestedAssets.map(asset =>
+      tuple(rawPortfolioId, assetToMeshAssetId(asset, context))
+    );
+
+    const [exists, rawTotals, rawLocked] = await Promise.all([
+      this.exists(),
+      portfolio.portfolioAssetBalances.multi(keys),
+      portfolio.portfolioLockedAssets.multi(keys),
+    ]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    return requestedAssets.map((asset, index) => {
+      const total = balanceToBigNumber(rawTotals[index]!);
+      const locked = balanceToBigNumber(rawLocked[index]!);
+
+      return { asset, total, locked, free: total.minus(locked) };
+    });
+  }
+
+  /**
    * Retrieve the balances of all fungible assets in this Portfolio
    *
    * @param args.assets - array of FungibleAssets (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
+   *
+   * @note passing `args.assets` reads only those Assets' storage keys. Omitting it scans every
+   *   Asset the Portfolio holds, which is unbounded
    */
   public async getAssetBalances(args?: {
     assets: (string | FungibleAsset)[];
@@ -243,6 +295,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     } = this;
 
     const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: portfolioId }, context);
+
+    if (args?.assets.length) {
+      return this.getBalancesForAssets(rawPortfolioId, args.assets);
+    }
+
     const [exists, totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
       this.exists(),
       portfolio.portfolioAssetBalances.entries(rawPortfolioId),
@@ -282,30 +339,105 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       }
     });
 
-    if (args?.assets.length) {
-      const filteredBalances: PortfolioBalance[] = [];
-      for (const asset of args.assets) {
-        const argAsset = await asFungibleAsset(asset, context);
-        const portfolioBalance = {
-          total: new BigNumber(0),
-          locked: new BigNumber(0),
-          free: new BigNumber(0),
-          asset: argAsset,
-        };
+    return Object.values(assetBalances);
+  }
 
-        filteredBalances.push(assetBalances[argAsset.id] ?? portfolioBalance);
-      }
+  /**
+   * @hidden
+   *
+   * Retrieve the NFTs held for a known set of collections, by prefixing the held map with each
+   * collection rather than scanning every NFT the Portfolio holds
+   */
+  private async getNftsForCollections(
+    rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId,
+    collections: (string | NftCollection)[]
+  ): Promise<PortfolioCollection[]> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+    } = this;
 
-      return filteredBalances;
+    // the same collection asked for twice must not come back twice, as it did not before
+    const assetIds = [
+      ...new Set(await Promise.all(collections.map(asset => asAssetId(asset, context)))),
+    ];
+
+    const [exists, ...heldEntries] = await Promise.all([
+      this.exists(),
+      ...assetIds.map(assetId =>
+        portfolio.portfolioNFT.entries(rawPortfolioId, stringToAssetId(assetId, context))
+      ),
+    ]);
+
+    if (!exists) {
+      throw new PolymeshError({ code: ErrorCode.DataUnavailable, message: notExistsMessage });
     }
 
-    return Object.values(assetBalances);
+    /*
+     * `portfolioLockedNFT` is keyed by (portfolioId, (assetId, nftId)), so it cannot be prefixed by
+     * collection. Every held NFT has to be asked about individually, which keeps the cost
+     * proportional to the answer rather than to every locked NFT in the Portfolio
+     */
+    const heldNftKeys = heldEntries.flatMap(entries =>
+      entries.map(
+        ([
+          {
+            args: [, rawAssetId, rawNftId],
+          },
+        ]) => tuple(rawPortfolioId, tuple(rawAssetId, rawNftId))
+      )
+    );
+
+    const lockStatuses = heldNftKeys.length
+      ? await portfolio.portfolioLockedNFT.multi(heldNftKeys)
+      : [];
+
+    const lockedIds = new Set<string>();
+    heldNftKeys.forEach(([, [rawAssetId, rawNftId]], index) => {
+      if (lockStatuses[index]?.isTrue) {
+        lockedIds.add(`${assetIdToString(rawAssetId)}/${u64ToBigNumber(rawNftId).toString()}`);
+      }
+    });
+
+    return assetIds.reduce<PortfolioCollection[]>((result, assetId, index) => {
+      const entries = heldEntries[index]!;
+
+      if (!entries.length) {
+        return result;
+      }
+
+      const held = entries.map(
+        ([
+          {
+            args: [, , rawNftId],
+          },
+        ]) => new Nft({ id: u64ToBigNumber(rawNftId), assetId }, context)
+      );
+      const locked = held.filter(({ id }) => lockedIds.has(`${assetId}/${id.toString()}`));
+      const lockedNftIds = new Set(locked.map(({ id }) => id.toString()));
+
+      result.push({
+        collection: new NftCollection({ assetId }, context),
+        free: held.filter(({ id }) => !lockedNftIds.has(id.toString())),
+        locked,
+        total: new BigNumber(held.length),
+      });
+
+      return result;
+    }, []);
   }
 
   /**
    * Retrieve the NFTs held in this portfolio
    *
    *  @param args.collections - array of NftCollection (or tickers) for which to fetch holdings (optional, all holdings are retrieved if not passed)
+   *
+   * @note passing `args.collections` reads only those collections. Omitting it scans every NFT the
+   *   Portfolio holds, which is unbounded
    */
   public async getCollections(args?: {
     collections: (string | NftCollection)[];
@@ -322,6 +454,10 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     } = this;
 
     const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: portfolioId }, context);
+
+    if (args?.collections.length) {
+      return this.getNftsForCollections(rawPortfolioId, args.collections);
+    }
 
     // portfolioNFT uses key [portfolioId, assetId, nftId]. Cast required to query with a single
     // arg as Polkadot defaults to N-1 args.
@@ -348,16 +484,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       throw new PolymeshError({ code: ErrorCode.DataUnavailable, message: notExistsMessage });
     }
 
-    const queriedCollections = args?.collections
-      ? await Promise.all(args.collections.map(asset => asAssetId(asset, context)))
-      : undefined;
-
     const seenAssetIds = new Set<string>();
     const heldCollections: Record<string, Nft[]> = {};
     const lockedCollections: Record<string, Nft[]> = {};
 
     const addNft = (record: Record<string, Nft[]>, assetId: string, nftId: BigNumber): void => {
-      if (queriedCollections && !queriedCollections.includes(assetId)) return;
       seenAssetIds.add(assetId);
       const nft = new Nft({ id: nftId, assetId }, context);
       if (record[assetId]) {

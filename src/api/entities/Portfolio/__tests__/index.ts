@@ -275,10 +275,11 @@ describe('Portfolio class', () => {
       expect(result[1]!.free).toEqual(total1.minus(locked1));
     });
 
-    it('should return the requested portfolio assets and their balances', async () => {
+    it('should look up only the requested assets, without scanning the whole portfolio', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
-      const otherAssetId = '0x99999999999999999999999999999999';
+      const otherAssetId = hexToUuid('0x99999999999999999999999999999999');
+      const rawZero = dsMockUtils.createMockBalance(new BigNumber(0));
 
       when(asFungibleAssetSpy)
         .calledWith(hexToUuid(assetId0), context)
@@ -290,9 +291,21 @@ describe('Portfolio class', () => {
         .calledWith(otherAssetId, context)
         .mockResolvedValue(entityMockUtils.getFungibleAssetInstance({ assetId: otherAssetId }));
 
+      const totalsMock = dsMockUtils.createQueryMock('portfolio', 'portfolioAssetBalances', {
+        multi: [rawTotal0, rawZero],
+      });
+      const lockedMock = dsMockUtils.createQueryMock('portfolio', 'portfolioLockedAssets', {
+        multi: [rawLocked0, rawZero],
+      });
+
       const result = await portfolio.getAssetBalances({
         assets: [hexToUuid(assetId0), new FungibleAsset({ assetId: otherAssetId }, context)],
       });
+
+      expect(totalsMock.multi).toHaveBeenCalledTimes(1);
+      expect(lockedMock.multi).toHaveBeenCalledTimes(1);
+      expect(totalsMock.entries).not.toHaveBeenCalled();
+      expect(lockedMock.entries).not.toHaveBeenCalled();
 
       expect(result).toHaveLength(2);
       expect(result[0]!.asset.id).toBe(hexToUuid(assetId0));
@@ -420,12 +433,31 @@ describe('Portfolio class', () => {
       );
     });
 
-    it('should filter assets if any are specified', async () => {
+    it('should read only the requested collections, without scanning the whole portfolio', async () => {
       const portfolio = new NonAbstract({ did, id: portfolioId }, context);
 
       jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(hexToUuid(assetId));
 
+      const rawFalse = dsMockUtils.createMockBool(false);
+
+      const heldMock = dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', {
+        entries: [
+          tuple([rawPortfolioId, rawAssetId, rawNftId], rawTrue),
+          tuple([rawPortfolioId, rawAssetId, rawSecondId], rawTrue),
+          tuple([rawPortfolioId, rawAssetId, rawLockedId], rawTrue),
+        ],
+      });
+
+      const lockedMock = dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT', {
+        multi: [rawFalse, rawFalse, rawTrue],
+      });
+
       const result = await portfolio.getCollections({ collections: [hexToUuid(assetId)] });
+
+      // the held map is prefixed by collection, and only the NFTs found are checked for locks
+      expect(heldMock.entries).toHaveBeenCalledTimes(1);
+      expect(lockedMock.multi).toHaveBeenCalledTimes(1);
+      expect(lockedMock.entries).not.toHaveBeenCalled();
 
       expect(result).toHaveLength(1);
 
@@ -442,6 +474,39 @@ describe('Portfolio class', () => {
           },
         ])
       );
+    });
+
+    it('should not query locked NFTs when the requested collections hold none', async () => {
+      const portfolio = new NonAbstract({ did, id: portfolioId }, context);
+
+      jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(hexToUuid(assetId));
+
+      dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', { entries: [] });
+      const lockedMock = dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT');
+
+      const result = await portfolio.getCollections({ collections: [hexToUuid(assetId)] });
+
+      expect(result).toEqual([]);
+      expect(lockedMock.multi).not.toHaveBeenCalled();
+    });
+
+    it('should return a collection once even if it is asked for twice', async () => {
+      const portfolio = new NonAbstract({ did, id: portfolioId }, context);
+
+      jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(hexToUuid(assetId));
+
+      dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', {
+        entries: [tuple([rawPortfolioId, rawAssetId, rawNftId], rawTrue)],
+      });
+      dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT', {
+        multi: [dsMockUtils.createMockBool(false)],
+      });
+
+      const result = await portfolio.getCollections({
+        collections: [hexToUuid(assetId), hexToUuid(assetId)],
+      });
+
+      expect(result).toHaveLength(1);
     });
 
     it('should throw an error if the portfolio does not exist', () => {
