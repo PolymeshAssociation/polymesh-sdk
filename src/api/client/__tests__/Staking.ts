@@ -247,7 +247,7 @@ describe('Staking Class', () => {
     const mockProgress = (
       sessionsIn: number,
       slotsIntoSession: number,
-      opts: { start?: number | null; activeEra?: number; plannedEra?: number } = {}
+      opts: { start?: number | null; activeEra?: number; plannedEra?: number | null } = {}
     ): void => {
       const { start = eraStartedAt, activeEra = 7131, plannedEra = activeEra } = opts;
 
@@ -261,7 +261,9 @@ describe('Staking Class', () => {
                 : dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(start))),
           })
         ),
-        dsMockUtils.createMockOption(dsMockUtils.createMockU32(new BigNumber(plannedEra))),
+        plannedEra === null
+          ? dsMockUtils.createMockOption()
+          : dsMockUtils.createMockOption(dsMockUtils.createMockU32(new BigNumber(plannedEra))),
         dsMockUtils.createMockU32(new BigNumber(eraStartSession + sessionsIn)),
         dsMockUtils.createMockU64(new BigNumber(eraStartEpoch + sessionsIn)),
         dsMockUtils.createMockU64(
@@ -331,6 +333,15 @@ describe('Staking Class', () => {
 
       expect(result.era.index).toEqual(new BigNumber(7131));
       expect(result.era.planned).toEqual(new BigNumber(7132));
+    });
+
+    it('should fall back to the active era where the chain has planned none', async () => {
+      mockProgress(1, 150, { activeEra: 7131, plannedEra: null });
+
+      const result = await staking.eraProgress();
+
+      expect(result.era.index).toEqual(new BigNumber(7131));
+      expect(result.era.planned).toEqual(new BigNumber(7131));
     });
 
     it('should anchor to session 0 where the chain has pruned the era start', async () => {
