@@ -17,10 +17,21 @@ jest.mock(
   '~/base/Context',
   require('~/testUtils/mocks/dataSources').mockContextModule('~/base/Context')
 );
-jest.mock(
-  '@apollo/client/core',
-  require('~/testUtils/mocks/dataSources').mockApolloModule('@apollo/client/core')
-);
+const mockCreateHttpLink = jest.fn();
+
+// wraps the shared Apollo mock so the options `createMiddlewareApi` builds can be asserted on
+jest.mock('@apollo/client/core', () => {
+  const actual = jest.requireActual('@apollo/client/core');
+
+  return {
+    ...require('~/testUtils/mocks/dataSources').mockApolloModule('@apollo/client/core')(),
+    createHttpLink: (...args: unknown[]): unknown => {
+      mockCreateHttpLink(...args);
+
+      return actual.createHttpLink(...args);
+    },
+  };
+});
 jest.mock(
   '~/api/entities/TickerReservation',
   require('~/testUtils/mocks/entities').mockTickerReservationModule(
@@ -181,6 +192,29 @@ describe('Polymesh Class', () => {
       });
 
       expect(createMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should send the api key header only when a key is configured', async () => {
+      mockCreateHttpLink.mockClear();
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        middlewareV2: { link: 'someLink' },
+      });
+
+      expect(mockCreateHttpLink).toHaveBeenLastCalledWith(
+        expect.objectContaining({ uri: 'someLink', headers: {} })
+      );
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        middlewareV2: { link: 'someLink', key: 'someKey' },
+      });
+
+      expect(mockCreateHttpLink).toHaveBeenLastCalledWith(
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        expect.objectContaining({ headers: { 'x-api-key': 'someKey' } })
+      );
     });
 
     it('should instantiate Context with Polkadot config and return  Polymesh instance', async () => {

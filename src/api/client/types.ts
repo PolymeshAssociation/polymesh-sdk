@@ -145,7 +145,11 @@ export enum ErrorCode {
 
 export interface MiddlewareConfig {
   link: string;
-  key: string;
+  /**
+   * API key for the middleware, sent as the `x-api-key` header. Optional: an indexer that
+   * requires no authentication needs none, and the header is omitted rather than sent empty
+   */
+  key?: string;
 }
 
 export interface PolkadotConfig {

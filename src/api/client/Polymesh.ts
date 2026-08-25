@@ -66,7 +66,7 @@ function createMiddlewareApi(
           uri: middleware.link,
           fetch,
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          headers: { 'x-api-key': middleware.key },
+          headers: middleware.key ? { 'x-api-key': middleware.key } : {},
         }),
         cache: new InMemoryCache(),
         defaultOptions: {
