@@ -271,6 +271,50 @@ export class Staking {
   }
 
   /**
+   * Retrieve the validators whose set is actually in force for the active era
+   *
+   * @returns the elected validators, in the chain's own order
+   *
+   * @note this is a different question from
+   *   {@link api/client/Staking!Staking.getValidators | getValidators}, which lists every Account
+   *   *declaring intent* to validate. Those declaring intent but not elected are the waiting set —
+   *   subtract this result from `getValidators` to get it
+   * @note bounded by {@link api/client/Staking!Staking.getValidatorCount | getValidatorCount}, so
+   *   unlike the intent list this needs no pagination
+   */
+  public async getActiveValidators(): Promise<Account[]> {
+    const {
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const rawValidators = await query.session.validators();
+
+    return rawValidators.map(
+      rawAddress => new Account({ address: accountIdToString(rawAddress) }, context)
+    );
+  }
+
+  /**
+   * Retrieve how many validators the chain aims to elect each era
+   *
+   * @note this is the target the election is run against, not how many are currently in force —
+   *   read {@link api/client/Staking!Staking.getActiveValidators | getActiveValidators} for that.
+   *   The two differ when fewer Accounts declare intent than there are slots
+   */
+  public async getValidatorCount(): Promise<BigNumber> {
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    return u32ToBigNumber(await query.staking.validatorCount());
+  }
+
+  /**
    * Retrieve information about the staking eras the chain is tracking
    *
    * @returns Promise that resolves to the era information

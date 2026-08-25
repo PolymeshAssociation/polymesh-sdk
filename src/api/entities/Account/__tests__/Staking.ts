@@ -413,5 +413,39 @@ describe('Staking namespace', () => {
 
       expect(result).toBeNull();
     });
+
+    it('should read the commission the account was elected on when an era is given', async () => {
+      const erasPrefsMock = dsMockUtils.createQueryMock('staking', 'erasValidatorPrefs', {
+        returnValue: dsMockUtils.createMockValidatorPref({
+          blocked: dsMockUtils.createMockBool(false),
+          commission: dsMockUtils.createMockCompact(
+            dsMockUtils.createMockPerbill(new BigNumber(250000000))
+          ),
+        }),
+      });
+
+      const currentPrefsMock = dsMockUtils.createQueryMock('staking', 'validators');
+
+      const result = await staking.getCommission({ era: new BigNumber(7131) });
+
+      expect(result).toEqual({
+        account: expect.objectContaining({ address: account.address }),
+        blocked: false,
+        commission: new BigNumber(25),
+      });
+      expect(erasPrefsMock).toHaveBeenCalled();
+      // the historical read must not fall back to what the account advertises now
+      expect(currentPrefsMock).not.toHaveBeenCalled();
+    });
+
+    it('should return null for an era the account was not in the validator set for', async () => {
+      dsMockUtils.createQueryMock('staking', 'erasValidatorPrefs', {
+        returnValue: dsMockUtils.createMockValidatorPref(),
+      });
+
+      const result = await staking.getCommission({ era: new BigNumber(7131) });
+
+      expect(result).toBeNull();
+    });
   });
 });

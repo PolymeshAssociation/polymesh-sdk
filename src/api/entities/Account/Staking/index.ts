@@ -1,6 +1,7 @@
 import { Option } from '@polkadot/types';
 import { AccountId, RewardDestination } from '@polkadot/types/interfaces';
 import { PalletStakingNominations } from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
 
 import { Account, Namespace } from '~/internal';
 import {
@@ -13,6 +14,7 @@ import {
 } from '~/types';
 import {
   accountIdToString,
+  bigNumberToU32,
   rawNominationToStakingNomination,
   rawStakingLedgerToStakingLedgerEntry,
   rawValidatorPrefToCommission,
@@ -239,9 +241,17 @@ export class Staking extends Namespace<Account> {
   /**
    * Fetch the commission settings for this validator account
    *
-   * @returns The commission details or null if the account is not seeking nominations as a validator
+   * @param args.era - read the commission the Account was elected for in a past era, rather than
+   *   the one it is currently advertising. Defaults to the current settings
+   *
+   * @returns The commission details, or `null` if the Account is not seeking nominations as a
+   *   validator — or, when an `era` is given, was not in that era's validator set
+   *
+   * @note the two are different questions. Without an `era` this reads what the Account is
+   *   advertising *now*, which it can change at any time. With one it reads what it was actually
+   *   elected on, which is fixed for that era and is what its rewards were calculated against
    */
-  public async getCommission(): Promise<StakingCommission | null> {
+  public async getCommission(args?: { era?: BigNumber }): Promise<StakingCommission | null> {
     const {
       context,
       context: {
@@ -252,7 +262,11 @@ export class Staking extends Namespace<Account> {
 
     const rawAddress = stringToAccountId(address, context);
 
-    const rawValidator = await query.staking.validators(rawAddress);
+    const era = args?.era;
+
+    const rawValidator = era
+      ? await query.staking.erasValidatorPrefs(bigNumberToU32(era, context), rawAddress)
+      : await query.staking.validators(rawAddress);
 
     if (rawValidator.isEmpty) {
       return null;

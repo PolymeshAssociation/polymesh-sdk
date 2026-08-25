@@ -190,6 +190,37 @@ describe('Network Class', () => {
     });
   });
 
+  describe('method: getTotalIssuance', () => {
+    it('should return the total POLYX in existence', async () => {
+      dsMockUtils.createQueryMock('balances', 'totalIssuance', {
+        returnValue: dsMockUtils.createMockBalance(new BigNumber(1_000_000_000)),
+      });
+
+      const result = await network.getTotalIssuance();
+
+      // shifted from the chain's smallest unit into POLYX
+      expect(result).toEqual(new BigNumber(1000));
+    });
+
+    it('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = jest.fn();
+
+      dsMockUtils
+        .createQueryMock('balances', 'totalIssuance')
+        .mockImplementation((cb: (issuance: unknown) => void) => {
+          cb(dsMockUtils.createMockBalance(new BigNumber(2_000_000_000)));
+
+          return unsubCallback;
+        });
+
+      const result = await network.getTotalIssuance(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(new BigNumber(2000));
+    });
+  });
+
   describe('method: transferPolyx', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {

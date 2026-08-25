@@ -169,6 +169,53 @@ export class Network {
   }
 
   /**
+   * Get the total POLYX in existence
+   *
+   * @returns Promise that resolves to the current total issuance
+   *
+   * @note this is every POLYX the chain has issued, not the circulating or staked amount. It is
+   *   the denominator for a staking ratio, and one of the inputs to Polymesh's inflation curve —
+   *   see {@link api/client/Staking!Staking.getConstants | staking.getConstants}
+   */
+  public getTotalIssuance(): Promise<BigNumber>;
+
+  /**
+   * Get the total POLYX in existence (with subscription support)
+   *
+   * @param callback - Callback function that receives issuance updates
+   *
+   * @returns Promise that resolves to an unsubscribe function
+   *
+   * @note can be subscribed to, if connected to node using a web socket
+   */
+  public getTotalIssuance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getTotalIssuance(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { balances },
+        },
+      },
+    } = this;
+
+    if (callback) {
+      context.assertSupportsSubscription();
+
+      return balances.totalIssuance(rawIssuance => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
+        callback(balanceToBigNumber(rawIssuance));
+      });
+    }
+
+    return balanceToBigNumber(await balances.totalIssuance());
+  }
+
+  /**
    * Transfer an amount of POLYX to a specified Account
    */
   public transferPolyx: ProcedureMethod<TransferPolyxParams, void>;

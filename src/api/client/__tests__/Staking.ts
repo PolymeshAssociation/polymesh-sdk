@@ -631,6 +631,39 @@ describe('Staking Class', () => {
     });
   });
 
+  describe('method: getActiveValidators', () => {
+    it('should return the validators in force for the active era', async () => {
+      dsMockUtils.createQueryMock('session', 'validators', {
+        returnValue: [
+          dsMockUtils.createMockAccountId('5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY'),
+          dsMockUtils.createMockAccountId('5FCPTnjevGqAuTttetBy4a24Ej3pH9fiQ8fmvP1ZkrVsLUoT'),
+        ],
+      });
+
+      const result = await staking.getActiveValidators();
+
+      expect(result).toHaveLength(2);
+      expect(result[0]?.address).toBe('5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY');
+      expect(result[1]?.address).toBe('5FCPTnjevGqAuTttetBy4a24Ej3pH9fiQ8fmvP1ZkrVsLUoT');
+    });
+
+    it('should return an empty array where no set is in force', async () => {
+      dsMockUtils.createQueryMock('session', 'validators', { returnValue: [] });
+
+      await expect(staking.getActiveValidators()).resolves.toEqual([]);
+    });
+  });
+
+  describe('method: getValidatorCount', () => {
+    it('should return how many validators the chain aims to elect', async () => {
+      dsMockUtils.createQueryMock('staking', 'validatorCount', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(20)),
+      });
+
+      await expect(staking.getValidatorCount()).resolves.toEqual(new BigNumber(20));
+    });
+  });
+
   describe('method: getElectionPhase', () => {
     it.each(['Off', 'Signed', 'Unsigned', 'Emergency'] as const)(
       'should return the %s phase',
