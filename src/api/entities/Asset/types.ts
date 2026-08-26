@@ -368,6 +368,18 @@ export interface HeldNfts {
 }
 
 /**
+ * A fungible Asset held by an Identity, with the amount held
+ */
+export interface FungibleAssetHolding {
+  asset: FungibleAsset;
+  /**
+   * amount of the Asset currently held. The indexer keeps a holding once it has existed, so this
+   * is `0` for an Asset the Identity held at some point and has since transferred away in full
+   */
+  amount: BigNumber;
+}
+
+/**
  * For all claim types except Jurisdiction - tracks holders with and without the claim
  */
 export type ClaimValue = {

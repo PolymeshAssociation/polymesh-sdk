@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { print } from 'graphql';
 
 import {
   assetHoldersQuery,
@@ -110,5 +111,31 @@ describe('nftCollectionHoldersQuery', () => {
       size: 1,
       start: 0,
     });
+  });
+});
+
+describe('holder queries', () => {
+  it('should select the amount held, which callers need to tell a live holding from a spent one', () => {
+    expect(print(assetHoldersQuery({ identityId: 'someDid' }).query)).toContain('amount');
+  });
+
+  it('should exclude zero balances in the query, so totalCount and the cursor stay honest', () => {
+    const { query, variables } = assetHoldersQuery({ identityId: 'someDid', amount: '0' });
+
+    expect(print(query)).toContain('amount: {greaterThan: $amount}');
+    expect(print(query)).toContain('$amount: BigFloat!');
+    expect(variables).toMatchObject({ amount: '0' });
+  });
+
+  it('should omit the amount filter when it is not asked for', () => {
+    expect(print(assetHoldersQuery({ identityId: 'someDid' }).query)).not.toContain('greaterThan');
+  });
+
+  it('should exclude collections held down to nothing in the query', () => {
+    const { query, variables } = nftHoldersQuery({ identityId: 'someDid', nftIds: [] });
+
+    expect(print(query)).toContain('nftIds: {notEqualTo: $nftIds}');
+    expect(print(query)).toContain('$nftIds: JSON!');
+    expect(variables).toMatchObject({ nftIds: [] });
   });
 });

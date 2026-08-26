@@ -9,7 +9,6 @@ import {
   AssetHoldersOrderBy,
   AssetTransaction,
   AssetTransactionsOrderBy,
-  DistributionPayment,
   NftHolder,
   NftHoldersOrderBy,
 } from '~/middleware/types';
@@ -50,11 +49,11 @@ export function assetQuery(
  * Get asset held by a DID
  */
 export function assetHoldersQuery(
-  filters: QueryArgs<AssetHolder, 'identityId'>,
+  filters: QueryArgs<AssetHolder, 'identityId'> & { amount?: string },
   size?: BigNumber,
   start?: BigNumber,
   orderBy = AssetHoldersOrderBy.AssetIdAsc
-): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetHolder, 'identityId'> & { amount?: string }>> {
   if (orderBy === AssetHoldersOrderBy.CreatedAtAsc) {
     orderBy = AssetHoldersOrderBy.CreatedBlockIdAsc;
   }
@@ -62,7 +61,11 @@ export function assetHoldersQuery(
     orderBy = AssetHoldersOrderBy.CreatedBlockIdDesc;
   }
 
-  const { args, filter } = createArgsAndFilters(filters, {});
+  // a holding is kept once created, so excluding zero balances has to happen in the query —
+  // filtering client side would leave `totalCount` and the cursor describing the unfiltered set
+  const { args, filter } = createArgsAndFilters(filters, {
+    amount: { type: 'BigFloat', operator: 'greaterThan' },
+  });
 
   const query = gql`
     query AssetHoldersQuery
@@ -76,6 +79,7 @@ export function assetHoldersQuery(
       ) {
         totalCount
         nodes {
+          amount
           asset {
             id
             ticker
@@ -100,11 +104,11 @@ export function assetHoldersQuery(
  * Get NFTs held by a DID
  */
 export function nftHoldersQuery(
-  filters: QueryArgs<NftHolder, 'identityId'>,
+  filters: QueryArgs<NftHolder, 'identityId'> & { nftIds?: number[] },
   size?: BigNumber,
   start?: BigNumber,
   orderBy = NftHoldersOrderBy.AssetIdAsc
-): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'identityId'>>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'identityId'> & { nftIds?: number[] }>> {
   if (orderBy === NftHoldersOrderBy.CreatedAtAsc) {
     orderBy = NftHoldersOrderBy.CreatedBlockIdAsc;
   }
@@ -112,7 +116,11 @@ export function nftHoldersQuery(
     orderBy = NftHoldersOrderBy.CreatedBlockIdDesc;
   }
 
-  const { args, filter } = createArgsAndFilters(filters, {});
+  // a holding is kept once created, so excluding collections the Identity no longer holds any of
+  // has to happen in the query, or `totalCount` and the cursor describe the unfiltered set
+  const { args, filter } = createArgsAndFilters(filters, {
+    nftIds: { type: 'JSON', operator: 'notEqualTo' },
+  });
 
   const query = gql`
     query NftHolderQuery

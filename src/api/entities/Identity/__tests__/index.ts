@@ -611,6 +611,60 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: getAssetHoldings', () => {
+    const did = 'someDid';
+    const assetIds = ['0x12341234123412341234123412341234', '0x5678'];
+
+    it('should return each Asset with the amount held', async () => {
+      const identity = new Identity({ did }, context);
+
+      assetIds.forEach(assetId =>
+        when(getAssetIdFromMiddlewareSpy).calledWith({ id: assetId }).mockReturnValue(assetId)
+      );
+
+      dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
+        assetHolders: {
+          nodes: [
+            { asset: { id: assetIds[0] }, amount: '1000000' },
+            { asset: { id: assetIds[1] }, amount: '0' },
+          ],
+          totalCount: 2,
+        },
+      });
+
+      const result = await identity.getAssetHoldings();
+
+      expect(result.data[0]!.asset.id).toBe(assetIds[0]);
+      expect(result.data[0]!.amount).toEqual(new BigNumber(1));
+      // a holding the Identity has transferred away in full is still returned, at zero
+      expect(result.data[1]!.amount).toEqual(new BigNumber(0));
+      expect(result.count).toEqual(new BigNumber(2));
+    });
+
+    it('should ask the indexer to exclude zero balances when heldNow is passed', async () => {
+      const identity = new Identity({ did }, context);
+
+      when(getAssetIdFromMiddlewareSpy)
+        .calledWith({ id: assetIds[0] })
+        .mockReturnValue(assetIds[0]!);
+
+      dsMockUtils.createApolloQueryMock(
+        assetHoldersQuery({ identityId: did, amount: '0' }, undefined, undefined, undefined),
+        {
+          assetHolders: {
+            nodes: [{ asset: { id: assetIds[0] }, amount: '1000000' }],
+            totalCount: 1,
+          },
+        }
+      );
+
+      const result = await identity.getAssetHoldings({ heldNow: true });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.count).toEqual(new BigNumber(1));
+    });
+  });
+
   describe('method: getHeldNfts', () => {
     const did = 'someDid';
     const assetIds = ['0x12341234123412341234123412341234', '0x4321'];
@@ -663,6 +717,29 @@ describe('Identity class', () => {
           expect.objectContaining({ id: new BigNumber(3) }),
         ])
       );
+    });
+
+    it('should ask the indexer to exclude collections held down to nothing', async () => {
+      const identity = new Identity({ did }, context);
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const assetId = assetIds[0]!;
+      when(getAssetIdFromMiddlewareSpy).calledWith(assetId).mockReturnValue(assetId);
+
+      dsMockUtils.createApolloQueryMock(
+        nftHoldersQuery({ identityId: did, nftIds: [] }, undefined, undefined, undefined),
+        {
+          nftHolders: {
+            nodes: [{ asset: { id: assetId }, nftIds: [1] }],
+            totalCount: 1,
+          },
+        }
+      );
+
+      const result = await identity.getHeldNfts({ heldNow: true });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.count).toEqual(new BigNumber(1));
     });
   });
 

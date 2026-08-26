@@ -36,6 +36,7 @@ import {
   DefaultPortfolio,
   DistributionWithDetails,
   ErrorCode,
+  FungibleAssetHolding,
   GroupedInstructions,
   GroupedInvolvedInstructions,
   HeldNfts,
@@ -388,6 +389,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve a list of all Assets which were held at one point by this Identity
    *
+   * @deprecated in favour of {@link getAssetHoldings}, which reports the amount held alongside
+   *   each Asset and can exclude the ones held down to zero. This method will be removed in the
+   *   next major version
+   *
    * @note uses the middlewareV2
    * @note supports pagination
    */
@@ -432,13 +437,72 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve the fungible Assets held by this Identity, with the amount held of each
+   *
+   * @param opts.heldNow - exclude Assets the Identity has transferred away in full. The indexer
+   *   keeps a holding once it has existed, so by default an Asset held at any point is returned,
+   *   with an `amount` of 0
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination
+   */
+  public async getAssetHoldings(
+    opts: {
+      heldNow?: boolean;
+      orderBy?: AssetHoldersOrderBy;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<FungibleAssetHolding>> {
+    const { context, did } = this;
+
+    const { size, start, orderBy, heldNow } = opts;
+
+    const {
+      data: {
+        assetHolders: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'assetHolders'>>(
+      assetHoldersQuery(
+        {
+          identityId: did,
+          ...(heldNow && { amount: '0' }),
+        },
+        size,
+        start,
+        orderBy
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const data = nodes.map(({ asset, amount }) => ({
+      asset: new FungibleAsset({ assetId: getAssetIdFromMiddleware(asset!.id) }, context),
+      amount: new BigNumber(amount).shiftedBy(-6),
+    }));
+
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
    * Retrieve a list of all NftCollections which were held at one point by this Identity
+   *
+   * @param opts.heldNow - exclude collections the Identity no longer holds any NFT of. The
+   *   indexer keeps a holding once it has existed, so by default a collection held at any point
+   *   is returned, with an empty `nfts` list
    *
    * @note uses the middlewareV2
    * @note supports pagination
    */
   public async getHeldNfts(
     opts: {
+      heldNow?: boolean;
       order?: NftHoldersOrderBy;
       size?: BigNumber;
       start?: BigNumber;
@@ -446,7 +510,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   ): Promise<ResultSet<HeldNfts>> {
     const { context, did } = this;
 
-    const { size, start, order } = opts;
+    const { size, start, order, heldNow } = opts;
 
     const {
       data: {
@@ -456,6 +520,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       nftHoldersQuery(
         {
           identityId: did,
+          ...(heldNow && { nftIds: [] }),
         },
         size,
         start,
