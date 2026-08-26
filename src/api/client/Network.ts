@@ -15,7 +15,7 @@ import {
 import { Account, Context, PolymeshError, transferPolyx } from '~/internal';
 import { eventsByArgs } from '~/middleware/queries/events';
 import { extrinsicByHash } from '~/middleware/queries/extrinsics';
-import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { EventIdEnum, EventsOrderBy, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   ErrorCode,
   EventIdentifier,
@@ -599,10 +599,11 @@ export class Network {
     eventArg2?: string;
     size?: BigNumber;
     start?: BigNumber;
+    orderBy?: EventsOrderBy;
   }): Promise<EventIdentifier[] | null> {
     const { context } = this;
 
-    const { moduleId, eventId, eventArg0, eventArg1, eventArg2, size, start } = opts;
+    const { moduleId, eventId, eventArg0, eventArg1, eventArg2, size, start, orderBy } = opts;
 
     const {
       data: {
@@ -618,7 +619,8 @@ export class Network {
           eventArg2,
         },
         size,
-        start
+        start,
+        orderBy
       )
     );
 

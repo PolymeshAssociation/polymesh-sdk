@@ -6,6 +6,7 @@ import { Account, AuthorizationRequest, Identity, Namespace, PolymeshError } fro
 import { AuthorizationArgs, authorizationsQuery } from '~/middleware/queries/authorizations';
 import {
   Authorization as MiddlewareAuthorization,
+  AuthorizationsOrderBy,
   AuthorizationStatusEnum,
   AuthTypeEnum,
   Query,
@@ -162,13 +163,14 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
       type?: AuthTypeEnum;
       size?: BigNumber;
       start?: BigNumber;
+      orderBy?: AuthorizationsOrderBy;
     } = {}
   ): Promise<ResultSet<AuthorizationRequest>> {
     const { context, parent } = this;
 
     const signerValue = signerToSignerValue(parent);
 
-    const { status, type, start, size } = opts;
+    const { status, type, start, size, orderBy } = opts;
 
     const filters: QueryArgs<MiddlewareAuthorization, AuthorizationArgs> = {
       type,
@@ -185,7 +187,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
         authorizations: { totalCount, nodes: authorizationResult },
       },
     } = await context.queryMiddleware<Ensured<Query, 'authorizations'>>(
-      authorizationsQuery(filters, size, start)
+      authorizationsQuery(filters, size, start, orderBy)
     );
 
     const data = authorizationResult.map(middlewareAuthorization => {

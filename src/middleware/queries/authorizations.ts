@@ -54,11 +54,10 @@ function createAuthorizationFilters(variables: QueryArgs<Authorization, Authoriz
 export function authorizationsQuery(
   filters: QueryArgs<Authorization, AuthorizationArgs>,
   size?: BigNumber,
-  start?: BigNumber
+  start?: BigNumber,
+  orderBy: AuthorizationsOrderBy = AuthorizationsOrderBy.CreatedEventIdAsc
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Authorization, AuthorizationArgs>>> {
   const { args, filter } = createAuthorizationFilters(filters);
-
-  const orderBy = `${AuthorizationsOrderBy.CreatedEventIdAsc}`;
 
   const query = gql`
     query AuthorizationsQuery

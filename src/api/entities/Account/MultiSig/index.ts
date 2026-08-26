@@ -14,7 +14,13 @@ import {
   removeMultiSigPayer,
 } from '~/internal';
 import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
-import { CallIdEnum, ModuleIdEnum, Query, Scalars } from '~/middleware/types';
+import {
+  CallIdEnum,
+  ModuleIdEnum,
+  MultiSigProposalsOrderBy,
+  Query,
+  Scalars,
+} from '~/middleware/types';
 import { MultiSigProposalStatusEnum } from '~/middleware/typesV1';
 import {
   AnyJson,
@@ -198,16 +204,17 @@ export class MultiSig extends Account {
   public async getHistoricalProposals(opts?: {
     size?: BigNumber;
     start?: BigNumber;
+    orderBy?: MultiSigProposalsOrderBy;
   }): Promise<ResultSet<HistoricalMultiSigProposal>> {
     const { context, address } = this;
-    const { size, start } = opts ?? {};
+    const { size, start, orderBy } = opts ?? {};
 
     const {
       data: {
         multiSigProposals: { nodes, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
-      multiSigProposalsQuery(address, size, start)
+      multiSigProposalsQuery(address, size, start, orderBy)
     );
 
     const getTxTagAndArgs = (

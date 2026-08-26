@@ -16,15 +16,14 @@ type EventArgs = 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2
 export function eventsByArgs(
   filters: QueryArgs<Event, EventArgs>,
   size?: BigNumber,
-  start?: BigNumber
+  start?: BigNumber,
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
+  orderBy: EventsOrderBy = EventsOrderBy.IdAsc
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Event, EventArgs>>> {
   const { args, filter } = createArgsAndFilters(filters, {
     moduleId: 'ModuleIdEnum',
     eventId: 'EventIdEnum',
   });
-
-  // `id` is `<block>/<event index>`, zero padded: block order, and unique
-  const orderBy = `${EventsOrderBy.IdAsc}`;
 
   const query = gql`
     query EventsQuery

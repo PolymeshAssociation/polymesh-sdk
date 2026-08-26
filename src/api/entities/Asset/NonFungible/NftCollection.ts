@@ -7,7 +7,7 @@ import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
 import { Account, Context, issueNft, Nft, nftControllerTransfer, PolymeshError } from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
-import { Query } from '~/middleware/types';
+import { AssetTransactionsOrderBy, Query } from '~/middleware/types';
 import {
   AssetDetails,
   BatchIssueNftParams,
@@ -360,9 +360,10 @@ export class NftCollection extends BaseAsset {
   public async getTransactionHistory(opts: {
     size?: BigNumber;
     start?: BigNumber;
+    orderBy?: AssetTransactionsOrderBy;
   }): Promise<ResultSet<HistoricNftTransaction>> {
     const { context, id } = this;
-    const { size, start } = opts;
+    const { size, start, orderBy } = opts;
 
     const {
       data: {
@@ -374,7 +375,8 @@ export class NftCollection extends BaseAsset {
           assetId: id,
         },
         size,
-        start
+        start,
+        orderBy
       )
     );
 

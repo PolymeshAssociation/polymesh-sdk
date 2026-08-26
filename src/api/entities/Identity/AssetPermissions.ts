@@ -16,7 +16,12 @@ import {
   tickerExternalAgentActionsQuery,
   tickerExternalAgentsQuery,
 } from '~/middleware/queries/externalAgents';
-import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import {
+  EventIdEnum,
+  ModuleIdEnum,
+  Query,
+  TickerExternalAgentActionsOrderBy,
+} from '~/middleware/types';
 import {
   Asset,
   AssetWithGroup,
@@ -373,13 +378,14 @@ export class AssetPermissions extends Namespace<Identity> {
     eventId?: EventIdEnum;
     size?: BigNumber;
     start?: BigNumber;
+    orderBy?: TickerExternalAgentActionsOrderBy;
   }): Promise<ResultSet<EventIdentifier>> {
     const {
       context,
       parent: { did },
     } = this;
 
-    const { asset, moduleId: palletName, eventId, size, start } = opts;
+    const { asset, moduleId: palletName, eventId, size, start, orderBy } = opts;
 
     const middlewareAssetId = await getAssetIdForMiddleware(asset, context);
 
@@ -396,7 +402,8 @@ export class AssetPermissions extends Namespace<Identity> {
           eventId,
         },
         size,
-        start
+        start,
+        orderBy
       )
     );
 

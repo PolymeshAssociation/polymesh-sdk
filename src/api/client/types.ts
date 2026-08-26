@@ -2,6 +2,7 @@ import { ApiOptions } from '@polkadot/api/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
+import { InstructionsOrderBy } from '~/middleware/types';
 import { Account, Asset, Identity, InstructionStatusEnum, TxTag } from '~/types';
 
 export { InstructionStatusEnum };
@@ -280,6 +281,10 @@ export interface HistoricalInstructionFilters {
    * The number of results to skip
    */
   start?: BigNumber;
+  /**
+   * The ordering of the results. Defaults to oldest first
+   */
+  orderBy?: InstructionsOrderBy;
 }
 
 /**

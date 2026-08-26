@@ -16,7 +16,7 @@ import {
   toggleFreezeOffering,
 } from '~/internal';
 import { investmentsQuery } from '~/middleware/queries/stos';
-import { Query } from '~/middleware/types';
+import { InvestmentsOrderBy, Query } from '~/middleware/types';
 import {
   Account,
   EnableOffChainFundingParams,
@@ -253,6 +253,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     opts: {
       size?: BigNumber;
       start?: BigNumber;
+      orderBy?: InvestmentsOrderBy;
     } = {}
   ): Promise<ResultSet<Investment>> {
     const {
@@ -263,7 +264,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
 
-    const { size, start } = opts;
+    const { size, start, orderBy } = opts;
 
     const {
       data: {
@@ -276,7 +277,8 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
           offeringAssetId: middlewareAssetId,
         },
         size,
-        start
+        start,
+        orderBy
       )
     );
 

@@ -10,6 +10,12 @@ import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
 import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
 import { instructionAffirmationsQuery } from '~/middleware/queries/settlements';
 import { investmentsQuery } from '~/middleware/queries/stos';
+import {
+  AssetTransactionsOrderBy,
+  EventsOrderBy,
+  InvestmentsOrderBy,
+  MultiSigProposalsOrderBy,
+} from '~/middleware/types';
 
 /**
  * A paginated query needs an order that is both defined and unique, or `first`/`offset` can repeat
@@ -74,6 +80,42 @@ describe('paginated query ordering', () => {
 
     // `InstructionAffirmation` has no `createdEvent`, so `id` is the only unique column available
     expect(affirmations).not.toContain('CREATED_EVENT_ID');
+  });
+
+  it('should let a caller replace the default order', () => {
+    expect(
+      print(
+        assetTransactionQuery(
+          { assetId: 'someAsset' },
+          undefined,
+          undefined,
+          AssetTransactionsOrderBy.DatetimeDesc
+        ).query
+      )
+    ).toContain('orderBy: [DATETIME_DESC]');
+    expect(
+      print(eventsByArgs({}, undefined, undefined, EventsOrderBy.BlockIdDesc).query)
+    ).toContain('orderBy: [BLOCK_ID_DESC]');
+    expect(
+      print(
+        multiSigProposalsQuery(
+          'someAddress',
+          undefined,
+          undefined,
+          MultiSigProposalsOrderBy.ProposalIdAsc
+        ).query
+      )
+    ).toContain('orderBy: [PROPOSAL_ID_ASC]');
+    expect(
+      print(
+        investmentsQuery(
+          { stoId: 1, offeringAssetId: 'someAsset' },
+          undefined,
+          undefined,
+          InvestmentsOrderBy.DatetimeAsc
+        ).query
+      )
+    ).toContain('orderBy: [DATETIME_ASC]');
   });
 
   it('should order MultiSig proposals numerically, since their id embeds an unpadded number', () => {

@@ -112,11 +112,10 @@ type MultiSigProposalQueryParameters = {
 export function multiSigProposalsQuery(
   multisigId: string,
   size?: BigNumber,
-  start?: BigNumber
-): QueryOptions<PaginatedQueryArgs<MultiSigProposalQueryParameters>> {
+  start?: BigNumber,
   // `id` embeds an unpadded proposal number; `proposalId` is an Int, and unique per multisig
-  const orderBy = `${MultiSigProposalsOrderBy.ProposalIdDesc}`;
-
+  orderBy: MultiSigProposalsOrderBy = MultiSigProposalsOrderBy.ProposalIdDesc
+): QueryOptions<PaginatedQueryArgs<MultiSigProposalQueryParameters>> {
   const query = gql`
     query MultiSigProposalsQuery($size: Int, $start: Int, $multisigId: String!) {
       multiSigProposals(

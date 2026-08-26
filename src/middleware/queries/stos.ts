@@ -14,11 +14,10 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 export function investmentsQuery(
   filters: QueryArgs<Investment, 'stoId' | 'offeringAssetId'>,
   size?: BigNumber,
-  start?: BigNumber
-): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringAssetId'>>> {
+  start?: BigNumber,
   // `id` is `<block>/<event index>`, zero padded: block order, and unique
-  const orderBy = `${InvestmentsOrderBy.IdAsc}`;
-
+  orderBy: InvestmentsOrderBy = InvestmentsOrderBy.IdAsc
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringAssetId'>>> {
   const query = gql`
     query InvestmentsQuery($stoId: Int!, $offeringAssetId: String!, $size: Int, $start: Int) {
       investments(

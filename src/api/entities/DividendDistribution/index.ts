@@ -24,7 +24,7 @@ import {
   reclaimDividendDistributionFunds,
 } from '~/internal';
 import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries/distributions';
-import { Query } from '~/middleware/types';
+import { DistributionPaymentsOrderBy, Query } from '~/middleware/types';
 import {
   CorporateActionKind,
   DistributionPayment,
@@ -491,14 +491,14 @@ export class DividendDistribution extends CorporateActionBase {
    * @note supports pagination
    */
   public async getPaymentHistory(
-    opts: { size?: BigNumber; start?: BigNumber } = {}
+    opts: { size?: BigNumber; start?: BigNumber; orderBy?: DistributionPaymentsOrderBy } = {}
   ): Promise<ResultSet<DistributionPayment>> {
     const {
       id,
       asset: { id: assetId },
       context,
     } = this;
-    const { size, start } = opts;
+    const { size, start, orderBy } = opts;
 
     const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
 
@@ -508,7 +508,8 @@ export class DividendDistribution extends CorporateActionBase {
           distributionId: `${middlewareAssetId}/${id.toString()}`,
         },
         size,
-        start
+        start,
+        orderBy
       )
     );
 

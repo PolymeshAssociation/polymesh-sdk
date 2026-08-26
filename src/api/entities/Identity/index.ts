@@ -1004,7 +1004,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   ): Promise<ResultSet<HistoricInstruction>> {
     const { context, did } = this;
 
-    const query = await historicalInstructionsQuery({ ...filter, identity: did }, context);
+    const query = await historicalInstructionsQuery(
+      { ...filter, identity: did },
+      context,
+      filter?.orderBy
+    );
 
     const {
       data: {

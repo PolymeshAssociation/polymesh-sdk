@@ -93,13 +93,13 @@ type TickerExternalAgentActionArgs = 'assetId' | 'callerId' | 'palletName' | 'ev
 export function tickerExternalAgentActionsQuery(
   filters: QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>,
   size?: BigNumber,
-  start?: BigNumber
+  start?: BigNumber,
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
+  orderBy: TickerExternalAgentActionsOrderBy = TickerExternalAgentActionsOrderBy.IdDesc
 ): QueryOptions<
   PaginatedQueryArgs<QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>>
 > {
   const { args, filter } = createArgsAndFilters(filters, { eventId: 'EventIdEnum' });
-  // `id` is `<block>/<event index>`, zero padded: block order, and unique
-  const orderBy = `${TickerExternalAgentActionsOrderBy.IdDesc}`;
   const query = gql`
     query TickerExternalAgentActionsQuery
       ${args}

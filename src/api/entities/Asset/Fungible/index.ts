@@ -20,7 +20,7 @@ import {
 } from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
 import { tickerExternalAgentHistoryQuery } from '~/middleware/queries/externalAgents';
-import { Query } from '~/middleware/types';
+import { AssetTransactionsOrderBy, Query } from '~/middleware/types';
 import {
   ApproveAllowanceParams,
   ControllerTransferParams,
@@ -193,9 +193,10 @@ export class FungibleAsset extends BaseAsset {
   public async getTransactionHistory(opts: {
     size?: BigNumber;
     start?: BigNumber;
+    orderBy?: AssetTransactionsOrderBy;
   }): Promise<ResultSet<HistoricAssetTransaction>> {
     const { context, id } = this;
-    const { size, start } = opts;
+    const { size, start, orderBy } = opts;
 
     const middlewareAssetId = await getAssetIdForMiddleware(id, context);
 
@@ -209,7 +210,8 @@ export class FungibleAsset extends BaseAsset {
           assetId: middlewareAssetId,
         },
         size,
-        start
+        start,
+        orderBy
       )
     );
 

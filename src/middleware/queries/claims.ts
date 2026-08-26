@@ -115,11 +115,11 @@ export function claimsGroupingQuery(
 export function claimsQuery(
   filters: ClaimsQueryFilter,
   size?: BigNumber,
-  start?: BigNumber
+  start?: BigNumber,
+  // block and event index together are unique, so this is a total order per target
+  orderBy = `${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}`
 ): QueryOptions<PaginatedQueryArgs<ClaimsQueryFilter>> {
   const { args, filter } = createClaimsFilters(filters);
-
-  const orderBy = `${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}`;
 
   const query = gql`
     query ClaimsQuery
@@ -256,12 +256,11 @@ export interface CustomClaimTypesQuery {
 export function customClaimTypeQuery(
   size?: BigNumber,
   start?: BigNumber,
-  dids?: string[]
+  dids?: string[],
+  // a custom claim type's `id` is the chain's numeric id, unpadded, so it serves only as a tiebreaker
+  orderBy = `${CustomClaimTypesOrderBy.CreatedBlockIdAsc}, ${CustomClaimTypesOrderBy.IdAsc}`
 ): QueryOptions<PaginatedQueryArgs<CustomClaimTypesQuery>> {
   const { args, filter } = createCustomClaimTypeQueryFilters({ ...(dids && { dids }) });
-
-  // a custom claim type's `id` is the chain's numeric id, unpadded, so it serves only as a tiebreaker
-  const orderBy = `${CustomClaimTypesOrderBy.CreatedBlockIdAsc}, ${CustomClaimTypesOrderBy.IdAsc}`;
 
   const query = gql`
   query CustomClaimTypesQuery

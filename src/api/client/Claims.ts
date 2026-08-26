@@ -13,7 +13,7 @@ import {
   claimsQuery,
   customClaimTypeQuery,
 } from '~/middleware/queries/claims';
-import { ClaimsOrderBy, Query } from '~/middleware/types';
+import { ClaimsOrderBy, CustomClaimTypesOrderBy, Query } from '~/middleware/types';
 import {
   ClaimData,
   ClaimOperation,
@@ -566,6 +566,7 @@ export class Claims {
       size?: BigNumber;
       start?: BigNumber;
       dids?: string[];
+      orderBy?: CustomClaimTypesOrderBy;
     } = {}
   ): Promise<ResultSet<CustomClaimTypeWithDid>> {
     const { context } = this;
@@ -579,14 +580,19 @@ export class Claims {
       });
     }
 
-    const { size = new BigNumber(DEFAULT_GQL_PAGE_SIZE), start = new BigNumber(0), dids } = opts;
+    const {
+      size = new BigNumber(DEFAULT_GQL_PAGE_SIZE),
+      start = new BigNumber(0),
+      dids,
+      orderBy,
+    } = opts;
 
     const {
       data: {
         customClaimTypes: { nodes, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'customClaimTypes'>>(
-      customClaimTypeQuery(size, start, dids)
+      customClaimTypeQuery(size, start, dids, orderBy)
     );
 
     const count = new BigNumber(totalCount);

@@ -142,11 +142,10 @@ export function nftHoldersQuery(
 export function assetTransactionQuery(
   filters: QueryArgs<AssetTransaction, 'assetId'>,
   size?: BigNumber,
-  start?: BigNumber
-): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
+  start?: BigNumber,
   // `id` is `<block>/<event index>`, zero padded: block order, and unique
-  const orderBy = `${AssetTransactionsOrderBy.IdAsc}`;
-
+  orderBy: AssetTransactionsOrderBy = AssetTransactionsOrderBy.IdAsc
+): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
   const query = gql`
     query AssetTransactionQuery($assetId: String!, $size: Int, $start: Int) {
       assetTransactions(
@@ -200,7 +199,8 @@ export function assetTransactionQuery(
 export function nftCollectionHolders(
   assetId: string,
   size?: BigNumber,
-  start?: BigNumber
+  start?: BigNumber,
+  orderBy: NftHoldersOrderBy = NftHoldersOrderBy.IdentityIdDesc
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'assetId'>>> {
   const query = gql`
     query NftCollectionHolders($assetId: String!, $size: Int, $start: Int) {
@@ -208,7 +208,7 @@ export function nftCollectionHolders(
         first: $size
         offset: $start
         filter: { assetId: { equalTo: $assetId }, nftIds: { notEqualTo: [] } }
-        orderBy: IDENTITY_ID_DESC
+        orderBy: [${orderBy}]
       ) {
         nodes {
           identityId

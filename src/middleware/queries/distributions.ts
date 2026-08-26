@@ -38,11 +38,10 @@ export function distributionQuery(
 export function distributionPaymentsQuery(
   filters: QueryArgs<DistributionPayment, 'distributionId'>,
   size?: BigNumber,
-  start?: BigNumber
-): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
+  start?: BigNumber,
   // `id` is `<block>/<event index>`, zero padded: chronological, and unique
-  const orderBy = `${DistributionPaymentsOrderBy.IdAsc}`;
-
+  orderBy: DistributionPaymentsOrderBy = DistributionPaymentsOrderBy.IdAsc
+): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
   const query = gql`
     query DistributionPaymentQuery($distributionId: String!, $size: Int, $start: Int) {
       distributionPayments(
