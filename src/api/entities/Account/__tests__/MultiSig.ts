@@ -267,7 +267,7 @@ describe('MultiSig class', () => {
       };
 
       dsMockUtils.createApolloQueryMock(
-        multiSigProposalsQuery(address, new BigNumber(1), new BigNumber(0)),
+        multiSigProposalsQuery({ multisigId: address }, new BigNumber(1), new BigNumber(0)),
         {
           multiSigProposals: multiSigProposalsResponse,
         }
@@ -332,7 +332,7 @@ describe('MultiSig class', () => {
         nodes: [mockHistoricalMultisig],
       };
 
-      dsMockUtils.createApolloQueryMock(multiSigProposalsQuery(address), {
+      dsMockUtils.createApolloQueryMock(multiSigProposalsQuery({ multisigId: address }), {
         multiSigProposals: multiSigProposalsResponse,
       });
 

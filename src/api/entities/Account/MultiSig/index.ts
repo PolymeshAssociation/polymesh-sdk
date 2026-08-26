@@ -214,7 +214,7 @@ export class MultiSig extends Account {
         multiSigProposals: { nodes, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
-      multiSigProposalsQuery(address, size, start, orderBy)
+      multiSigProposalsQuery({ multisigId: address }, size, start, orderBy)
     );
 
     const getTxTagAndArgs = (

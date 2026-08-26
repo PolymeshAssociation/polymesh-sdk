@@ -38,7 +38,7 @@ describe('multiSigProposalsQuery', () => {
   const multisigId = 'someId';
 
   it('should return correct query and variables when size, start are not provided', () => {
-    const result = multiSigProposalsQuery(multisigId);
+    const result = multiSigProposalsQuery({ multisigId });
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({ size: DEFAULT_GQL_PAGE_SIZE, start: 0, multisigId });
   });
@@ -46,7 +46,7 @@ describe('multiSigProposalsQuery', () => {
   it('should return correct query and variables when size, start are provided', () => {
     const size = new BigNumber(10);
     const start = new BigNumber(0);
-    const result = multiSigProposalsQuery(multisigId, size, start);
+    const result = multiSigProposalsQuery({ multisigId }, size, start);
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
       size: size.toNumber(),

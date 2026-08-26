@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  createArgsAndFilters,
   getSizeAndOffset,
   heartbeatQuery,
   latestBlockQuery,
@@ -129,5 +130,35 @@ describe('removeUndefinedValues', () => {
     const result = removeUndefinedValues(input);
 
     expect(result).toEqual(input);
+  });
+});
+
+describe('createArgsAndFilters', () => {
+  it('should only emit the attributes actually supplied', () => {
+    const { args, filter } = createArgsAndFilters({ assetId: 'someAsset', ticker: undefined }, {});
+
+    expect(args).toBe('($start: Int,$size: Int,$assetId: String!)');
+    expect(filter).toBe('filter: { assetId: { equalTo: $assetId } }');
+  });
+
+  it('should default to a String variable compared with equalTo', () => {
+    const { args, filter } = createArgsAndFilters({ stoId: 1 }, { stoId: 'Int' });
+
+    expect(args).toContain('$stoId: Int!');
+    expect(filter).toBe('filter: { stoId: { equalTo: $stoId } }');
+  });
+
+  it('should accept a comparison other than equalTo', () => {
+    const { args, filter } = createArgsAndFilters(
+      { amount: '0' },
+      { amount: { type: 'BigFloat', operator: 'greaterThan' } }
+    );
+
+    expect(args).toContain('$amount: BigFloat!');
+    expect(filter).toBe('filter: { amount: { greaterThan: $amount } }');
+  });
+
+  it('should emit no filter block when nothing is supplied', () => {
+    expect(createArgsAndFilters({}, {}).filter).toBe('');
   });
 });

@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { getSizeAndOffset } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
 import {
   MultiSigProposal,
   MultiSigProposalsOrderBy,
@@ -100,26 +100,26 @@ export function multiSigProposalVotesQuery(
   };
 }
 
-type MultiSigProposalQueryParameters = {
-  multisigId: string;
-};
-
 /**
  * @hidden
  *
  * Get MultiSig Proposals history for a given MultiSig address
  */
 export function multiSigProposalsQuery(
-  multisigId: string,
+  filters: QueryArgs<MultiSigProposal, 'multisigId' | 'status'>,
   size?: BigNumber,
   start?: BigNumber,
   // `id` embeds an unpadded proposal number; `proposalId` is an Int, and unique per multisig
   orderBy: MultiSigProposalsOrderBy = MultiSigProposalsOrderBy.ProposalIdDesc
-): QueryOptions<PaginatedQueryArgs<MultiSigProposalQueryParameters>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<MultiSigProposal, 'multisigId' | 'status'>>> {
+  const { args, filter } = createArgsAndFilters(filters, {});
+
   const query = gql`
-    query MultiSigProposalsQuery($size: Int, $start: Int, $multisigId: String!) {
+    query MultiSigProposalsQuery
+      ${args}
+     {
       multiSigProposals(
-        filter: { multisigId: { equalTo: $multisigId } }
+        ${filter}
         first: $size
         offset: $start
         orderBy: [${orderBy}]
@@ -140,6 +140,6 @@ export function multiSigProposalsQuery(
 
   return {
     query,
-    variables: { ...getSizeAndOffset(size, start), multisigId },
+    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }

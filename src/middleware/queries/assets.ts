@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { getSizeAndOffset } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
 import {
   Asset,
   AssetHolder,
@@ -62,10 +62,14 @@ export function assetHoldersQuery(
     orderBy = AssetHoldersOrderBy.CreatedBlockIdDesc;
   }
 
+  const { args, filter } = createArgsAndFilters(filters, {});
+
   const query = gql`
-    query AssetHoldersQuery($identityId: String!, $size: Int, $start: Int) {
+    query AssetHoldersQuery
+      ${args}
+     {
       assetHolders(
-        filter: { identityId: { equalTo: $identityId } }
+        ${filter}
         first: $size
         offset: $start
         orderBy: [${orderBy}]
@@ -108,10 +112,14 @@ export function nftHoldersQuery(
     orderBy = NftHoldersOrderBy.CreatedBlockIdDesc;
   }
 
+  const { args, filter } = createArgsAndFilters(filters, {});
+
   const query = gql`
-    query NftHolderQuery($identityId: String!, $size: Int, $start: Int) {
+    query NftHolderQuery
+      ${args}
+     {
       nftHolders(
-        filter: { identityId: { equalTo: $identityId } }
+        ${filter}
         first: $size
         offset: $start
         orderBy: [${orderBy}]
@@ -146,10 +154,14 @@ export function assetTransactionQuery(
   // `id` is `<block>/<event index>`, zero padded: block order, and unique
   orderBy: AssetTransactionsOrderBy = AssetTransactionsOrderBy.IdAsc
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
+  const { args, filter } = createArgsAndFilters(filters, {});
+
   const query = gql`
-    query AssetTransactionQuery($assetId: String!, $size: Int, $start: Int) {
+    query AssetTransactionQuery
+      ${args}
+     {
       assetTransactions(
-        filter: { assetId: { equalTo: $assetId } }
+        ${filter}
         first: $size
         offset: $start
         orderBy:  [${orderBy}]

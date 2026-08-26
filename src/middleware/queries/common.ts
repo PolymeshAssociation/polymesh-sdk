@@ -105,9 +105,30 @@ export function latestSqVersionQuery(): QueryOptions {
  *
  * @hidden
  */
+/**
+ * @hidden
+ *
+ * How a filter attribute is turned into a GQL variable and comparison
+ */
+export interface FilterSpec {
+  /**
+   * GQL type of the variable. Defaults to `String`
+   */
+  type?: string;
+  /**
+   * GQL comparison to apply. Defaults to `equalTo`
+   */
+  operator?: string;
+}
+
+/**
+ * @hidden
+ *
+ * Build the GQL argument list and `filter:` block for the attributes actually supplied
+ */
 export function createArgsAndFilters(
   filters: Record<string, unknown>,
-  typeMap: Record<string, string>
+  typeMap: Record<string, string | FilterSpec>
 ): {
   args: string;
   filter: string;
@@ -117,9 +138,12 @@ export function createArgsAndFilters(
 
   Object.keys(filters).forEach(attribute => {
     if (filters[attribute]) {
-      const type = typeMap[attribute] ?? 'String';
+      const spec = typeMap[attribute];
+      const { type = 'String', operator = 'equalTo' } =
+        typeof spec === 'string' ? { type: spec } : spec ?? {};
+
       args.push(`$${attribute}: ${type}!`);
-      gqlFilters.push(`${attribute}: { equalTo: $${attribute} }`);
+      gqlFilters.push(`${attribute}: { ${operator}: $${attribute} }`);
     }
   });
 

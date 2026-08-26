@@ -36,7 +36,7 @@ describe('paginated query ordering', () => {
       print(tickerExternalAgentActionsQuery({ assetId: 'someAsset' }).query),
     ],
     ['extrinsicsByArgs', print(extrinsicsByArgs({}).query)],
-    ['multiSigProposalsQuery', print(multiSigProposalsQuery('someAddress').query)],
+    ['multiSigProposalsQuery', print(multiSigProposalsQuery({ multisigId: 'someAddress' }).query)],
     ['polyxTransactionsQuery', print(polyxTransactionsQuery({}).query)],
     [
       'instructionAffirmationsQuery',
@@ -99,7 +99,7 @@ describe('paginated query ordering', () => {
     expect(
       print(
         multiSigProposalsQuery(
-          'someAddress',
+          { multisigId: 'someAddress' },
           undefined,
           undefined,
           MultiSigProposalsOrderBy.ProposalIdAsc

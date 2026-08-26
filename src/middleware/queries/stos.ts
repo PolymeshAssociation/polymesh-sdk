@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { getSizeAndOffset } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
 import { Investment, InvestmentsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
@@ -18,10 +18,14 @@ export function investmentsQuery(
   // `id` is `<block>/<event index>`, zero padded: block order, and unique
   orderBy: InvestmentsOrderBy = InvestmentsOrderBy.IdAsc
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringAssetId'>>> {
+  const { args, filter } = createArgsAndFilters(filters, { stoId: 'Int' });
+
   const query = gql`
-    query InvestmentsQuery($stoId: Int!, $offeringAssetId: String!, $size: Int, $start: Int) {
+    query InvestmentsQuery
+      ${args}
+     {
       investments(
-        filter: { stoId: { equalTo: $stoId }, offeringAssetId: { equalTo: $offeringAssetId } }
+        ${filter}
         first: $size
         offset: $start
         orderBy: [${orderBy}]
