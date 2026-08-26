@@ -37,7 +37,7 @@ import {
   Staking,
 } from '~/internal';
 import { extrinsicsByArgs } from '~/middleware/queries/extrinsics';
-import { ExtrinsicsOrderBy, Query } from '~/middleware/types';
+import { ExtrinsicsOrderBy, PolyxTransactionsOrderBy, Query } from '~/middleware/types';
 import {
   AccountBalance,
   AccountCollection,
@@ -298,6 +298,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * @param filters.success - whether the transaction was successful or not
    * @param filters.size - page size
    * @param filters.start - page offset
+   * @param filters.orderBy - ordering of the results. Defaults to `ExtrinsicsOrderBy.IdDesc`, newest first
    *
    * @note uses the middleware v2
    *
@@ -317,7 +318,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       orderBy?: ExtrinsicsOrderBy;
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
-    const { tag, success, size, start, orderBy = ExtrinsicsOrderBy.IdAsc, blockHash } = filters;
+    const { tag, success, size, start, orderBy = ExtrinsicsOrderBy.IdDesc, blockHash } = filters;
 
     const { context, address } = this;
 
@@ -671,12 +672,16 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    *
    * @param filters.size - page size
    * @param filters.start - page offset
+   * @param filters.orderBy - ordering of the results. Defaults to `PolyxTransactionsOrderBy.IdDesc`, newest first.
+   *   The indexer's `id` is `<block number>/<event index>`, so it orders by block and then by position within
+   *   the block — ordering by block alone leaves transactions sharing a block in no defined order
    *
    * @note uses the middleware
    */
   public getPolyxTransactions(filters: {
     size?: BigNumber;
     start?: BigNumber;
+    orderBy?: PolyxTransactionsOrderBy;
   }): Promise<ResultSet<HistoricPolyxTransaction>> {
     const { context } = this;
 

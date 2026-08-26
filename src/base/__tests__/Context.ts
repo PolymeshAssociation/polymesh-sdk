@@ -18,6 +18,7 @@ import {
   ClaimTypeEnum,
   EventIdEnum,
   ModuleIdEnum,
+  PolyxTransactionsOrderBy,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
@@ -2596,6 +2597,32 @@ describe('Context class', () => {
       expect(result.data).toEqual([]);
       expect(result.count).toEqual(new BigNumber(0));
       expect(result.next).toBeNull();
+    });
+
+    it('should pass a requested ordering through to the query', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance(),
+      });
+
+      dsMockUtils.createApolloQueryMock(
+        polyxTransactionsQuery(
+          {},
+          new BigNumber(25),
+          new BigNumber(0),
+          PolyxTransactionsOrderBy.CreatedBlockIdAsc
+        ),
+        {
+          polyxTransactions: { nodes: [], totalCount: 0 },
+        }
+      );
+
+      const result = await context.getPolyxTransactions({
+        orderBy: PolyxTransactionsOrderBy.CreatedBlockIdAsc,
+      });
+
+      expect(result.data).toEqual([]);
     });
   });
 

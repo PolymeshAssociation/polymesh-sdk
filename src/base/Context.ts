@@ -36,7 +36,7 @@ import {
 import { claimsQuery } from '~/middleware/queries/claims';
 import { heartbeatQuery, metadataQuery } from '~/middleware/queries/common';
 import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
-import { Query } from '~/middleware/types';
+import { PolyxTransactionsOrderBy, Query } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
@@ -1440,12 +1440,14 @@ export class Context {
     accounts?: (string | Account)[];
     size?: BigNumber;
     start?: BigNumber;
+    orderBy?: PolyxTransactionsOrderBy;
   }): Promise<ResultSet<HistoricPolyxTransaction>> {
     const {
       identity,
       accounts,
       size = new BigNumber(DEFAULT_GQL_PAGE_SIZE),
       start = new BigNumber(0),
+      orderBy,
     } = args;
 
     const {
@@ -1459,7 +1461,8 @@ export class Context {
           addresses: accounts?.map(account => signerToString(account)),
         },
         size,
-        start
+        start,
+        orderBy
       )
     );
 
