@@ -158,6 +158,17 @@ describe('createArgsAndFilters', () => {
     expect(filter).toBe('filter: { amount: { greaterThan: $amount } }');
   });
 
+  it('should filter on a falsy value that was supplied', () => {
+    // `success: 0` means "only the failed ones"; dropping it returned everything
+    const { filter } = createArgsAndFilters({ success: 0 }, { success: 'Int' });
+
+    expect(filter).toBe('filter: { success: { equalTo: $success } }');
+  });
+
+  it('should skip an attribute that was not supplied', () => {
+    expect(createArgsAndFilters({ address: undefined, moduleId: null }, {}).filter).toBe('');
+  });
+
   it('should emit no filter block when nothing is supplied', () => {
     expect(createArgsAndFilters({}, {}).filter).toBe('');
   });

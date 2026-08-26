@@ -17,6 +17,16 @@ import {
   MultiSigProposalsOrderBy,
 } from '~/middleware/types';
 
+const assetId = 'someAsset';
+const multisigId = 'someAddress';
+
+const ID_ASC = 'orderBy: [ID_ASC]';
+const ID_DESC = 'orderBy: [ID_DESC]';
+
+const AFFIRMATIONS = 'instructionAffirmationsQuery';
+const CUSTOM_CLAIM_TYPES = 'customClaimTypeQuery';
+const PROPOSALS = 'multiSigProposalsQuery';
+
 /**
  * A paginated query needs an order that is both defined and unique, or `first`/`offset` can repeat
  * and skip rows. The indexer zero-pads block-derived ids, so `id` sorts as a number; an id that is
@@ -24,105 +34,103 @@ import {
  */
 describe('paginated query ordering', () => {
   const cases: [string, string][] = [
-    ['assetTransactionQuery', print(assetTransactionQuery({ assetId: 'someAsset' }).query)],
-    ['customClaimTypeQuery', print(customClaimTypeQuery().query)],
-    [
-      'distributionPaymentsQuery',
-      print(distributionPaymentsQuery({ distributionId: 'someId' }).query),
-    ],
+    ['assetTransactionQuery', print(assetTransactionQuery({ assetId }).query)],
+    [CUSTOM_CLAIM_TYPES, print(customClaimTypeQuery().query)],
+    ['distributionPaymentsQuery', print(distributionPaymentsQuery({ distributionId: '1' }).query)],
     ['eventsByArgs', print(eventsByArgs({}).query)],
-    [
-      'tickerExternalAgentActionsQuery',
-      print(tickerExternalAgentActionsQuery({ assetId: 'someAsset' }).query),
-    ],
+    ['tickerExternalAgentActionsQuery', print(tickerExternalAgentActionsQuery({ assetId }).query)],
     ['extrinsicsByArgs', print(extrinsicsByArgs({}).query)],
-    ['multiSigProposalsQuery', print(multiSigProposalsQuery({ multisigId: 'someAddress' }).query)],
+    [PROPOSALS, print(multiSigProposalsQuery({ multisigId }).query)],
     ['polyxTransactionsQuery', print(polyxTransactionsQuery({}).query)],
-    [
-      'instructionAffirmationsQuery',
-      print(instructionAffirmationsQuery({ instructionId: '1' }).query),
-    ],
-    ['investmentsQuery', print(investmentsQuery({ stoId: 1, offeringAssetId: 'someAsset' }).query)],
+    [AFFIRMATIONS, print(instructionAffirmationsQuery({ instructionId: '1' }).query)],
+    ['investmentsQuery', print(investmentsQuery({ stoId: 1, offeringAssetId: assetId }).query)],
   ];
+
+  const queryFor = (name: string): string => {
+    const found = cases.find(([caseName]) => caseName === name);
+
+    if (!found) {
+      throw new Error(`no case named ${name}`);
+    }
+
+    return found[1];
+  };
 
   it.each(cases)('%s should order its results', (_name, query) => {
     expect(query).toContain('orderBy:');
   });
 
   it('should order by an id that is unique, not by block alone', () => {
-    const byId: Record<string, string> = {
-      assetTransactionQuery: 'orderBy: [ID_ASC]',
-      distributionPaymentsQuery: 'orderBy: [ID_ASC]',
-      eventsByArgs: 'orderBy: [ID_ASC]',
-      extrinsicsByArgs: 'orderBy: [ID_ASC]',
-      investmentsQuery: 'orderBy: [ID_ASC]',
-      polyxTransactionsQuery: 'orderBy: [ID_DESC]',
-      tickerExternalAgentActionsQuery: 'orderBy: [ID_DESC]',
+    const expected: Record<string, string> = {
+      assetTransactionQuery: ID_ASC,
+      distributionPaymentsQuery: ID_ASC,
+      eventsByArgs: ID_ASC,
+      extrinsicsByArgs: ID_ASC,
+      investmentsQuery: ID_ASC,
+      polyxTransactionsQuery: ID_DESC,
+      tickerExternalAgentActionsQuery: ID_DESC,
     };
 
-    cases
-      .filter(([name]) => byId[name])
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      .forEach(([name, query]) => expect(query).toContain(byId[name]!));
+    Object.entries(expected).forEach(([name, order]) => expect(queryFor(name)).toContain(order));
   });
 
   it('should use a unique tiebreaker where the id is not block derived', () => {
-    const [, customClaimTypes] = cases.find(([name]) => name === 'customClaimTypeQuery')!;
-    const [, affirmations] = cases.find(([name]) => name === 'instructionAffirmationsQuery')!;
-
-    expect(customClaimTypes).toContain('orderBy: [CREATED_BLOCK_ID_ASC, ID_ASC]');
-    expect(affirmations).toContain('orderBy: [CREATED_BLOCK_ID_DESC, ID_DESC]');
+    expect(queryFor(CUSTOM_CLAIM_TYPES)).toContain('orderBy: [CREATED_BLOCK_ID_ASC, ID_ASC]');
+    expect(queryFor(AFFIRMATIONS)).toContain('orderBy: [CREATED_BLOCK_ID_DESC, ID_DESC]');
   });
 
-  it('should prefer a composite event id over a block id plus a tiebreaker', () => {
-    // `instructions` and `instructionEvents` already order this way
-    const [, affirmations] = cases.find(([name]) => name === 'instructionAffirmationsQuery')!;
-
-    // `InstructionAffirmation` has no `createdEvent`, so `id` is the only unique column available
-    expect(affirmations).not.toContain('CREATED_EVENT_ID');
-  });
-
-  it('should let a caller replace the default order', () => {
-    expect(
-      print(
-        assetTransactionQuery(
-          { assetId: 'someAsset' },
-          undefined,
-          undefined,
-          AssetTransactionsOrderBy.DatetimeDesc
-        ).query
-      )
-    ).toContain('orderBy: [DATETIME_DESC]');
-    expect(
-      print(eventsByArgs({}, undefined, undefined, EventsOrderBy.BlockIdDesc).query)
-    ).toContain('orderBy: [BLOCK_ID_DESC]');
-    expect(
-      print(
-        multiSigProposalsQuery(
-          { multisigId: 'someAddress' },
-          undefined,
-          undefined,
-          MultiSigProposalsOrderBy.ProposalIdAsc
-        ).query
-      )
-    ).toContain('orderBy: [PROPOSAL_ID_ASC]');
-    expect(
-      print(
-        investmentsQuery(
-          { stoId: 1, offeringAssetId: 'someAsset' },
-          undefined,
-          undefined,
-          InvestmentsOrderBy.DatetimeAsc
-        ).query
-      )
-    ).toContain('orderBy: [DATETIME_ASC]');
+  it('should fall back to a tiebreaker only where no composite event id exists', () => {
+    // `instructions` and `instructionEvents` order by `createdEventId`; affirmations have none
+    expect(queryFor(AFFIRMATIONS)).not.toContain('CREATED_EVENT_ID');
   });
 
   it('should order MultiSig proposals numerically, since their id embeds an unpadded number', () => {
-    const [, proposals] = cases.find(([name]) => name === 'multiSigProposalsQuery')!;
-
-    expect(proposals).toContain('orderBy: [PROPOSAL_ID_DESC]');
     // ordering by `id` would place proposal 10 before proposal 9
-    expect(proposals).not.toContain('orderBy: [ID_DESC]');
+    expect(queryFor(PROPOSALS)).toContain('orderBy: [PROPOSAL_ID_DESC]');
+    expect(queryFor(PROPOSALS)).not.toContain(ID_DESC);
+  });
+
+  it('should let a caller replace the default order', () => {
+    const withOrder = [
+      [
+        print(
+          assetTransactionQuery(
+            { assetId },
+            undefined,
+            undefined,
+            AssetTransactionsOrderBy.DatetimeDesc
+          ).query
+        ),
+        'orderBy: [DATETIME_DESC]',
+      ],
+      [
+        print(eventsByArgs({}, undefined, undefined, EventsOrderBy.BlockIdDesc).query),
+        'orderBy: [BLOCK_ID_DESC]',
+      ],
+      [
+        print(
+          multiSigProposalsQuery(
+            { multisigId },
+            undefined,
+            undefined,
+            MultiSigProposalsOrderBy.ProposalIdAsc
+          ).query
+        ),
+        'orderBy: [PROPOSAL_ID_ASC]',
+      ],
+      [
+        print(
+          investmentsQuery(
+            { stoId: 1, offeringAssetId: assetId },
+            undefined,
+            undefined,
+            InvestmentsOrderBy.DatetimeAsc
+          ).query
+        ),
+        'orderBy: [DATETIME_ASC]',
+      ],
+    ];
+
+    withOrder.forEach(([query, order]) => expect(query).toContain(order));
   });
 });

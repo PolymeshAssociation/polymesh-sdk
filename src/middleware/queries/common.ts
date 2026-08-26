@@ -137,14 +137,20 @@ export function createArgsAndFilters(
   const gqlFilters: string[] = [];
 
   Object.keys(filters).forEach(attribute => {
-    if (filters[attribute]) {
-      const spec = typeMap[attribute];
-      const { type = 'String', operator = 'equalTo' } =
-        typeof spec === 'string' ? { type: spec } : spec ?? {};
-
-      args.push(`$${attribute}: ${type}!`);
-      gqlFilters.push(`${attribute}: { ${operator}: $${attribute} }`);
+    /*
+     * a supplied value is filtered on even when it is falsy: `success: 0` means "only the failed
+     * ones", and dropping it returned everything instead
+     */
+    if (filters[attribute] === undefined || filters[attribute] === null) {
+      return;
     }
+
+    const spec = typeMap[attribute] ?? {};
+    const { type = 'String', operator = 'equalTo' } =
+      typeof spec === 'string' ? { type: spec } : spec;
+
+    args.push(`$${attribute}: ${type}!`);
+    gqlFilters.push(`${attribute}: { ${operator}: $${attribute} }`);
   });
 
   return {
