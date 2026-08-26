@@ -398,7 +398,8 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     const lockedIds = new Set<string>();
     heldNftKeys.forEach(([, [rawAssetId, rawNftId]], index) => {
-      if (lockStatuses[index]?.isTrue) {
+      // `multi` returns one result per key, so this is always defined
+      if (lockStatuses[index]!.isTrue) {
         lockedIds.add(`${assetIdToString(rawAssetId)}/${u64ToBigNumber(rawNftId).toString()}`);
       }
     });

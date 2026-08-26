@@ -326,6 +326,24 @@ describe('Portfolio class', () => {
         "The Portfolio doesn't exist or was removed by its owner"
       );
     });
+
+    it('should throw an error if the portfolio does not exist and assets were requested', async () => {
+      const portfolio = new NonAbstract({ did, id }, context);
+      exists = false;
+
+      when(asFungibleAssetSpy)
+        .calledWith(hexToUuid(assetId0), context)
+        .mockResolvedValue(
+          entityMockUtils.getFungibleAssetInstance({ assetId: hexToUuid(assetId0) })
+        );
+
+      dsMockUtils.createQueryMock('portfolio', 'portfolioAssetBalances', { multi: [rawTotal0] });
+      dsMockUtils.createQueryMock('portfolio', 'portfolioLockedAssets', { multi: [rawLocked0] });
+
+      await expect(portfolio.getAssetBalances({ assets: [hexToUuid(assetId0)] })).rejects.toThrow(
+        "The Portfolio doesn't exist or was removed by its owner"
+      );
+    });
   });
 
   describe('method: getCollections', () => {
@@ -514,6 +532,21 @@ describe('Portfolio class', () => {
       exists = false;
 
       return expect(portfolio.getCollections()).rejects.toThrow(
+        "The Portfolio doesn't exist or was removed by its owner"
+      );
+    });
+
+    it('should throw an error if the portfolio does not exist and collections were requested', async () => {
+      const portfolio = new NonAbstract({ did, id: portfolioId }, context);
+      exists = false;
+
+      jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(hexToUuid(assetId));
+
+      dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', {
+        entries: [tuple([rawPortfolioId, rawAssetId, rawNftId], rawTrue)],
+      });
+
+      await expect(portfolio.getCollections({ collections: [hexToUuid(assetId)] })).rejects.toThrow(
         "The Portfolio doesn't exist or was removed by its owner"
       );
     });
