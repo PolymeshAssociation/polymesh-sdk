@@ -6,6 +6,7 @@ import { getSizeAndOffset, removeUndefinedValues } from '~/middleware/queries/co
 import {
   ClaimsOrderBy,
   ClaimTypeEnum,
+  CustomClaimTypesOrderBy,
   TrustedClaimIssuer,
   TrustedClaimIssuersOrderBy,
 } from '~/middleware/types';
@@ -259,6 +260,9 @@ export function customClaimTypeQuery(
 ): QueryOptions<PaginatedQueryArgs<CustomClaimTypesQuery>> {
   const { args, filter } = createCustomClaimTypeQueryFilters({ ...(dids && { dids }) });
 
+  // a custom claim type's `id` is the chain's numeric id, unpadded, so it serves only as a tiebreaker
+  const orderBy = `${CustomClaimTypesOrderBy.CreatedBlockIdAsc}, ${CustomClaimTypesOrderBy.IdAsc}`;
+
   const query = gql`
   query CustomClaimTypesQuery
     ${args}
@@ -267,6 +271,7 @@ export function customClaimTypeQuery(
         ${filter}
         first: $size
         offset: $start
+        orderBy: [${orderBy}]
       ){
         nodes {
           id

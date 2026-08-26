@@ -144,7 +144,8 @@ export function assetTransactionQuery(
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
-  const orderBy = `${AssetTransactionsOrderBy.CreatedBlockIdAsc}`;
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
+  const orderBy = `${AssetTransactionsOrderBy.IdAsc}`;
 
   const query = gql`
     query AssetTransactionQuery($assetId: String!, $size: Int, $start: Int) {

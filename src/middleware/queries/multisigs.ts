@@ -5,6 +5,7 @@ import gql from 'graphql-tag';
 import { getSizeAndOffset } from '~/middleware/queries/common';
 import {
   MultiSigProposal,
+  MultiSigProposalsOrderBy,
   MultiSigProposalVote,
   MultiSigProposalVotesOrderBy,
 } from '~/middleware/types';
@@ -113,12 +114,16 @@ export function multiSigProposalsQuery(
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<MultiSigProposalQueryParameters>> {
+  // `id` embeds an unpadded proposal number; `proposalId` is an Int, and unique per multisig
+  const orderBy = `${MultiSigProposalsOrderBy.ProposalIdDesc}`;
+
   const query = gql`
     query MultiSigProposalsQuery($size: Int, $start: Int, $multisigId: String!) {
       multiSigProposals(
         filter: { multisigId: { equalTo: $multisigId } }
         first: $size
         offset: $start
+        orderBy: [${orderBy}]
       ) {
         nodes {
           id

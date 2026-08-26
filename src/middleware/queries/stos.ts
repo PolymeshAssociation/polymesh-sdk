@@ -16,7 +16,8 @@ export function investmentsQuery(
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringAssetId'>>> {
-  const orderBy = `${InvestmentsOrderBy.CreatedBlockIdAsc}`;
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
+  const orderBy = `${InvestmentsOrderBy.IdAsc}`;
 
   const query = gql`
     query InvestmentsQuery($stoId: Int!, $offeringAssetId: String!, $size: Int, $start: Int) {

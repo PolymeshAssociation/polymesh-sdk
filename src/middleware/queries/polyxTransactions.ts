@@ -57,12 +57,7 @@ export function polyxTransactionsQuery(
   filters: QueryPolyxTransactionFilters,
   size?: BigNumber,
   start?: BigNumber,
-  /*
-   * `id` is the indexer's `<block number>/<event index>`, both zero padded, so it is unique and
-   * ordering it as a string orders by block and then by position within the block. Ordering by
-   * `createdBlockId` alone leaves transactions in the same block in no defined order, which makes
-   * pages repeat or skip entries
-   */
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
   orderBy: PolyxTransactionsOrderBy = PolyxTransactionsOrderBy.IdDesc
 ): QueryOptions<PaginatedQueryArgs<QueryPolyxTransactionFilters>> {
   const { args, filter, variables } = createPolyxTransactionFilters(filters);

@@ -58,7 +58,8 @@ export function extrinsicsByArgs(
   filters: QueryArgs<Extrinsic, ExtrinsicArgs>,
   size?: BigNumber,
   start?: BigNumber,
-  orderBy: ExtrinsicsOrderBy = ExtrinsicsOrderBy.BlockIdAsc
+  // `id` is `<block>/<extrinsic index>`, zero padded: block order, and unique
+  orderBy: ExtrinsicsOrderBy = ExtrinsicsOrderBy.IdAsc
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Extrinsic, ExtrinsicArgs>>> {
   const { args, filter } = createArgsAndFilters(filters, {
     moduleId: 'ModuleIdEnum',
@@ -66,11 +67,12 @@ export function extrinsicsByArgs(
     success: 'Int',
   });
 
+  // the indexer exposes no `createdAt` ordering; both map onto block order
   if (orderBy === ExtrinsicsOrderBy.CreatedAtAsc) {
-    orderBy = ExtrinsicsOrderBy.BlockIdAsc;
+    orderBy = ExtrinsicsOrderBy.IdAsc;
   }
   if (orderBy === ExtrinsicsOrderBy.CreatedAtDesc) {
-    orderBy = ExtrinsicsOrderBy.BlockIdDesc;
+    orderBy = ExtrinsicsOrderBy.IdDesc;
   }
 
   const query = gql`

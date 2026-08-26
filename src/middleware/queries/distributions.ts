@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import { getSizeAndOffset } from '~/middleware/queries/common';
-import { Distribution, DistributionPayment } from '~/middleware/types';
+import { Distribution, DistributionPayment, DistributionPaymentsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
 /**
@@ -40,12 +40,16 @@ export function distributionPaymentsQuery(
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
+  // `id` is `<block>/<event index>`, zero padded: chronological, and unique
+  const orderBy = `${DistributionPaymentsOrderBy.IdAsc}`;
+
   const query = gql`
     query DistributionPaymentQuery($distributionId: String!, $size: Int, $start: Int) {
       distributionPayments(
         filter: { distributionId: { equalTo: $distributionId } }
         first: $size
         offset: $start
+        orderBy: [${orderBy}]
       ) {
         totalCount
         nodes {

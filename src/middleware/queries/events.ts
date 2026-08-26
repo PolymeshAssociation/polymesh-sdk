@@ -23,7 +23,8 @@ export function eventsByArgs(
     eventId: 'EventIdEnum',
   });
 
-  const orderBy = `${EventsOrderBy.BlockIdAsc}`;
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
+  const orderBy = `${EventsOrderBy.IdAsc}`;
 
   const query = gql`
     query EventsQuery

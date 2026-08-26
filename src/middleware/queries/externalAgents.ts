@@ -98,7 +98,8 @@ export function tickerExternalAgentActionsQuery(
   PaginatedQueryArgs<QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>>
 > {
   const { args, filter } = createArgsAndFilters(filters, { eventId: 'EventIdEnum' });
-  const orderBy = `${TickerExternalAgentActionsOrderBy.CreatedBlockIdDesc}`;
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
+  const orderBy = `${TickerExternalAgentActionsOrderBy.IdDesc}`;
   const query = gql`
     query TickerExternalAgentActionsQuery
       ${args}

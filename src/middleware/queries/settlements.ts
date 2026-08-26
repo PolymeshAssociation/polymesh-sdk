@@ -215,7 +215,8 @@ export function instructionAffirmationsQuery(
     isMediator: 'Boolean',
   });
 
-  const orderBy = `[${InstructionAffirmationsOrderBy.CreatedBlockIdDesc}]`;
+  // an affirmation's `id` is not time ordered, so it serves only as a tiebreaker
+  const orderBy = `[${InstructionAffirmationsOrderBy.CreatedBlockIdDesc}, ${InstructionAffirmationsOrderBy.IdDesc}]`;
 
   const query = gql`
     query InstructionAffirmationsQuery
@@ -420,7 +421,8 @@ export async function historicalInstructionsQuery(
     context
   );
 
-  const orderBy = `[${InstructionsOrderBy.CreatedBlockIdAsc}]`;
+  // `createdEventId` is `<block>/<event index>`, zero padded: block order, and unique
+  const orderBy = `[${InstructionsOrderBy.CreatedEventIdAsc}]`;
 
   const query = gql`
     query InstructionsQuery
