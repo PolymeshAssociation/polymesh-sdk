@@ -1195,10 +1195,16 @@ describe('Identity class', () => {
 
       const identity = new Identity({ did: 'someDid' }, context);
 
-      const heldAssetsSpy = jest.spyOn(identity, 'getHeldAssets');
-      heldAssetsSpy
-        .mockResolvedValueOnce({ data: [assets[0]!], next: new BigNumber(1) })
-        .mockResolvedValue({ data: [assets[1]!], next: null });
+      const assetHoldingsSpy = jest.spyOn(identity, 'getAssetHoldings');
+      assetHoldingsSpy
+        .mockResolvedValueOnce({
+          data: [{ asset: assets[0]!, amount: new BigNumber(10) }],
+          next: new BigNumber(1),
+        })
+        .mockResolvedValue({
+          data: [{ asset: assets[1]!, amount: new BigNumber(20) }],
+          next: null,
+        });
 
       const result = await identity.getPendingDistributions();
 

@@ -451,7 +451,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       heldNow?: boolean;
       orderBy?: AssetHoldersOrderBy;
       size?: BigNumber;
-      start?: BigNumber;
+      start?: BigNumber | undefined;
     } = {}
   ): Promise<ResultSet<FungibleAssetHolding>> {
     const { context, did } = this;
@@ -875,13 +875,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     let start: BigNumber | undefined;
 
     while (!allFetched) {
-      const { data, next } = await this.getHeldAssets({
+      const { data, next } = await this.getAssetHoldings({
         size: MAX_PAGE_SIZE,
         start,
       });
       start = next ? new BigNumber(next) : undefined;
       allFetched = !next;
-      assets = [...assets, ...data];
+      assets = [...assets, ...data.map(({ asset }) => asset)];
     }
 
     const distributions = await this.context.getDividendDistributionsForAssets({ assets });
