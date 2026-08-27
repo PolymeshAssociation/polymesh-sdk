@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
 import {
   MultiSigProposal,
   MultiSigProposalsOrderBy,
@@ -109,10 +109,12 @@ export function multiSigProposalsQuery(
   filters: QueryArgs<MultiSigProposal, 'multisigId' | 'status'>,
   size?: BigNumber,
   start?: BigNumber,
-  // `id` embeds an unpadded proposal number; `proposalId` is an Int, and unique per multisig
-  orderBy: MultiSigProposalsOrderBy = MultiSigProposalsOrderBy.ProposalIdDesc
+  orderBy?: MultiSigProposalsOrderBy | MultiSigProposalsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<MultiSigProposal, 'multisigId' | 'status'>>> {
   const { args, filter } = createArgsAndFilters(filters, {});
+
+  // `id` embeds an unpadded proposal number; `proposalId` is an Int, and unique per multisig
+  const ordering = orderByClause(orderBy, [MultiSigProposalsOrderBy.ProposalIdDesc]);
 
   const query = gql`
     query MultiSigProposalsQuery
@@ -122,7 +124,7 @@ export function multiSigProposalsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         nodes {
           id

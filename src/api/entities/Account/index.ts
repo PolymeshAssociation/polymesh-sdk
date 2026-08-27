@@ -315,7 +315,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       success?: boolean;
       size?: BigNumber;
       start?: BigNumber;
-      orderBy?: ExtrinsicsOrderBy;
+      orderBy?: ExtrinsicsOrderBy | ExtrinsicsOrderBy[];
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
     const { tag, success, size, start, orderBy = ExtrinsicsOrderBy.IdDesc, blockHash } = filters;
@@ -681,7 +681,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public getPolyxTransactions(filters: {
     size?: BigNumber;
     start?: BigNumber;
-    orderBy?: PolyxTransactionsOrderBy;
+    orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[];
   }): Promise<ResultSet<HistoricPolyxTransaction>> {
     const { context } = this;
 

@@ -284,7 +284,7 @@ export interface HistoricalInstructionFilters {
   /**
    * The ordering of the results. Defaults to oldest first
    */
-  orderBy?: InstructionsOrderBy;
+  orderBy?: InstructionsOrderBy | InstructionsOrderBy[];
 }
 
 /**

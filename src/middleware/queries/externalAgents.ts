@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
 import {
   TickerExternalAgent,
   TickerExternalAgentAction,
@@ -94,12 +94,15 @@ export function tickerExternalAgentActionsQuery(
   filters: QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>,
   size?: BigNumber,
   start?: BigNumber,
-  // `id` is `<block>/<event index>`, zero padded: block order, and unique
-  orderBy: TickerExternalAgentActionsOrderBy = TickerExternalAgentActionsOrderBy.IdDesc
+  orderBy?: TickerExternalAgentActionsOrderBy | TickerExternalAgentActionsOrderBy[]
 ): QueryOptions<
   PaginatedQueryArgs<QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>>
 > {
   const { args, filter } = createArgsAndFilters(filters, { eventId: 'EventIdEnum' });
+
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
+  const ordering = orderByClause(orderBy, [TickerExternalAgentActionsOrderBy.IdDesc]);
+
   const query = gql`
     query TickerExternalAgentActionsQuery
       ${args}
@@ -108,7 +111,7 @@ export function tickerExternalAgentActionsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         totalCount
         nodes {

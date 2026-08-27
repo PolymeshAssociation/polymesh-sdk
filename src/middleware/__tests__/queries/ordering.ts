@@ -90,8 +90,8 @@ describe('paginated query ordering', () => {
     expect(queryFor(PROPOSALS)).not.toContain(ID_DESC);
   });
 
-  it('should let a caller replace the default order', () => {
-    const withOrder = [
+  it('should keep the unique key behind whatever ordering a caller asks for', () => {
+    const withOrder: [string, string][] = [
       [
         print(
           assetTransactionQuery(
@@ -101,11 +101,11 @@ describe('paginated query ordering', () => {
             AssetTransactionsOrderBy.DatetimeDesc
           ).query
         ),
-        'orderBy: [DATETIME_DESC]',
+        'orderBy: [DATETIME_DESC, ID_ASC]',
       ],
       [
         print(eventsByArgs({}, undefined, undefined, EventsOrderBy.BlockIdDesc).query),
-        'orderBy: [BLOCK_ID_DESC]',
+        'orderBy: [BLOCK_ID_DESC, ID_ASC]',
       ],
       [
         print(
@@ -113,10 +113,10 @@ describe('paginated query ordering', () => {
             { multisigId },
             undefined,
             undefined,
-            MultiSigProposalsOrderBy.ProposalIdAsc
+            MultiSigProposalsOrderBy.StatusAsc
           ).query
         ),
-        'orderBy: [PROPOSAL_ID_ASC]',
+        'orderBy: [STATUS_ASC, PROPOSAL_ID_DESC]',
       ],
       [
         print(
@@ -127,10 +127,40 @@ describe('paginated query ordering', () => {
             InvestmentsOrderBy.DatetimeAsc
           ).query
         ),
-        'orderBy: [DATETIME_ASC]',
+        'orderBy: [DATETIME_ASC, ID_ASC]',
       ],
     ];
 
     withOrder.forEach(([query, order]) => expect(query).toContain(order));
+  });
+
+  it('should order by every key a caller supplies, in the order they supplied them', () => {
+    const query = print(
+      investmentsQuery({ stoId: 1, offeringAssetId: assetId }, undefined, undefined, [
+        InvestmentsOrderBy.OfferingTokenAsc,
+        InvestmentsOrderBy.DatetimeDesc,
+      ]).query
+    );
+
+    expect(query).toContain('orderBy: [OFFERING_TOKEN_ASC, DATETIME_DESC, ID_ASC]');
+  });
+
+  it('should not append a key the caller already orders by, in either direction', () => {
+    // the caller wants the newest first; appending `ID_ASC` behind it would say nothing, and
+    // appending it *ahead* of their key would quietly ignore what they asked for
+    const query = print(
+      investmentsQuery(
+        { stoId: 1, offeringAssetId: assetId },
+        undefined,
+        undefined,
+        InvestmentsOrderBy.IdDesc
+      ).query
+    );
+
+    expect(query).toContain('orderBy: [ID_DESC]');
+  });
+
+  it('should order by the unique key alone when a caller supplies nothing', () => {
+    expect(print(investmentsQuery({ stoId: 1, offeringAssetId: assetId }).query)).toContain(ID_ASC);
   });
 });

@@ -1440,7 +1440,7 @@ export class Context {
     accounts?: (string | Account)[];
     size?: BigNumber;
     start?: BigNumber;
-    orderBy?: PolyxTransactionsOrderBy;
+    orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[];
   }): Promise<ResultSet<HistoricPolyxTransaction>> {
     const {
       identity,

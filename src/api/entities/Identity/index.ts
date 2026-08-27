@@ -92,6 +92,26 @@ import {
 } from '~/utils/internal';
 
 /**
+ * @hidden
+ *
+ * Read the ordering from a method that still accepts the `order` it was first published with.
+ *
+ * The two mean the same thing, so passing both says nothing about which was meant
+ */
+function orderingFrom<Key>(opts: { order?: Key; orderBy?: Key | Key[] }): Key | Key[] | undefined {
+  const { order, orderBy } = opts;
+
+  if (order !== undefined && orderBy !== undefined) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Pass "orderBy" or the deprecated "order", not both',
+    });
+  }
+
+  return orderBy ?? order;
+}
+
+/**
  * Properties that uniquely identify an Identity
  */
 export interface UniqueIdentifiers {
@@ -393,19 +413,31 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *   each Asset and can exclude the ones held down to zero. This method will be removed in the
    *   next major version
    *
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
+   * @param opts.order - deprecated in favour of `orderBy`, which it means the same thing as.
+   *   Passing both throws, since neither can be said to have been meant
+   *
    * @note uses the middlewareV2
    * @note supports pagination
    */
   public async getHeldAssets(
     opts: {
+      /**
+       * @deprecated in favour of `orderBy`, which every other read is ordered by. Passing both
+       *   throws
+       */
       order?: AssetHoldersOrderBy;
+      orderBy?: AssetHoldersOrderBy | AssetHoldersOrderBy[];
       size?: BigNumber;
       start?: BigNumber | undefined;
     } = {}
   ): Promise<ResultSet<FungibleAsset>> {
     const { context, did } = this;
 
-    const { size, start, order } = opts;
+    const { size, start } = opts;
+    const ordering = orderingFrom(opts);
 
     const {
       data: {
@@ -418,7 +450,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         },
         size,
         start,
-        order
+        ordering
       )
     );
     const count = new BigNumber(totalCount);
@@ -442,6 +474,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * @param opts.heldNow - exclude Assets the Identity has transferred away in full. The indexer
    *   keeps a holding once it has existed, so by default an Asset held at any point is returned,
    *   with an `amount` of 0
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
    *
    * @note uses the middlewareV2
    * @note supports pagination
@@ -449,7 +484,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getAssetHoldings(
     opts: {
       heldNow?: boolean;
-      orderBy?: AssetHoldersOrderBy;
+      orderBy?: AssetHoldersOrderBy | AssetHoldersOrderBy[];
       size?: BigNumber;
       start?: BigNumber | undefined;
     } = {}
@@ -496,6 +531,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * @param opts.heldNow - exclude collections the Identity no longer holds any NFT of. The
    *   indexer keeps a holding once it has existed, so by default a collection held at any point
    *   is returned, with an empty `nfts` list
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
+   * @param opts.order - deprecated in favour of `orderBy`, which it means the same thing as.
+   *   Passing both throws, since neither can be said to have been meant
    *
    * @note uses the middlewareV2
    * @note supports pagination
@@ -503,14 +543,20 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getHeldNfts(
     opts: {
       heldNow?: boolean;
+      /**
+       * @deprecated in favour of `orderBy`, which every other read is ordered by. Passing both
+       *   throws
+       */
       order?: NftHoldersOrderBy;
+      orderBy?: NftHoldersOrderBy | NftHoldersOrderBy[];
       size?: BigNumber;
       start?: BigNumber;
     } = {}
   ): Promise<ResultSet<HeldNfts>> {
     const { context, did } = this;
 
-    const { size, start, order, heldNow } = opts;
+    const { size, start, heldNow } = opts;
+    const ordering = orderingFrom(opts);
 
     const {
       data: {
@@ -524,7 +570,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         },
         size,
         start,
-        order
+        ordering
       )
     );
 

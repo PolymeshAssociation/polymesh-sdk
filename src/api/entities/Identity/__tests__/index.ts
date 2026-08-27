@@ -706,7 +706,7 @@ describe('Identity class', () => {
       result = await identity.getHeldNfts({
         start: new BigNumber(0),
         size: new BigNumber(1),
-        order: NftHoldersOrderBy.CreatedBlockIdAsc,
+        orderBy: NftHoldersOrderBy.CreatedBlockIdAsc,
       });
 
       expect(result.data[0]!.collection.id).toBe(assetIds[0]);
@@ -740,6 +740,44 @@ describe('Identity class', () => {
 
       expect(result.data).toHaveLength(1);
       expect(result.count).toEqual(new BigNumber(1));
+    });
+
+    it('should still order by the deprecated `order` it was published with', async () => {
+      const identity = new Identity({ did }, context);
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const assetId = assetIds[0]!;
+      when(getAssetIdFromMiddlewareSpy).calledWith(assetId).mockReturnValue(assetId);
+
+      dsMockUtils.createApolloQueryMock(
+        nftHoldersQuery(
+          { identityId: did },
+          undefined,
+          undefined,
+          NftHoldersOrderBy.CreatedBlockIdAsc
+        ),
+        {
+          nftHolders: {
+            nodes: [{ asset: { id: assetId }, nftIds: [1] }],
+            totalCount: 1,
+          },
+        }
+      );
+
+      const result = await identity.getHeldNfts({ order: NftHoldersOrderBy.CreatedBlockIdAsc });
+
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should throw when both `order` and `orderBy` are passed, since neither can be meant', () => {
+      const identity = new Identity({ did }, context);
+
+      return expect(
+        identity.getHeldNfts({
+          order: NftHoldersOrderBy.CreatedBlockIdAsc,
+          orderBy: NftHoldersOrderBy.CreatedBlockIdDesc,
+        })
+      ).rejects.toThrow('Pass "orderBy" or the deprecated "order", not both');
     });
   });
 

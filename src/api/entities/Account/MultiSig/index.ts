@@ -198,13 +198,17 @@ export class MultiSig extends Account {
 
   /**
    * Return a set of {@link MultiSigProposal} for this MultiSig Account
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
+   *
    *
    * @note uses the middlewareV2
    */
   public async getHistoricalProposals(opts?: {
     size?: BigNumber;
     start?: BigNumber;
-    orderBy?: MultiSigProposalsOrderBy;
+    orderBy?: MultiSigProposalsOrderBy | MultiSigProposalsOrderBy[];
   }): Promise<ResultSet<HistoricalMultiSigProposal>> {
     const { context, address } = this;
     const { size, start, orderBy } = opts ?? {};

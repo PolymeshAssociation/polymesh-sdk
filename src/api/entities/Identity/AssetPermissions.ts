@@ -368,6 +368,9 @@ export class AssetPermissions extends Namespace<Identity> {
    * @param opts.eventId - filters results by event
    * @param opts.size - page size
    * @param opts.start - page offset
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
    *
    * @note uses the middlewareV2
    * @note supports pagination
@@ -378,7 +381,7 @@ export class AssetPermissions extends Namespace<Identity> {
     eventId?: EventIdEnum;
     size?: BigNumber;
     start?: BigNumber;
-    orderBy?: TickerExternalAgentActionsOrderBy;
+    orderBy?: TickerExternalAgentActionsOrderBy | TickerExternalAgentActionsOrderBy[];
   }): Promise<ResultSet<EventIdentifier>> {
     const {
       context,

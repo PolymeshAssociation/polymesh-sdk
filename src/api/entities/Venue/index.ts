@@ -248,6 +248,9 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
    *
    * @param opts.size - page size
    * @param opts.start - page offset
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
    *
    * @note uses the middleware V2
    * @note supports pagination

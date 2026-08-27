@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
 import { Event, EventsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
@@ -17,13 +17,15 @@ export function eventsByArgs(
   filters: QueryArgs<Event, EventArgs>,
   size?: BigNumber,
   start?: BigNumber,
-  // `id` is `<block>/<event index>`, zero padded: block order, and unique
-  orderBy: EventsOrderBy = EventsOrderBy.IdAsc
+  orderBy?: EventsOrderBy | EventsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Event, EventArgs>>> {
   const { args, filter } = createArgsAndFilters(filters, {
     moduleId: 'ModuleIdEnum',
     eventId: 'EventIdEnum',
   });
+
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
+  const ordering = orderByClause(orderBy, [EventsOrderBy.IdAsc]);
 
   const query = gql`
     query EventsQuery
@@ -31,7 +33,7 @@ export function eventsByArgs(
      {
       events(
         ${filter}
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
         first: $size
         offset: $start
       ) {

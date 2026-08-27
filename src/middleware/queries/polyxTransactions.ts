@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { getSizeAndOffset } from '~/middleware/queries/common';
+import { getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
 import { PolyxTransactionsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs } from '~/types/utils';
 
@@ -57,10 +57,12 @@ export function polyxTransactionsQuery(
   filters: QueryPolyxTransactionFilters,
   size?: BigNumber,
   start?: BigNumber,
-  // `id` is `<block>/<event index>`, zero padded: block order, and unique
-  orderBy: PolyxTransactionsOrderBy = PolyxTransactionsOrderBy.IdDesc
+  orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryPolyxTransactionFilters>> {
   const { args, filter, variables } = createPolyxTransactionFilters(filters);
+
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
+  const ordering = orderByClause(orderBy, [PolyxTransactionsOrderBy.IdDesc]);
 
   const query = gql`
     query PolyxTransactionsQuery
@@ -70,7 +72,7 @@ export function polyxTransactionsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         totalCount
         nodes {

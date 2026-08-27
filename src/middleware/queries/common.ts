@@ -160,6 +160,53 @@ export function createArgsAndFilters(
 }
 
 /**
+ * @hidden
+ *
+ * The column an ordering key names, without its direction
+ */
+function orderByColumn(key: string): string {
+  return key.replace(/_(ASC|DESC)$/, '');
+}
+
+/**
+ * @hidden
+ *
+ * Read an ordering the caller may have given as one key or as several
+ */
+export function toOrderByList<Key>(orderBy?: Key | Key[]): Key[] {
+  if (orderBy === undefined) {
+    return [];
+  }
+
+  return Array.isArray(orderBy) ? orderBy : [orderBy];
+}
+
+/**
+ * @hidden
+ *
+ * Build a paginated query's `orderBy` list from the ordering the caller supplied.
+ *
+ * What a caller asks for comes first, and the query's own ordering follows it, rather than being
+ * replaced by it: `first`/`offset` paging over an order that does not decide every row repeats and
+ * skips rows, so the keys that make the order unique are appended, except where the caller already
+ * orders by that column and has said which direction they want it in
+ *
+ * @param orderBy - ordering the caller supplied, if any
+ * @param tiebreaker - the keys that make this query's order unique, which are also its default
+ */
+export function orderByClause<Key extends string>(
+  orderBy: Key | Key[] | undefined,
+  tiebreaker: Key[]
+): string {
+  const supplied = toOrderByList(orderBy);
+  const orderedColumns = new Set(supplied.map(orderByColumn));
+
+  return [...supplied, ...tiebreaker.filter(key => !orderedColumns.has(orderByColumn(key)))].join(
+    ', '
+  );
+}
+
+/**
  * Create args and filters to be supplied to GQL query
  *
  * @param size - size of the page

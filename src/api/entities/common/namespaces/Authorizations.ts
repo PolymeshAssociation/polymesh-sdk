@@ -153,6 +153,9 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
    * @param opts.status - fetch only authorizations with this status. Fetches all statuses if not passed
    * @param opts.size - page size
    * @param opts.start - page offset
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
    *
    * @note supports pagination
    * @note uses the middlewareV2
@@ -163,7 +166,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
       type?: AuthTypeEnum;
       size?: BigNumber;
       start?: BigNumber;
-      orderBy?: AuthorizationsOrderBy;
+      orderBy?: AuthorizationsOrderBy | AuthorizationsOrderBy[];
     } = {}
   ): Promise<ResultSet<AuthorizationRequest>> {
     const { context, parent } = this;

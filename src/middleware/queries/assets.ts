@@ -2,7 +2,12 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
+import {
+  createArgsAndFilters,
+  getSizeAndOffset,
+  orderByClause,
+  toOrderByList,
+} from '~/middleware/queries/common';
 import {
   Asset,
   AssetHolder,
@@ -52,14 +57,22 @@ export function assetHoldersQuery(
   filters: QueryArgs<AssetHolder, 'identityId'> & { amount?: string },
   size?: BigNumber,
   start?: BigNumber,
-  orderBy = AssetHoldersOrderBy.AssetIdAsc
+  orderBy?: AssetHoldersOrderBy | AssetHoldersOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetHolder, 'identityId'> & { amount?: string }>> {
-  if (orderBy === AssetHoldersOrderBy.CreatedAtAsc) {
-    orderBy = AssetHoldersOrderBy.CreatedBlockIdAsc;
-  }
-  if (orderBy === AssetHoldersOrderBy.CreatedAtDesc) {
-    orderBy = AssetHoldersOrderBy.CreatedBlockIdDesc;
-  }
+  // the indexer exposes no `createdAt` ordering; both map onto block order
+  const supplied = toOrderByList(orderBy).map(key => {
+    if (key === AssetHoldersOrderBy.CreatedAtAsc) {
+      return AssetHoldersOrderBy.CreatedBlockIdAsc;
+    }
+    if (key === AssetHoldersOrderBy.CreatedAtDesc) {
+      return AssetHoldersOrderBy.CreatedBlockIdDesc;
+    }
+
+    return key;
+  });
+
+  // a holding is unique per Asset given the Identity this always filters by
+  const ordering = orderByClause(supplied, [AssetHoldersOrderBy.AssetIdAsc]);
 
   // a holding is kept once created, so excluding zero balances has to happen in the query —
   // filtering client side would leave `totalCount` and the cursor describing the unfiltered set
@@ -75,7 +88,7 @@ export function assetHoldersQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         totalCount
         nodes {
@@ -107,14 +120,22 @@ export function nftHoldersQuery(
   filters: QueryArgs<NftHolder, 'identityId'> & { nftIds?: number[] },
   size?: BigNumber,
   start?: BigNumber,
-  orderBy = NftHoldersOrderBy.AssetIdAsc
+  orderBy?: NftHoldersOrderBy | NftHoldersOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'identityId'> & { nftIds?: number[] }>> {
-  if (orderBy === NftHoldersOrderBy.CreatedAtAsc) {
-    orderBy = NftHoldersOrderBy.CreatedBlockIdAsc;
-  }
-  if (orderBy === NftHoldersOrderBy.CreatedAtDesc) {
-    orderBy = NftHoldersOrderBy.CreatedBlockIdDesc;
-  }
+  // the indexer exposes no `createdAt` ordering; both map onto block order
+  const supplied = toOrderByList(orderBy).map(key => {
+    if (key === NftHoldersOrderBy.CreatedAtAsc) {
+      return NftHoldersOrderBy.CreatedBlockIdAsc;
+    }
+    if (key === NftHoldersOrderBy.CreatedAtDesc) {
+      return NftHoldersOrderBy.CreatedBlockIdDesc;
+    }
+
+    return key;
+  });
+
+  // a holding is unique per Asset given the Identity this always filters by
+  const ordering = orderByClause(supplied, [NftHoldersOrderBy.AssetIdAsc]);
 
   // a holding is kept once created, so excluding collections the Identity no longer holds any of
   // has to happen in the query, or `totalCount` and the cursor describe the unfiltered set
@@ -130,7 +151,7 @@ export function nftHoldersQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         totalCount
         nodes {
@@ -159,10 +180,12 @@ export function assetTransactionQuery(
   filters: QueryArgs<AssetTransaction, 'assetId'>,
   size?: BigNumber,
   start?: BigNumber,
-  // `id` is `<block>/<event index>`, zero padded: block order, and unique
-  orderBy: AssetTransactionsOrderBy = AssetTransactionsOrderBy.IdAsc
+  orderBy?: AssetTransactionsOrderBy | AssetTransactionsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
   const { args, filter } = createArgsAndFilters(filters, {});
+
+  // `id` is `<block>/<event index>`, zero padded: block order, and unique
+  const ordering = orderByClause(orderBy, [AssetTransactionsOrderBy.IdAsc]);
 
   const query = gql`
     query AssetTransactionQuery
@@ -172,7 +195,7 @@ export function assetTransactionQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy:  [${orderBy}]
+        orderBy:  [${ordering}]
       ) {
         totalCount
         nodes {
@@ -220,15 +243,18 @@ export function nftCollectionHolders(
   assetId: string,
   size?: BigNumber,
   start?: BigNumber,
-  orderBy: NftHoldersOrderBy = NftHoldersOrderBy.IdentityIdDesc
+  orderBy?: NftHoldersOrderBy | NftHoldersOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'assetId'>>> {
+  // a holder appears once per collection, which this always filters by
+  const ordering = orderByClause(orderBy, [NftHoldersOrderBy.IdentityIdDesc]);
+
   const query = gql`
     query NftCollectionHolders($assetId: String!, $size: Int, $start: Int) {
       nftHolders(
         first: $size
         offset: $start
         filter: { assetId: { equalTo: $assetId }, nftIds: { notEqualTo: [] } }
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         nodes {
           identityId

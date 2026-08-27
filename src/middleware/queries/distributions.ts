@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
 import { Distribution, DistributionPayment, DistributionPaymentsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
@@ -39,10 +39,12 @@ export function distributionPaymentsQuery(
   filters: QueryArgs<DistributionPayment, 'distributionId'>,
   size?: BigNumber,
   start?: BigNumber,
-  // `id` is `<block>/<event index>`, zero padded: chronological, and unique
-  orderBy: DistributionPaymentsOrderBy = DistributionPaymentsOrderBy.IdAsc
+  orderBy?: DistributionPaymentsOrderBy | DistributionPaymentsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
   const { args, filter } = createArgsAndFilters(filters, {});
+
+  // `id` is `<block>/<event index>`, zero padded: chronological, and unique
+  const ordering = orderByClause(orderBy, [DistributionPaymentsOrderBy.IdAsc]);
 
   const query = gql`
     query DistributionPaymentQuery
@@ -52,7 +54,7 @@ export function distributionPaymentsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         totalCount
         nodes {

@@ -2,7 +2,11 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { getSizeAndOffset, removeUndefinedValues } from '~/middleware/queries/common';
+import {
+  getSizeAndOffset,
+  orderByClause,
+  removeUndefinedValues,
+} from '~/middleware/queries/common';
 import {
   ClaimsOrderBy,
   ClaimTypeEnum,
@@ -79,10 +83,12 @@ export interface ClaimsQueryFilter {
  */
 export function claimsGroupingQuery(
   variables: ClaimsQueryFilter,
-  orderBy = ClaimsOrderBy.TargetIdAsc,
+  orderBy?: ClaimsOrderBy | ClaimsOrderBy[],
   groupBy = 'TARGET_ID'
 ): QueryOptions<PaginatedQueryArgs<ClaimsQueryFilter>> {
   const { args, filter } = createClaimsFilters(variables);
+
+  const ordering = orderByClause(orderBy, [ClaimsOrderBy.TargetIdAsc]);
 
   const query = gql`
     query claimsGroupingQuery
@@ -90,7 +96,7 @@ export function claimsGroupingQuery(
      {
       claims(
         ${filter}
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
         first: $size
         offset: $start
       ) {
@@ -116,10 +122,16 @@ export function claimsQuery(
   filters: ClaimsQueryFilter,
   size?: BigNumber,
   start?: BigNumber,
-  // block and event index together are unique, so this is a total order per target
-  orderBy = `${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}`
+  orderBy?: ClaimsOrderBy | ClaimsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<ClaimsQueryFilter>> {
   const { args, filter } = createClaimsFilters(filters);
+
+  // block and event index together are unique, so this is a total order per target
+  const ordering = orderByClause(orderBy, [
+    ClaimsOrderBy.TargetIdAsc,
+    ClaimsOrderBy.CreatedBlockIdAsc,
+    ClaimsOrderBy.EventIdxAsc,
+  ]);
 
   const query = gql`
     query ClaimsQuery
@@ -127,7 +139,7 @@ export function claimsQuery(
       {
         claims(
           ${filter}
-          orderBy: [${orderBy}]
+          orderBy: [${ordering}]
           first: $size
           offset: $start
         ) {
@@ -257,10 +269,15 @@ export function customClaimTypeQuery(
   size?: BigNumber,
   start?: BigNumber,
   dids?: string[],
-  // a custom claim type's `id` is the chain's numeric id, unpadded, so it serves only as a tiebreaker
-  orderBy = `${CustomClaimTypesOrderBy.CreatedBlockIdAsc}, ${CustomClaimTypesOrderBy.IdAsc}`
+  orderBy?: CustomClaimTypesOrderBy | CustomClaimTypesOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<CustomClaimTypesQuery>> {
   const { args, filter } = createCustomClaimTypeQueryFilters({ ...(dids && { dids }) });
+
+  // a custom claim type's `id` is the chain's numeric id, unpadded, so it serves only as a tiebreaker
+  const ordering = orderByClause(orderBy, [
+    CustomClaimTypesOrderBy.CreatedBlockIdAsc,
+    CustomClaimTypesOrderBy.IdAsc,
+  ]);
 
   const query = gql`
   query CustomClaimTypesQuery
@@ -270,7 +287,7 @@ export function customClaimTypeQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ){
         nodes {
           id

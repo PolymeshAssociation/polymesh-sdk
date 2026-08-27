@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import { Context } from '~/internal';
-import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
 import {
   Instruction,
   InstructionAffirmation,
@@ -110,12 +110,14 @@ export function instructionEventsQuery(
   filters: QueryArgs<InstructionEvent, 'event' | 'instructionId'>,
   size?: BigNumber,
   start?: BigNumber,
-  // `createdEventId` is `<block>/<event index>`, zero padded: block order, and unique
-  orderBy: InstructionEventsOrderBy = InstructionEventsOrderBy.CreatedEventIdDesc
+  orderBy?: InstructionEventsOrderBy | InstructionEventsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<InstructionEvent, 'event' | 'instructionId'>>> {
   const { args, filter } = createArgsAndFilters(filters, {
     event: 'InstructionEventEnum',
   });
+
+  // `createdEventId` is `<block>/<event index>`, zero padded: block order, and unique
+  const ordering = orderByClause(orderBy, [InstructionEventsOrderBy.CreatedEventIdDesc]);
 
   const query = gql`
     query InstructionEventsQuery
@@ -125,7 +127,7 @@ export function instructionEventsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         totalCount
         nodes {
@@ -171,12 +173,14 @@ export function instructionsQuery(
   filters: QueryArgs<Instruction, InstructionArgs>,
   size?: BigNumber,
   start?: BigNumber,
-  // `createdEventId` is `<block>/<event index>`, zero padded: block order, and unique
-  orderBy: InstructionsOrderBy = InstructionsOrderBy.CreatedEventIdDesc
+  orderBy?: InstructionsOrderBy | InstructionsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Instruction, InstructionArgs>>> {
   const { args, filter } = createArgsAndFilters(filters, {
     status: 'InstructionStatusEnum',
   });
+
+  // `createdEventId` is `<block>/<event index>`, zero padded: block order, and unique
+  const ordering = orderByClause(orderBy, [InstructionsOrderBy.CreatedEventIdDesc]);
 
   const query = gql`
     query InstructionsQuery
@@ -186,7 +190,7 @@ export function instructionsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         totalCount
         nodes {
@@ -213,13 +217,18 @@ export function instructionAffirmationsQuery(
   filters: QueryArgs<InstructionAffirmation, InstructionAffirmationArgs>,
   size?: BigNumber,
   start?: BigNumber,
-  // an affirmation's `id` is not time ordered, so it serves only as a tiebreaker
-  orderBy = `${InstructionAffirmationsOrderBy.CreatedBlockIdDesc}, ${InstructionAffirmationsOrderBy.IdDesc}`
+  orderBy?: InstructionAffirmationsOrderBy | InstructionAffirmationsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<InstructionAffirmation, InstructionAffirmationArgs>>> {
   const { args, filter } = createArgsAndFilters(filters, {
     status: 'AffirmStatusEnum',
     isMediator: 'Boolean',
   });
+
+  // an affirmation's `id` is not time ordered, so it serves only as a tiebreaker
+  const ordering = orderByClause(orderBy, [
+    InstructionAffirmationsOrderBy.CreatedBlockIdDesc,
+    InstructionAffirmationsOrderBy.IdDesc,
+  ]);
 
   const query = gql`
     query InstructionAffirmationsQuery
@@ -229,7 +238,7 @@ export function instructionAffirmationsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         totalCount
         nodes {
@@ -290,13 +299,15 @@ export function legsQuery(
   filters: QueryArgs<Leg, 'instructionId' | 'legType' | 'legIndex'>,
   size?: BigNumber,
   start?: BigNumber,
-  // `legIndex` is unique within the instruction this query always filters by
-  orderBy: LegsOrderBy = LegsOrderBy.LegIndexAsc
+  orderBy?: LegsOrderBy | LegsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Leg, 'instructionId' | 'legType'>>> {
   const { args, filter } = createArgsAndFilters(filters, {
     legType: 'LegTypeEnum',
     legIndex: 'Int',
   });
+
+  // `legIndex` is unique within the instruction this query always filters by
+  const ordering = orderByClause(orderBy, [LegsOrderBy.LegIndexAsc]);
   const query = gql`
     query LegsQuery
       ${args}
@@ -305,7 +316,7 @@ export function legsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         totalCount
         nodes {
@@ -420,8 +431,7 @@ export const buildHistoricalInstructionsQueryFilter = async (
 export async function historicalInstructionsQuery(
   filters: HistoricalInstructionFilters,
   context: Context,
-  // `createdEventId` is `<block>/<event index>`, zero padded: block order, and unique
-  orderBy: InstructionsOrderBy = InstructionsOrderBy.CreatedEventIdAsc
+  orderBy?: InstructionsOrderBy | InstructionsOrderBy[]
 ): Promise<
   QueryOptions<PaginatedQueryArgs<Omit<HistoricalInstructionFilters, 'size' | 'start' | 'orderBy'>>>
 > {
@@ -430,13 +440,16 @@ export async function historicalInstructionsQuery(
     context
   );
 
+  // `createdEventId` is `<block>/<event index>`, zero padded: block order, and unique
+  const ordering = orderByClause(orderBy, [InstructionsOrderBy.CreatedEventIdAsc]);
+
   const query = gql`
     query InstructionsQuery
     ${args}
      {
       instructions(
         ${filter}
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
         first: $size
         offset: $start
       ) {

@@ -187,13 +187,17 @@ export class FungibleAsset extends BaseAsset {
 
   /**
    * Retrieve this Asset's transaction History
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
+   *
    *
    * @note uses the middlewareV2
    */
   public async getTransactionHistory(opts: {
     size?: BigNumber;
     start?: BigNumber;
-    orderBy?: AssetTransactionsOrderBy;
+    orderBy?: AssetTransactionsOrderBy | AssetTransactionsOrderBy[];
   }): Promise<ResultSet<HistoricAssetTransaction>> {
     const { context, id } = this;
     const { size, start, orderBy } = opts;

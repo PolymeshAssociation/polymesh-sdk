@@ -486,12 +486,20 @@ export class DividendDistribution extends CorporateActionBase {
 
   /**
    * Retrieve the payment history for this Distribution
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
+   *
    *
    * @note uses the middleware V2
    * @note supports pagination
    */
   public async getPaymentHistory(
-    opts: { size?: BigNumber; start?: BigNumber; orderBy?: DistributionPaymentsOrderBy } = {}
+    opts: {
+      size?: BigNumber;
+      start?: BigNumber;
+      orderBy?: DistributionPaymentsOrderBy | DistributionPaymentsOrderBy[];
+    } = {}
   ): Promise<ResultSet<DistributionPayment>> {
     const {
       id,

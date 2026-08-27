@@ -7,7 +7,9 @@ import {
   latestBlockQuery,
   latestSqVersionQuery,
   metadataQuery,
+  orderByClause,
   removeUndefinedValues,
+  toOrderByList,
 } from '~/middleware/queries/common';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
@@ -171,5 +173,48 @@ describe('createArgsAndFilters', () => {
 
   it('should emit no filter block when nothing is supplied', () => {
     expect(createArgsAndFilters({}, {}).filter).toBe('');
+  });
+});
+
+describe('orderByClause', () => {
+  const ID_ASC = 'ID_ASC';
+  const ID_DESC = 'ID_DESC';
+  const DATETIME_DESC = 'DATETIME_DESC';
+  const AMOUNT_ASC = 'AMOUNT_ASC';
+
+  it('should order by the unique key alone when nothing is supplied', () => {
+    expect(orderByClause(undefined, [ID_ASC])).toBe(ID_ASC);
+    expect(orderByClause([], [ID_ASC])).toBe(ID_ASC);
+  });
+
+  it('should keep the unique key behind what a caller asks for, so paging stays stable', () => {
+    // `AMOUNT_ASC` decides no row on its own: paging over it can repeat and skip rows
+    expect(orderByClause(AMOUNT_ASC, [ID_ASC])).toBe(`${AMOUNT_ASC}, ${ID_ASC}`);
+  });
+
+  it('should keep several supplied keys in the order they were given', () => {
+    expect(orderByClause([AMOUNT_ASC, DATETIME_DESC], [ID_ASC])).toBe(
+      `${AMOUNT_ASC}, ${DATETIME_DESC}, ${ID_ASC}`
+    );
+  });
+
+  it('should not append a key whose column the caller already ordered by', () => {
+    // appending `ID_ASC` behind their `ID_DESC` says nothing, and ahead of it would ignore them
+    expect(orderByClause(ID_DESC, [ID_ASC])).toBe(ID_DESC);
+    expect(orderByClause([AMOUNT_ASC, ID_DESC], [ID_ASC])).toBe(`${AMOUNT_ASC}, ${ID_DESC}`);
+  });
+
+  it('should append every key a query needs to decide a row', () => {
+    expect(orderByClause(AMOUNT_ASC, ['CREATED_BLOCK_ID_DESC', ID_DESC])).toBe(
+      `${AMOUNT_ASC}, CREATED_BLOCK_ID_DESC, ${ID_DESC}`
+    );
+  });
+});
+
+describe('toOrderByList', () => {
+  it('should read one key, several, or none', () => {
+    expect(toOrderByList('ID_ASC')).toEqual(['ID_ASC']);
+    expect(toOrderByList(['ID_ASC', 'ID_DESC'])).toEqual(['ID_ASC', 'ID_DESC']);
+    expect(toOrderByList(undefined)).toEqual([]);
   });
 });

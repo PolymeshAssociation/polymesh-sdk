@@ -140,23 +140,23 @@ describe('holder queries', () => {
         assetHoldersQuery({ identityId }, undefined, undefined, AssetHoldersOrderBy.CreatedAtAsc)
           .query
       )
-    ).toContain('orderBy: [CREATED_BLOCK_ID_ASC]');
+    ).toContain('orderBy: [CREATED_BLOCK_ID_ASC, ASSET_ID_ASC]');
     expect(
       print(
         assetHoldersQuery({ identityId }, undefined, undefined, AssetHoldersOrderBy.CreatedAtDesc)
           .query
       )
-    ).toContain('orderBy: [CREATED_BLOCK_ID_DESC]');
+    ).toContain('orderBy: [CREATED_BLOCK_ID_DESC, ASSET_ID_ASC]');
     expect(
       print(
         nftHoldersQuery({ identityId }, undefined, undefined, NftHoldersOrderBy.CreatedAtAsc).query
       )
-    ).toContain('orderBy: [CREATED_BLOCK_ID_ASC]');
+    ).toContain('orderBy: [CREATED_BLOCK_ID_ASC, ASSET_ID_ASC]');
     expect(
       print(
         nftHoldersQuery({ identityId }, undefined, undefined, NftHoldersOrderBy.CreatedAtDesc).query
       )
-    ).toContain('orderBy: [CREATED_BLOCK_ID_DESC]');
+    ).toContain('orderBy: [CREATED_BLOCK_ID_DESC, ASSET_ID_ASC]');
   });
 
   it('should exclude collections held down to nothing in the query', () => {

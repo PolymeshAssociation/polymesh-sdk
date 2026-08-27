@@ -245,6 +245,9 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    *
    * @param opts.size - page size
    * @param opts.start - page offset
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
    *
    * @note supports pagination
    * @note uses the middleware V2
@@ -253,7 +256,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     opts: {
       size?: BigNumber;
       start?: BigNumber;
-      orderBy?: InvestmentsOrderBy;
+      orderBy?: InvestmentsOrderBy | InvestmentsOrderBy[];
     } = {}
   ): Promise<ResultSet<Investment>> {
     const {

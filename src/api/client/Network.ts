@@ -588,6 +588,9 @@ export class Network {
    * @param opts.eventArg2 - event parameter value to filter by in position 2
    * @param opts.size - page size
    * @param opts.start - page offset
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
    *
    * @note uses the middlewareV2
    */
@@ -599,7 +602,7 @@ export class Network {
     eventArg2?: string;
     size?: BigNumber;
     start?: BigNumber;
-    orderBy?: EventsOrderBy;
+    orderBy?: EventsOrderBy | EventsOrderBy[];
   }): Promise<EventIdentifier[] | null> {
     const { context } = this;
 

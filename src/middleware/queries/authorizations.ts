@@ -2,7 +2,11 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { getSizeAndOffset, removeUndefinedValues } from '~/middleware/queries/common';
+import {
+  getSizeAndOffset,
+  orderByClause,
+  removeUndefinedValues,
+} from '~/middleware/queries/common';
 import { Authorization, AuthorizationsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
@@ -55,9 +59,12 @@ export function authorizationsQuery(
   filters: QueryArgs<Authorization, AuthorizationArgs>,
   size?: BigNumber,
   start?: BigNumber,
-  orderBy: AuthorizationsOrderBy = AuthorizationsOrderBy.CreatedEventIdAsc
+  orderBy?: AuthorizationsOrderBy | AuthorizationsOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Authorization, AuthorizationArgs>>> {
   const { args, filter } = createAuthorizationFilters(filters);
+
+  // `createdEventId` is the composite of block and event index, and unique
+  const ordering = orderByClause(orderBy, [AuthorizationsOrderBy.CreatedEventIdAsc]);
 
   const query = gql`
     query AuthorizationsQuery
@@ -67,7 +74,7 @@ export function authorizationsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${orderBy}]
+        orderBy: [${ordering}]
       ) {
         totalCount
         nodes {

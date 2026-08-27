@@ -34,7 +34,7 @@ describe('polyxTransactionsQuery', () => {
     expect(print(query)).toContain('orderBy: [ID_DESC]');
   });
 
-  it('should pass a requested ordering straight through', () => {
+  it('should put a requested ordering first, ahead of the key that makes it unique', () => {
     const { query } = polyxTransactionsQuery(
       {},
       undefined,
@@ -42,7 +42,7 @@ describe('polyxTransactionsQuery', () => {
       PolyxTransactionsOrderBy.CreatedBlockIdAsc
     );
 
-    expect(print(query)).toContain('orderBy: [CREATED_BLOCK_ID_ASC]');
+    expect(print(query)).toContain('orderBy: [CREATED_BLOCK_ID_ASC, ID_DESC]');
   });
 
   it('should request totalCount, which the ResultSet count is built from', () => {

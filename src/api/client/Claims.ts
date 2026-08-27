@@ -557,6 +557,9 @@ export class Claims {
    * Retrieve registered CustomClaimTypes
    *
    * @param opts.dids - Fetch CustomClaimTypes issued by the given `dids`
+   * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
+   *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
+   *   that paging cannot repeat or skip a row
    *
    * @note supports pagination
    * @note uses the middlewareV2 (Required)
@@ -566,7 +569,7 @@ export class Claims {
       size?: BigNumber;
       start?: BigNumber;
       dids?: string[];
-      orderBy?: CustomClaimTypesOrderBy;
+      orderBy?: CustomClaimTypesOrderBy | CustomClaimTypesOrderBy[];
     } = {}
   ): Promise<ResultSet<CustomClaimTypeWithDid>> {
     const { context } = this;
