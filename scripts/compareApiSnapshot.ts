@@ -67,6 +67,49 @@ function splitMembers(body: string): string[] {
   return members.map(member => member.trim()).filter(member => member.length > 0);
 }
 
+/**
+ * Split a type's text on its top-level union bars, so that a bar inside an object, a generic or a
+ * parameter list stays where it is
+ */
+function splitTopLevelUnion(text: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i]!;
+
+    if ('{([<'.includes(char)) depth++;
+    // the `>` of an arrow closes nothing
+    else if (')]}'.includes(char) || (char === '>' && text[i - 1] !== '=')) depth--;
+
+    if (char === '|' && depth === 0) {
+      parts.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  parts.push(current);
+
+  return parts.map(part => part.trim()).filter(part => part.length > 0);
+}
+
+/**
+ * Whether a parameter's type only got wider — everything it used to accept, it still accepts.
+ *
+ * A caller passes a parameter in, so taking more than before cannot break a call already written:
+ * `orderBy?: X` becoming `orderBy?: X | X[]` is not a change a caller has to make. This holds for a
+ * parameter only. A *return* type that gains a member breaks the caller reading it, which is why
+ * return types are compared as plain text
+ */
+function isWidenedParameterType(baseType: string, currentType: string): boolean {
+  const accepted = new Set(splitTopLevelUnion(currentType));
+
+  return splitTopLevelUnion(baseType).every(member => accepted.has(member));
+}
+
 type ObjectMember = { optional: boolean; type: string };
 
 const MEMBER_REGEX =
@@ -137,7 +180,10 @@ function compareObjectTypes(baseType: string, currentType: string): string[] | n
       breaks.push(`property '${name}' is now required`);
     }
 
-    if (baseMember.type !== currentMember.type) {
+    if (
+      baseMember.type !== currentMember.type &&
+      !isWidenedParameterType(baseMember.type, currentMember.type)
+    ) {
       breaks.push(
         `property '${name}' changed type from '${baseMember.type}' to '${currentMember.type}'`
       );
@@ -201,7 +247,7 @@ function compareOverloads(
         continue;
       }
 
-      if (bp?.type !== cp?.type) {
+      if (bp?.type !== cp?.type && !isWidenedParameterType(bp!.type, cp!.type)) {
         const objectBreaks = compareObjectTypes(bp!.type, cp!.type);
 
         if (!objectBreaks) {
