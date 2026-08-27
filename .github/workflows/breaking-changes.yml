@@ -82,9 +82,12 @@ jobs:
           yarn api-snapshot:generate
           mv api-snapshot.json pr-api-snapshot.json
 
-      # # Checkout and build develop snapshot
-      # - name: Stash changes
-      #   run: git stash --include-untracked
+      # Checking out develop takes its scripts too, so keep the PR's. Both sides have to be
+      # described by the same tool for the comparison to read as one description of the API against
+      # another, rather than as one tool's output against another tool's — and without this, a fix
+      # to these scripts could never take effect on the PR that makes it
+      - name: Keep PR snapshot scripts
+        run: cp -r scripts "$RUNNER_TEMP/pr-scripts"
 
       - name: Checkout develop branch
         run: git checkout origin/develop
@@ -93,7 +96,12 @@ jobs:
         run: yarn install --immutable
 
       - name: Build develop declaration files
-        run: yarn build:declaration-only
+        run: |
+          rm -rf dist
+          yarn build:declaration-only
+
+      - name: Restore PR snapshot scripts
+        run: cp -r "$RUNNER_TEMP/pr-scripts/." scripts/
 
       - name: Generate develop API snapshot
         run: |

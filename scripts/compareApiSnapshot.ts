@@ -77,7 +77,8 @@ const MEMBER_REGEX =
  * anything else — a named type, a union, an intersection — or holds a member we can't read
  */
 function parseObjectType(type: string): Map<string, ObjectMember> | null {
-  const trimmed = type.trim();
+  // an optional parameter prints as `T | undefined`; the `optional` flag already records that
+  const trimmed = type.trim().replace(/\s*\|\s*undefined$/, '');
 
   if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) return null;
 
@@ -192,7 +193,11 @@ function compareOverloads(
       const location = `${filePath} > ${parentName}.${methodName}: Param ${j + 1}`;
 
       if (bp?.name !== cp?.name || bp?.optional !== cp?.optional) {
-        logBreak(`${location} mismatch in overload #${i + 1}`);
+        logBreak(
+          `${location} mismatch in overload #${i + 1}: was '${bp.name}${
+            bp.optional ? '?' : ''
+          }', is now '${cp.name}${cp.optional ? '?' : ''}'`
+        );
         continue;
       }
 
@@ -200,7 +205,10 @@ function compareOverloads(
         const objectBreaks = compareObjectTypes(bp!.type, cp!.type);
 
         if (!objectBreaks) {
-          logBreak(`${location} mismatch in overload #${i + 1}`);
+          // say what moved: a type the members can't be read from is the hardest one to place
+          logBreak(
+            `${location} in overload #${i + 1}: type changed from '${bp!.type}' to '${cp!.type}'`
+          );
         } else {
           objectBreaks.forEach(reason => logBreak(`${location} in overload #${i + 1}: ${reason}`));
         }
@@ -209,7 +217,9 @@ function compareOverloads(
 
     if (baseSig.returnType !== currSig.returnType) {
       logBreak(
-        `${filePath} > ${parentName}.${methodName}: Return type changed in overload #${i + 1}`
+        `${filePath} > ${parentName}.${methodName}: Return type changed in overload #${
+          i + 1
+        }: from '${baseSig.returnType}' to '${currSig.returnType}'`
       );
     }
   });
