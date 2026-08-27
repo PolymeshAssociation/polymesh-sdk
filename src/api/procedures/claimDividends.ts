@@ -31,7 +31,18 @@ export async function prepareClaimDividends(
 
   assertDistributionOpen(paymentDate, expiryDate);
 
-  const participant = await distribution.getParticipant();
+  // `distribution` was fetched through (and carries) whatever Context it happened to be
+  // constructed with, which is *not* necessarily this Procedure's own Context (`context` above,
+  // scoped to this call's `signingAccount`). Since `getParticipant` defaults its `identity` by
+  // reading the *signing* Identity off whichever Context it's given, calling it with no args here
+  // would resolve against `distribution`'s Context instead of this one, silently checking the
+  // wrong Identity's participation (and balance) whenever the two differ - e.g. any multi-account
+  // consumer, such as the REST API, that fetches entities off a shared Context while overriding
+  // `signingAccount` per call. Resolve the signing Identity from this Procedure's Context
+  // explicitly and pass it through so the correct Identity is always the one checked.
+  const signingIdentity = await context.getSigningIdentity();
+
+  const participant = await distribution.getParticipant({ identity: signingIdentity });
 
   if (!participant) {
     throw new PolymeshError({
