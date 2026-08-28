@@ -32,6 +32,7 @@ import {
   ErrorCode,
   IdentityBalance,
   InputCaCheckpoint,
+  MiddlewarePaginationOptions,
   ModifyCaCheckpointParams,
   NoArgsProcedureMethod,
   PayDividendsParams,
@@ -495,9 +496,7 @@ export class DividendDistribution extends CorporateActionBase {
    * @note supports pagination
    */
   public async getPaymentHistory(
-    opts: {
-      size?: BigNumber;
-      start?: BigNumber;
+    opts: MiddlewarePaginationOptions & {
       orderBy?: DistributionPaymentsOrderBy | DistributionPaymentsOrderBy[];
     } = {}
   ): Promise<ResultSet<DistributionPayment>> {

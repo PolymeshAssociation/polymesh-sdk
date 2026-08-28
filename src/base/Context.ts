@@ -47,6 +47,7 @@ import {
   DistributionWithDetails,
   ErrorCode,
   MiddlewareMetadata,
+  MiddlewarePaginationOptions,
   ModuleName,
   PolkadotConfig,
   ProtocolFees,
@@ -1084,14 +1085,14 @@ export class Context {
   /**
    * @hidden
    */
-  public async getIdentityClaimsFromMiddleware(args: {
-    targets?: (string | Identity)[] | undefined;
-    trustedClaimIssuers?: (string | Identity)[] | undefined;
-    claimTypes?: ClaimTypeInput[] | undefined;
-    includeExpired?: boolean | undefined;
-    size?: BigNumber | undefined;
-    start?: BigNumber | undefined;
-  }): Promise<ResultSet<ClaimData>> {
+  public async getIdentityClaimsFromMiddleware(
+    args: MiddlewarePaginationOptions & {
+      targets?: (string | Identity)[] | undefined;
+      trustedClaimIssuers?: (string | Identity)[] | undefined;
+      claimTypes?: ClaimTypeInput[] | undefined;
+      includeExpired?: boolean | undefined;
+    }
+  ): Promise<ResultSet<ClaimData>> {
     const {
       targets,
       claimTypes,
@@ -1148,13 +1149,11 @@ export class Context {
    * @note uses the middleware V2 (optional)
    */
   public async issuedClaims(
-    opts: {
+    opts: MiddlewarePaginationOptions & {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
       claimTypes?: ClaimTypeInput[];
       includeExpired?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
     const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
@@ -1435,13 +1434,13 @@ export class Context {
    * @note uses the middleware V2
    * @note supports pagination
    */
-  public async getPolyxTransactions(args: {
-    identity?: string | Identity;
-    accounts?: (string | Account)[];
-    size?: BigNumber;
-    start?: BigNumber;
-    orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[];
-  }): Promise<ResultSet<HistoricPolyxTransaction>> {
+  public async getPolyxTransactions(
+    args: MiddlewarePaginationOptions & {
+      identity?: string | Identity;
+      accounts?: (string | Account)[];
+      orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[];
+    }
+  ): Promise<ResultSet<HistoricPolyxTransaction>> {
     const {
       identity,
       accounts,

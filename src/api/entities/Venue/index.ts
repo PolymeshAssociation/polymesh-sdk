@@ -20,6 +20,7 @@ import {
   ErrorCode,
   GroupedInstructions,
   InstructionStatus,
+  MiddlewarePaginationOptions,
   ModifyVenueParams,
   NumberedPortfolio,
   ProcedureMethod,
@@ -256,10 +257,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
    * @note supports pagination
    */
   public async getHistoricalInstructions(
-    opts: {
-      size?: BigNumber;
-      start?: BigNumber;
-    } = {}
+    opts: MiddlewarePaginationOptions = {}
   ): Promise<ResultSet<HistoricInstruction>> {
     const { context, id } = this;
 

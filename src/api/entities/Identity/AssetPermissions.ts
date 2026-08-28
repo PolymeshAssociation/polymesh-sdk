@@ -28,6 +28,7 @@ import {
   CheckPermissionsResult,
   ErrorCode,
   EventIdentifier,
+  MiddlewarePaginationOptions,
   ModuleName,
   PermissionType,
   ProcedureMethod,
@@ -375,14 +376,14 @@ export class AssetPermissions extends Namespace<Identity> {
    * @note uses the middlewareV2
    * @note supports pagination
    */
-  public async getOperationHistory(opts: {
-    asset: string | FungibleAsset;
-    moduleId?: ModuleIdEnum;
-    eventId?: EventIdEnum;
-    size?: BigNumber;
-    start?: BigNumber;
-    orderBy?: TickerExternalAgentActionsOrderBy | TickerExternalAgentActionsOrderBy[];
-  }): Promise<ResultSet<EventIdentifier>> {
+  public async getOperationHistory(
+    opts: MiddlewarePaginationOptions & {
+      asset: string | FungibleAsset;
+      moduleId?: ModuleIdEnum;
+      eventId?: EventIdEnum;
+      orderBy?: TickerExternalAgentActionsOrderBy | TickerExternalAgentActionsOrderBy[];
+    }
+  ): Promise<ResultSet<EventIdentifier>> {
     const {
       context,
       parent: { did },

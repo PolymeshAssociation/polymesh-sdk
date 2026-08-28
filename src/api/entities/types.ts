@@ -86,14 +86,28 @@ export type SubCallback<T> = (result: T) => void | Promise<void>;
 
 export type UnsubCallback = () => void;
 
+/**
+ * Pagination options for a read that pages the chain. `start` is a storage key, so it is only ever
+ *   a `next` returned by a previous call and cannot be constructed by hand
+ */
 export interface PaginationOptions {
   size: BigNumber;
   start?: string | undefined;
 }
 
+/**
+ * Pagination options for a read that pages the middleware. `start` is an offset, so any page can be
+ *   requested directly
+ */
 export interface MiddlewarePaginationOptions {
-  size: BigNumber;
-  start?: BigNumber;
+  /**
+   * The number of results to return. Defaults to 25
+   */
+  size?: BigNumber | undefined;
+  /**
+   * The number of results to skip
+   */
+  start?: BigNumber | undefined;
 }
 
 export type NextKey = string | BigNumber | null;

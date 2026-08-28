@@ -21,6 +21,7 @@ import {
   Account,
   EnableOffChainFundingParams,
   InvestInOfferingParams,
+  MiddlewarePaginationOptions,
   ModifyOfferingTimesParams,
   NoArgsProcedureMethod,
   OffChainFundingDetails,
@@ -253,11 +254,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    * @note uses the middleware V2
    */
   public async getInvestments(
-    opts: {
-      size?: BigNumber;
-      start?: BigNumber;
-      orderBy?: InvestmentsOrderBy | InvestmentsOrderBy[];
-    } = {}
+    opts: MiddlewarePaginationOptions & { orderBy?: InvestmentsOrderBy | InvestmentsOrderBy[] } = {}
   ): Promise<ResultSet<Investment>> {
     const {
       context,
