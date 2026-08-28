@@ -43,6 +43,7 @@ import {
   HistoricalInstructionFilters,
   HistoricInstruction,
   InstructionsByStatus,
+  MiddlewarePaginationOptions,
   MultiSigSigners,
   NumberedPortfolio,
   PaginationOptions,
@@ -423,15 +424,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * @note supports pagination
    */
   public async getHeldAssets(
-    opts: {
+    opts: MiddlewarePaginationOptions & {
       /**
        * @deprecated in favour of `orderBy`, which every other read is ordered by. Passing both
        *   throws
        */
       order?: AssetHoldersOrderBy;
       orderBy?: AssetHoldersOrderBy | AssetHoldersOrderBy[];
-      size?: BigNumber;
-      start?: BigNumber | undefined;
     } = {}
   ): Promise<ResultSet<FungibleAsset>> {
     const { context, did } = this;
@@ -482,11 +481,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * @note supports pagination
    */
   public async getAssetHoldings(
-    opts: {
+    opts: MiddlewarePaginationOptions & {
       heldNow?: boolean;
       orderBy?: AssetHoldersOrderBy | AssetHoldersOrderBy[];
-      size?: BigNumber;
-      start?: BigNumber | undefined;
     } = {}
   ): Promise<ResultSet<FungibleAssetHolding>> {
     const { context, did } = this;
@@ -541,7 +538,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * @note supports pagination
    */
   public async getHeldNfts(
-    opts: {
+    opts: MiddlewarePaginationOptions & {
       heldNow?: boolean;
       /**
        * @deprecated in favour of `orderBy`, which every other read is ordered by. Passing both
@@ -549,8 +546,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
        */
       order?: NftHoldersOrderBy;
       orderBy?: NftHoldersOrderBy | NftHoldersOrderBy[];
-      size?: BigNumber;
-      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<HeldNfts>> {
     const { context, did } = this;

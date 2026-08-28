@@ -26,6 +26,7 @@ import {
   AnyJson,
   ErrorCode,
   HistoricalMultiSigProposal,
+  MiddlewarePaginationOptions,
   ModifyMultiSigParams,
   MultiSigDetails,
   NoArgsProcedureMethod,
@@ -205,11 +206,11 @@ export class MultiSig extends Account {
    *
    * @note uses the middlewareV2
    */
-  public async getHistoricalProposals(opts?: {
-    size?: BigNumber;
-    start?: BigNumber;
-    orderBy?: MultiSigProposalsOrderBy | MultiSigProposalsOrderBy[];
-  }): Promise<ResultSet<HistoricalMultiSigProposal>> {
+  public async getHistoricalProposals(
+    opts?: MiddlewarePaginationOptions & {
+      orderBy?: MultiSigProposalsOrderBy | MultiSigProposalsOrderBy[];
+    }
+  ): Promise<ResultSet<HistoricalMultiSigProposal>> {
     const { context, address } = this;
     const { size, start, orderBy } = opts ?? {};
 

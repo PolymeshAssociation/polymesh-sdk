@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Identity, Namespace, Nft } from '~/internal';
 import { nftCollectionHolders } from '~/middleware/queries/assets';
 import { Query } from '~/middleware/types';
-import { IdentityHeldNfts, NftCollection, ResultSet } from '~/types';
+import { IdentityHeldNfts, MiddlewarePaginationOptions, NftCollection, ResultSet } from '~/types';
 import { Ensured } from '~/types/utils';
 import { calculateNextKey, getAssetIdForMiddleware } from '~/utils/internal';
 
@@ -16,10 +16,7 @@ export class AssetHolders extends Namespace<NftCollection> {
    *
    * @note uses the middlewareV2
    */
-  public async get(opts: {
-    size?: BigNumber;
-    start?: BigNumber;
-  }): Promise<ResultSet<IdentityHeldNfts>> {
+  public async get(opts: MiddlewarePaginationOptions): Promise<ResultSet<IdentityHeldNfts>> {
     const {
       context,
       parent: { id: assetId },

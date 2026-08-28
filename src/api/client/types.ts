@@ -3,7 +3,14 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { InstructionsOrderBy } from '~/middleware/types';
-import { Account, Asset, Identity, InstructionStatusEnum, TxTag } from '~/types';
+import {
+  Account,
+  Asset,
+  Identity,
+  InstructionStatusEnum,
+  MiddlewarePaginationOptions,
+  TxTag,
+} from '~/types';
 
 export { InstructionStatusEnum };
 
@@ -244,7 +251,7 @@ export type CustomClaimTypeWithDid = CustomClaimType & { did?: string | undefine
  * Filters for instructions
  *
  */
-export interface HistoricalInstructionFilters {
+export interface HistoricalInstructionFilters extends MiddlewarePaginationOptions {
   /**
    * The DID of the identity to filter by
    */
@@ -273,14 +280,6 @@ export interface HistoricalInstructionFilters {
    * The party did to filter by
    */
   party?: string | Identity;
-  /**
-   * The number of results to return
-   */
-  size?: BigNumber;
-  /**
-   * The number of results to skip
-   */
-  start?: BigNumber;
   /**
    * The ordering of the results. Defaults to oldest first
    */

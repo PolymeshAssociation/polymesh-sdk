@@ -17,6 +17,7 @@ import {
   HistoricNftTransaction,
   IssueNftParams,
   MetadataType,
+  MiddlewarePaginationOptions,
   NftControllerTransferParams,
   ProcedureMethod,
   ResultSet,
@@ -361,11 +362,11 @@ export class NftCollection extends BaseAsset {
    *
    * @note uses the middlewareV2
    */
-  public async getTransactionHistory(opts: {
-    size?: BigNumber;
-    start?: BigNumber;
-    orderBy?: AssetTransactionsOrderBy | AssetTransactionsOrderBy[];
-  }): Promise<ResultSet<HistoricNftTransaction>> {
+  public async getTransactionHistory(
+    opts: MiddlewarePaginationOptions & {
+      orderBy?: AssetTransactionsOrderBy | AssetTransactionsOrderBy[];
+    }
+  ): Promise<ResultSet<HistoricNftTransaction>> {
     const { context, id } = this;
     const { size, start, orderBy } = opts;
 

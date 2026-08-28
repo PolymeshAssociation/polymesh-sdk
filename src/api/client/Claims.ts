@@ -25,6 +25,7 @@ import {
   CustomClaimWithoutScope,
   ErrorCode,
   IdentityWithClaims,
+  MiddlewarePaginationOptions,
   ModifyClaimsParams,
   NextKey,
   ProcedureMethod,
@@ -150,11 +151,9 @@ export class Claims {
    * @note uses the middlewareV2
    */
   public async getIssuedClaims(
-    opts: {
+    opts: MiddlewarePaginationOptions & {
       target?: string | Identity;
       includeExpired?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
@@ -185,14 +184,12 @@ export class Claims {
    * @note uses the middleware V2
    */
   public async getIdentitiesWithClaims(
-    opts: {
+    opts: MiddlewarePaginationOptions & {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
       scope?: Scope;
       claimTypes?: ClaimTypeInput[];
       includeExpired?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
@@ -422,13 +419,11 @@ export class Claims {
    * @note uses the middlewareV2 (optional)
    */
   public async getTargetingClaims(
-    opts: {
+    opts: MiddlewarePaginationOptions & {
       target?: string | Identity;
       scope?: Scope;
       trustedClaimIssuers?: (string | Identity)[];
       includeExpired?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
@@ -565,9 +560,7 @@ export class Claims {
    * @note uses the middlewareV2 (Required)
    */
   public async getAllCustomClaimTypes(
-    opts: {
-      size?: BigNumber;
-      start?: BigNumber;
+    opts: MiddlewarePaginationOptions & {
       dids?: string[];
       orderBy?: CustomClaimTypesOrderBy | CustomClaimTypesOrderBy[];
     } = {}

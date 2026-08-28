@@ -11,7 +11,15 @@ import {
   AuthTypeEnum,
   Query,
 } from '~/middleware/types';
-import { AuthorizationType, ErrorCode, ResultSet, Signer, SignerType, SignerValue } from '~/types';
+import {
+  AuthorizationType,
+  ErrorCode,
+  MiddlewarePaginationOptions,
+  ResultSet,
+  Signer,
+  SignerType,
+  SignerValue,
+} from '~/types';
 import { Ensured, QueryArgs } from '~/types/utils';
 import {
   addressToKey,
@@ -161,11 +169,9 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
    * @note uses the middlewareV2
    */
   public async getHistoricalAuthorizations(
-    opts: {
+    opts: MiddlewarePaginationOptions & {
       status?: AuthorizationStatusEnum;
       type?: AuthTypeEnum;
-      size?: BigNumber;
-      start?: BigNumber;
       orderBy?: AuthorizationsOrderBy | AuthorizationsOrderBy[];
     } = {}
   ): Promise<ResultSet<AuthorizationRequest>> {

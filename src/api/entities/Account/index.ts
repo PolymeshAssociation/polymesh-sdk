@@ -45,6 +45,7 @@ import {
   CheckPermissionsResult,
   ErrorCode,
   ExtrinsicData,
+  MiddlewarePaginationOptions,
   MultiSigTx,
   NftOwnerStatus,
   Permissions,
@@ -308,13 +309,11 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    *   "no history" and read as a bug in the caller's code
    */
   public async getTransactionHistory(
-    filters: {
+    filters: MiddlewarePaginationOptions & {
       blockNumber?: BigNumber;
       blockHash?: string;
       tag?: TxTag;
       success?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
       orderBy?: ExtrinsicsOrderBy | ExtrinsicsOrderBy[];
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
@@ -678,11 +677,11 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    *
    * @note uses the middleware
    */
-  public getPolyxTransactions(filters: {
-    size?: BigNumber;
-    start?: BigNumber;
-    orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[];
-  }): Promise<ResultSet<HistoricPolyxTransaction>> {
+  public getPolyxTransactions(
+    filters: MiddlewarePaginationOptions & {
+      orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[];
+    }
+  ): Promise<ResultSet<HistoricPolyxTransaction>> {
     const { context } = this;
 
     return context.getPolyxTransactions({

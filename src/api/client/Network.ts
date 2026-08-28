@@ -21,6 +21,7 @@ import {
   EventIdentifier,
   ExtrinsicDataWithFees,
   MiddlewareMetadata,
+  MiddlewarePaginationOptions,
   NetworkProperties,
   ProcedureMethod,
   ProtocolFees,
@@ -594,16 +595,16 @@ export class Network {
    *
    * @note uses the middlewareV2
    */
-  public async getEventsByIndexedArgs(opts: {
-    moduleId: ModuleIdEnum;
-    eventId: EventIdEnum;
-    eventArg0?: string;
-    eventArg1?: string;
-    eventArg2?: string;
-    size?: BigNumber;
-    start?: BigNumber;
-    orderBy?: EventsOrderBy | EventsOrderBy[];
-  }): Promise<EventIdentifier[] | null> {
+  public async getEventsByIndexedArgs(
+    opts: MiddlewarePaginationOptions & {
+      moduleId: ModuleIdEnum;
+      eventId: EventIdEnum;
+      eventArg0?: string;
+      eventArg1?: string;
+      eventArg2?: string;
+      orderBy?: EventsOrderBy | EventsOrderBy[];
+    }
+  ): Promise<EventIdentifier[] | null> {
     const { context } = this;
 
     const { moduleId, eventId, eventArg0, eventArg1, eventArg2, size, start, orderBy } = opts;
