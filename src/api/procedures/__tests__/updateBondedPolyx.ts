@@ -31,6 +31,7 @@ describe('updateBondedPolyx procedure', () => {
   let bondExtraTx: PolymeshTx<[Balance]>;
   let rebondTx: PolymeshTx<[Balance]>;
   let actingAccount: Account;
+  let stash: Account;
   let rawAmount: Balance;
 
   let bigNumberToBalanceSpy: jest.SpyInstance;
@@ -49,6 +50,8 @@ describe('updateBondedPolyx procedure', () => {
 
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext).mockReturnValue(rawAmount);
 
+    stash = entityMockUtils.getAccountInstance();
+
     storage = {
       isStash: false,
       actingAccount,
@@ -58,7 +61,7 @@ describe('updateBondedPolyx procedure', () => {
         locked: new BigNumber(0),
       },
       controllerEntry: {
-        stash: entityMockUtils.getAccountInstance(),
+        stash,
         total: new BigNumber(100),
         active: new BigNumber(100),
         unlocking: [],
@@ -223,6 +226,20 @@ describe('updateBondedPolyx procedure', () => {
       expect(() => prepareUnbondPolyx.call(proc, { type: 'rebond', amount })).toThrow(
         expectedError
       );
+    });
+
+    it('should throw an error if there is nothing unbonding at all', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'There is no unbonding POLYX to rebond',
+      });
+
+      /* zero passes the amount check, since nothing is not less than nothing */
+      expect(() =>
+        prepareUnbondPolyx.call(proc, { type: 'rebond', amount: new BigNumber(0) })
+      ).toThrow(expectedError);
     });
 
     it('should throw an error if there is insufficient unbonding POLYX', () => {

@@ -46,6 +46,13 @@ describe('nominateValidators procedure', () => {
     });
     rawAccountId = dsMockUtils.createMockAccountId(validator.address);
 
+    dsMockUtils.createCallMock('stakingApi', 'nominationsQuota', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(16)),
+    });
+    dsMockUtils.createQueryMock('staking', 'minNominatorBond', {
+      returnValue: dsMockUtils.createMockU128(new BigNumber(1).times(10 ** 6)),
+    });
+
     stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
 
     when(stringToAccountIdSpy)
@@ -83,12 +90,51 @@ describe('nominateValidators procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The acting account must be a controller',
+      message:
+        'The acting account must be a controller. Pass `bonded` to nominate against a bond that is being made in the same batch',
     });
 
     await expect(
       prepareNominateValidators.call(proc, {
         validators: [validator],
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should nominate against a bond made in the same batch', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      ...storage,
+      ledger: null,
+    });
+
+    const result = await prepareNominateValidators.call(proc, {
+      validators: [validator],
+      bonded: new BigNumber(500),
+    });
+
+    /* not a controller yet — the bond that makes it one is in the same batch */
+    expect(result).toEqual({
+      transaction: nominateTx,
+      args: [[rawAccountId]],
+      resolver: undefined,
+    });
+  });
+
+  it('should throw an error if the bond is below the minimum a nominator may hold', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      ...storage,
+      ledger: null,
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.InsufficientBalance,
+      message: 'The bonded amount is below the minimum the chain accepts from a nominator',
+    });
+
+    await expect(
+      prepareNominateValidators.call(proc, {
+        validators: [validator],
+        bonded: new BigNumber(0.5),
       })
     ).rejects.toThrow(expectedError);
   });
@@ -107,6 +153,30 @@ describe('nominateValidators procedure', () => {
     await expect(
       prepareNominateValidators.call(proc, {
         validators: [validator, validator],
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if more validators are nominated than the quota allows', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+
+    dsMockUtils.createCallMock('stakingApi', 'nominationsQuota', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
+    });
+
+    const otherValidator = entityMockUtils.getAccountInstance({
+      address: '5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY',
+      stakingGetCommission: { commission: new BigNumber(7), blocked: false },
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'More validators nominated than the acting account may nominate',
+    });
+
+    await expect(
+      prepareNominateValidators.call(proc, {
+        validators: [validator, otherValidator],
       })
     ).rejects.toThrow(expectedError);
   });

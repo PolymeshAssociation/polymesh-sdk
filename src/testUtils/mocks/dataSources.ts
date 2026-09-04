@@ -34,6 +34,8 @@ import {
   Block,
   BlockHash,
   Call,
+  Digest,
+  DigestItem,
   DispatchError,
   DispatchErrorModule,
   DispatchErrorModuleU8,
@@ -156,6 +158,7 @@ import {
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
+  SpConsensusBabeDigestsPreDigest,
   SpStakingExposurePage,
   SpStakingIndividualExposure,
   SpStakingPagedExposureMetadata,
@@ -2557,6 +2560,38 @@ export const createMockAssetType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockDigestItem = (
+  digestItem?:
+    | 'RuntimeEnvironmentUpdated'
+    | { Other: Bytes }
+    | { Consensus: ITuple<[U8aFixed, Bytes]> }
+    | { Seal: ITuple<[U8aFixed, Bytes]> }
+    | { PreRuntime: ITuple<[U8aFixed, Bytes]> }
+    | DigestItem
+): MockCodec<DigestItem> => {
+  return createMockEnum<DigestItem>(digestItem);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBabePreDigest = (
+  preDigest?:
+    | { Primary: Record<string, unknown> }
+    | { SecondaryPlain: Record<string, unknown> }
+    /* the chain spells this variant `SecondaryVRF`, which is not strict PascalCase */
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    | { SecondaryVRF: Record<string, unknown> }
+    | SpConsensusBabeDigestsPreDigest
+): MockCodec<SpConsensusBabeDigestsPreDigest> => {
+  return createMockEnum<SpConsensusBabeDigestsPreDigest>(preDigest);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockNftType = (
   assetType?:
     | 'Derivative'
@@ -4015,13 +4050,16 @@ export const createMockHeader = (
         number: Compact<u32>;
         stateRoot: Hash | Parameters<typeof createMockHash>[0];
         extrinsicsRoot: Hash | Parameters<typeof createMockHash>[0];
+        /* the consensus digest a real header carries; empty unless a test needs to read it */
+        digest?: Digest | { logs: DigestItem[] };
       }
 ): MockCodec<Header> => {
-  const { parentHash, number, stateRoot, extrinsicsRoot } = header ?? {
+  const { parentHash, number, stateRoot, extrinsicsRoot, digest } = header ?? {
     parentHash: createMockHash(),
     number: createMockCompact(),
     stateRoot: createMockHash(),
     extrinsicsRoot: createMockHash(),
+    digest: undefined,
   };
 
   return createMockCodec(
@@ -4030,6 +4068,7 @@ export const createMockHeader = (
       number: createMockCompact(number.unwrap()),
       stateRoot: createMockHash(stateRoot),
       extrinsicsRoot: createMockHash(extrinsicsRoot),
+      digest: digest ?? { logs: [] },
     },
     !header
   );

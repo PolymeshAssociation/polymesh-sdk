@@ -184,14 +184,14 @@ describe('Staking Class', () => {
 
   describe('method: eraProgress', () => {
     /*
-     * 300 slots per session, 3 sessions per era, so 900 slots per era. Genesis at slot 1000, and
-     *   the active era anchored to session 30 — so the era opened at epoch 40, slot 13000
+     * 300 slots per session, 3 sessions per era, so 900 slots per era. The active era is anchored
+     *   to session 30; the chain recorded that session opening at block 13000, and the header of
+     *   that block names the slot it was authored in
      */
-    const genesisSlot = 1000;
     const slotsPerSession = 300;
     const eraStartSession = 30;
-    const eraStartEpoch = 40;
-    const eraStartSlot = genesisSlot + eraStartEpoch * slotsPerSession;
+    const eraStartBlock = 13000;
+    const eraStartSlot = 41_000;
     const eraStartedAt = 1_700_000_000_000;
 
     let queryMultiMock: jest.Mock;
@@ -229,9 +229,8 @@ describe('Staking Class', () => {
       dsMockUtils.createQueryMock('staking', 'activeEra');
       dsMockUtils.createQueryMock('staking', 'currentEra');
       dsMockUtils.createQueryMock('session', 'currentIndex');
-      dsMockUtils.createQueryMock('babe', 'epochIndex');
       dsMockUtils.createQueryMock('babe', 'currentSlot');
-      dsMockUtils.createQueryMock('babe', 'genesisSlot');
+      dsMockUtils.createQueryMock('babe', 'epochStart');
 
       queryMultiMock = dsMockUtils.getQueryMultiMock();
     });
@@ -241,15 +240,75 @@ describe('Staking Class', () => {
     });
 
     /**
+     * The epoch began on `epochStartBlock`, whose header names `epochStartSlot`. `getBlockHash` and
+     *   `getHeader` are what the SDK reads that header with, and `createType` decodes the
+     *   pre-runtime digest it finds there
+     */
+    const mockEpochStartBlock = (epochStartBlock: number, epochStartSlot: number): void => {
+      const blockHash = dsMockUtils.createMockHash(`0xblock${epochStartBlock}`);
+      const payload = dsMockUtils.createMockBytes(`0xdigest${epochStartSlot}`);
+
+      when(dsMockUtils.createRpcMock('chain', 'getBlockHash'))
+        .calledWith(expect.objectContaining({ toString: expect.anything() }))
+        .mockResolvedValue(blockHash);
+
+      dsMockUtils.createRpcMock('chain', 'getHeader', {
+        returnValue: dsMockUtils.createMockHeader({
+          parentHash: dsMockUtils.createMockHash(),
+          number: dsMockUtils.createMockCompact(
+            dsMockUtils.createMockU32(new BigNumber(epochStartBlock))
+          ),
+          stateRoot: dsMockUtils.createMockHash(),
+          extrinsicsRoot: dsMockUtils.createMockHash(),
+          digest: {
+            logs: [
+              dsMockUtils.createMockDigestItem({
+                PreRuntime: dsMockUtils.createMockTupleCodec([
+                  dsMockUtils.createMockU8aFixed('BABE'),
+                  payload,
+                ]),
+              }),
+            ],
+          },
+        }),
+      });
+
+      when(mockContext.createType)
+        .calledWith('SpConsensusBabeDigestsPreDigest', payload)
+        .mockReturnValue(
+          dsMockUtils.createMockBabePreDigest({
+            SecondaryPlain: {
+              authorityIndex: dsMockUtils.createMockU32(new BigNumber(0)),
+              slot: dsMockUtils.createMockU64(new BigNumber(epochStartSlot)),
+            },
+          })
+        );
+    };
+
+    /**
      * @param sessionsIn - how many sessions of the era are already behind the chain
      * @param slotsIntoSession - how far into the current session the chain is
      */
     const mockProgress = (
       sessionsIn: number,
       slotsIntoSession: number,
-      opts: { start?: number | null; activeEra?: number; plannedEra?: number | null } = {}
+      opts: {
+        start?: number | null;
+        activeEra?: number;
+        plannedEra?: number | null;
+        epochStartBlock?: number;
+        epochStartSlot?: number;
+      } = {}
     ): void => {
-      const { start = eraStartedAt, activeEra = 7131, plannedEra = activeEra } = opts;
+      const {
+        start = eraStartedAt,
+        activeEra = 7131,
+        plannedEra = activeEra,
+        epochStartBlock = eraStartBlock + sessionsIn * slotsPerSession,
+        epochStartSlot = eraStartSlot + sessionsIn * slotsPerSession,
+      } = opts;
+
+      mockEpochStartBlock(epochStartBlock, epochStartSlot);
 
       queryMultiMock.mockResolvedValue([
         dsMockUtils.createMockOption(
@@ -265,11 +324,11 @@ describe('Staking Class', () => {
           ? dsMockUtils.createMockOption()
           : dsMockUtils.createMockOption(dsMockUtils.createMockU32(new BigNumber(plannedEra))),
         dsMockUtils.createMockU32(new BigNumber(eraStartSession + sessionsIn)),
-        dsMockUtils.createMockU64(new BigNumber(eraStartEpoch + sessionsIn)),
-        dsMockUtils.createMockU64(
-          new BigNumber(eraStartSlot + sessionsIn * slotsPerSession + slotsIntoSession)
-        ),
-        dsMockUtils.createMockU64(new BigNumber(genesisSlot)),
+        dsMockUtils.createMockU64(new BigNumber(epochStartSlot + slotsIntoSession)),
+        dsMockUtils.createMockTupleCodec([
+          dsMockUtils.createMockU32(new BigNumber(Math.max(epochStartBlock - slotsPerSession, 0))),
+          dsMockUtils.createMockU32(new BigNumber(epochStartBlock)),
+        ]),
       ]);
     };
 
@@ -293,6 +352,34 @@ describe('Staking Class', () => {
       expect(result.session.progress.total).toEqual(new BigNumber(300));
       expect(result.session.progress.progress).toEqual(new BigNumber(0.5));
       expect(result.session.progress.remaining).toEqual(new BigNumber(150 * 6000));
+    });
+
+    it('should read block 1 where no rotation has been recorded yet', async () => {
+      /* `babe.epochStart` is `(0, 0)` until the first rotation, and the chain opens epoch 0 at
+       * block 1 — so that is the header the slot has to come from */
+      const bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
+
+      mockProgress(0, 150, { epochStartBlock: 0 });
+
+      const result = await staking.eraProgress();
+
+      expect(bigNumberToU32Spy).toHaveBeenCalledWith(new BigNumber(1), mockContext);
+      expect(result.session.progress.elapsed).toEqual(new BigNumber(150));
+    });
+
+    it('should stay local to the epoch on a chain that skipped epochs', async () => {
+      /*
+       * a chain paused mid-era and restarted rotates the epoch on its next block, and the slot it
+       *   resumes in bears no relation to `genesisSlot + epochIndex * slotsPerSession`. Progress
+       *   counts forward from the slot that block was authored in, so the gap cannot reach it
+       */
+      mockProgress(2, 12, { epochStartBlock: 90_000, epochStartSlot: 8_000_000 });
+
+      const result = await staking.eraProgress();
+
+      expect(result.session.progress.elapsed).toEqual(new BigNumber(12));
+      expect(result.session.inEra).toEqual(new BigNumber(3));
+      expect(result.era.progress.elapsed).toEqual(new BigNumber(2 * slotsPerSession + 12));
     });
 
     it('should report zero progress at the very start of an era', async () => {
@@ -361,9 +448,11 @@ describe('Staking Class', () => {
         dsMockUtils.createMockOption(),
         dsMockUtils.createMockOption(),
         dsMockUtils.createMockU32(new BigNumber(0)),
-        dsMockUtils.createMockU64(new BigNumber(0)),
-        dsMockUtils.createMockU64(new BigNumber(0)),
-        dsMockUtils.createMockU64(new BigNumber(0)),
+        dsMockUtils.createMockU32(new BigNumber(0)),
+        dsMockUtils.createMockTupleCodec([
+          dsMockUtils.createMockU32(new BigNumber(0)),
+          dsMockUtils.createMockU32(new BigNumber(0)),
+        ]),
       ]);
 
       return expect(staking.eraProgress()).rejects.toThrow('There is no active staking era');
@@ -372,6 +461,8 @@ describe('Staking Class', () => {
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
       const callback = jest.fn();
+
+      mockEpochStartBlock(eraStartBlock + slotsPerSession, eraStartSlot + slotsPerSession);
 
       queryMultiMock.mockImplementation(async (_, cb) => {
         await cb([
@@ -385,9 +476,11 @@ describe('Staking Class', () => {
           ),
           dsMockUtils.createMockOption(dsMockUtils.createMockU32(new BigNumber(7131))),
           dsMockUtils.createMockU32(new BigNumber(eraStartSession + 1)),
-          dsMockUtils.createMockU64(new BigNumber(eraStartEpoch + 1)),
           dsMockUtils.createMockU64(new BigNumber(eraStartSlot + slotsPerSession + 150)),
-          dsMockUtils.createMockU64(new BigNumber(genesisSlot)),
+          dsMockUtils.createMockTupleCodec([
+            dsMockUtils.createMockU32(new BigNumber(eraStartBlock)),
+            dsMockUtils.createMockU32(new BigNumber(eraStartBlock + slotsPerSession)),
+          ]),
         ]);
 
         return unsubCallback;
@@ -401,6 +494,196 @@ describe('Staking Class', () => {
           era: expect.objectContaining({ index: new BigNumber(7131) }),
           session: expect.objectContaining({ inEra: new BigNumber(2) }),
         })
+      );
+    });
+  });
+
+  describe('method: getElectionSchedule', () => {
+    /* 300 slots per session, 3 sessions per era, so the election window is 300 / 4 = 75 slots */
+    const slotsPerSession = 300;
+    const eraStartSession = 30;
+    const epochStartBlock = 13000;
+    const epochStartSlot = 41000;
+
+    beforeEach(() => {
+      dsMockUtils.setConstMock('staking', 'sessionsPerEra', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
+      });
+      dsMockUtils.setConstMock('staking', 'bondingDuration', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(7)),
+      });
+      dsMockUtils.setConstMock('staking', 'historyDepth', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(84)),
+      });
+      dsMockUtils.setConstMock('babe', 'epochDuration', {
+        returnValue: dsMockUtils.createMockU64(new BigNumber(slotsPerSession)),
+      });
+      dsMockUtils.setConstMock('babe', 'expectedBlockTime', {
+        returnValue: dsMockUtils.createMockU64(new BigNumber(6000)),
+      });
+      dsMockUtils.setConstMock('validators', 'fixedYearlyReward', {
+        returnValue: dsMockUtils.createMockBalance(new BigNumber(140000000000000)),
+      });
+      dsMockUtils.setConstMock('validators', 'maxVariableInflationTotalIssuance', {
+        returnValue: dsMockUtils.createMockBalance(new BigNumber(1000000000000000)),
+      });
+
+      dsMockUtils.createQueryMock('staking', 'erasStartSessionIndex', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockU32(new BigNumber(eraStartSession))
+        ),
+      });
+
+      dsMockUtils.createQueryMock('staking', 'activeEra');
+      dsMockUtils.createQueryMock('session', 'currentIndex');
+      dsMockUtils.createQueryMock('babe', 'currentSlot');
+      dsMockUtils.createQueryMock('system', 'number');
+      dsMockUtils.createQueryMock('babe', 'epochStart');
+
+      const blockHash = dsMockUtils.createMockHash('0xepoch');
+      const payload = dsMockUtils.createMockBytes('0xdigest');
+
+      dsMockUtils.createRpcMock('chain', 'getBlockHash', { returnValue: blockHash });
+      dsMockUtils.createRpcMock('chain', 'getHeader', {
+        returnValue: dsMockUtils.createMockHeader({
+          parentHash: dsMockUtils.createMockHash(),
+          number: dsMockUtils.createMockCompact(
+            dsMockUtils.createMockU32(new BigNumber(epochStartBlock))
+          ),
+          stateRoot: dsMockUtils.createMockHash(),
+          extrinsicsRoot: dsMockUtils.createMockHash(),
+          digest: {
+            logs: [
+              dsMockUtils.createMockDigestItem({
+                PreRuntime: dsMockUtils.createMockTupleCodec([
+                  dsMockUtils.createMockU8aFixed('BABE'),
+                  payload,
+                ]),
+              }),
+            ],
+          },
+        }),
+      });
+
+      when(mockContext.createType)
+        .calledWith('SpConsensusBabeDigestsPreDigest', payload)
+        .mockReturnValue(
+          dsMockUtils.createMockBabePreDigest({
+            SecondaryPlain: {
+              authorityIndex: dsMockUtils.createMockU32(new BigNumber(0)),
+              slot: dsMockUtils.createMockU64(new BigNumber(epochStartSlot)),
+            },
+          })
+        );
+    });
+
+    /**
+     * @param sessionsIn - how many sessions of the era are behind the chain
+     * @param slotsIntoSession - how far into the current session the chain is
+     */
+    const mockSchedule = (sessionsIn: number, slotsIntoSession: number, hasEra = true): void => {
+      dsMockUtils.getQueryMultiMock().mockResolvedValue([
+        hasEra
+          ? dsMockUtils.createMockOption(
+              dsMockUtils.createMockActiveEraInfo({
+                index: dsMockUtils.createMockU32(new BigNumber(7131)),
+                start: dsMockUtils.createMockOption(),
+              })
+            )
+          : dsMockUtils.createMockOption(),
+        dsMockUtils.createMockU32(new BigNumber(eraStartSession + sessionsIn)),
+        dsMockUtils.createMockU64(new BigNumber(epochStartSlot + slotsIntoSession)),
+        dsMockUtils.createMockU32(new BigNumber(epochStartBlock + slotsIntoSession)),
+        dsMockUtils.createMockTupleCodec([
+          dsMockUtils.createMockU32(new BigNumber(epochStartBlock - slotsPerSession)),
+          dsMockUtils.createMockU32(new BigNumber(epochStartBlock)),
+        ]),
+      ]);
+    };
+
+    it('should report when the election opens and closes', async () => {
+      /* first session of a three session era, 100 slots in: the close is two rotations away */
+      mockSchedule(0, 100);
+
+      const result = await staking.getElectionSchedule();
+
+      /* closes 600 slots out, opens 75 before that */
+      expect(result.closesAt).toEqual(new BigNumber(epochStartBlock + 600));
+      expect(result.opensAt).toEqual(new BigNumber(epochStartBlock + 525));
+      expect(result.closesIn).toEqual(new BigNumber(500 * 6000));
+      expect(result.opensIn).toEqual(new BigNumber(425 * 6000));
+    });
+
+    it('should report the next era where this era has already elected', async () => {
+      /* the last session of the era is running, so its election is behind the chain */
+      mockSchedule(2, 100);
+
+      const result = await staking.getElectionSchedule();
+
+      /* three more rotations: the last session of the era after this one */
+      expect(result.closesAt).toEqual(new BigNumber(epochStartBlock + 900));
+      expect(result.closesIn).toEqual(new BigNumber(800 * 6000));
+    });
+
+    it('should report nothing left until an election that is already open', async () => {
+      /* one rotation from the close, and past the 75 slot window in which it opens */
+      mockSchedule(1, 250);
+
+      const result = await staking.getElectionSchedule();
+
+      expect(result.opensIn).toEqual(new BigNumber(0));
+      expect(result.opensAt).toEqual(new BigNumber(epochStartBlock + 225));
+      expect(result.closesIn).toEqual(new BigNumber(50 * 6000));
+    });
+
+    it('should throw if there is no active era', () => {
+      mockSchedule(0, 100, false);
+
+      return expect(staking.getElectionSchedule()).rejects.toThrow(
+        'There is no active staking era'
+      );
+    });
+
+    it('should throw where the chain has pruned the era start', () => {
+      dsMockUtils.createQueryMock('staking', 'erasStartSessionIndex', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+      mockSchedule(0, 100);
+
+      return expect(staking.getElectionSchedule()).rejects.toThrow(
+        'The chain has no start session recorded for the active era'
+      );
+    });
+
+    it('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = jest.fn();
+
+      dsMockUtils.getQueryMultiMock().mockImplementation(async (_, cb) => {
+        await cb([
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockActiveEraInfo({
+              index: dsMockUtils.createMockU32(new BigNumber(7131)),
+              start: dsMockUtils.createMockOption(),
+            })
+          ),
+          dsMockUtils.createMockU32(new BigNumber(eraStartSession)),
+          dsMockUtils.createMockU64(new BigNumber(epochStartSlot + 100)),
+          dsMockUtils.createMockU32(new BigNumber(epochStartBlock + 100)),
+          dsMockUtils.createMockTupleCodec([
+            dsMockUtils.createMockU32(new BigNumber(epochStartBlock - slotsPerSession)),
+            dsMockUtils.createMockU32(new BigNumber(epochStartBlock)),
+          ]),
+        ]);
+
+        return unsubCallback;
+      });
+
+      const result = await staking.getElectionSchedule(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining({ closesAt: new BigNumber(epochStartBlock + 600) })
       );
     });
   });

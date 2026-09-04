@@ -1,5 +1,5 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { Account, Balance, BondPolyxParams, ErrorCode } from '~/types';
+import { Account, Balance, BondPolyxParams, ErrorCode, StakingLedger } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance } from '~/utils/conversion';
 import { asAccount, calculateRawStakingPayee } from '~/utils/internal';
@@ -7,6 +7,10 @@ import { asAccount, calculateRawStakingPayee } from '~/utils/internal';
 export interface Storage {
   actingBalance: Balance;
   actingAccount: Account;
+  /** the controller the acting Account has bonded to, where it is a stash already */
+  currentController: Account | null;
+  /** the ledger the acting Account controls, where it is some other stash's controller */
+  controlledLedger: StakingLedger | null;
 }
 
 /**
@@ -33,11 +37,36 @@ export async function prepareBondPolyx(
     storage: {
       actingAccount,
       actingBalance: { free, locked },
+      currentController,
+      controlledLedger,
     },
   } = this;
   const { autoStake, payee: payeeInput, amount } = args;
 
   const payee = asAccount(payeeInput, context);
+
+  if (currentController) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The stash account is already bonded. Use bondExtra to add to the existing bond',
+      data: {
+        actingAccount: actingAccount.address,
+        currentController: currentController.address,
+      },
+    });
+  }
+
+  /* the chain will not let one Account be a controller and a stash at the same time */
+  if (controlledLedger) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The account is a controller for another stash, so it cannot become a stash itself',
+      data: {
+        actingAccount: actingAccount.address,
+        stash: controlledLedger.stash.address,
+      },
+    });
+  }
 
   if (free.lt(amount)) {
     throw new PolymeshError({
@@ -88,11 +117,17 @@ export async function prepareStorage(this: Procedure<Params, void, Storage>): Pr
 
   const actingAccount = await context.getActingAccount();
 
-  const actingBalance = await actingAccount.getBalance();
+  const [actingBalance, currentController, controlledLedger] = await Promise.all([
+    actingAccount.getBalance(),
+    actingAccount.staking.getController(),
+    actingAccount.staking.getLedger(),
+  ]);
 
   return {
     actingAccount,
     actingBalance,
+    currentController,
+    controlledLedger,
   };
 }
 
