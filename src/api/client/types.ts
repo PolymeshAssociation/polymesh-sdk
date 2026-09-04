@@ -407,6 +407,41 @@ export enum ElectionPhase {
   Emergency = 'Emergency',
 }
 
+/**
+ * When the next validator election opens and closes
+ *
+ * @note the election closes at the session rotation one session before the era ends, not at the
+ *   era boundary, so it can be far closer than the era's own countdown suggests. The blocks are
+ *   **projections** — the chain schedules the election in slots, and a slot that produces no block
+ *   moves the block it lands on
+ */
+export interface ElectionSchedule {
+  /**
+   * The block the election is expected to open on
+   *
+   * @note in the past once the election is open
+   */
+  opensAt: BigNumber;
+
+  /**
+   * The block the election is expected to close on, which is when the next era's validator set is
+   *   decided
+   */
+  closesAt: BigNumber;
+
+  /**
+   * Projected milliseconds until the election opens
+   *
+   * @note `0` once it has opened
+   */
+  opensIn: BigNumber;
+
+  /**
+   * Projected milliseconds until the election closes
+   */
+  closesIn: BigNumber;
+}
+
 export interface EraRewardPoints {
   /**
    * The total points awarded across all validators in the era

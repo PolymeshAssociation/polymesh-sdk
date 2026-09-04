@@ -194,3 +194,13 @@ export const MILLISECONDS_PER_YEAR = new BigNumber(1000 * 3600 * 24 * 36525).div
  * @note the slot a block was produced in is only recorded there — it is not in state
  */
 export const BABE_ENGINE_ID = 'BABE';
+
+/**
+ * How much of an epoch the chain's unsigned election phase runs for
+ *
+ * @note the runtimes set `UnsignedPhase = EPOCH_DURATION_IN_BLOCKS / 4` and it is not a
+ *   `#[pallet::constant]`, so it never reaches metadata and has to be carried here. The mainnet,
+ *   testnet and develop runtimes all agree on it, and `SignedPhase` is `0`, so the unsigned phase
+ *   is the whole election window
+ */
+export const UNSIGNED_ELECTION_PHASE_EPOCH_FRACTION = new BigNumber(4);

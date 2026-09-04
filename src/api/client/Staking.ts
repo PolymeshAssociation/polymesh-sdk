@@ -19,6 +19,7 @@ import {
   ActiveEraInfo,
   BondPolyxParams,
   ElectionPhase,
+  ElectionSchedule,
   EraExposure,
   EraNominators,
   EraProgress,
@@ -38,7 +39,10 @@ import {
   UnsubCallback,
   UpdatePolyxBondParams,
 } from '~/types';
-import { MILLISECONDS_PER_YEAR } from '~/utils/constants';
+import {
+  MILLISECONDS_PER_YEAR,
+  UNSIGNED_ELECTION_PHASE_EPOCH_FRACTION,
+} from '~/utils/constants';
 import {
   accountIdToString,
   activeEraStakingToActiveEraInfo,
@@ -80,6 +84,20 @@ function toPeriodProgress(
     remaining,
     end: new Date(new BigNumber(Date.now()).plus(remaining).toNumber()),
   };
+}
+
+/**
+ * @hidden
+ *
+ * The block the current epoch began on
+ *
+ * @note the chain writes `babe.epochStart` on rotation and treats epoch 0 as opening at block 1,
+ *   so `(0, 0)` means no rotation has happened yet
+ */
+function epochStartBlock(rawEpochStart: ITuple<[u32, u32]>): BigNumber {
+  const startBlock = u32ToBigNumber(rawEpochStart[1]);
+
+  return startBlock.isZero() ? new BigNumber(1) : startBlock;
 }
 
 /**
@@ -136,6 +154,56 @@ function assembleEraProgress(
       perEra: sessionsPerEra,
       progress: toPeriodProgress(sessionElapsed, slotsPerSession, expectedBlockTime),
     },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * What one round of `getElectionSchedule`'s multi query comes back with
+ */
+type ElectionScheduleReads = [Option<PalletStakingActiveEraInfo>, u32, u64, u32, ITuple<[u32, u32]>];
+
+/**
+ * @hidden
+ *
+ * Work out when the next election opens and closes, from the session the era began in and the slot
+ *   the current epoch began in
+ */
+function assembleElectionSchedule(
+  [, rawSession, rawSlot, rawBlock]: ElectionScheduleReads,
+  eraStartSession: BigNumber,
+  epochStartSlot: BigNumber,
+  { slotsPerSession, sessionsPerEra, expectedBlockTime }: StakingConstants
+): ElectionSchedule {
+  const session = u32ToBigNumber(rawSession);
+  const currentSlot = u64ToBigNumber(rawSlot);
+  const currentBlock = u32ToBigNumber(rawBlock);
+
+  /*
+   * the election closes at the rotation into the era's last session, not at the era boundary —
+   *   measured on chain as exactly one epoch of slots before that session's start. Where that
+   *   rotation is already behind, the next election is the one an era later
+   */
+  const lastSession = eraStartSession.plus(sessionsPerEra).minus(1);
+  const sessionsAway = lastSession.minus(session);
+
+  /* `isPositive` is true of zero, and a zero here means the rotation is the one already behind */
+  const sessionsUntilClose = sessionsAway.isGreaterThan(0)
+    ? sessionsAway
+    : sessionsAway.plus(sessionsPerEra);
+
+  const closeSlot = epochStartSlot.plus(sessionsUntilClose.multipliedBy(slotsPerSession));
+  const openSlot = closeSlot.minus(slotsPerSession.dividedToIntegerBy(UNSIGNED_ELECTION_PHASE_EPOCH_FRACTION));
+
+  const toProjection = (slot: BigNumber): BigNumber =>
+    BigNumber.max(slot.minus(currentSlot), 0).multipliedBy(expectedBlockTime);
+
+  return {
+    opensAt: currentBlock.plus(openSlot.minus(currentSlot)),
+    closesAt: currentBlock.plus(closeSlot.minus(currentSlot)),
+    opensIn: toProjection(openSlot),
+    closesIn: toProjection(closeSlot),
   };
 }
 
@@ -649,9 +717,7 @@ export class Staking {
     let epochStart = new BigNumber(0);
 
     const readEpochStartSlot = async (rawEpochStart: ITuple<[u32, u32]>): Promise<BigNumber> => {
-      /* the chain writes `epochStart` on rotation, and treats epoch 0 as opening at block 1 */
-      const startBlock = u32ToBigNumber(rawEpochStart[1]);
-      const anchorBlock = startBlock.isZero() ? new BigNumber(1) : startBlock;
+      const anchorBlock = epochStartBlock(rawEpochStart);
 
       if (cachedForBlock !== anchorBlock.toString()) {
         epochStart = await getSlotAtBlock(context, anchorBlock);
@@ -905,6 +971,107 @@ export class Staking {
         value: balanceToBigNumber(value.unwrap()),
       })),
     };
+  }
+
+  /**
+   * Retrieve when the next validator election opens and closes
+   *
+   * @throws if there is no active era
+   *
+   * @note this is the figure that says whether a nomination made now takes effect this era or the
+   *   next. It is not the era's own countdown: the election closes a session before the era ends,
+   *   so it can be minutes away while the era still has hours left
+   */
+  public async getElectionSchedule(): Promise<ElectionSchedule>;
+
+  /**
+   * Retrieve when the next validator election opens and closes, and subscribe to it
+   *
+   * @param callback - called on every block, since the projections advance with each one
+   *
+   * @returns Promise that resolves to an unsubscribe function
+   *
+   * @note can be subscribed to, if connected to node using a web socket
+   */
+  public async getElectionSchedule(
+    callback: SubCallback<ElectionSchedule>
+  ): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getElectionSchedule(
+    callback?: SubCallback<ElectionSchedule>
+  ): Promise<ElectionSchedule | UnsubCallback> {
+    const {
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    type ScheduleQueries = [
+      typeof query.staking.activeEra,
+      typeof query.session.currentIndex,
+      typeof query.babe.currentSlot,
+      typeof query.system.number,
+      typeof query.babe.epochStart
+    ];
+
+    const queries: QueryMultiParam<ScheduleQueries> = [
+      [query.staking.activeEra, undefined],
+      [query.session.currentIndex, undefined],
+      [query.babe.currentSlot, undefined],
+      [query.system.number, undefined],
+      [query.babe.epochStart, undefined],
+    ];
+
+    const readAnchors = async (
+      raw: ElectionScheduleReads
+    ): Promise<[BigNumber, BigNumber]> => {
+      const [rawActiveEra] = raw;
+
+      if (rawActiveEra.isNone) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'There is no active staking era',
+        });
+      }
+
+      const rawStartSession = await query.staking.erasStartSessionIndex(rawActiveEra.unwrap().index);
+
+      /*
+       * which session the era ends on is what dates the election, so an era whose start the chain
+       *   has pruned cannot be answered for — where `eraProgress` treats a missing anchor as
+       *   session 0 and reads as overdue, a schedule built on that would name a block in the past
+       */
+      if (rawStartSession.isNone) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'The chain has no start session recorded for the active era',
+        });
+      }
+
+      return [
+        u32ToBigNumber(rawStartSession.unwrap()),
+        await getSlotAtBlock(context, epochStartBlock(raw[4])),
+      ];
+    };
+
+    if (callback) {
+      context.assertSupportsSubscription();
+
+      return requestMulti<ScheduleQueries>(context, queries, async raw => {
+        const [eraStartSession, epochStartSlot] = await readAnchors(raw);
+
+        await callback(
+          assembleElectionSchedule(raw, eraStartSession, epochStartSlot, this.getConstants())
+        );
+      });
+    }
+
+    const raw = await requestMulti<ScheduleQueries>(context, queries);
+    const [eraStartSession, epochStartSlot] = await readAnchors(raw);
+
+    return assembleElectionSchedule(raw, eraStartSession, epochStartSlot, this.getConstants());
   }
 
   /**
