@@ -221,7 +221,9 @@ export class Staking {
   /**
    * Bond POLYX for staking
    *
-   * @note the signing account cannot be a stash
+   * @note the signing Account cannot already be a stash — use
+   *   {@link api/client/Staking!Staking.bondExtra | bondExtra} to add to a bond it already has —
+   *   nor a controller for another stash, since one Account cannot be both
    */
   public bond: ProcedureMethod<BondPolyxParams, void>;
 

@@ -74,6 +74,8 @@ describe('bondPolyx procedure', () => {
     storage = {
       actingBalance,
       actingAccount,
+      currentController: null,
+      controlledLedger: null,
     };
   });
 
@@ -86,6 +88,45 @@ describe('bondPolyx procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if the stash is already bonded', () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      ...storage,
+      currentController: entityMockUtils.getAccountInstance(),
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The stash account is already bonded. Use bondExtra to add to the existing bond',
+    });
+
+    return expect(
+      prepareBondPolyx.call(proc, { payee: actingAccount, autoStake: false, amount })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if the account already controls another stash', () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      ...storage,
+      controlledLedger: {
+        stash: entityMockUtils.getAccountInstance(),
+        total: new BigNumber(10),
+        active: new BigNumber(10),
+        unlocking: [],
+        claimedRewards: [],
+      },
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message:
+        'The account is a controller for another stash, so it cannot become a stash itself',
+    });
+
+    return expect(
+      prepareBondPolyx.call(proc, { payee: actingAccount, autoStake: false, amount })
+    ).rejects.toThrow(expectedError);
   });
 
   it('should throw an error if there is insufficient free balance', async () => {
@@ -143,7 +184,7 @@ describe('bondPolyx procedure', () => {
 
   it('should return a bond transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      actingBalance,
+      ...storage,
       actingAccount,
     });
 
@@ -165,7 +206,7 @@ describe('bondPolyx procedure', () => {
 
   it('should handle auto stake', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      actingBalance,
+      ...storage,
       actingAccount: entityMockUtils.getAccountInstance({
         isEqual: false,
         address: actingAccount.address,
@@ -186,7 +227,7 @@ describe('bondPolyx procedure', () => {
 
   it('should handle different an account destination', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      actingBalance,
+      ...storage,
       actingAccount: entityMockUtils.getAccountInstance({
         isEqual: false,
         address: actingAccount.address,
