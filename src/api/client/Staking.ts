@@ -234,6 +234,10 @@ export class Staking {
 
   /**
    * Unbond POLYX for staking. The unbonded amount can be withdrawn after the lockup period
+   *
+   * @note the chain chills a stash that unbonds its whole ledger. Since this refuses an amount
+   *   larger than the active bond, that is the case where nothing is already unlocking and the
+   *   whole of it is unbonded — the stash stops nominating or validating as well
    */
   public unbond: ProcedureMethod<UpdatePolyxBondParams, void>;
 
@@ -241,6 +245,9 @@ export class Staking {
    * Rebond POLYX that is currently unbonding, without waiting for the lockup period to elapse
    *
    * @note this transaction must be signed by a controller
+   *
+   * @note the chain takes the amount from the most recently unbonded POLYX first, so a partial
+   *   rebond leaves the lots closest to maturing where they are
    */
   public rebond: ProcedureMethod<UpdatePolyxBondParams, void>;
 

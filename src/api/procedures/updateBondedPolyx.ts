@@ -59,6 +59,15 @@ export function prepareUnbondPolyx(
       });
     }
 
+    /* the chain refuses a rebond with nothing unbonding, whatever the amount */
+    if (!controllerEntry.unlocking.length) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'There is no unbonding POLYX to rebond',
+        data: { actingAccount: actingAccount.address },
+      });
+    }
+
     const unlockingTotal = controllerEntry.unlocking.reduce(
       (total, { value }) => total.plus(value),
       new BigNumber(0)
