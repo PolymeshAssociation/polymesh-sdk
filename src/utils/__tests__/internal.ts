@@ -1,5 +1,5 @@
 import { Bytes, u32 } from '@polkadot/types';
-import { AccountId, EventRecord, Moment } from '@polkadot/types/interfaces';
+import { AccountId, DigestItem, EventRecord, Moment } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
@@ -127,6 +127,7 @@ import {
   getIdentityFromKeyRecord,
   getPortfolioIdsByName,
   getSecondaryAccountPermissions,
+  getSlotAtBlock,
   getTickerForAsset,
   hasSameElements,
   isAllowedCharacters,
@@ -4006,5 +4007,114 @@ describe('getCorporateBallotDetailsOrThrow success', () => {
 
     expect(result.meta).toEqual({ title: 't', motions: [] });
     expect(result.rcv).toBe(false);
+  });
+});
+
+describe('getSlotAtBlock', () => {
+  let mockContext: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  /**
+   * A header carrying one pre-runtime digest, stamped with `engineId` and holding `payload`
+   */
+  const mockHeaderWith = (logs: DigestItem[]): void => {
+    dsMockUtils.createRpcMock('chain', 'getBlockHash', {
+      returnValue: dsMockUtils.createMockHash('0xabc'),
+    });
+    dsMockUtils.createRpcMock('chain', 'getHeader', {
+      returnValue: dsMockUtils.createMockHeader({
+        parentHash: dsMockUtils.createMockHash(),
+        number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(13000))),
+        stateRoot: dsMockUtils.createMockHash(),
+        extrinsicsRoot: dsMockUtils.createMockHash(),
+        digest: { logs },
+      }),
+    });
+  };
+
+  const babeLog = (payload: Bytes): DigestItem =>
+    dsMockUtils.createMockDigestItem({
+      PreRuntime: dsMockUtils.createMockTupleCodec([
+        dsMockUtils.createMockU8aFixed('BABE'),
+        payload,
+      ]),
+    });
+
+  it('should return the slot named by the BABE pre-runtime digest', async () => {
+    const payload = dsMockUtils.createMockBytes('0x01');
+    mockHeaderWith([babeLog(payload)]);
+
+    when(mockContext.createType)
+      .calledWith('SpConsensusBabeDigestsPreDigest', payload)
+      .mockReturnValue(
+        dsMockUtils.createMockBabePreDigest({
+          Primary: {
+            authorityIndex: dsMockUtils.createMockU32(new BigNumber(3)),
+            slot: dsMockUtils.createMockU64(new BigNumber(41_000)),
+          },
+        })
+      );
+
+    const result = await getSlotAtBlock(mockContext, new BigNumber(13000));
+
+    expect(result).toEqual(new BigNumber(41_000));
+  });
+
+  it('should read the slot from a secondary VRF claim as readily as a primary one', async () => {
+    const payload = dsMockUtils.createMockBytes('0x02');
+    mockHeaderWith([babeLog(payload)]);
+
+    when(mockContext.createType)
+      .calledWith('SpConsensusBabeDigestsPreDigest', payload)
+      .mockReturnValue(
+        dsMockUtils.createMockBabePreDigest({
+          SecondaryVRF: {
+            authorityIndex: dsMockUtils.createMockU32(new BigNumber(1)),
+            slot: dsMockUtils.createMockU64(new BigNumber(41_001)),
+          },
+        })
+      );
+
+    const result = await getSlotAtBlock(mockContext, new BigNumber(13000));
+
+    expect(result).toEqual(new BigNumber(41_001));
+  });
+
+  it('should throw where the header carries no pre-runtime digest', () => {
+    mockHeaderWith([dsMockUtils.createMockDigestItem('RuntimeEnvironmentUpdated')]);
+
+    return expect(getSlotAtBlock(mockContext, new BigNumber(13000))).rejects.toThrow(
+      'The block header carries no consensus pre-runtime digest'
+    );
+  });
+
+  it('should throw where the block was authored by another consensus engine', () => {
+    mockHeaderWith([
+      dsMockUtils.createMockDigestItem({
+        PreRuntime: dsMockUtils.createMockTupleCodec([
+          dsMockUtils.createMockU8aFixed('aura'),
+          dsMockUtils.createMockBytes('0x03'),
+        ]),
+      }),
+    ]);
+
+    return expect(getSlotAtBlock(mockContext, new BigNumber(13000))).rejects.toThrow(
+      'The block was not authored by BABE, so it names no slot'
+    );
   });
 });

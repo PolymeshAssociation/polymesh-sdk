@@ -187,3 +187,10 @@ export const MODULE_NAMES: string[] = Object.values(ModuleName);
  *   result by 0.0685%
  */
 export const MILLISECONDS_PER_YEAR = new BigNumber(1000 * 3600 * 24 * 36525).dividedBy(100);
+
+/**
+ * The consensus engine id BABE stamps on the pre-runtime digest of every block it authors
+ *
+ * @note the slot a block was produced in is only recorded there — it is not in state
+ */
+export const BABE_ENGINE_ID = 'BABE';

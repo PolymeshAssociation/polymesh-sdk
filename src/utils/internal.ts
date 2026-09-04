@@ -17,10 +17,11 @@ import {
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
+  SpConsensusBabeDigestsPreDigest,
 } from '@polkadot/types/lookup';
 import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
-import { stringUpperFirst } from '@polkadot/util';
+import { stringUpperFirst, u8aToString } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
@@ -100,6 +101,7 @@ import {
   UnionOfProcedureFuncs,
 } from '~/types/utils';
 import {
+  BABE_ENGINE_ID,
   CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
   MAX_META_LENGTH,
   MAX_TICKER_LENGTH,
@@ -2492,4 +2494,58 @@ export async function getCorporateActionWithDescription(
   }
 
   return { corporateAction: ca.unwrap(), description };
+}
+
+/**
+ * @hidden
+ *
+ * Read the BABE slot a block was authored in, from its header's pre-runtime digest
+ *
+ * @note the slot is not in state, so it cannot be read back with a storage query — but every
+ *   authored block names it in its header, and headers survive state pruning. That makes this the
+ *   only way to anchor a slot count inside a period rather than deriving it from the genesis slot
+ */
+export async function getSlotAtBlock(context: Context, blockNumber: BigNumber): Promise<BigNumber> {
+  const {
+    polymeshApi: {
+      rpc: { chain },
+    },
+  } = context;
+
+  const blockHash = await chain.getBlockHash(bigNumberToU32(blockNumber, context));
+  const { digest } = await chain.getHeader(blockHash);
+
+  const preRuntime = digest.logs.find(log => log.isPreRuntime)?.asPreRuntime;
+
+  if (!preRuntime) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The block header carries no consensus pre-runtime digest',
+      data: { blockNumber: blockNumber.toString() },
+    });
+  }
+
+  const [engineId, payload] = preRuntime;
+
+  if (u8aToString(engineId) !== BABE_ENGINE_ID) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The block was not authored by BABE, so it names no slot',
+      data: { blockNumber: blockNumber.toString(), engineId: u8aToString(engineId) },
+    });
+  }
+
+  const preDigest = context.createType<SpConsensusBabeDigestsPreDigest>(
+    'SpConsensusBabeDigestsPreDigest',
+    payload
+  );
+
+  /* every variant carries the slot; which one it is depends only on how the slot was claimed */
+  const { slot } = preDigest.isPrimary
+    ? preDigest.asPrimary
+    : preDigest.isSecondaryPlain
+    ? preDigest.asSecondaryPlain
+    : preDigest.asSecondaryVRF;
+
+  return u64ToBigNumber(slot);
 }

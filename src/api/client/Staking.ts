@@ -1,5 +1,6 @@
 import { Option, u32, u64, u128 } from '@polkadot/types';
 import { PalletStakingActiveEraInfo, PalletStakingEraRewardPoints } from '@polkadot/types/lookup';
+import { ITuple } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -51,6 +52,7 @@ import {
 import {
   asAccount,
   createProcedureMethod,
+  getSlotAtBlock,
   QueryMultiParam,
   requestMulti,
   requestPaginated,
@@ -77,6 +79,63 @@ function toPeriodProgress(
     progress: capped.dividedBy(total),
     remaining,
     end: new Date(new BigNumber(Date.now()).plus(remaining).toNumber()),
+  };
+}
+
+/**
+ * @hidden
+ *
+ * What one round of `eraProgress`'s multi query comes back with
+ */
+type EraProgressReads = [
+  Option<PalletStakingActiveEraInfo>,
+  Option<u32>,
+  u32,
+  u64,
+  ITuple<[u32, u32]>
+];
+
+/**
+ * @hidden
+ *
+ * Assemble the era and session progress from one round of chain reads, the session the era began
+ *   in, and the slot the current epoch began in
+ */
+function assembleEraProgress(
+  [rawActiveEra, rawCurrentEra, rawSession, rawSlot]: EraProgressReads,
+  eraStartSession: BigNumber,
+  epochStartSlot: BigNumber,
+  { slotsPerSession, sessionsPerEra, expectedBlockTime }: StakingConstants
+): EraProgress {
+  const { index: rawEraIndex, start: rawStart } = rawActiveEra.unwrap();
+
+  const era = u32ToBigNumber(rawEraIndex);
+  const session = u32ToBigNumber(rawSession);
+
+  const sessionElapsed = BigNumber.max(u64ToBigNumber(rawSlot).minus(epochStartSlot), 0);
+
+  /* sessions of this era that are already behind the chain */
+  const sessionsDone = BigNumber.max(session.minus(eraStartSession), 0);
+
+  const eraElapsed = sessionsDone.multipliedBy(slotsPerSession).plus(sessionElapsed);
+
+  return {
+    era: {
+      index: era,
+      planned: rawCurrentEra.isSome ? u32ToBigNumber(rawCurrentEra.unwrap()) : era,
+      start: rawStart.isSome ? new Date(u64ToBigNumber(rawStart.unwrap()).toNumber()) : null,
+      progress: toPeriodProgress(
+        eraElapsed,
+        slotsPerSession.multipliedBy(sessionsPerEra),
+        expectedBlockTime
+      ),
+    },
+    session: {
+      index: session,
+      inEra: BigNumber.min(sessionsDone.plus(1), sessionsPerEra),
+      perEra: sessionsPerEra,
+      progress: toPeriodProgress(sessionElapsed, slotsPerSession, expectedBlockTime),
+    },
   };
 }
 
@@ -522,15 +581,12 @@ export class Staking {
       },
     } = this;
 
-    const { slotsPerSession, sessionsPerEra, expectedBlockTime } = this.getConstants();
-
     type ProgressQueries = [
       typeof query.staking.activeEra,
       typeof query.staking.currentEra,
       typeof query.session.currentIndex,
-      typeof query.babe.epochIndex,
       typeof query.babe.currentSlot,
-      typeof query.babe.genesisSlot
+      typeof query.babe.epochStart
     ];
 
     /* `babe.currentSlot` alone changes every block; the rest ride along on the same notification */
@@ -538,12 +594,9 @@ export class Staking {
       [query.staking.activeEra, undefined],
       [query.staking.currentEra, undefined],
       [query.session.currentIndex, undefined],
-      [query.babe.epochIndex, undefined],
       [query.babe.currentSlot, undefined],
-      [query.babe.genesisSlot, undefined],
+      [query.babe.epochStart, undefined],
     ];
-
-    type RawProgress = [Option<PalletStakingActiveEraInfo>, Option<u32>, u32, u64, u64, u64];
 
     /*
      * `erasStartSessionIndex` is keyed by the active era, so it cannot join the multi query that
@@ -569,51 +622,37 @@ export class Staking {
       return startSession;
     };
 
-    const assembleResult = (
-      [rawActiveEra, rawCurrentEra, rawSession, rawEpoch, rawSlot, rawGenesisSlot]: RawProgress,
-      eraStartSession: BigNumber
-    ): EraProgress => {
-      const { index: rawEraIndex, start: rawStart } = rawActiveEra.unwrap();
+    /*
+     * the slot an epoch began in is not stored anywhere — the runtime recomputes it from the
+     *   genesis slot and the epoch index whenever it needs it, an identity that a chain which has
+     *   skipped epochs no longer satisfies. What the chain does record is the *block* each epoch
+     *   began on, and that block's header carries the BABE pre-digest naming the slot it was
+     *   authored in. Reading it back gives an exact slot anchored inside the epoch itself.
+     *
+     * It costs two RPC round trips, paid once per rotation rather than once per block, and it
+     *   reads a header rather than state, so a pruning node answers it as readily as an archive.
+     *
+     * Where the opening slots of an epoch produced no block the anchor is the first slot that
+     *   did, so the count is short by however many were skipped at that boundary — a handful at
+     *   most, and it cannot accumulate, since the next rotation re-anchors
+     */
+    let cachedForBlock: string | null = null;
+    let epochStart = new BigNumber(0);
 
-      const era = u32ToBigNumber(rawEraIndex);
-      const session = u32ToBigNumber(rawSession);
+    const readEpochStartSlot = async (rawEpochStart: ITuple<[u32, u32]>): Promise<BigNumber> => {
+      /* the chain writes `epochStart` on rotation, and treats epoch 0 as opening at block 1 */
+      const startBlock = u32ToBigNumber(rawEpochStart[1]);
+      const anchorBlock = startBlock.isZero() ? new BigNumber(1) : startBlock;
 
-      /*
-       * the chain does not store where a session began, so it is derived the way the runtime lays
-       *   epochs out: the Nth epoch starts `N * slotsPerSession` slots after genesis
-       */
-      const sessionStartSlot = u64ToBigNumber(rawEpoch)
-        .multipliedBy(slotsPerSession)
-        .plus(u64ToBigNumber(rawGenesisSlot));
+      if (cachedForBlock !== anchorBlock.toString()) {
+        epochStart = await getSlotAtBlock(context, anchorBlock);
+        cachedForBlock = anchorBlock.toString();
+      }
 
-      const sessionElapsed = BigNumber.max(u64ToBigNumber(rawSlot).minus(sessionStartSlot), 0);
-
-      /* sessions of this era that are already behind the chain */
-      const sessionsDone = BigNumber.max(session.minus(eraStartSession), 0);
-
-      const eraElapsed = sessionsDone.multipliedBy(slotsPerSession).plus(sessionElapsed);
-
-      return {
-        era: {
-          index: era,
-          planned: rawCurrentEra.isSome ? u32ToBigNumber(rawCurrentEra.unwrap()) : era,
-          start: rawStart.isSome ? new Date(u64ToBigNumber(rawStart.unwrap()).toNumber()) : null,
-          progress: toPeriodProgress(
-            eraElapsed,
-            slotsPerSession.multipliedBy(sessionsPerEra),
-            expectedBlockTime
-          ),
-        },
-        session: {
-          index: session,
-          inEra: BigNumber.min(sessionsDone.plus(1), sessionsPerEra),
-          perEra: sessionsPerEra,
-          progress: toPeriodProgress(sessionElapsed, slotsPerSession, expectedBlockTime),
-        },
-      };
+      return epochStart;
     };
 
-    const assertActiveEra = (raw: RawProgress): void => {
+    const assertActiveEra = (raw: EraProgressReads): void => {
       if (raw[0].isNone) {
         throw new PolymeshError({
           code: ErrorCode.DataUnavailable,
@@ -628,9 +667,14 @@ export class Staking {
       return requestMulti<ProgressQueries>(context, queries, async raw => {
         assertActiveEra(raw);
 
-        const eraStartSession = await readStartSession(u32ToBigNumber(raw[0].unwrap().index));
+        const [eraStartSession, epochStartSlot] = await Promise.all([
+          readStartSession(u32ToBigNumber(raw[0].unwrap().index)),
+          readEpochStartSlot(raw[4]),
+        ]);
 
-        await callback(assembleResult(raw, eraStartSession));
+        await callback(
+          assembleEraProgress(raw, eraStartSession, epochStartSlot, this.getConstants())
+        );
       });
     }
 
@@ -638,7 +682,12 @@ export class Staking {
 
     assertActiveEra(raw);
 
-    return assembleResult(raw, await readStartSession(u32ToBigNumber(raw[0].unwrap().index)));
+    const [eraStartSession, epochStartSlot] = await Promise.all([
+      readStartSession(u32ToBigNumber(raw[0].unwrap().index)),
+      readEpochStartSlot(raw[4]),
+    ]);
+
+    return assembleEraProgress(raw, eraStartSession, epochStartSlot, this.getConstants());
   }
 
   /**
