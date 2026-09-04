@@ -101,6 +101,77 @@ describe('Staking namespace', () => {
     });
   });
 
+  describe('method: getNominationQuota', () => {
+    const mockLedger = (active: BigNumber): void => {
+      dsMockUtils.createQueryMock('staking', 'ledger', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockStakingLedger({
+            stash: dsMockUtils.createMockAccountId('someId'),
+            total: dsMockUtils.createMockCompact(
+              dsMockUtils.createMockU128(active.times(10 ** 6))
+            ),
+            active: dsMockUtils.createMockCompact(
+              dsMockUtils.createMockU128(active.times(10 ** 6))
+            ),
+            unlocking: dsMockUtils.createMockVec(),
+            legacyClaimedRewards: dsMockUtils.createMockVec(),
+          })
+        ),
+      });
+    };
+
+    it('should return how many validators the account may nominate', async () => {
+      mockLedger(new BigNumber(5));
+
+      dsMockUtils.createCallMock('stakingApi', 'nominationsQuota', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(16)),
+      });
+
+      const bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+
+      const result = await staking.getNominationQuota();
+
+      expect(result).toEqual(new BigNumber(16));
+      /* the runtime call takes raw units, not POLYX */
+      expect(bigNumberToBalanceSpy).toHaveBeenCalledWith(new BigNumber(5), mockContext);
+    });
+
+    it('should answer for the minimum bond where the account has bonded nothing', async () => {
+      dsMockUtils.createQueryMock('staking', 'ledger', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+      dsMockUtils.createQueryMock('staking', 'minNominatorBond', {
+        returnValue: dsMockUtils.createMockU128(new BigNumber(20).times(10 ** 6)),
+      });
+      dsMockUtils.createCallMock('stakingApi', 'nominationsQuota', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(16)),
+      });
+
+      const bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+
+      const result = await staking.getNominationQuota();
+
+      expect(result).toEqual(new BigNumber(16));
+      expect(bigNumberToBalanceSpy).toHaveBeenCalledWith(new BigNumber(20), mockContext);
+    });
+
+    it('should answer for a supplied amount rather than the bond in place', async () => {
+      const ledgerMock = dsMockUtils.createQueryMock('staking', 'ledger');
+      dsMockUtils.createCallMock('stakingApi', 'nominationsQuota', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(16)),
+      });
+
+      const bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+
+      const result = await staking.getNominationQuota({ bonded: new BigNumber(300) });
+
+      expect(result).toEqual(new BigNumber(16));
+      expect(bigNumberToBalanceSpy).toHaveBeenCalledWith(new BigNumber(300), mockContext);
+      /* the supplied amount stands in for the ledger, so it should not be read */
+      expect(ledgerMock).not.toHaveBeenCalled();
+    });
+  });
+
   describe('method: getPayee', () => {
     it('should return payee info for Staked', async () => {
       dsMockUtils.createQueryMock('staking', 'payee', {

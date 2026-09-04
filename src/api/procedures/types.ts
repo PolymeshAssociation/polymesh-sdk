@@ -1967,6 +1967,14 @@ export interface UpdatePolyxBondParams {
 
 export interface NominateValidatorsParams {
   validators: (Account | string)[];
+
+  /**
+   * (optional) The **total** POLYX that will be bonded when this executes, not an amount to add to
+   *   the current bond. Pass it when bonding and nominating in one batch: the batch is prepared
+   *   before the bond exists, so there is no ledger yet to check the nomination against, and the
+   *   acting Account is not required to be a controller already
+   */
+  bonded?: BigNumber;
 }
 
 export interface CreateBallotParams {

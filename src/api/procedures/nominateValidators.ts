@@ -1,9 +1,15 @@
+import BigNumber from 'bignumber.js';
 import { uniqBy } from 'lodash';
 
 import { PolymeshError, Procedure } from '~/internal';
 import { Account, ErrorCode, NominateValidatorsParams, StakingLedger } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { stringToAccountId } from '~/utils/conversion';
+import {
+  balanceToBigNumber,
+  bigNumberToBalance,
+  stringToAccountId,
+  u32ToBigNumber,
+} from '~/utils/conversion';
 import { asAccount } from '~/utils/internal';
 
 export interface Storage {
@@ -29,12 +35,18 @@ export async function prepareNominateValidators(
         tx: {
           staking: { nominate },
         },
+        call: {
+          stakingApi: { nominationsQuota },
+        },
+        query: {
+          staking: { minNominatorBond },
+        },
       },
     },
     context,
     storage: { actingAccount, ledger },
   } = this;
-  const { validators: validatorsInput } = args;
+  const { validators: validatorsInput, bonded } = args;
 
   const validators = validatorsInput.map(validator => asAccount(validator, context));
 
@@ -97,11 +109,49 @@ export async function prepareNominateValidators(
     });
   }
 
-  if (!ledger) {
+  /* `bonded` stands in for the ledger where the bond is being made in the same batch */
+  let activeBond: BigNumber;
+
+  if (bonded) {
+    activeBond = bonded;
+  } else if (ledger) {
+    activeBond = ledger.active;
+  } else {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The acting account must be a controller',
+      message:
+        'The acting account must be a controller. Pass `bonded` to nominate against a bond that is being made in the same batch',
       data: { actingAccount: actingAccount.address },
+    });
+  }
+
+  const minBond = balanceToBigNumber(await minNominatorBond());
+
+  if (activeBond.lt(minBond)) {
+    throw new PolymeshError({
+      code: ErrorCode.InsufficientBalance,
+      message: 'The bonded amount is below the minimum the chain accepts from a nominator',
+      data: {
+        actingAccount: actingAccount.address,
+        bonded: activeBond.toString(),
+        minBond: minBond.toString(),
+      },
+    });
+  }
+
+  /* the chain refuses a list longer than the cap, so check it before the caller signs */
+  const rawQuota = await nominationsQuota(bigNumberToBalance(activeBond, context));
+  const quota = u32ToBigNumber(rawQuota);
+
+  if (quota.lt(validators.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'More validators nominated than the acting account may nominate',
+      data: {
+        actingAccount: actingAccount.address,
+        nominated: validators.length,
+        quota: quota.toString(),
+      },
     });
   }
 

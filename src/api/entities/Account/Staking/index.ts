@@ -14,12 +14,15 @@ import {
 } from '~/types';
 import {
   accountIdToString,
+  balanceToBigNumber,
+  bigNumberToBalance,
   bigNumberToU32,
   rawNominationToStakingNomination,
   rawStakingLedgerToStakingLedgerEntry,
   rawValidatorPrefToCommission,
   rewardDestinationToPayee,
   stringToAccountId,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 
 /**
@@ -278,5 +281,36 @@ export class Staking extends Namespace<Account> {
       account: this.parent,
       ...commission,
     };
+  }
+
+  /**
+   * Fetch how many validators this Account may nominate
+   *
+   * @param args.bonded - the total POLYX that will be bonded, for bonding and nominating in one
+   *   batch. Defaults to what the Account has bonded now, or to the chain's minimum nominator bond
+   *   where it has none
+   *
+   * @note the chain derives the cap from the amount bonded, so it is read rather than assumed. On
+   *   Polymesh v8 it is always 16 whatever the bond, but that is a runtime setting and can change
+   */
+  public async getNominationQuota(args?: { bonded?: BigNumber }): Promise<BigNumber> {
+    const {
+      context,
+      context: {
+        polymeshApi: { call, query },
+      },
+    } = this;
+
+    let bonded = args?.bonded;
+
+    if (!bonded) {
+      const ledger = await this.getLedger();
+
+      bonded = ledger ? ledger.active : balanceToBigNumber(await query.staking.minNominatorBond());
+    }
+
+    const rawQuota = await call.stakingApi.nominationsQuota(bigNumberToBalance(bonded, context));
+
+    return u32ToBigNumber(rawQuota);
   }
 }
