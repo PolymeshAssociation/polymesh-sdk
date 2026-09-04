@@ -7,7 +7,7 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { Bytes, Option, StorageKey, u32 } from '@polkadot/types';
+import { Bytes, Option, StorageKey, u32, u64 } from '@polkadot/types';
 import { EventRecord, RewardDestination } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
@@ -2541,11 +2541,15 @@ export async function getSlotAtBlock(context: Context, blockNumber: BigNumber): 
   );
 
   /* every variant carries the slot; which one it is depends only on how the slot was claimed */
-  const { slot } = preDigest.isPrimary
-    ? preDigest.asPrimary
-    : preDigest.isSecondaryPlain
-    ? preDigest.asSecondaryPlain
-    : preDigest.asSecondaryVRF;
+  let slot: u64;
+
+  if (preDigest.isPrimary) {
+    slot = preDigest.asPrimary.slot;
+  } else if (preDigest.isSecondaryPlain) {
+    slot = preDigest.asSecondaryPlain.slot;
+  } else {
+    slot = preDigest.asSecondaryVRF.slot;
+  }
 
   return u64ToBigNumber(slot);
 }

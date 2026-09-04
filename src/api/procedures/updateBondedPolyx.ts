@@ -23,6 +23,121 @@ export type Params = UpdatePolyxBondParams &
 
 /**
  * @hidden
+ *
+ * @throws if the acting account controls no bond
+ */
+function assertControllerEntry(
+  controllerEntry: StakingLedger | null,
+  actingAccount: Account
+): StakingLedger {
+  if (!controllerEntry) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The caller must be a controller account',
+      data: { actingAccount: actingAccount.address },
+    });
+  }
+
+  return controllerEntry;
+}
+
+/**
+ * @hidden
+ *
+ * @throws if `amount` cannot be rebonded
+ */
+function assertRebondable(
+  amount: BigNumber,
+  controllerEntry: StakingLedger | null,
+  actingAccount: Account
+): void {
+  const { unlocking } = assertControllerEntry(controllerEntry, actingAccount);
+
+  /* the chain refuses a rebond with nothing unbonding, whatever the amount */
+  if (!unlocking.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'There is no unbonding POLYX to rebond',
+      data: { actingAccount: actingAccount.address },
+    });
+  }
+
+  const unlockingTotal = unlocking.reduce(
+    (total, { value }) => total.plus(value),
+    new BigNumber(0)
+  );
+
+  if (unlockingTotal.lt(amount)) {
+    throw new PolymeshError({
+      code: ErrorCode.InsufficientBalance,
+      message: 'Insufficient unbonding POLYX',
+      data: {
+        amount: amount.toString(),
+        unlocking: unlockingTotal.toString(),
+        actingAccount: actingAccount.address,
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * @throws if `amount` cannot be unbonded
+ */
+function assertUnbondable(
+  amount: BigNumber,
+  controllerEntry: StakingLedger | null,
+  actingAccount: Account
+): void {
+  const { active } = assertControllerEntry(controllerEntry, actingAccount);
+
+  if (active.lt(amount)) {
+    throw new PolymeshError({
+      code: ErrorCode.InsufficientBalance,
+      message: 'Insufficient bonded POLYX',
+      data: {
+        amount: amount.toString(),
+        active: active.toString(),
+        actingAccount: actingAccount.address,
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * @throws if `amount` cannot be added to an existing bond
+ */
+function assertBondExtraPossible(
+  amount: BigNumber,
+  actingBalance: Balance,
+  isStash: boolean,
+  actingAccount: Account
+): void {
+  if (!isStash) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The caller must be a stash account',
+      data: { actingAccount: actingAccount.address },
+    });
+  }
+
+  if (actingBalance.free.lt(amount)) {
+    throw new PolymeshError({
+      code: ErrorCode.InsufficientBalance,
+      message: 'The stash account has insufficient free balance',
+      data: {
+        actingAccount: actingAccount.address,
+        free: actingBalance.free.toString(),
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
  */
 export function prepareUnbondPolyx(
   this: Procedure<Params, void, Storage>,
@@ -50,85 +165,13 @@ export function prepareUnbondPolyx(
 
   if (type === 'rebond') {
     transaction = rebond;
-
-    if (!controllerEntry) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'The caller must be a controller account',
-        data: { actingAccount: actingAccount.address },
-      });
-    }
-
-    /* the chain refuses a rebond with nothing unbonding, whatever the amount */
-    if (!controllerEntry.unlocking.length) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'There is no unbonding POLYX to rebond',
-        data: { actingAccount: actingAccount.address },
-      });
-    }
-
-    const unlockingTotal = controllerEntry.unlocking.reduce(
-      (total, { value }) => total.plus(value),
-      new BigNumber(0)
-    );
-
-    if (unlockingTotal.lt(amount)) {
-      throw new PolymeshError({
-        code: ErrorCode.InsufficientBalance,
-        message: 'Insufficient unbonding POLYX',
-        data: {
-          amount: amount.toString(),
-          unlocking: unlockingTotal.toString(),
-          actingAccount: actingAccount.address,
-        },
-      });
-    }
+    assertRebondable(amount, controllerEntry, actingAccount);
   } else if (type === 'unbond') {
     transaction = unbond;
-
-    if (!controllerEntry) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'The caller must be a controller account',
-        data: { actingAccount: actingAccount.address },
-      });
-    }
-
-    const { active } = controllerEntry;
-
-    if (active.lt(amount)) {
-      throw new PolymeshError({
-        code: ErrorCode.InsufficientBalance,
-        message: 'Insufficient bonded POLYX',
-        data: {
-          amount: amount.toString(),
-          active: active.toString(),
-          actingAccount: actingAccount.address,
-        },
-      });
-    }
+    assertUnbondable(amount, controllerEntry, actingAccount);
   } else {
     transaction = bondExtra;
-
-    if (!isStash) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'The caller must be a stash account',
-        data: { actingAccount: actingAccount.address },
-      });
-    }
-
-    if (actingBalance.free.lt(amount)) {
-      throw new PolymeshError({
-        code: ErrorCode.InsufficientBalance,
-        message: 'The stash account has insufficient free balance',
-        data: {
-          actingAccount: actingAccount.address,
-          free: actingBalance.free.toString(),
-        },
-      });
-    }
+    assertBondExtraPossible(amount, actingBalance, isStash, actingAccount);
   }
 
   const rawAmount = bigNumberToBalance(amount, context);
