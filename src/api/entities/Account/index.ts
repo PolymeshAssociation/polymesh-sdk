@@ -41,6 +41,7 @@ import { ExtrinsicsOrderBy, PolyxTransactionsOrderBy, Query } from '~/middleware
 import {
   AccountBalance,
   AccountCollection,
+  AssetAllowance,
   AssetHolderBalance,
   CheckPermissionsResult,
   ErrorCode,
@@ -48,6 +49,7 @@ import {
   MiddlewarePaginationOptions,
   MultiSigTx,
   NftOwnerStatus,
+  PaginationOptions,
   Permissions,
   PermissionType,
   PortfolioCollection,
@@ -60,7 +62,7 @@ import {
 } from '~/types';
 import { Ensured, tuple } from '~/types/utils';
 import { hexToUuid } from '~/utils';
-import { ASSET_ID_PREFIX } from '~/utils/constants';
+import { ASSET_ID_PREFIX, UNLIMITED_ALLOWANCE } from '~/utils/constants';
 import {
   accountIdToString,
   addressToKey,
@@ -74,6 +76,7 @@ import {
   txTagToExtrinsicIdentifier,
   u32ToBigNumber,
   u64ToBigNumber,
+  u128ToBigNumber,
 } from '~/utils/conversion';
 import {
   ethAddressFromSs58,
@@ -90,6 +93,7 @@ import {
   getIdentityFromKeyRecord,
   getSecondaryAccountPermissions,
   requestMulti,
+  requestPaginated,
 } from '~/utils/internal';
 
 /**
@@ -779,6 +783,52 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     rawBytes[8] = (rawBytesEight & 0x3f) | 0x80;
 
     return hexToUuid(u8aToHex(rawBytes));
+  }
+
+  /**
+   * Retrieve the Asset allowances this Account has approved — what each spender may transfer on
+   *   its behalf, and for which Asset
+   *
+   * @note revoking an allowance removes it, so every entry returned is live. An Account with no
+   *   approvals returns an empty set
+   *
+   * @note the chain cannot be asked the reverse question, "who has approved *me*", because the
+   *   spender is not the key this map is ordered by
+   */
+  public async getAllowances(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<AssetAllowance>> {
+    const {
+      address,
+      context,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+    } = this;
+
+    const rawAddress = stringToAccountId(address, context);
+
+    const { entries, lastKey: next } = await requestPaginated(asset.allowances, {
+      arg: rawAddress,
+      paginationOpts,
+    });
+
+    const data = entries.map(([storageKey, rawAmount]) => {
+      const {
+        args: [, rawSpender, rawAssetId],
+      } = storageKey;
+
+      return {
+        asset: new FungibleAsset({ assetId: assetIdToString(rawAssetId) }, context),
+        spender: new Account({ address: accountIdToString(rawSpender) }, context),
+        amount: balanceToBigNumber(rawAmount),
+        unlimited: u128ToBigNumber(rawAmount).eq(UNLIMITED_ALLOWANCE),
+      };
+    });
+
+    return { data, next };
   }
 
   /**

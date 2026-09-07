@@ -1151,6 +1151,93 @@ describe('Account class', () => {
     });
   });
 
+  describe('method: getAllowances', () => {
+    const spenderOne = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const spenderTwo = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+    const assetIdOne = '0x11111111111111111111111111111111';
+    const assetIdTwo = '0x22222222222222222222222222222222';
+    const uuidOne = '11111111-1111-1111-1111-111111111111';
+    const uuidTwo = '22222222-2222-2222-2222-222222222222';
+
+    const allowanceEntry = (
+      spender: string,
+      assetId: string,
+      amount: BigNumber
+    ): [unknown[], unknown] => [
+      [
+        createMockAccountId(address),
+        createMockAccountId(spender),
+        dsMockUtils.createMockAssetId(assetId),
+      ],
+      dsMockUtils.createMockBalance(amount),
+    ];
+
+    it('should return the allowances the Account has approved', async () => {
+      dsMockUtils.createQueryMock('asset', 'allowances', {
+        entries: [
+          allowanceEntry(spenderOne, assetIdOne, new BigNumber(1000).times(10 ** 6)),
+          allowanceEntry(spenderTwo, assetIdTwo, new BigNumber(50).times(10 ** 6)),
+        ],
+      });
+
+      const allowanceAccount = new Account({ address }, context);
+
+      const { data, next } = await allowanceAccount.getAllowances();
+
+      expect(data).toHaveLength(2);
+
+      expect(data[0]!.asset.id).toBe(uuidOne);
+      expect(data[0]!.spender.address).toBe(spenderOne);
+      expect(data[0]!.amount).toEqual(new BigNumber(1000));
+      expect(data[0]!.unlimited).toBe(false);
+
+      expect(data[1]!.asset.id).toBe(uuidTwo);
+      expect(data[1]!.spender.address).toBe(spenderTwo);
+      expect(data[1]!.amount).toEqual(new BigNumber(50));
+
+      expect(next).toBeNull();
+    });
+
+    it('should flag an allowance the chain treats as unlimited', async () => {
+      const max = new BigNumber(2).exponentiatedBy(128).minus(1);
+
+      dsMockUtils.createQueryMock('asset', 'allowances', {
+        entries: [allowanceEntry(spenderOne, assetIdOne, max)],
+      });
+
+      const allowanceAccount = new Account({ address }, context);
+
+      const { data } = await allowanceAccount.getAllowances();
+
+      expect(data[0]!.unlimited).toBe(true);
+    });
+
+    it('should return an empty set where the Account has approved nothing', async () => {
+      dsMockUtils.createQueryMock('asset', 'allowances', { entries: [] });
+
+      const allowanceAccount = new Account({ address }, context);
+
+      const { data, next } = await allowanceAccount.getAllowances();
+
+      expect(data).toEqual([]);
+      expect(next).toBeNull();
+    });
+
+    it('should page the scan when pagination options are passed', async () => {
+      dsMockUtils.createQueryMock('asset', 'allowances', {
+        entries: [allowanceEntry(spenderOne, assetIdOne, new BigNumber(1000).times(10 ** 6))],
+      });
+
+      const allowanceAccount = new Account({ address }, context);
+
+      const { data, next } = await allowanceAccount.getAllowances({ size: new BigNumber(1) });
+
+      expect(data).toHaveLength(1);
+      // a full page means there may be more, so the cursor stays live
+      expect(next).not.toBeNull();
+    });
+  });
+
   describe('method: getCollections', () => {
     it('should return collections held by the Account', async () => {
       const rawAccountId = dsMockUtils.createMockAccountId(address);

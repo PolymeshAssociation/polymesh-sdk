@@ -21,6 +21,14 @@ export const MAX_ASSET_MEDIATORS = 4;
  * Biggest possible number for on-chain balances
  */
 export const MAX_BALANCE = new BigNumber(Math.pow(10, 12));
+
+/**
+ * @hidden
+ *
+ * The raw allowance the chain reads as unlimited — `Balance::MAX`. `spend_allowance` never deducts
+ *   from an allowance of this size, so it does not run down as it is used
+ */
+export const UNLIMITED_ALLOWANCE = new BigNumber(2).exponentiatedBy(128).minus(1);
 /**
  * Account ID used for certain calls that require it when the SDK is instanced without one
  */

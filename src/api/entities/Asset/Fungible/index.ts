@@ -23,6 +23,7 @@ import { tickerExternalAgentHistoryQuery } from '~/middleware/queries/externalAg
 import { AssetTransactionsOrderBy, Query } from '~/middleware/types';
 import {
   ApproveAllowanceParams,
+  AssetAllowance,
   ControllerTransferParams,
   EventIdentifier,
   HistoricAgentOperation,
@@ -33,13 +34,17 @@ import {
   ResultSet,
 } from '~/types';
 import { Ensured } from '~/types/utils';
+import { UNLIMITED_ALLOWANCE } from '~/utils/constants';
 import {
+  accountIdToString,
+  assetIdToString,
   assetToMeshAssetId,
   balanceToBigNumber,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
   stringToAccountId,
+  u128ToBigNumber,
 } from '~/utils/conversion';
 import {
   asAccount,
@@ -48,6 +53,7 @@ import {
   getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   optionize,
+  requestPaginated,
 } from '~/utils/internal';
 
 /**
@@ -305,6 +311,43 @@ export class FungibleAsset extends BaseAsset {
    * On every spend transaction, the spender account's allowance will be decremented by the amount transferred.
    */
   public approveAllowance: ProcedureMethod<ApproveAllowanceParams, void>;
+
+  /**
+   * Retrieve every allowance an Account has approved for this Asset — each spender and what it may
+   *   transfer
+   *
+   * @param args.owner - the Account whose approvals to read
+   *
+   * @note not paginated: allowances are keyed by owner, spender and Asset in that order, so the
+   *   Asset can only be filtered after reading. Bounded by how many approvals the owner has made
+   *   across all Assets
+   */
+  public async getAllowances(args: { owner: AccountLike }): Promise<AssetAllowance[]> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      id: assetId,
+    } = this;
+
+    const { address: ownerAddress } = asAccount(args.owner, context);
+
+    const rawOwner = stringToAccountId(ownerAddress, context);
+
+    const { entries } = await requestPaginated(asset.allowances, { arg: rawOwner });
+
+    return entries
+      .filter(([{ args: keys }]) => assetIdToString(keys[2]) === assetId)
+      .map(([{ args: keys }, rawAmount]) => ({
+        asset: this,
+        spender: new Account({ address: accountIdToString(keys[1]) }, context),
+        amount: balanceToBigNumber(rawAmount),
+        unlimited: u128ToBigNumber(rawAmount).eq(UNLIMITED_ALLOWANCE),
+      }));
+  }
 
   /**
    * Retrieve the amount of allowance for a spender account as approved by owner

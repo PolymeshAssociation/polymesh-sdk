@@ -380,6 +380,29 @@ export interface FungibleAssetHolding {
 }
 
 /**
+ * An allowance an Account has approved, letting a spender transfer an Asset on its behalf
+ */
+export interface AssetAllowance {
+  asset: FungibleAsset;
+  /**
+   * the Account permitted to spend
+   */
+  spender: Account;
+  /**
+   * the most the spender may transfer
+   *
+   * @note where `unlimited` is true this is the chain's maximum balance, which is not a meaningful
+   *   figure to display. Check `unlimited` first
+   */
+  amount: BigNumber;
+  /**
+   * whether the spender may transfer without limit. The chain never deducts from such an
+   *   allowance, so it does not run down as it is used
+   */
+  unlimited: boolean;
+}
+
+/**
  * For all claim types except Jurisdiction - tracks holders with and without the claim
  */
 export type ClaimValue = {

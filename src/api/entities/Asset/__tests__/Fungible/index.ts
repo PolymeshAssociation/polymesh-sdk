@@ -1024,4 +1024,52 @@ describe('Fungible class', () => {
       expect(result).toEqual(allowance);
     });
   });
+  describe('method: getAllowances', () => {
+    const owner = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const spender = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+    const thisAssetId = '12341234-1234-1234-1234-123412341234';
+    const thisRawId = '0x12341234123412341234123412341234';
+    const otherRawId = '0x43214321432143214321432143214321';
+
+    const entry = (assetId: string, amount: BigNumber): [unknown[], unknown] => [
+      [
+        dsMockUtils.createMockAccountId(owner),
+        dsMockUtils.createMockAccountId(spender),
+        dsMockUtils.createMockAssetId(assetId),
+      ],
+      dsMockUtils.createMockBalance(amount.shiftedBy(6)),
+    ];
+
+    it('should return only the allowances that name this Asset', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ assetId: thisAssetId }, context);
+
+      dsMockUtils.createQueryMock('asset', 'allowances', {
+        entries: [
+          entry(otherRawId, new BigNumber(999)),
+          entry(thisRawId, new BigNumber(150)),
+        ],
+      });
+
+      const result = await asset.getAllowances({ owner });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.spender.address).toBe(spender);
+      expect(result[0]!.amount).toEqual(new BigNumber(150));
+      expect(result[0]!.unlimited).toBe(false);
+    });
+
+    it('should return an empty array where the owner has approved nothing for this Asset', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ assetId: thisAssetId }, context);
+
+      dsMockUtils.createQueryMock('asset', 'allowances', {
+        entries: [entry(otherRawId, new BigNumber(999))],
+      });
+
+      const result = await asset.getAllowances({ owner });
+
+      expect(result).toEqual([]);
+    });
+  });
 });
