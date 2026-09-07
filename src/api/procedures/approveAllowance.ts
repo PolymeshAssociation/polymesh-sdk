@@ -1,7 +1,13 @@
 import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ApproveAllowanceParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { assetToMeshAssetId, bigNumberToBalance, stringToAccountId } from '~/utils/conversion';
+import { UNLIMITED_ALLOWANCE } from '~/utils/constants';
+import {
+  assetToMeshAssetId,
+  bigNumberToBalance,
+  bigNumberToU128,
+  stringToAccountId,
+} from '~/utils/conversion';
 import { asAccount } from '~/utils/internal';
 
 /**
@@ -27,9 +33,16 @@ export function prepareApproveAllowance(
     context,
   } = this;
 
-  const { asset, amount, spender } = args;
+  const { asset, amount, spender, unlimited } = args;
 
-  if (amount.lt(0)) {
+  if (!!unlimited === !!amount) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Pass either an allowance amount or `unlimited`, but not both',
+    });
+  }
+
+  if (amount?.lt(0)) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message:
@@ -41,13 +54,17 @@ export function prepareApproveAllowance(
 
   const { address: spenderAddress } = asAccount(spender, context);
 
+  /*
+   * an unlimited allowance is `Balance::MAX`, which is far above the balance any real amount may
+   *   take, so it goes straight to a `u128` rather than through the capped balance conversion
+   */
+  const rawAmount = amount
+    ? bigNumberToBalance(amount, context)
+    : bigNumberToU128(UNLIMITED_ALLOWANCE, context);
+
   return Promise.resolve({
     transaction: approve,
-    args: [
-      rawAssetId,
-      stringToAccountId(spenderAddress, context),
-      bigNumberToBalance(amount, context),
-    ],
+    args: [rawAssetId, stringToAccountId(spenderAddress, context), rawAmount],
     resolver: undefined,
   });
 }

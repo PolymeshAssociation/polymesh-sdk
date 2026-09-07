@@ -2086,9 +2086,19 @@ export interface ApproveAllowanceParams {
   spender: AccountLike;
 
   /**
-   * Maximum amount the `spender` may transfer. Passing `0` will revoke the approval. Balance::MAX = unlimited.
+   * Maximum amount the `spender` may transfer. Passing `0` will revoke the approval
+   *
+   * @note required unless `unlimited` is passed
    */
-  amount: BigNumber;
+  amount?: BigNumber;
+
+  /**
+   * Approve the `spender` without a limit. The chain never deducts from such an allowance, so it
+   *   does not run down as it is used and only an explicit revocation ends it
+   *
+   * @note pass this instead of `amount`, not as well as it
+   */
+  unlimited?: boolean;
 }
 
 export type TransferFundsParams = (InstructionFungibleLeg | InstructionNftLeg) & {

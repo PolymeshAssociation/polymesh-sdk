@@ -664,7 +664,11 @@ export function bigNumberToU64(value: BigNumber, context: Context): u64 {
 export function bigNumberToU128(value: BigNumber, context: Context): u128 {
   assertIsInteger(value);
   assertIsPositive(value);
-  return context.createType('u128', value.toString());
+  /*
+   * `toString` switches to exponential notation from 1e21, which the codec rejects. A `u128` holds
+   *   values far above that, so the digits have to be spelled out
+   */
+  return context.createType('u128', value.toFixed());
 }
 
 /**
@@ -1634,7 +1638,7 @@ export function bigNumberToBalance(value: BigNumber, context: Context, divisible
     });
   }
 
-  return context.createType('Balance', value.shiftedBy(6).toString());
+  return context.createType('Balance', value.shiftedBy(6).toFixed());
 }
 
 /**

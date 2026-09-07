@@ -2675,6 +2675,21 @@ describe('bigNumberToU128', () => {
     expect(result).toBe(fakeResult);
   });
 
+  it('should spell out a value too large for decimal notation', () => {
+    // `Balance::MAX`; `toString` would give "3.40282366920938463463374607431768211455e+38"
+    const value = new BigNumber(2).exponentiatedBy(128).minus(1);
+    const fakeResult = 'max' as unknown as u128;
+    const context = dsMockUtils.getContextInstance();
+
+    when(context.createType)
+      .calledWith('u128', '340282366920938463463374607431768211455')
+      .mockReturnValue(fakeResult);
+
+    const result = bigNumberToU128(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
   it('should throw an error if the number is negative', () => {
     const value = new BigNumber(-100);
     const context = dsMockUtils.getContextInstance();
