@@ -2553,3 +2553,31 @@ export async function getSlotAtBlock(context: Context, blockNumber: BigNumber): 
 
   return u64ToBigNumber(slot);
 }
+
+/**
+ * @hidden
+ *
+ * Resolve an optional era argument to the era to query, defaulting to the active one
+ *
+ * @throws if no era is given and the chain has no active era
+ */
+export async function asRawEra(era: BigNumber | undefined, context: Context): Promise<u32> {
+  const {
+    polymeshApi: { query },
+  } = context;
+
+  if (era) {
+    return bigNumberToU32(era, context);
+  }
+
+  const rawActiveEra = await query.staking.activeEra();
+
+  if (rawActiveEra.isNone) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'There is no active staking era',
+    });
+  }
+
+  return rawActiveEra.unwrap().index;
+}

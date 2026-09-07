@@ -55,6 +55,7 @@ import {
 } from '~/utils/conversion';
 import {
   asAccount,
+  asRawEra,
   createProcedureMethod,
   getSlotAtBlock,
   QueryMultiParam,
@@ -816,7 +817,7 @@ export class Staking {
     const era = BigNumber.isBigNumber(eraOrCallback) ? eraOrCallback : undefined;
     const callback = BigNumber.isBigNumber(eraOrCallback) ? maybeCallback : eraOrCallback;
 
-    const rawEra = await this.asRawEra(era);
+    const rawEra = await asRawEra(era, context);
 
     const assembleResult = (rawPoints: PalletStakingEraRewardPoints): EraRewardPoints => {
       const { total, individual } = rawPoints;
@@ -852,12 +853,13 @@ export class Staking {
    */
   public async getEraValidatorReward(era?: BigNumber): Promise<BigNumber | null> {
     const {
+      context,
       context: {
         polymeshApi: { query },
       },
     } = this;
 
-    const rawEra = await this.asRawEra(era);
+    const rawEra = await asRawEra(era, context);
 
     const rawReward = await query.staking.erasValidatorReward(rawEra);
 
@@ -873,12 +875,13 @@ export class Staking {
    */
   public async getEraStartSession(era?: BigNumber): Promise<BigNumber | null> {
     const {
+      context,
       context: {
         polymeshApi: { query },
       },
     } = this;
 
-    const rawEra = await this.asRawEra(era);
+    const rawEra = await asRawEra(era, context);
 
     const rawIndex = await query.staking.erasStartSessionIndex(rawEra);
 
@@ -906,7 +909,7 @@ export class Staking {
 
     const { validator, era } = args;
 
-    const rawEra = await this.asRawEra(era);
+    const rawEra = await asRawEra(era, context);
     const rawAddress = stringToAccountId(asAccount(validator, context).address, context);
 
     const rawOverview = await query.staking.erasStakersOverview(rawEra, rawAddress);
@@ -952,7 +955,7 @@ export class Staking {
 
     const { validator, page = new BigNumber(0), era } = args;
 
-    const rawEra = await this.asRawEra(era);
+    const rawEra = await asRawEra(era, context);
     const rawAddress = stringToAccountId(asAccount(validator, context).address, context);
     const rawPage = bigNumberToU32(page, context);
 
@@ -1120,32 +1123,4 @@ export class Staking {
     return ElectionPhase[rawPhase.type];
   }
 
-  /**
-   * @hidden
-   *
-   * Resolve an optional era argument to the era to query, defaulting to the active one
-   */
-  private async asRawEra(era?: BigNumber): Promise<u32> {
-    const {
-      context,
-      context: {
-        polymeshApi: { query },
-      },
-    } = this;
-
-    if (era) {
-      return bigNumberToU32(era, context);
-    }
-
-    const rawActiveEra = await query.staking.activeEra();
-
-    if (rawActiveEra.isNone) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'There is no active staking era',
-      });
-    }
-
-    return rawActiveEra.unwrap().index;
-  }
 }
