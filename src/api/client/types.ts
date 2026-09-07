@@ -496,6 +496,18 @@ export interface EraNominators {
   }[];
 }
 
+export interface AccountExposure {
+  /**
+   * The validator the stake was assigned to
+   */
+  validator: Account;
+
+  /**
+   * The POLYX of this Account's stake that backed the validator in the era
+   */
+  value: BigNumber;
+}
+
 /**
  * How far through a period the chain is
  *

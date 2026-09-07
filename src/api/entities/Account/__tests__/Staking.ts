@@ -2,8 +2,9 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Staking } from '~/api/entities/Account/Staking';
-import { Account, Context, Namespace } from '~/internal';
+import { Account, Context, Namespace, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -107,9 +108,7 @@ describe('Staking namespace', () => {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockStakingLedger({
             stash: dsMockUtils.createMockAccountId('someId'),
-            total: dsMockUtils.createMockCompact(
-              dsMockUtils.createMockU128(active.times(10 ** 6))
-            ),
+            total: dsMockUtils.createMockCompact(dsMockUtils.createMockU128(active.times(10 ** 6))),
             active: dsMockUtils.createMockCompact(
               dsMockUtils.createMockU128(active.times(10 ** 6))
             ),
@@ -517,6 +516,148 @@ describe('Staking namespace', () => {
       const result = await staking.getCommission({ era: new BigNumber(7131) });
 
       expect(result).toBeNull();
+    });
+  });
+  describe('method: getExposure', () => {
+    const era = new BigNumber(7201);
+    const rawEra = dsMockUtils.createMockU32(era);
+
+    beforeEach(() => {
+      when(jest.spyOn(utilsConversionModule, 'bigNumberToU32'))
+        .calledWith(era, mockContext)
+        .mockReturnValue(rawEra);
+    });
+
+    const exposurePage = (
+      others: { address: string; value: BigNumber }[]
+    ): ReturnType<typeof dsMockUtils.createMockOption> =>
+      dsMockUtils.createMockOption(
+        dsMockUtils.createMockExposurePage({
+          pageTotal: dsMockUtils.createMockCompact(dsMockUtils.createMockU128(new BigNumber(0))),
+          others: others.map(({ address, value }) =>
+            dsMockUtils.createMockIndividualExposure({
+              who: dsMockUtils.createMockAccountId(address),
+              value: dsMockUtils.createMockCompact(
+                dsMockUtils.createMockU128(value.times(10 ** 6))
+              ),
+            })
+          ),
+        })
+      );
+
+    const rawPage = (page: number): ReturnType<typeof dsMockUtils.createMockU32> =>
+      dsMockUtils.createMockU32(new BigNumber(page));
+
+    it('should return the operators the Account is exposed to in the active era', async () => {
+      dsMockUtils.createQueryMock('staking', 'activeEra', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockActiveEraInfo({
+            index: rawEra,
+            start: dsMockUtils.createMockOption(),
+          })
+        ),
+      });
+
+      dsMockUtils.createQueryMock('staking', 'erasStakersPaged', {
+        entries: [
+          [
+            [
+              rawEra,
+              dsMockUtils.createMockAccountId('validatorOne'),
+              dsMockUtils.createMockU32(new BigNumber(0)),
+            ],
+            exposurePage([
+              { address: 'someOtherNominator', value: new BigNumber(7) },
+              { address: account.address, value: new BigNumber(100) },
+            ]),
+          ],
+        ],
+      });
+
+      const result = await staking.getExposure();
+
+      expect(result).toEqual([
+        {
+          validator: expect.objectContaining({ address: 'validatorOne' }),
+          value: new BigNumber(100),
+        },
+      ]);
+    });
+
+    it('should throw if the era has no exposure recorded at all', async () => {
+      dsMockUtils.createQueryMock('staking', 'erasStakersPaged', { entries: [] });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'No exposure is recorded for that era',
+        data: { era: expect.any(String) },
+      });
+
+      await expect(staking.getExposure({ era })).rejects.toThrow(expectedError);
+    });
+
+    it('should return an empty array where the Account backed nobody in the era', async () => {
+      dsMockUtils.createQueryMock('staking', 'erasStakersPaged', {
+        entries: [
+          [
+            [rawEra, dsMockUtils.createMockAccountId('validatorOne'), rawPage(0)],
+            exposurePage([{ address: 'someOtherNominator', value: new BigNumber(7) }]),
+          ],
+        ],
+      });
+
+      const result = await staking.getExposure({ era });
+
+      expect(result).toEqual([]);
+    });
+
+    it('should find the Account across validators even when it sits on different pages', async () => {
+      dsMockUtils.createQueryMock('staking', 'erasStakersPaged', {
+        entries: [
+          [
+            [rawEra, dsMockUtils.createMockAccountId('validatorOne'), rawPage(0)],
+            exposurePage([{ address: account.address, value: new BigNumber(100) }]),
+          ],
+          [
+            [rawEra, dsMockUtils.createMockAccountId('validatorTwo'), rawPage(0)],
+            exposurePage([{ address: 'someOtherNominator', value: new BigNumber(7) }]),
+          ],
+          [
+            [rawEra, dsMockUtils.createMockAccountId('validatorThree'), rawPage(1)],
+            exposurePage([{ address: account.address, value: new BigNumber(50) }]),
+          ],
+        ],
+      });
+
+      const result = await staking.getExposure({ era });
+
+      expect(result).toEqual([
+        {
+          validator: expect.objectContaining({ address: 'validatorOne' }),
+          value: new BigNumber(100),
+        },
+        {
+          validator: expect.objectContaining({ address: 'validatorThree' }),
+          value: new BigNumber(50),
+        },
+      ]);
+    });
+
+    it('should not read the active era when one is given', async () => {
+      const activeEraMock = dsMockUtils.createQueryMock('staking', 'activeEra');
+
+      dsMockUtils.createQueryMock('staking', 'erasStakersPaged', {
+        entries: [
+          [
+            [rawEra, dsMockUtils.createMockAccountId('validatorOne'), rawPage(0)],
+            exposurePage([{ address: account.address, value: new BigNumber(100) }]),
+          ],
+        ],
+      });
+
+      await staking.getExposure({ era });
+
+      expect(activeEraMock).not.toHaveBeenCalled();
     });
   });
 });

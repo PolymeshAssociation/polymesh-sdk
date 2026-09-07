@@ -3,8 +3,10 @@ import { AccountId, RewardDestination } from '@polkadot/types/interfaces';
 import { PalletStakingNominations } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
-import { Account, Namespace } from '~/internal';
+import { Account, Namespace, PolymeshError } from '~/internal';
 import {
+  AccountExposure,
+  ErrorCode,
   StakingCommission,
   StakingLedger,
   StakingNomination,
@@ -24,6 +26,7 @@ import {
   stringToAccountId,
   u32ToBigNumber,
 } from '~/utils/conversion';
+import { asRawEra, requestPaginated } from '~/utils/internal';
 
 /**
  * Handles Account staking related functionality
@@ -281,6 +284,58 @@ export class Staking extends Namespace<Account> {
       account: this.parent,
       ...commission,
     };
+  }
+
+  /**
+   * Fetch the validators this Account's stake backed in an era, and how much each one carried
+   *
+   * @param args.era - defaults to the active era
+   *
+   * @returns one entry per validator backed, or an empty array where the Account backed none. A
+   *   validator's own self-bond is not included — read that as `own` from
+   *   {@link api/client/Staking!Staking.getEraExposure | getEraExposure}
+   *
+   * @throws if the era has no exposure recorded, such as one outside the chain's history depth
+   *
+   * @note an era's assignments are fixed when it is elected, so this can name a validator the
+   *   Account no longer nominates. {@link getNomination} reads intent; this reads what the election
+   *   assigned
+   *
+   * @note reads every exposure page in the era, so it costs one paged storage request over the
+   *   whole validator set
+   */
+  public async getExposure(args?: { era?: BigNumber }): Promise<AccountExposure[]> {
+    const {
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+      parent: { address },
+    } = this;
+
+    const rawEra = await asRawEra(args?.era, context);
+
+    const { entries } = await requestPaginated(query.staking.erasStakersPaged, { arg: rawEra });
+
+    if (!entries.length) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'No exposure is recorded for that era',
+        data: { era: rawEra.toString() },
+      });
+    }
+
+    return entries.flatMap(([key, rawPage]) => {
+      const validatorAddress = accountIdToString(key.args[1]);
+
+      return rawPage
+        .unwrap()
+        .others.filter(({ who }) => accountIdToString(who) === address)
+        .map(({ value }) => ({
+          validator: new Account({ address: validatorAddress }, context),
+          value: balanceToBigNumber(value.unwrap()),
+        }));
+    });
   }
 
   /**
