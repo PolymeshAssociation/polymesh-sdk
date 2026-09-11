@@ -103,4 +103,25 @@ describe('AssetHolder class', () => {
       });
     });
   });
+
+  describe('method: getFreezeStatus', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should report whether the holder is frozen, without a frozen amount', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const collection = entityMockUtils.getNftCollectionInstance();
+      const holder = entityMockUtils.getAccountInstance();
+
+      const getHolderFreezeStatusSpy = jest
+        .spyOn(utilsInternalModule, 'getHolderFreezeStatus')
+        .mockResolvedValue({ isFrozen: true, frozen: new BigNumber(0) });
+
+      const assetHolders = new AssetHolders(collection, context);
+
+      await expect(assetHolders.getFreezeStatus({ holder })).resolves.toEqual({ isFrozen: true });
+      expect(getHolderFreezeStatusSpy).toHaveBeenCalledWith(holder, collection, context);
+    });
+  });
 });

@@ -22,6 +22,7 @@ import {
   NftCollection,
   NoArgsProcedureMethod,
   TransferBreakdown,
+  TransferError,
 } from '~/types';
 import { isFungibleAsset } from '~/utils';
 import {
@@ -34,7 +35,26 @@ import {
   stringToIdentityId,
   transferReportToTransferBreakdown,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, getHolderFreezeStatus } from '~/utils/internal';
+
+/**
+ * @hidden
+ *
+ * Add a frozen sender to a transfer breakdown. The chain's NFT transfer report does not check
+ *   whether the sender is frozen, although the transfer itself refuses a frozen sender, so the
+ *   SDK checks it separately
+ */
+function withFrozenSender(breakdown: TransferBreakdown): TransferBreakdown {
+  const { general } = breakdown;
+
+  return {
+    ...breakdown,
+    general: general.includes(TransferError.SenderFrozen)
+      ? general
+      : [...general, TransferError.SenderFrozen],
+    result: false,
+  };
+}
 
 /**
  * @hidden
@@ -136,6 +156,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
 
     let granularResult: Vec<DispatchError> | undefined;
     let nftResult: Vec<DispatchError> | undefined;
+    let isNftSenderFrozen = false;
     let complianceResult: Result<ComplianceReport, DispatchError>;
     let transferRestrictionsReport: Result<Vec<TransferCondition>, DispatchError>;
 
@@ -188,34 +209,38 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     } else {
       const rawNfts = nftToMeshNft(parent, args.nfts, context);
       const rawAmount = bigNumberToBalance(amount, context, isDivisible);
-      [nftResult, complianceResult, transferRestrictionsReport] = await Promise.all([
-        nftApi.transferReport<Vec<DispatchError>>(
-          rawFromAccountHolder,
-          rawToAccountHolder,
-          rawNfts,
-          booleanToBool(false, context)
-        ),
-        complianceApi.complianceReport<Result<ComplianceReport, DispatchError>>(
-          rawAssetId,
-          rawFromDid,
-          rawToDid
-        ),
-        statisticsApi.transferRestrictionsReport<Result<Vec<TransferCondition>, DispatchError>>(
-          rawAssetId,
-          rawFromDid,
-          rawToDid,
-          rawAmount
-        ),
-      ]);
+      [nftResult, complianceResult, transferRestrictionsReport, { isFrozen: isNftSenderFrozen }] =
+        await Promise.all([
+          nftApi.transferReport<Vec<DispatchError>>(
+            rawFromAccountHolder,
+            rawToAccountHolder,
+            rawNfts,
+            booleanToBool(false, context)
+          ),
+          complianceApi.complianceReport<Result<ComplianceReport, DispatchError>>(
+            rawAssetId,
+            rawFromDid,
+            rawToDid
+          ),
+          statisticsApi.transferRestrictionsReport<Result<Vec<TransferCondition>, DispatchError>>(
+            rawAssetId,
+            rawFromDid,
+            rawToDid,
+            rawAmount
+          ),
+          getHolderFreezeStatus(from, parent, context),
+        ]);
     }
 
-    return transferReportToTransferBreakdown(
+    const breakdown = transferReportToTransferBreakdown(
       granularResult,
       nftResult,
       complianceResult,
       transferRestrictionsReport,
       context
     );
+
+    return isNftSenderFrozen ? withFrozenSender(breakdown) : breakdown;
   }
 }
 

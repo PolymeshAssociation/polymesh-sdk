@@ -48,6 +48,7 @@ import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/typ
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   Asset,
+  AssetHolderLike,
   AssetStat,
   AttestPrimaryKeyRotationAuthorizationData,
   Authorization,
@@ -63,6 +64,7 @@ import {
   ErrorCode,
   GenericAuthorizationData,
   GenericPolymeshTransaction,
+  HolderFreezeStatus,
   InputCaCheckpoint,
   InputCondition,
   ModuleName,
@@ -115,6 +117,7 @@ import {
   SUPPORTED_SPEC_VERSION_RANGE,
 } from '~/utils/constants';
 import {
+  assetHolderLikeToAssetHolderId,
   assetIdToString,
   assetToMeshAssetId,
   balanceToBigNumber,
@@ -127,6 +130,7 @@ import {
   meshPermissionsToPermissionsV2,
   middlewareScopeToScope,
   momentToDate,
+  portfolioIdToMeshPortfolioId,
   signerToString,
   stakingRewardDestinationToRaw,
   statisticsOpTypeToStatType,
@@ -1201,6 +1205,54 @@ export function assembleHolderBalance(
  */
 export function asOptionalApi<T>(member: T): T | undefined {
   return member;
+}
+
+/**
+ * @hidden
+ *
+ * Read how an Asset agent has frozen one holder of an Asset: whether it is frozen outright, and how
+ *   much of its balance is frozen. An Account's freeze is kept by the Asset pallet, a Portfolio's by
+ *   the Portfolio pallet
+ *
+ * @note reports an unfrozen holder before Polymesh 8.1.1, whose metadata has none of this storage
+ */
+export async function getHolderFreezeStatus(
+  holder: AssetHolderLike,
+  asset: BaseAsset,
+  context: Context
+): Promise<HolderFreezeStatus> {
+  const {
+    polymeshApi: {
+      query: { asset: assetQuery, portfolio: portfolioQuery },
+    },
+  } = context;
+
+  const holderId = assetHolderLikeToAssetHolderId(holder);
+  const rawAssetId = assetToMeshAssetId(asset, context);
+
+  let rawIsFrozen;
+  let rawFrozen;
+
+  if (typeof holderId === 'string') {
+    const rawAccountId = stringToAccountId(holderId, context);
+
+    [rawIsFrozen, rawFrozen] = await Promise.all([
+      asOptionalApi(assetQuery.frozenAccounts)?.(rawAccountId, rawAssetId),
+      asOptionalApi(assetQuery.frozenBalance)?.(rawAccountId, rawAssetId),
+    ]);
+  } else {
+    const rawPortfolioId = portfolioIdToMeshPortfolioId(holderId, context);
+
+    [rawIsFrozen, rawFrozen] = await Promise.all([
+      asOptionalApi(portfolioQuery.frozenPortfolios)?.(rawPortfolioId, rawAssetId),
+      asOptionalApi(portfolioQuery.portfolioFrozenAssets)?.(rawPortfolioId, rawAssetId),
+    ]);
+  }
+
+  return {
+    isFrozen: rawIsFrozen ? boolToBoolean(rawIsFrozen) : false,
+    frozen: rawFrozen ? balanceToBigNumber(rawFrozen) : new BigNumber(0),
+  };
 }
 
 /**

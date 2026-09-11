@@ -3587,6 +3587,8 @@ export function assetDispatchErrorToTransferError(
     [assetErrors.BalanceOverflow, TransferError.BalanceOverflow],
     [assetErrors.InsufficientBalance, TransferError.InsufficientBalance],
     [assetErrors.InvalidTransferFrozenAsset, TransferError.TransfersFrozen],
+    // absent before Polymesh 8.1.1, hence the optional chaining below
+    [assetErrors.InvalidTransferSenderIsFrozen, TransferError.SenderFrozen],
     [portfolioErrors.PortfolioDoesNotExist, TransferError.InvalidSenderPortfolio],
     [portfolioErrors.InsufficientPortfolioBalance, TransferError.InsufficientPortfolioBalance],
     [assetErrors.InvalidTransferInvalidReceiverDID, TransferError.InvalidReceiverIdentity],
