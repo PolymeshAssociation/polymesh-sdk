@@ -179,7 +179,10 @@ export async function prepareConfigureDividendDistribution(
 
   const [result] = await portfolio.getAssetBalances({ assets: [currencyAsset] });
 
-  const { free } = result!;
+  // the chain locks the amount against unlocked tokens only (`Portfolio::ensure_sufficient_balance`),
+  // so tokens an agent has frozen still count
+  const { total, locked } = result!;
+  const free = total.minus(locked);
   if (free.lt(maxAmount)) {
     throw new PolymeshError({
       code: ErrorCode.InsufficientBalance,

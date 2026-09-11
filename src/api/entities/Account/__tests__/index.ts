@@ -1078,6 +1078,7 @@ describe('Account class', () => {
         multi: [lockedBalance1, lockedBalance2],
       });
 
+      // no `frozenBalance` mock: the storage is absent before Polymesh 8.1.1
       const result = await account.getAssetBalances({ assets: ['TICKER1', asset2] });
 
       expect(result).toEqual([
@@ -1085,13 +1086,44 @@ describe('Account class', () => {
           asset: asset1,
           total: new BigNumber(100),
           locked: new BigNumber(10),
+          frozen: new BigNumber(0),
           free: new BigNumber(90),
         },
         {
           asset: asset2,
           total: new BigNumber(200),
           locked: new BigNumber(20),
+          frozen: new BigNumber(0),
           free: new BigNumber(180),
+        },
+      ]);
+
+      const frozenBalance1 = dsMockUtils.createMockBalance(new BigNumber(30));
+      // frozen above the available balance, which `set_frozen_tokens` allows
+      const frozenBalance2 = dsMockUtils.createMockBalance(new BigNumber(500));
+      when(balanceToBigNumberSpy).calledWith(frozenBalance1).mockReturnValue(new BigNumber(30));
+      when(balanceToBigNumberSpy).calledWith(frozenBalance2).mockReturnValue(new BigNumber(500));
+
+      dsMockUtils.createQueryMock('asset', 'frozenBalance', {
+        multi: [frozenBalance1, frozenBalance2],
+      });
+
+      const frozenResult = await account.getAssetBalances({ assets: ['TICKER1', asset2] });
+
+      expect(frozenResult).toEqual([
+        {
+          asset: asset1,
+          total: new BigNumber(100),
+          locked: new BigNumber(10),
+          frozen: new BigNumber(30),
+          free: new BigNumber(60),
+        },
+        {
+          asset: asset2,
+          total: new BigNumber(200),
+          locked: new BigNumber(20),
+          frozen: new BigNumber(500),
+          free: new BigNumber(0),
         },
       ]);
     });
@@ -1108,13 +1140,11 @@ describe('Account class', () => {
       const totalBalance1 = dsMockUtils.createMockBalance(new BigNumber(100));
       const totalBalance2 = dsMockUtils.createMockBalance(new BigNumber(200));
       const lockedBalance1 = dsMockUtils.createMockBalance(new BigNumber(10));
-      const lockedBalance2 = dsMockUtils.createMockBalance(new BigNumber(0));
 
       const balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
       when(balanceToBigNumberSpy).calledWith(totalBalance1).mockReturnValue(new BigNumber(100));
       when(balanceToBigNumberSpy).calledWith(totalBalance2).mockReturnValue(new BigNumber(200));
       when(balanceToBigNumberSpy).calledWith(lockedBalance1).mockReturnValue(new BigNumber(10));
-      when(balanceToBigNumberSpy).calledWith(lockedBalance2).mockReturnValue(new BigNumber(0));
 
       const assetIdToStringSpy = jest.spyOn(utilsConversionModule, 'assetIdToString');
       when(assetIdToStringSpy).calledWith(rawAssetId1).mockReturnValue(assetId1);
@@ -1125,10 +1155,8 @@ describe('Account class', () => {
         tuple([rawAccountId, rawAssetId2], totalBalance2),
       ];
 
-      const lockedEntries = [
-        tuple([rawAccountId, rawAssetId1], lockedBalance1),
-        tuple([rawAccountId, rawAssetId2], lockedBalance2),
-      ];
+      // the second Asset has never been locked, so it has no entry in the locked map at all
+      const lockedEntries = [tuple([rawAccountId, rawAssetId1], lockedBalance1)];
 
       dsMockUtils.createQueryMock('asset', 'assetBalance', {
         entries: totalEntries,
@@ -1147,7 +1175,22 @@ describe('Account class', () => {
       expect(result[1]!.asset.id).toEqual(assetId2);
       expect(result[1]!.total).toEqual(new BigNumber(200));
       expect(result[1]!.locked).toEqual(new BigNumber(0));
+      expect(result[1]!.frozen).toEqual(new BigNumber(0));
       expect(result[1]!.free).toEqual(new BigNumber(200));
+
+      const frozenBalance2 = dsMockUtils.createMockBalance(new BigNumber(50));
+      when(balanceToBigNumberSpy).calledWith(frozenBalance2).mockReturnValue(new BigNumber(50));
+
+      dsMockUtils.createQueryMock('asset', 'frozenBalance', {
+        entries: [tuple([rawAccountId, rawAssetId2], frozenBalance2)],
+      });
+
+      const frozenResult = await account.getAssetBalances();
+
+      expect(frozenResult[0]!.frozen).toEqual(new BigNumber(0));
+      expect(frozenResult[0]!.free).toEqual(new BigNumber(90));
+      expect(frozenResult[1]!.frozen).toEqual(new BigNumber(50));
+      expect(frozenResult[1]!.free).toEqual(new BigNumber(150));
     });
   });
 

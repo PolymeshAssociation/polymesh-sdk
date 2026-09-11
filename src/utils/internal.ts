@@ -7,12 +7,13 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { Bytes, Option, StorageKey, u32, u64 } from '@polkadot/types';
+import { Bytes, Option, StorageKey, u32, u64, u128 } from '@polkadot/types';
 import { EventRecord, RewardDestination } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
   PalletAssetAssetDetails,
   PalletCorporateActionsCorporateAction,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatType,
@@ -71,6 +72,7 @@ import {
   OptionalArgsProcedureMethod,
   PaginationOptions,
   PermissionedAccount,
+  PortfolioBalance,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
   ProcedureOpts,
@@ -115,6 +117,7 @@ import {
 import {
   assetIdToString,
   assetToMeshAssetId,
+  balanceToBigNumber,
   bigNumberToU32,
   boolToBoolean,
   claimIssuerToMeshClaimIssuer,
@@ -1162,6 +1165,60 @@ export async function asAssetId(asset: string | BaseAsset, context: Context): Pr
   const base = await asBaseAsset(asset, context);
 
   return base.id;
+}
+
+/**
+ * @hidden
+ *
+ * Assemble a holder's balance of a fungible Asset. `free` is what the holder can send, since the
+ *   chain moves neither locked nor frozen tokens on the holder's behalf. It is clamped at zero,
+ *   because an agent can set the frozen amount above the balance
+ */
+export function assembleHolderBalance(
+  asset: FungibleAsset,
+  total: BigNumber,
+  locked: BigNumber,
+  frozen: BigNumber
+): PortfolioBalance {
+  return {
+    asset,
+    total,
+    locked,
+    frozen,
+    free: BigNumber.max(total.minus(locked).minus(frozen), 0),
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Type a chain API member as possibly absent
+ *
+ * The augmented types describe the newest runtime the SDK supports, so a storage entry or extrinsic
+ *   added in a later release is typed as always present — even when connected to a chain that
+ *   predates it, where it is `undefined` at runtime. Assigning through this keeps the guard
+ *   honest to the type system, which would otherwise narrow it away
+ */
+export function asOptionalApi<T>(member: T): T | undefined {
+  return member;
+}
+
+/**
+ * @hidden
+ *
+ * Index balance storage entries keyed `(holder, AssetId)` by Asset ID, for a holder whose entries
+ *   were read with a prefix scan
+ */
+export function balanceEntriesByAssetId(
+  entries: [StorageKey<[Codec, PolymeshPrimitivesAssetAssetId]>, u128][]
+): Record<string, BigNumber> {
+  const balances: Record<string, BigNumber> = {};
+
+  entries.forEach(([key, balance]) => {
+    balances[assetIdToString(key.args[1])] = balanceToBigNumber(balance);
+  });
+
+  return balances;
 }
 
 /**

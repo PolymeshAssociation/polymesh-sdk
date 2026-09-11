@@ -74,7 +74,10 @@ export async function prepareLaunchOffering(
     }),
   ]);
 
-  const { free } = balanceResult!;
+  // the chain locks the offered tokens against unlocked tokens only
+  // (`Portfolio::ensure_sufficient_balance`), so tokens an agent has frozen still count
+  const { total: totalBalance, locked } = balanceResult!;
+  const free = totalBalance.minus(locked);
 
   let venueId: BigNumber | undefined;
 

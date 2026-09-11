@@ -218,7 +218,11 @@ describe('launchOffering procedure', () => {
   });
 
   it('should throw an error if no valid Venue was supplied or found', async () => {
-    portfolio.getAssetBalances = jest.fn().mockResolvedValue([{ free: new BigNumber(20) }]);
+    portfolio.getAssetBalances = jest
+      .fn()
+      .mockResolvedValue([
+        { total: new BigNumber(20), locked: new BigNumber(0), free: new BigNumber(20) },
+      ]);
     entityMockUtils.configureMocks({
       identityOptions: {
         getVenues: [entityMockUtils.getVenueInstance({ details: { type: VenueType.Exchange } })],
@@ -257,7 +261,11 @@ describe('launchOffering procedure', () => {
   });
 
   it("should throw an error if Asset tokens offered exceed the Portfolio's balance", async () => {
-    portfolio.getAssetBalances = jest.fn().mockResolvedValue([{ free: new BigNumber(1) }]);
+    portfolio.getAssetBalances = jest
+      .fn()
+      .mockResolvedValue([
+        { total: new BigNumber(1), locked: new BigNumber(0), free: new BigNumber(1) },
+      ]);
 
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
       offeringPortfolioId,
@@ -276,7 +284,15 @@ describe('launchOffering procedure', () => {
   });
 
   it('should return a create fundraiser transaction spec', async () => {
-    portfolio.getAssetBalances = jest.fn().mockResolvedValue([{ free: new BigNumber(1000) }]);
+    // frozen tokens still count: the chain locks the offering against unlocked tokens only
+    portfolio.getAssetBalances = jest.fn().mockResolvedValue([
+      {
+        total: new BigNumber(1000),
+        locked: new BigNumber(0),
+        frozen: new BigNumber(1000),
+        free: new BigNumber(0),
+      },
+    ]);
 
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
       offeringPortfolioId,
@@ -314,7 +330,9 @@ describe('launchOffering procedure', () => {
         getVenues: [venue],
       },
       defaultPortfolioOptions: {
-        getAssetBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
+        getAssetBalances: [
+          { total: new BigNumber(1000), locked: new BigNumber(0), free: new BigNumber(1000) },
+        ] as PortfolioBalance[],
       },
     });
 

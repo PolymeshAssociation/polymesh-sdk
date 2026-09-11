@@ -63,13 +63,16 @@ export async function prepareControllerTransfer(
     assets: [asset],
   });
 
-  const { free } = balance!;
+  // a controller transfer can seize frozen tokens, which is what makes seizing from a frozen
+  // holder possible, but not locked ones. So the ceiling is `total - locked` rather than `free`
+  const { total, locked } = balance!;
+  const available = total.minus(locked);
 
-  if (free.lt(amount)) {
+  if (available.lt(amount)) {
     throw new PolymeshError({
       code: ErrorCode.InsufficientBalance,
-      message: 'The origin Portfolio does not have enough free balance for this transfer',
-      data: { free },
+      message: 'The origin Portfolio does not have enough unlocked balance for this transfer',
+      data: { available },
     });
   }
 

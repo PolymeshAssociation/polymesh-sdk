@@ -157,8 +157,12 @@ export async function prepareMoveFunds(
   for (const fungibleBalance of fungibleBalances) {
     const {
       asset: { id },
-      free,
+      total,
+      locked,
     } = fungibleBalance;
+    // the chain checks a move against unlocked tokens only (`Portfolio::ensure_sufficient_balance`),
+    // so tokens an agent has frozen can still be moved. A fully frozen Portfolio cannot move at all
+    const free = total.minus(locked);
     for (const fungibleMovement of fungibleMovements) {
       const assetId = await asAssetId(fungibleMovement.asset, context);
       if (assetId === id && fungibleMovement.amount.gt(free)) {

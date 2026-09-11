@@ -7,7 +7,6 @@ import {
 import { hexAddPrefix, hexStripPrefix, stringToHex, u8aToHex } from '@polkadot/util';
 import { blake2AsU8a } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
-import { values } from 'lodash';
 
 import {
   getMissingAssetPermissions,
@@ -88,7 +87,10 @@ import {
   areSameAccounts,
   asAssetId,
   asFungibleAsset,
+  asOptionalApi,
+  assembleHolderBalance,
   assertAddressValid,
+  balanceEntriesByAssetId,
   calculateNextKey,
   getIdentityFromKeyRecord,
   getSecondaryAccountPermissions,
@@ -835,6 +837,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * Retrieve the balances of all fungible assets in this Account
    *
    * @param args.assets - array of FungibleAssets (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
+   *
+   * @note `free` excludes tokens an Asset agent has frozen, as well as locked tokens. See
+   *   {@link AssetHolderBalance}
    */
   public async getAssetBalances(args?: {
     assets: (string | FungibleAsset)[];
@@ -849,6 +854,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
+    // absent before Polymesh 8.1.1, where nothing can be frozen
+    const frozenBalance = asOptionalApi(asset.frozenBalance);
+
     const rawAccountId = stringToAccountId(address, context);
     if (args?.assets.length) {
       const queriedAssets = await Promise.all(
@@ -859,56 +867,43 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         tuple(rawAccountId, stringToAssetId(id, context))
       );
 
-      const [totalBalances, lockedBalances] = await Promise.all([
+      const [totalBalances, lockedBalances, frozenBalances] = await Promise.all([
         asset.assetBalance.multi(multiParams),
         asset.lockedBalance.multi(multiParams),
+        frozenBalance?.multi(multiParams) ?? [],
       ]);
 
       return queriedAssets.map((queriedAsset, index) => {
-        const total = balanceToBigNumber(totalBalances[index] as Balance);
-        const locked = balanceToBigNumber(lockedBalances[index] as Balance);
+        const rawFrozen = frozenBalances[index];
 
-        return {
-          asset: queriedAsset,
-          total,
-          locked,
-          free: total.minus(locked),
-        };
+        return assembleHolderBalance(
+          queriedAsset,
+          balanceToBigNumber(totalBalances[index] as Balance),
+          balanceToBigNumber(lockedBalances[index] as Balance),
+          rawFrozen ? balanceToBigNumber(rawFrozen) : new BigNumber(0)
+        );
       });
     }
 
-    const [totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
+    const [totalBalanceEntries, lockedBalanceEntries, frozenBalanceEntries] = await Promise.all([
       asset.assetBalance.entries(rawAccountId),
       asset.lockedBalance.entries(rawAccountId),
+      frozenBalance?.entries(rawAccountId) ?? [],
     ]);
 
-    const assetBalances: Record<string, AssetHolderBalance> = {};
+    const lockedByAsset = balanceEntriesByAssetId(lockedBalanceEntries);
+    const frozenByAsset = balanceEntriesByAssetId(frozenBalanceEntries);
 
-    totalBalanceEntries.forEach(([key, balance]) => {
-      const total = balanceToBigNumber(balance);
+    return totalBalanceEntries.map(([key, balance]) => {
       const assetId = assetIdToString(key.args[1]);
 
-      assetBalances[assetId] = {
-        asset: new FungibleAsset({ assetId }, context),
-        total,
-        locked: new BigNumber(0),
-        free: total,
-      };
+      return assembleHolderBalance(
+        new FungibleAsset({ assetId }, context),
+        balanceToBigNumber(balance),
+        lockedByAsset[assetId] ?? new BigNumber(0),
+        frozenByAsset[assetId] ?? new BigNumber(0)
+      );
     });
-
-    lockedBalanceEntries.forEach(([key, balance]) => {
-      const locked = balanceToBigNumber(balance);
-      const assetId = assetIdToString(key.args[1]);
-
-      if (!locked.isZero()) {
-        const assetBalance = assetBalances[assetId]!;
-
-        assetBalance.locked = locked;
-        assetBalance.free = assetBalances[assetId]!.total.minus(locked);
-      }
-    });
-
-    return values(assetBalances);
   }
 
   /**
