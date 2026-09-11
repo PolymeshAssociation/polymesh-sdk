@@ -1274,32 +1274,50 @@ export interface UpdateVenueSignersParams {
 
 export interface ControllerTransferParams {
   /**
-   * portfolio (or portfolio ID) from which Assets will be transferred
+   * portfolio (or portfolio ID) or account from which Assets will be transferred. One of `origin`
+   *   or `originPortfolio` is required
    */
-  originPortfolio: PortfolioLike;
+  origin?: AssetHolderLike;
+  /**
+   * portfolio (or portfolio ID) from which Assets will be transferred
+   *
+   * @deprecated in favour of `origin`, which means the same thing and also accepts an Account.
+   *   Passing both throws. This will be removed in the next major version
+   */
+  originPortfolio?: PortfolioLike;
   /**
    * amount of Asset tokens to transfer
    */
   amount: BigNumber;
 
   /**
-   * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to default portfolio. If specified it must be one of the callers own portfolios or accounts
+   * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to the caller's default portfolio.
+   *   From Polymesh 8.1.1 it can be any portfolio or account; before, it must be one of the caller's own portfolios or the signing account
    */
   destination?: AssetHolderLike;
 }
 
 export interface NftControllerTransferParams {
   /**
-   * portfolio (or portfolio ID) from which NFTs will be transferred from
+   * portfolio (or portfolio ID) or account from which NFTs will be transferred. One of `origin`
+   *   or `originPortfolio` is required
    */
-  originPortfolio: PortfolioLike;
+  origin?: AssetHolderLike;
+  /**
+   * portfolio (or portfolio ID) from which NFTs will be transferred
+   *
+   * @deprecated in favour of `origin`, which means the same thing and also accepts an Account.
+   *   Passing both throws. This will be removed in the next major version
+   */
+  originPortfolio?: PortfolioLike;
   /**
    * The NFTs to transfer
    */
   nfts: (Nft | BigNumber)[];
 
   /**
-   * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to default portfolio. If specified it must be one of the callers own portfolios or accounts
+   * (optional) portfolio (or portfolio ID) or account to which NFTs will be transferred to. Defaults to the caller's default portfolio.
+   *   From Polymesh 8.1.1 it can be any portfolio or account; before, it must be one of the caller's own portfolios or the signing account
    */
   destination?: AssetHolderLike;
 }
