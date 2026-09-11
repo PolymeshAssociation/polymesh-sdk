@@ -2452,6 +2452,82 @@ describe('Polymesh Transaction Base class', () => {
         );
       });
 
+      describe('from Polymesh 8.1.1, where the chain delegates Ethereum fees', () => {
+        beforeEach(() => {
+          context.supportsEthFeeDelegation.mockReturnValue(true);
+        });
+
+        it('should attribute fees to a third party set to pay them', async () => {
+          const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+          const payerAccount = entityMockUtils.getAccountInstance({ address: 'payerAddress' });
+          const payer = entityMockUtils.getIdentityInstance({
+            getPrimaryAccount: {
+              account: payerAccount,
+              permissions: {
+                assets: null,
+                portfolios: null,
+                transactions: null,
+                transactionGroups: [],
+              },
+            },
+          });
+          const tx = new PolymeshTransaction(
+            {
+              ...ethTxSpec,
+              paidForBy: payer,
+              transaction,
+              args: tuple('FOO'),
+              resolver: undefined,
+            },
+            context
+          );
+
+          const { payingAccountData } = await tx.getTotalFees();
+
+          expect(payingAccountData.type).toBe(PayingAccountType.Other);
+          expect(payingAccountData.account.address).toBe('payerAddress');
+        });
+
+        it('should attribute fees to a subsidizer', async () => {
+          const subsidizer = entityMockUtils.getAccountInstance({ address: 'subsidizer' });
+          (context.accountSubsidy as jest.Mock).mockResolvedValue({
+            subsidy: entityMockUtils.getSubsidyInstance({ subsidizer: 'subsidizer' }),
+            allowance: new BigNumber(1000),
+          });
+          const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+          const tx = new PolymeshTransaction(
+            { ...ethTxSpec, transaction, args: tuple('FOO'), resolver: undefined },
+            context
+          );
+
+          const { payingAccountData } = await tx.getTotalFees();
+
+          expect(payingAccountData.type).toBe(PayingAccountType.Subsidy);
+          expect(payingAccountData.account.address).toBe(subsidizer.address);
+        });
+
+        it("should let an Ethereum key sign for a MultiSig, attributing fees to the MultiSig's payer", async () => {
+          const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+          dsMockUtils.createTxMock('multiSig', 'createProposal');
+
+          const multiSig = entityMockUtils.getMultiSigInstance({ address: DUMMY_ACCOUNT_ID });
+          const payerIdentity = entityMockUtils.getIdentityInstance({ did: 'payerDid' });
+          const payerAccount = entityMockUtils.getAccountInstance({ address: 'payerAddress' });
+          multiSig.getPayer = jest.fn().mockResolvedValue(payerIdentity);
+          payerIdentity.getPrimaryAccount = jest.fn().mockResolvedValue({ account: payerAccount });
+
+          const tx = new PolymeshTransaction(
+            { ...ethTxSpec, multiSig, transaction, args: tuple('FOO'), resolver: undefined },
+            context
+          );
+
+          const { payingAccountData } = await tx.getTotalFees();
+
+          expect(payingAccountData.type).toBe(PayingAccountType.MultiSigCreator);
+          expect(payingAccountData.account.address).toBe('payerAddress');
+        });
+      });
+
       it('should throw a ValidationError if mortality was explicitly set', async () => {
         const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
         const tx = new PolymeshTransaction(

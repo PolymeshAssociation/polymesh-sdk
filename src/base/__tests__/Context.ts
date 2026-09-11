@@ -2898,6 +2898,24 @@ describe('Context class', () => {
     });
   });
 
+  describe('method: supportsEthFeeDelegation', () => {
+    it('should be true from spec version 8_001_010 (Polymesh 8.1.1)', async () => {
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      context.specVersion = 8_001_000;
+      expect(context.supportsEthFeeDelegation()).toBe(false);
+
+      context.specVersion = 8_001_010;
+      expect(context.supportsEthFeeDelegation()).toBe(true);
+
+      context.specVersion = 8_002_000;
+      expect(context.supportsEthFeeDelegation()).toBe(true);
+    });
+  });
+
   describe('method: getEthSigner', () => {
     it('should return undefined if there is no Signing Manager attached', async () => {
       const context = await Context.create({

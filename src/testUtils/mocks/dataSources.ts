@@ -500,6 +500,7 @@ interface ContextOptions {
   getEthSigner?: EthSigner | undefined;
   getEthRuntimePalletsAddress?: string;
   getEthChainId?: BigNumber;
+  supportsEthFeeDelegation?: boolean;
 }
 
 interface SigningManagerOptions {
@@ -847,6 +848,7 @@ const defaultContextOptions: ContextOptions = {
   getEthSigner: undefined,
   getEthRuntimePalletsAddress: '0x6d6f646c70792f70616464720000000000000000',
   getEthChainId: new BigNumber(1641818),
+  supportsEthFeeDelegation: false,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultSigningManagerOptions: SigningManagerOptions = {
@@ -988,6 +990,7 @@ function configureContext(opts: ContextOptions): void {
     getEthSigner: jest.fn().mockReturnValue(opts.getEthSigner),
     getEthRuntimePalletsAddress: jest.fn().mockResolvedValue(opts.getEthRuntimePalletsAddress),
     getEthChainId: jest.fn().mockReturnValue(opts.getEthChainId),
+    supportsEthFeeDelegation: jest.fn().mockReturnValue(opts.supportsEthFeeDelegation),
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);

@@ -1571,17 +1571,17 @@ export abstract class PolymeshTransactionBase<
   private async getPayingAccount(asProposal: boolean): Promise<PayingAccount> {
     const { paidForBy, multiSig, context, signingAddress } = this;
 
-    const isEthSigner = isEthDerivedAddress(signingAddress, context.ss58Format);
-
     /*
-     * An Ethereum-derived Account always pays its own fees. `revive.ethTransact` is a bare
-     *   extrinsic, so neither `paidForBy` nor a subsidy reaches the chain's fee pipeline — gas is
-     *   charged to the signing Account.
-     *
-     * Both branches below would need revisiting if the chain ever routes third-party payment
-     *   through this transport
+     * Before Polymesh 8.1.1 an Ethereum-derived Account always paid its own fees: `revive.ethTransact`
+     *   is a bare extrinsic, so neither `paidForBy` nor a subsidy reached the chain's fee pipeline.
+     *   From 8.1.1 the runtime puts an Ethereum transaction through that pipeline, attributing its
+     *   fee exactly as it would a native transaction's
      */
-    if (paidForBy && !isEthSigner) {
+    const paysOwnFees =
+      isEthDerivedAddress(signingAddress, context.ss58Format) &&
+      !context.supportsEthFeeDelegation();
+
+    if (paidForBy && !paysOwnFees) {
       const { account: primaryAccount } = await paidForBy.getPrimaryAccount();
 
       return {
@@ -1590,7 +1590,7 @@ export abstract class PolymeshTransactionBase<
       };
     }
 
-    const subsidyWithAllowance = isEthSigner ? null : await context.accountSubsidy();
+    const subsidyWithAllowance = paysOwnFees ? null : await context.accountSubsidy();
 
     if (subsidyWithAllowance && !this.ignoresSubsidy()) {
       const {
@@ -1608,30 +1608,7 @@ export abstract class PolymeshTransactionBase<
     // For MultiSig the fees come from the creator's primary key
     // Only use MultiSig payer when asProposal is true
     if (multiSig && asProposal) {
-      const multiId = await multiSig.getPayer();
-
-      if (multiId) {
-        try {
-          const { account } = await multiId.getPrimaryAccount();
-
-          return {
-            account,
-            type: PayingAccountType.MultiSigCreator,
-          };
-        } catch {
-          // If we can't get the primary account (e.g., it doesn't have an identity),
-          // fall back to using the MultiSig account directly
-          return {
-            type: PayingAccountType.Caller,
-            account: multiSig,
-          };
-        }
-      } else {
-        return {
-          type: PayingAccountType.Caller,
-          account: multiSig,
-        };
-      }
+      return this.getMultiSigPayingAccount(multiSig);
     }
 
     const caller = context.getSigningAccount();
@@ -1640,6 +1617,37 @@ export abstract class PolymeshTransactionBase<
       account: caller,
       type: PayingAccountType.Caller,
     };
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve the Account that pays for a proposal made to `multiSig`: its payer's primary key,
+   *   falling back to the MultiSig itself when there is no payer, or the payer has no primary
+   *   Account to charge (e.g. no Identity)
+   */
+  private async getMultiSigPayingAccount(multiSig: MultiSig): Promise<PayingAccount> {
+    const payingAccount: PayingAccount = {
+      type: PayingAccountType.Caller,
+      account: multiSig,
+    };
+
+    const multiId = await multiSig.getPayer();
+
+    if (!multiId) {
+      return payingAccount;
+    }
+
+    try {
+      const { account } = await multiId.getPrimaryAccount();
+
+      return {
+        account,
+        type: PayingAccountType.MultiSigCreator,
+      };
+    } catch {
+      return payingAccount;
+    }
   }
 
   /**
@@ -1662,16 +1670,18 @@ export abstract class PolymeshTransactionBase<
 
     if (actingMultiSig) {
       /*
-       * MultiSig + Ethereum is a narrow, untested intersection: `getPayingAccount` resolves fees
-       *   to a *native* primary key for a MultiSig proposal, while the gas-derived fee arithmetic
-       *   describes the transaction the Ethereum key itself submits. Out of scope for now,
-       *   rather than shipping an untested combination of two fee models
+       * Before Polymesh 8.1.1 the chain did not attribute an Ethereum transaction's fee to the
+       *   MultiSig's payer, which `getPayingAccount` reports for a proposal, so an Ethereum key
+       *   could not sign for a MultiSig on the terms the SDK describes
        */
-      if (isEthDerivedAddress(signingAddress, context.ss58Format)) {
+      if (
+        isEthDerivedAddress(signingAddress, context.ss58Format) &&
+        !context.supportsEthFeeDelegation()
+      ) {
         throw new PolymeshError({
           code: ErrorCode.NotSupported,
           message:
-            'Using an Ethereum-derived Account as a MultiSig signer is not currently supported',
+            'Using an Ethereum-derived Account as a MultiSig signer requires Polymesh 8.1.1 or later',
         });
       }
 
