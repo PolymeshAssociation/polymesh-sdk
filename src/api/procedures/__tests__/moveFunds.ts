@@ -230,8 +230,21 @@ describe('moveFunds procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         getAssetBalances: [
-          { asset: asset1, free: new BigNumber(50) },
-          { asset: asset2, free: new BigNumber(10) },
+          // 140 of asset1 are unlocked, enough for the move, but 60 of those are frozen
+          {
+            asset: asset1,
+            total: new BigNumber(150),
+            locked: new BigNumber(10),
+            frozen: new BigNumber(60),
+            free: new BigNumber(80),
+          },
+          {
+            asset: asset2,
+            total: new BigNumber(10),
+            locked: new BigNumber(0),
+            frozen: new BigNumber(0),
+            free: new BigNumber(10),
+          },
         ] as unknown as PortfolioBalance[],
       },
     });
@@ -455,12 +468,28 @@ describe('moveFunds procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         did,
-        getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
+        getAssetBalances: [
+          {
+            asset,
+            total: new BigNumber(150),
+            locked: new BigNumber(0),
+            frozen: new BigNumber(0),
+            free: new BigNumber(150),
+          },
+        ] as unknown as PortfolioBalance[],
         getCollections: [],
       },
       defaultPortfolioOptions: {
         did,
-        getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
+        getAssetBalances: [
+          {
+            asset,
+            total: new BigNumber(150),
+            locked: new BigNumber(0),
+            frozen: new BigNumber(0),
+            free: new BigNumber(150),
+          },
+        ] as unknown as PortfolioBalance[],
         getCollections: [],
       },
     });

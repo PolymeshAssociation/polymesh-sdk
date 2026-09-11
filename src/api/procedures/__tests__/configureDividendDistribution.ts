@@ -119,6 +119,7 @@ describe('configureDividendDistribution procedure', () => {
           asset: entityMockUtils.getFungibleAssetInstance({ assetId: currency }),
           total: new BigNumber(1000001),
           locked: new BigNumber(0),
+          frozen: new BigNumber(0),
           free: new BigNumber(1000001),
         },
       ],
@@ -441,7 +442,7 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe('Expiry date must be after payment date');
   });
 
-  it('should throw an error if the origin Portfolio does not have enough balance', async () => {
+  it('should throw an error if the origin Portfolio does not have enough free balance', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       {
@@ -449,8 +450,10 @@ describe('configureDividendDistribution procedure', () => {
           getAssetBalances: [
             {
               asset: entityMockUtils.getFungibleAssetInstance({ assetId: currency }),
-              total: new BigNumber(1),
+              // enough unlocked tokens, but all but one of them are frozen
+              total: new BigNumber(1000001),
               locked: new BigNumber(0),
+              frozen: new BigNumber(1000000),
               free: new BigNumber(1),
             },
           ],
@@ -596,6 +599,7 @@ describe('configureDividendDistribution procedure', () => {
             asset: entityMockUtils.getFungibleAssetInstance({ assetId: currency }),
             total: new BigNumber(1000001),
             locked: new BigNumber(0),
+            frozen: new BigNumber(0),
             free: new BigNumber(1000001),
           },
         ],

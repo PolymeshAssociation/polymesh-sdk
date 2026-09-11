@@ -202,6 +202,10 @@ describe('Portfolio class', () => {
     let rawAssetId0: PolymeshPrimitivesAssetAssetId;
     let rawAssetId1: PolymeshPrimitivesAssetAssetId;
     let rawAssetId2: PolymeshPrimitivesAssetAssetId;
+    let assetId3: string;
+    let rawAssetId3: PolymeshPrimitivesAssetAssetId;
+    let total3: BigNumber;
+    let rawTotal3: Balance;
     let rawTotal0: Balance;
     let rawTotal1: Balance;
     let rawLocked0: Balance;
@@ -225,6 +229,10 @@ describe('Portfolio class', () => {
       rawAssetId0 = dsMockUtils.createMockAssetId(assetId0);
       rawAssetId1 = dsMockUtils.createMockAssetId(assetId1);
       rawAssetId2 = dsMockUtils.createMockAssetId(assetId2);
+      assetId3 = '0x44444444444444444444444444444444';
+      rawAssetId3 = dsMockUtils.createMockAssetId(assetId3);
+      total3 = new BigNumber(300);
+      rawTotal3 = dsMockUtils.createMockBalance(total3.shiftedBy(6));
       rawTotal0 = dsMockUtils.createMockBalance(total0.shiftedBy(6));
       rawTotal1 = dsMockUtils.createMockBalance(total1.shiftedBy(6));
       rawLocked0 = dsMockUtils.createMockBalance(locked0.shiftedBy(6));
@@ -245,6 +253,8 @@ describe('Portfolio class', () => {
         entries: [
           tuple([rawPortfolioId, rawAssetId0], rawTotal0),
           tuple([rawPortfolioId, rawAssetId1], rawTotal1),
+          // held, but never locked, so it has no entry in the locked map at all
+          tuple([rawPortfolioId, rawAssetId3], rawTotal3),
         ],
       });
       dsMockUtils.createQueryMock('portfolio', 'portfolioLockedAssets', {
@@ -272,7 +282,59 @@ describe('Portfolio class', () => {
       expect(result[1]!.asset.id).toBe(hexToUuid(assetId1));
       expect(result[1]!.total).toEqual(total1);
       expect(result[1]!.locked).toEqual(locked1);
+      expect(result[1]!.frozen).toEqual(new BigNumber(0));
       expect(result[1]!.free).toEqual(total1.minus(locked1));
+      expect(result[2]!.asset.id).toBe(hexToUuid(assetId3));
+      expect(result[2]!.locked).toEqual(new BigNumber(0));
+      expect(result[2]!.free).toEqual(total3);
+    });
+
+    it('should subtract frozen tokens from the free balance, never going below zero', async () => {
+      const portfolio = new NonAbstract({ did, id }, context);
+
+      dsMockUtils.createQueryMock('portfolio', 'portfolioFrozenAssets', {
+        entries: [
+          tuple(
+            [rawPortfolioId, rawAssetId0],
+            dsMockUtils.createMockBalance(new BigNumber(80).shiftedBy(6))
+          ),
+          tuple(
+            [rawPortfolioId, rawAssetId1],
+            dsMockUtils.createMockBalance(new BigNumber(15).shiftedBy(6))
+          ),
+        ],
+      });
+
+      const result = await portfolio.getAssetBalances();
+
+      // 100 total, 50 locked, 80 frozen: the frozen amount can exceed what is available
+      expect(result[0]!.frozen).toEqual(new BigNumber(80));
+      expect(result[0]!.free).toEqual(new BigNumber(0));
+      // 200 total, 25 locked, 15 frozen
+      expect(result[1]!.frozen).toEqual(new BigNumber(15));
+      expect(result[1]!.free).toEqual(new BigNumber(160));
+    });
+
+    it('should subtract frozen tokens from the free balance of requested assets', async () => {
+      const portfolio = new NonAbstract({ did, id }, context);
+
+      when(asFungibleAssetSpy)
+        .calledWith(hexToUuid(assetId0), context)
+        .mockResolvedValue(
+          entityMockUtils.getFungibleAssetInstance({ assetId: hexToUuid(assetId0) })
+        );
+
+      dsMockUtils.createQueryMock('portfolio', 'portfolioAssetBalances', { multi: [rawTotal0] });
+      dsMockUtils.createQueryMock('portfolio', 'portfolioLockedAssets', { multi: [rawLocked0] });
+      const frozenMock = dsMockUtils.createQueryMock('portfolio', 'portfolioFrozenAssets', {
+        multi: [dsMockUtils.createMockBalance(new BigNumber(20).shiftedBy(6))],
+      });
+
+      const [balance] = await portfolio.getAssetBalances({ assets: [hexToUuid(assetId0)] });
+
+      expect(frozenMock.entries).not.toHaveBeenCalled();
+      expect(balance!.frozen).toEqual(new BigNumber(20));
+      expect(balance!.free).toEqual(new BigNumber(30));
     });
 
     it('should look up only the requested assets, without scanning the whole portfolio', async () => {

@@ -87,6 +87,7 @@ import {
   asNftId,
   assembleAssetQuery,
   assembleBatchTransactions,
+  assembleHolderBalance,
   assertAddressValid,
   assertBallotNotStarted,
   assertDeclarationDate,
@@ -99,6 +100,7 @@ import {
   assertStatIsSet,
   assertTickerLengthValid,
   assertTickerValid,
+  balanceEntriesByAssetId,
   calculateNextKey,
   calculateRawStakingPayee,
   checkTxType,
@@ -3312,6 +3314,76 @@ describe('xor', () => {
   it('should return false when both arguments match', () => {
     expect(xor(false, false)).toBe(false);
     expect(xor(true, true)).toBe(false);
+  });
+});
+
+describe('assembleHolderBalance', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should exclude both locked and frozen tokens from the free balance', () => {
+    const asset = new FungibleAsset(
+      { assetId: '12341234-1234-1234-1234-123412341234' },
+      dsMockUtils.getContextInstance()
+    );
+
+    expect(
+      assembleHolderBalance(asset, new BigNumber(100), new BigNumber(10), new BigNumber(30))
+    ).toEqual({
+      asset,
+      total: new BigNumber(100),
+      locked: new BigNumber(10),
+      frozen: new BigNumber(30),
+      free: new BigNumber(60),
+    });
+  });
+
+  it('should not report a negative free balance when more is frozen than is available', () => {
+    const asset = new FungibleAsset(
+      { assetId: '12341234-1234-1234-1234-123412341234' },
+      dsMockUtils.getContextInstance()
+    );
+
+    const { free } = assembleHolderBalance(
+      asset,
+      new BigNumber(100),
+      new BigNumber(10),
+      new BigNumber(500)
+    );
+
+    expect(free).toEqual(new BigNumber(0));
+  });
+});
+
+describe('balanceEntriesByAssetId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should index balance entries by Asset ID', () => {
+    const rawHolder = dsMockUtils.createMockAccountId('someAccount');
+    const entry = (assetId: string, amount: BigNumber): unknown => [
+      { args: [rawHolder, dsMockUtils.createMockAssetId(assetId)] },
+      dsMockUtils.createMockBalance(amount.shiftedBy(6)),
+    ];
+
+    const result = balanceEntriesByAssetId([
+      entry('0x11111111111111111111111111111111', new BigNumber(1)),
+      entry('0x22222222222222222222222222222222', new BigNumber(2)),
+    ] as Parameters<typeof balanceEntriesByAssetId>[0]);
+
+    expect(Object.keys(result)).toHaveLength(2);
+    expect(result['11111111-1111-1111-1111-111111111111']).toEqual(new BigNumber(1));
+    expect(result['22222222-2222-2222-2222-222222222222']).toEqual(new BigNumber(2));
   });
 });
 

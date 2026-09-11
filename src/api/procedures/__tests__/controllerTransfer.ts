@@ -70,9 +70,17 @@ describe('controllerTransfer procedure', () => {
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
+    // 60 of the 90 unlocked tokens are frozen. A controller transfer can still seize them
     originPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       did,
-      getAssetBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
+      getAssetBalances: [
+        {
+          total: new BigNumber(100),
+          locked: new BigNumber(10),
+          frozen: new BigNumber(60),
+          free: new BigNumber(30),
+        },
+      ] as PortfolioBalance[],
     });
 
     destinationPortfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' });
@@ -131,7 +139,34 @@ describe('controllerTransfer procedure', () => {
         originPortfolio,
         amount: new BigNumber(1000),
       })
-    ).rejects.toThrow('The origin Portfolio does not have enough free balance for this transfer');
+    ).rejects.toThrow(
+      'The origin Portfolio does not have enough unlocked balance for this transfer'
+    );
+  });
+
+  it('should throw an error if the amount would reach into locked tokens', () => {
+    const lockedPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+      did,
+      getAssetBalances: [
+        {
+          total: new BigNumber(100),
+          locked: new BigNumber(60),
+          frozen: new BigNumber(0),
+          free: new BigNumber(40),
+        },
+      ] as PortfolioBalance[],
+    });
+    assetHolderLikeToAssetHolderSpy.mockReturnValue(lockedPortfolio);
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      did: 'someDid',
+      destinationAssetHolder: destinationPortfolio,
+    });
+
+    return expect(
+      prepareControllerTransfer.call(proc, { asset, originPortfolio: lockedPortfolio, amount })
+    ).rejects.toThrow(
+      'The origin Portfolio does not have enough unlocked balance for this transfer'
+    );
   });
 
   it("should throw an error if destinationDid does not match the signing identity's DID", () => {
@@ -153,7 +188,7 @@ describe('controllerTransfer procedure', () => {
     );
   });
 
-  it('should return a controller transfer transaction spec', async () => {
+  it('should return a controller transfer transaction spec, seizing frozen tokens', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: 'someDid',
       destinationAssetHolder: destinationPortfolio,

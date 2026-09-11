@@ -52,6 +52,9 @@ import {
   asAssetId,
   asBaseAsset,
   asFungibleAsset,
+  asOptionalApi,
+  assembleHolderBalance,
+  balanceEntriesByAssetId,
   createProcedureMethod,
   getAssetIdForMiddleware,
   getIdentity,
@@ -251,10 +254,14 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       tuple(rawPortfolioId, assetToMeshAssetId(asset, context))
     );
 
-    const [exists, rawTotals, rawLocked] = await Promise.all([
+    // absent before Polymesh 8.1.1, where nothing can be frozen
+    const frozenAssets = asOptionalApi(portfolio.portfolioFrozenAssets);
+
+    const [exists, rawTotals, rawLocked, rawFrozen] = await Promise.all([
       this.exists(),
       portfolio.portfolioAssetBalances.multi(keys),
       portfolio.portfolioLockedAssets.multi(keys),
+      frozenAssets?.multi(keys) ?? [],
     ]);
 
     if (!exists) {
@@ -265,10 +272,14 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     }
 
     return requestedAssets.map((asset, index) => {
-      const total = balanceToBigNumber(rawTotals[index]!);
-      const locked = balanceToBigNumber(rawLocked[index]!);
+      const frozen = rawFrozen[index];
 
-      return { asset, total, locked, free: total.minus(locked) };
+      return assembleHolderBalance(
+        asset,
+        balanceToBigNumber(rawTotals[index]!),
+        balanceToBigNumber(rawLocked[index]!),
+        frozen ? balanceToBigNumber(frozen) : new BigNumber(0)
+      );
     });
   }
 
@@ -279,6 +290,8 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    *
    * @note passing `args.assets` reads only those Assets' storage keys. Omitting it scans every
    *   Asset the Portfolio holds, which is unbounded
+   * @note `free` excludes tokens an Asset agent has frozen, as well as locked tokens. See
+   *   {@link PortfolioBalance}
    */
   public async getAssetBalances(args?: {
     assets: (string | FungibleAsset)[];
@@ -300,11 +313,16 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       return this.getBalancesForAssets(rawPortfolioId, args.assets);
     }
 
-    const [exists, totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
-      this.exists(),
-      portfolio.portfolioAssetBalances.entries(rawPortfolioId),
-      portfolio.portfolioLockedAssets.entries(rawPortfolioId),
-    ]);
+    // absent before Polymesh 8.1.1, where nothing can be frozen
+    const frozenAssets = asOptionalApi(portfolio.portfolioFrozenAssets);
+
+    const [exists, totalBalanceEntries, lockedBalanceEntries, frozenBalanceEntries] =
+      await Promise.all([
+        this.exists(),
+        portfolio.portfolioAssetBalances.entries(rawPortfolioId),
+        portfolio.portfolioLockedAssets.entries(rawPortfolioId),
+        frozenAssets?.entries(rawPortfolioId) ?? [],
+      ]);
 
     if (!exists) {
       throw new PolymeshError({
@@ -313,33 +331,19 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       });
     }
 
-    const assetBalances: Record<string, PortfolioBalance> = {};
+    const lockedByAsset = balanceEntriesByAssetId(lockedBalanceEntries);
+    const frozenByAsset = balanceEntriesByAssetId(frozenBalanceEntries);
 
-    totalBalanceEntries.forEach(([key, balance]) => {
+    return totalBalanceEntries.map(([key, balance]) => {
       const assetId = assetIdToString(key.args[1]);
-      const total = balanceToBigNumber(balance);
 
-      assetBalances[assetId] = {
-        asset: new FungibleAsset({ assetId }, context),
-        total,
-        locked: new BigNumber(0),
-        free: total,
-      };
+      return assembleHolderBalance(
+        new FungibleAsset({ assetId }, context),
+        balanceToBigNumber(balance),
+        lockedByAsset[assetId] ?? new BigNumber(0),
+        frozenByAsset[assetId] ?? new BigNumber(0)
+      );
     });
-
-    lockedBalanceEntries.forEach(([key, balance]) => {
-      const assetId = assetIdToString(key.args[1]);
-      const locked = balanceToBigNumber(balance);
-
-      if (!locked.isZero()) {
-        const tickerBalance = assetBalances[assetId]!;
-
-        tickerBalance.locked = locked;
-        tickerBalance.free = assetBalances[assetId]!.total.minus(locked);
-      }
-    });
-
-    return Object.values(assetBalances);
   }
 
   /**
