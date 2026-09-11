@@ -150,4 +150,81 @@ describe('AssetHolder class', () => {
       expect(result.next).toBe('someKey');
     });
   });
+
+  describe('method: getFreezeStatus', () => {
+    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const did = '0x0600000000000000000000000000000000000000000000000000000000000000';
+
+    beforeEach(() => {
+      jest.spyOn(utilsConversionModule, 'assetToMeshAssetId').mockReturnValue(rawAssetId);
+      jest
+        .spyOn(utilsConversionModule, 'stringToAccountId')
+        .mockReturnValue(dsMockUtils.createMockAccountId(address));
+      jest
+        .spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId')
+        .mockReturnValue(dsMockUtils.createMockPortfolioId());
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should report how an Account holder is frozen', async () => {
+      const rawFrozen = dsMockUtils.createMockBalance(new BigNumber(50).shiftedBy(6));
+      const frozenAccountsMock = dsMockUtils.createQueryMock('asset', 'frozenAccounts', {
+        returnValue: dsMockUtils.createMockBool(true),
+      });
+      dsMockUtils.createQueryMock('asset', 'frozenBalance', { returnValue: rawFrozen });
+
+      const assetHolders = new AssetHolders(
+        entityMockUtils.getFungibleAssetInstance(),
+        dsMockUtils.getContextInstance()
+      );
+
+      const result = await assetHolders.getFreezeStatus({ holder: address });
+
+      expect(frozenAccountsMock).toHaveBeenCalled();
+      expect(result).toEqual({ isFrozen: true, frozen: new BigNumber(50) });
+    });
+
+    it('should report how a Portfolio holder is frozen', async () => {
+      const frozenPortfoliosMock = dsMockUtils.createQueryMock('portfolio', 'frozenPortfolios', {
+        returnValue: dsMockUtils.createMockBool(false),
+      });
+      dsMockUtils.createQueryMock('portfolio', 'portfolioFrozenAssets', {
+        returnValue: dsMockUtils.createMockBalance(new BigNumber(10).shiftedBy(6)),
+      });
+
+      const assetHolders = new AssetHolders(
+        entityMockUtils.getFungibleAssetInstance(),
+        dsMockUtils.getContextInstance()
+      );
+
+      const result = await assetHolders.getFreezeStatus({
+        holder: { identity: did, id: new BigNumber(1) },
+      });
+
+      expect(frozenPortfoliosMock).toHaveBeenCalled();
+      expect(result).toEqual({ isFrozen: false, frozen: new BigNumber(10) });
+    });
+
+    it('should report an unfrozen holder on a chain without holder freezing', async () => {
+      // the pallets exist before Polymesh 8.1.1, without the freeze storage
+      dsMockUtils.createQueryMock('asset', 'balanceOf');
+      dsMockUtils.createQueryMock('portfolio', 'portfolioAssetBalances');
+
+      const assetHolders = new AssetHolders(
+        entityMockUtils.getFungibleAssetInstance(),
+        dsMockUtils.getContextInstance()
+      );
+
+      await expect(assetHolders.getFreezeStatus({ holder: address })).resolves.toEqual({
+        isFrozen: false,
+        frozen: new BigNumber(0),
+      });
+      await expect(
+        assetHolders.getFreezeStatus({ holder: { identity: did, id: new BigNumber(1) } })
+      ).resolves.toEqual({ isFrozen: false, frozen: new BigNumber(0) });
+    });
+  });
 });
