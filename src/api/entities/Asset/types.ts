@@ -124,6 +124,21 @@ export interface IdentityBalance {
 }
 
 /**
+ * How an Asset agent has frozen one holder of a fungible Asset
+ */
+export interface HolderFreezeStatus {
+  /**
+   * whether the holder is frozen outright, in which case it cannot send any of the Asset
+   */
+  isFrozen: boolean;
+  /**
+   * the part of the holder's balance that is frozen, which it cannot send. It can exceed the
+   *   balance, since an agent can set it above what the holder holds
+   */
+  frozen: BigNumber;
+}
+
+/**
  * Represents the holdings of an NFT holder
  */
 export interface IdentityHeldNfts {
