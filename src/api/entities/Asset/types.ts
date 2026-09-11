@@ -124,13 +124,19 @@ export interface IdentityBalance {
 }
 
 /**
- * How an Asset agent has frozen one holder of a fungible Asset
+ * Whether an Asset agent has frozen one holder of an NFT collection
  */
-export interface HolderFreezeStatus {
+export interface NftHolderFreezeStatus {
   /**
    * whether the holder is frozen outright, in which case it cannot send any of the Asset
    */
   isFrozen: boolean;
+}
+
+/**
+ * How an Asset agent has frozen one holder of a fungible Asset
+ */
+export interface HolderFreezeStatus extends NftHolderFreezeStatus {
   /**
    * the part of the holder's balance that is frozen, which it cannot send. It can exceed the
    *   balance, since an agent can set it above what the holder holds
@@ -315,13 +321,19 @@ export enum TransferError {
    */
   InvalidReceiverIdentity = 'InvalidReceiverIdentity',
   /**
-   * occurs if the sender Identity does not have enough balance to cover the amount
+   * occurs if the sender Identity does not have enough balance to cover the amount. From Polymesh
+   *   8.1.1 tokens an Asset agent has frozen do not count
    */
   InsufficientBalance = 'InsufficientBalance',
   /**
    * occurs if the Asset's transfers are frozen
    */
   TransfersFrozen = 'TransfersFrozen',
+  /**
+   * occurs if an Asset agent has frozen the sending Account or Portfolio for this Asset. Unlike
+   *   {@link TransferError.TransfersFrozen}, other holders can still transfer
+   */
+  SenderFrozen = 'SenderFrozen',
   /**
    * occurs if the sender Portfolio doesn't exist
    */

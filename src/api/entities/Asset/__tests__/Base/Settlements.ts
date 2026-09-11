@@ -17,10 +17,18 @@ import * as proceduresUtilsModule from '~/api/procedures/utils';
 import { Context, Namespace, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, FungibleAsset, NftCollection, PortfolioId, TransferBreakdown } from '~/types';
+import {
+  ErrorCode,
+  FungibleAsset,
+  NftCollection,
+  PortfolioId,
+  TransferBreakdown,
+  TransferError,
+} from '~/types';
 import { uuidToHex } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -274,6 +282,18 @@ describe('Settlements class', () => {
       expect(NonFungibleSettlements.prototype instanceof Namespace).toBe(true);
     });
 
+    let getHolderFreezeStatusSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      getHolderFreezeStatusSpy = jest
+        .spyOn(utilsInternalModule, 'getHolderFreezeStatus')
+        .mockResolvedValue({ isFrozen: false, frozen: new BigNumber(0) });
+    });
+
+    afterEach(() => {
+      getHolderFreezeStatusSpy.mockRestore();
+    });
+
     it('should work for NftCollections', async () => {
       when(assetHolderIdToMeshAssetHolderSpy)
         .calledWith({ did: fromDid }, mockContext)
@@ -329,6 +349,50 @@ describe('Settlements class', () => {
       });
 
       expect(result).toEqual(expected);
+    });
+
+    it('should report a frozen sender, which the chain report does not check for NFTs', async () => {
+      when(assetHolderIdToMeshAssetHolderSpy)
+        .calledWith({ did: fromDid }, mockContext)
+        .mockReturnValue(rawFromPortfolioHolder);
+
+      dsMockUtils.createCallMock('nftApi', 'transferReport');
+      dsMockUtils.createCallMock('complianceApi', 'complianceReport');
+      dsMockUtils.createCallMock('statisticsApi', 'transferRestrictionsReport');
+
+      const chainBreakdown: TransferBreakdown = {
+        general: [TransferError.InvalidReceiverIdentity],
+        compliance: { requirements: [], complies: true },
+        restrictions: [],
+        result: false,
+      };
+      transferReportToTransferBreakdownSpy.mockReturnValue(chainBreakdown);
+      getHolderFreezeStatusSpy.mockResolvedValue({ isFrozen: true, frozen: new BigNumber(0) });
+
+      const result = await settlements.canTransfer({
+        from: fromDid,
+        to: toDid,
+        nfts: [new BigNumber(1)],
+      });
+
+      expect(result).toEqual({
+        ...chainBreakdown,
+        general: [TransferError.InvalidReceiverIdentity, TransferError.SenderFrozen],
+        result: false,
+      });
+
+      transferReportToTransferBreakdownSpy.mockReturnValue({
+        ...chainBreakdown,
+        general: [TransferError.SenderFrozen],
+      });
+
+      const deduplicated = await settlements.canTransfer({
+        from: fromDid,
+        to: toDid,
+        nfts: [new BigNumber(1)],
+      });
+
+      expect(deduplicated.general).toEqual([TransferError.SenderFrozen]);
     });
   });
 });

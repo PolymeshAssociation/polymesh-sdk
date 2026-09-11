@@ -8,16 +8,8 @@ import {
   PaginationOptions,
   ResultSet,
 } from '~/types';
-import {
-  assetHolderLikeToAssetHolderId,
-  assetToMeshAssetId,
-  balanceToBigNumber,
-  boolToBoolean,
-  identityIdToString,
-  portfolioIdToMeshPortfolioId,
-  stringToAccountId,
-} from '~/utils/conversion';
-import { requestPaginated } from '~/utils/internal';
+import { assetToMeshAssetId, balanceToBigNumber, identityIdToString } from '~/utils/conversion';
+import { getHolderFreezeStatus, requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Asset Holders related functionality
@@ -68,45 +60,9 @@ export class AssetHolders extends Namespace<FungibleAsset> {
    *   {@link api/entities/Portfolio/types!PortfolioBalance | PortfolioBalance}
    * @note always reports an unfrozen holder before Polymesh 8.1.1, which cannot freeze one
    */
-  public async getFreezeStatus(args: { holder: AssetHolderLike }): Promise<HolderFreezeStatus> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset, portfolio },
-        },
-      },
-      context,
-      parent,
-    } = this;
+  public getFreezeStatus(args: { holder: AssetHolderLike }): Promise<HolderFreezeStatus> {
+    const { context, parent } = this;
 
-    const holderId = assetHolderLikeToAssetHolderId(args.holder);
-    const rawAssetId = assetToMeshAssetId(parent, context);
-
-    // each of these is absent before Polymesh 8.1.1, where nothing can be frozen
-    let rawIsFrozen;
-    let rawFrozen;
-
-    if (typeof holderId === 'string') {
-      const rawAccountId = stringToAccountId(holderId, context);
-      const { frozenAccounts, frozenBalance } = asset as Partial<typeof asset>;
-
-      [rawIsFrozen, rawFrozen] = await Promise.all([
-        frozenAccounts?.(rawAccountId, rawAssetId),
-        frozenBalance?.(rawAccountId, rawAssetId),
-      ]);
-    } else {
-      const rawPortfolioId = portfolioIdToMeshPortfolioId(holderId, context);
-      const { frozenPortfolios, portfolioFrozenAssets } = portfolio as Partial<typeof portfolio>;
-
-      [rawIsFrozen, rawFrozen] = await Promise.all([
-        frozenPortfolios?.(rawPortfolioId, rawAssetId),
-        portfolioFrozenAssets?.(rawPortfolioId, rawAssetId),
-      ]);
-    }
-
-    return {
-      isFrozen: rawIsFrozen ? boolToBoolean(rawIsFrozen) : false,
-      frozen: rawFrozen ? balanceToBigNumber(rawFrozen) : new BigNumber(0),
-    };
+    return getHolderFreezeStatus(args.holder, parent, context);
   }
 }
