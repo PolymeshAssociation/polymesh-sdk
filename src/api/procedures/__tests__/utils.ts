@@ -17,6 +17,7 @@ import {
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
+  assertTxSupported,
   createAuthorizationResolver,
   createCreateGroupResolver,
   getAssetHolderDid,
@@ -390,6 +391,52 @@ describe('assertInstructionValidForManualExecution', () => {
         mockContext
       )
     ).resolves.not.toThrow();
+  });
+});
+
+describe('assertTxSupported', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should not throw if the chain has the extrinsic', () => {
+    dsMockUtils.createTxMock('asset', 'setFrozenTokens');
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() =>
+      assertTxSupported(TxTags.asset.SetFrozenTokens, '8.1.1', context)
+    ).not.toThrow();
+  });
+
+  it('should throw NotSupported if the chain lacks the extrinsic', () => {
+    dsMockUtils.createTxMock('asset', 'freeze');
+    const context = dsMockUtils.getContextInstance();
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.NotSupported,
+      message:
+        'The connected chain does not support "asset.setFrozenTokens", which requires Polymesh 8.1.1 or later',
+    });
+
+    expect(() => assertTxSupported(TxTags.asset.SetFrozenTokens, '8.1.1', context)).toThrow(
+      expectedError
+    );
+  });
+
+  it('should throw NotSupported if the chain lacks the whole pallet', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => assertTxSupported(TxTags.nft.Approve, '8.1.1', context)).toThrow(
+      expect.objectContaining({ code: ErrorCode.NotSupported })
+    );
   });
 });
 

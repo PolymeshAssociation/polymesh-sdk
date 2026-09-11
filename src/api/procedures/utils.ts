@@ -169,6 +169,34 @@ export function assertInstructionValidForUnlocking(details: InstructionDetails):
 
 /**
  * @hidden
+ *
+ * Throw if the connected chain has no extrinsic for `tag`. For a procedure whose extrinsic was
+ *   added in a later runtime than the oldest the SDK supports, so that an older chain refuses it
+ *   with a clear error rather than failing to find the extrinsic
+ *
+ * @param sinceVersion - the first Polymesh release with the extrinsic, reported in the error
+ *
+ * @note this reads the chain's metadata, not its spec version, so it is also right for a runtime
+ *   that is not on the public release line
+ */
+export function assertTxSupported(tag: TxTag, sinceVersion: string, context: Context): void {
+  const [section, method] = tag.split('.') as [string, string];
+  const tx = context.polymeshApi.tx as unknown as Record<
+    string,
+    Record<string, unknown> | undefined
+  >;
+
+  if (!tx[section]?.[method]) {
+    throw new PolymeshError({
+      code: ErrorCode.NotSupported,
+      message: `The connected chain does not support "${tag}", which requires Polymesh ${sinceVersion} or later`,
+      data: { tag, specVersion: context.specVersion },
+    });
+  }
+}
+
+/**
+ * @hidden
  */
 export async function assertPortfolioExists(
   portfolioId: PortfolioId,
