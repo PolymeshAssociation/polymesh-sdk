@@ -204,6 +204,7 @@ interface NftCollectionOptions extends BaseAssetOptions {
   collectionKeys?: EntityGetter<CollectionKey[]>;
   getCollectionId?: EntityGetter<BigNumber>;
   getBaseImageUrl?: EntityGetter<string | null>;
+  isOperatorApproved?: EntityGetter<boolean>;
 }
 
 interface NftOptions extends EntityOptions {
@@ -1082,6 +1083,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getVenueFilteringDetails!: jest.Mock;
     getBaseImageUrl!: jest.Mock;
     currentFundingRound!: jest.Mock;
+    isOperatorApproved!: jest.Mock;
 
     /**
      * @hidden
@@ -1110,12 +1112,14 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
       this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
       this.currentFundingRound = createEntityGetterMock(opts.currentFundingRound);
+      this.isOperatorApproved = createEntityGetterMock(opts.isOperatorApproved);
     }
   },
   () => ({
     assetId: '12341234-1234-1234-1234-123412341234',
     ticker: 'TICKER',
     did: 'assetDid',
+    isOperatorApproved: false,
     details: {
       owner: getIdentityInstance(),
       name: 'ASSET_NAME',

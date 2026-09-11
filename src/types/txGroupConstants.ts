@@ -369,6 +369,8 @@ export const EXTERNAL_AGENT_PARTICIPATION_TX_TAGS = [
  * - TxTags.asset.RemoveAssetPreApproval
  * - TxTags.asset.TransferAsset
  * - TxTags.capitalDistribution.Claim
+ * - TxTags.nft.Approve
+ * - TxTags.nft.SetApprovalForAll
  * - TxTags.nft.TransferNft
  * - TxTags.portfolio.PreApprovePortfolio
  * - TxTags.portfolio.RemovePortfolioPreApproval
@@ -399,6 +401,8 @@ export const SETTLEMENT_MANAGEMENT_TX_TAGS = [
   TxTags.asset.RemoveAssetPreApproval, // Secondary Key
   TxTags.asset.TransferAsset, // Secondary Key
   TxTags.capitalDistribution.Claim, // Secondary Key
+  TxTags.nft.Approve, // Secondary Key
+  TxTags.nft.SetApprovalForAll, // Secondary Key
   TxTags.nft.TransferNft, // Secondary Key
   TxTags.portfolio.PreApprovePortfolio, // Secondary Key
   TxTags.portfolio.RemovePortfolioPreApproval, // Secondary Key

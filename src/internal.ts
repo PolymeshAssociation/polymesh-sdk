@@ -67,6 +67,8 @@ export {
 } from '~/api/procedures/toggleFreezeTransfers';
 export { toggleFreezeHolder } from '~/api/procedures/toggleFreezeHolder';
 export { modifyFrozenTokens } from '~/api/procedures/modifyFrozenTokens';
+export { setNftApproval } from '~/api/procedures/setNftApproval';
+export { toggleNftOperator } from '~/api/procedures/toggleNftOperator';
 export {
   togglePauseRequirements,
   TogglePauseRequirementsParams,
