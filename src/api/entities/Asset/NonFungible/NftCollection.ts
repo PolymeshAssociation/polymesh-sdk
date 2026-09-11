@@ -91,7 +91,14 @@ export class NftCollection extends BaseAsset {
   public batchIssue: ProcedureMethod<BatchIssueNftParams, Nft[]>;
 
   /**
-   * Force a transfer from the origin portfolio to one of the caller's portfolios
+   * Force a transfer from the origin Portfolio, by default to the caller's default Portfolio
+   *
+   * @note from Polymesh 8.1.1 `destination` can be any Account or Portfolio, such as the rightful
+   *   owner of seized NFTs. Before 8.1.1 it must be the signing Account or one of the signing
+   *   Identity's Portfolios
+   * @note a destination the caller does not control must not require receiver affirmation for the
+   *   collection, since a forced transfer cannot affirm on its behalf
+   * @note the transfer ignores a holder freeze, so it can seize NFTs from a frozen holder
    */
   public controllerTransfer: ProcedureMethod<NftControllerTransferParams, void>;
 

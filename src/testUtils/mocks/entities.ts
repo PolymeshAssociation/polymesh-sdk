@@ -155,6 +155,7 @@ interface IdentityOptions extends EntityOptions {
   assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
   isAssetPreApproved?: EntityGetter<boolean>;
+  isMandatoryReceiverAffirmationEnabled?: EntityGetter<boolean>;
   preApprovedAssets?: EntityGetter<ResultSet<Asset[]>>;
   getOffChainAuthorizationNonce?: EntityGetter<BigNumber>;
 }
@@ -624,6 +625,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     isDidRegistrar!: jest.Mock;
     preApprovedAssets!: jest.Mock;
     isAssetPreApproved!: jest.Mock;
+    isMandatoryReceiverAffirmationEnabled!: jest.Mock;
     getOffChainAuthorizationNonce!: jest.Mock;
 
     /**
@@ -663,6 +665,9 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.isDidRegistrar = createEntityGetterMock(opts.isDidRegistrar);
       this.preApprovedAssets = createEntityGetterMock(opts.preApprovedAssets);
       this.isAssetPreApproved = createEntityGetterMock(opts.isAssetPreApproved);
+      this.isMandatoryReceiverAffirmationEnabled = createEntityGetterMock(
+        opts.isMandatoryReceiverAffirmationEnabled
+      );
       this.getOffChainAuthorizationNonce = createEntityGetterMock(
         opts.getOffChainAuthorizationNonce
       );
@@ -702,6 +707,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     },
     preApprovedAssets: { data: [], next: null, count: new BigNumber(0) },
     isAssetPreApproved: false,
+    isMandatoryReceiverAffirmationEnabled: false,
     toHuman: 'someDid',
     getOffChainAuthorizationNonce: new BigNumber(0),
   }),

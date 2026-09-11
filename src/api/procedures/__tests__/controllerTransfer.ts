@@ -1,5 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetHolder,
+  PolymeshPrimitivesAssetAssetHolderKind,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
@@ -12,10 +14,11 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/controllerTransfer';
+import * as proceduresUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, FungibleAsset } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, RoleType, TxTags } from '~/types';
+import { ErrorCode, PortfolioBalance, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -28,41 +31,43 @@ jest.mock(
     '~/api/entities/DefaultPortfolio'
   )
 );
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
 
 describe('controllerTransfer procedure', () => {
+  const actingAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+
   let mockContext: Mocked<Context>;
   let assetHolderLikeToAssetHolderSpy: jest.SpyInstance;
-  let bigNumberToBalanceSpy: jest.SpyInstance<
-    Balance,
-    [BigNumber, Context, (boolean | undefined)?]
-  >;
   let assetHolderIdToMeshAssetHolderSpy: jest.SpyInstance;
-  let assetToMeshAssetIdSpy: jest.SpyInstance;
-  let assetId: string;
+  let assertDestinationAcceptedSpy: jest.SpyInstance;
   let asset: FungibleAsset;
   let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let did: string;
   let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
+  let rawDestinationHolder: PolymeshPrimitivesAssetAssetHolder;
+  let rawDestinationKind: PolymeshPrimitivesAssetAssetHolderKind;
   let originPortfolio: DefaultPortfolio;
   let destinationPortfolio: DefaultPortfolio;
   let rawAmount: Balance;
   let amount: BigNumber;
 
+  const buildStorage = (overrides: Partial<Storage> = {}): Storage => ({
+    did: 'someDid',
+    actingAddress,
+    destinationAssetHolder: destinationPortfolio,
+    isDestinationCallers: true,
+    ...overrides,
+  });
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    assetHolderLikeToAssetHolderSpy = jest.spyOn(
-      utilsConversionModule,
-      'assetHolderLikeToAssetHolder'
-    );
-    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
-    assetHolderIdToMeshAssetHolderSpy = jest.spyOn(
-      utilsConversionModule,
-      'assetHolderIdToMeshAssetHolder'
-    );
-    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
-    assetId = '0x12341234123412341234123412341234';
+
+    const assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     did = 'fakeDid';
@@ -70,6 +75,11 @@ describe('controllerTransfer procedure', () => {
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
+    rawDestinationHolder = dsMockUtils.createMockAssetHolder({
+      Account: dsMockUtils.createMockAccountId('someAccount'),
+    });
+    rawDestinationKind = dsMockUtils.createMockAssetHolderKind('DefaultPortfolio');
+
     // 60 of the 90 unlocked tokens are frozen. A controller transfer can still seize them
     originPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       did,
@@ -82,7 +92,6 @@ describe('controllerTransfer procedure', () => {
         },
       ] as PortfolioBalance[],
     });
-
     destinationPortfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' });
 
     amount = new BigNumber(50);
@@ -91,13 +100,32 @@ describe('controllerTransfer procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    assetToMeshAssetIdSpy.mockReturnValue(rawAssetId);
-    assetHolderLikeToAssetHolderSpy.mockReturnValue(originPortfolio);
-    bigNumberToBalanceSpy.mockReturnValue(rawAmount);
-    assetHolderIdToMeshAssetHolderSpy.mockReturnValue(rawPortfolioId);
+    dsMockUtils.createTxMock('asset', 'controllerTransfer');
+    dsMockUtils.createTxMock('asset', 'controllerTransferTo');
+
+    jest.spyOn(utilsConversionModule, 'assetToMeshAssetId').mockReturnValue(rawAssetId);
+    jest.spyOn(utilsConversionModule, 'bigNumberToBalance').mockReturnValue(rawAmount);
+    jest
+      .spyOn(utilsConversionModule, 'assetHolderToAssetHolderKind')
+      .mockReturnValue(rawDestinationKind);
+    assetHolderIdToMeshAssetHolderSpy = jest
+      .spyOn(utilsConversionModule, 'assetHolderIdToMeshAssetHolder')
+      .mockImplementation(holderId =>
+        typeof holderId === 'string'
+          ? rawDestinationHolder
+          : (rawPortfolioId as unknown as PolymeshPrimitivesAssetAssetHolder)
+      );
+    assetHolderLikeToAssetHolderSpy = jest
+      .spyOn(utilsConversionModule, 'assetHolderLikeToAssetHolder')
+      .mockReturnValue(originPortfolio);
+    assertDestinationAcceptedSpy = jest
+      .spyOn(proceduresUtilsModule, 'assertControllerTransferDestinationAccepted')
+      .mockResolvedValue();
+    jest.spyOn(proceduresUtilsModule, 'assertAssetHolderExists').mockResolvedValue();
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     entityMockUtils.reset();
     procedureMockUtils.reset();
     dsMockUtils.reset();
@@ -108,15 +136,12 @@ describe('controllerTransfer procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error in case of self Transfer', () => {
-    const selfPortfolio = entityMockUtils.getDefaultPortfolioInstance({
-      did: 'someDid',
-      getAssetBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
-    });
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      did: 'someDid',
-      destinationAssetHolder: destinationPortfolio,
-    });
+  it('should throw if the origin and destination belong to the same Identity', () => {
+    const selfPortfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' });
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(
+      mockContext,
+      buildStorage()
+    );
 
     return expect(
       prepareControllerTransfer.call(proc, {
@@ -124,14 +149,46 @@ describe('controllerTransfer procedure', () => {
         originPortfolio: selfPortfolio,
         amount: new BigNumber(1000),
       })
-    ).rejects.toThrow('Controller transfers to self are not allowed');
+    ).rejects.toThrow('The origin and destination must belong to different Identities');
   });
 
-  it('should throw an error if the Portfolio does not have enough balance to transfer', () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+  it("should allow seizing from the agent's own Portfolio when delivering elsewhere", async () => {
+    // the restriction is between origin and destination, not origin and caller: returning seized
+    // tokens from the agent's own custody to their owner is exactly what `controllerTransferTo` is for
+    const ownPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       did: 'someDid',
-      destinationAssetHolder: destinationPortfolio,
+      getAssetBalances: [
+        {
+          total: new BigNumber(100),
+          locked: new BigNumber(0),
+          frozen: new BigNumber(0),
+          free: new BigNumber(100),
+        },
+      ] as PortfolioBalance[],
     });
+    assetHolderLikeToAssetHolderSpy.mockReturnValue(ownPortfolio);
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(
+      mockContext,
+      buildStorage({
+        destinationAssetHolder: entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' }),
+        isDestinationCallers: false,
+      })
+    );
+
+    const result = await prepareControllerTransfer.call(proc, {
+      asset,
+      originPortfolio: ownPortfolio,
+      amount,
+    });
+
+    expect(result.transaction).toBe(mockContext.polymeshApi.tx.asset.controllerTransferTo);
+  });
+
+  it('should throw an error if the Portfolio does not have enough unlocked balance', () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(
+      mockContext,
+      buildStorage()
+    );
 
     return expect(
       prepareControllerTransfer.call(proc, {
@@ -157,10 +214,10 @@ describe('controllerTransfer procedure', () => {
       ] as PortfolioBalance[],
     });
     assetHolderLikeToAssetHolderSpy.mockReturnValue(lockedPortfolio);
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      did: 'someDid',
-      destinationAssetHolder: destinationPortfolio,
-    });
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(
+      mockContext,
+      buildStorage()
+    );
 
     return expect(
       prepareControllerTransfer.call(proc, { asset, originPortfolio: lockedPortfolio, amount })
@@ -169,32 +226,11 @@ describe('controllerTransfer procedure', () => {
     );
   });
 
-  it("should throw an error if destinationDid does not match the signing identity's DID", () => {
-    const differentDestination = entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' });
-
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      did: 'someDid',
-      destinationAssetHolder: differentDestination,
-    });
-
-    return expect(
-      prepareControllerTransfer.call(proc, {
-        asset,
-        originPortfolio,
-        amount,
-      })
-    ).rejects.toThrow(
-      "Controller transfer must send to one of the signer's portfolios or accounts"
+  it("should use controllerTransfer, seizing frozen tokens, for the caller's own destination", async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(
+      mockContext,
+      buildStorage()
     );
-  });
-
-  it('should return a controller transfer transaction spec, seizing frozen tokens', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      did: 'someDid',
-      destinationAssetHolder: destinationPortfolio,
-    });
-
-    const transaction = dsMockUtils.createTxMock('asset', 'controllerTransfer');
 
     const result = await prepareControllerTransfer.call(proc, {
       asset,
@@ -202,64 +238,155 @@ describe('controllerTransfer procedure', () => {
       amount,
     });
 
+    expect(assertDestinationAcceptedSpy).not.toHaveBeenCalled();
     expect(result).toEqual({
-      transaction,
-      args: [rawAssetId, rawAmount, rawPortfolioId],
+      transaction: mockContext.polymeshApi.tx.asset.controllerTransfer,
+      args: [rawAssetId, rawAmount, rawPortfolioId, rawDestinationKind],
       resolver: undefined,
     });
   });
 
-  describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', () => {
-      const portfolioId = { did: 'oneDid' };
+  it('should use controllerTransferTo for a destination the caller does not own', async () => {
+    const destination = entityMockUtils.getAccountInstance({ address: 'someAccount' });
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(
+      mockContext,
+      buildStorage({ destinationAssetHolder: destination, isDestinationCallers: false })
+    );
 
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        did: 'oneDid',
-        destinationAssetHolder: destinationPortfolio,
-      });
+    const result = await prepareControllerTransfer.call(proc, {
+      asset,
+      originPortfolio,
+      amount,
+    });
+
+    expect(assertDestinationAcceptedSpy).toHaveBeenCalledWith(
+      destination,
+      asset,
+      { did: 'someDid', address: actingAddress },
+      mockContext
+    );
+    expect(assetHolderIdToMeshAssetHolderSpy).toHaveBeenCalledWith('someAccount', mockContext);
+    expect(result).toEqual({
+      transaction: mockContext.polymeshApi.tx.asset.controllerTransferTo,
+      args: [rawAssetId, rawAmount, rawPortfolioId, rawDestinationHolder],
+      resolver: undefined,
+    });
+  });
+
+  it('should throw if the destination would have to affirm the transfer', () => {
+    assertDestinationAcceptedSpy.mockRejectedValue(new Error('must affirm'));
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(
+      mockContext,
+      buildStorage({ isDestinationCallers: false })
+    );
+
+    return expect(
+      prepareControllerTransfer.call(proc, { asset, originPortfolio, amount })
+    ).rejects.toThrow('must affirm');
+  });
+
+  it('should throw NotSupported for a destination the caller does not own before Polymesh 8.1.1', () => {
+    dsMockUtils.reset();
+    mockContext = dsMockUtils.getContextInstance();
+    dsMockUtils.createTxMock('asset', 'controllerTransfer');
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(
+      mockContext,
+      buildStorage({ isDestinationCallers: false })
+    );
+
+    return expect(
+      prepareControllerTransfer.call(proc, { asset, originPortfolio, amount })
+    ).rejects.toThrow(expect.objectContaining({ code: ErrorCode.NotSupported }));
+  });
+
+  describe('getAuthorization', () => {
+    it("should require custody of the caller's Portfolio for the caller's own destination", () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(
+        mockContext,
+        buildStorage({ did: 'oneDid' })
+      );
       const boundFunc = getAuthorization.bind(proc);
 
-      const roles = [
-        {
-          type: RoleType.PortfolioCustodian,
-          portfolioId,
-        },
-      ];
-
       expect(boundFunc({ asset, originPortfolio, amount })).toEqual({
-        roles,
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did: 'oneDid' } }],
         permissions: {
           transactions: [TxTags.asset.ControllerTransfer],
           assets: [asset],
           portfolios: [
-            expect.objectContaining({ owner: expect.objectContaining({ did: portfolioId.did }) }),
+            expect.objectContaining({ owner: expect.objectContaining({ did: 'oneDid' }) }),
           ],
+        },
+      });
+    });
+
+    it('should require only the Asset permission for a named destination', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(
+        mockContext,
+        buildStorage({ isDestinationCallers: false })
+      );
+      const boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc({ asset, originPortfolio, amount })).toEqual({
+        permissions: {
+          transactions: [TxTags.asset.ControllerTransferTo],
+          assets: [asset],
+          portfolios: [],
         },
       });
     });
   });
 
   describe('prepareStorage', () => {
-    it('should return the DID of signing Identity and destination asset holder', async () => {
+    it("should default to the signing Identity's Default Portfolio", async () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
-      assetHolderLikeToAssetHolderSpy.mockReturnValue(destinationPortfolio);
 
-      let result = await boundFunc({ asset, originPortfolio, amount });
-
-      expect(JSON.stringify(result)).toEqual(
-        JSON.stringify({ did: 'someDid', destinationAssetHolder: destinationPortfolio })
-      );
-
-      const mockAccount = entityMockUtils.getAccountInstance();
-      assetHolderLikeToAssetHolderSpy.mockReturnValue(mockAccount);
-
-      result = await boundFunc({ asset, originPortfolio, amount, destination: 'someAddress' });
+      const result = await boundFunc({ asset, originPortfolio, amount });
 
       expect(result).toEqual({
         did: 'someDid',
-        destinationAssetHolder: mockAccount,
+        actingAddress: expect.any(String),
+        destinationAssetHolder: expect.objectContaining({
+          owner: expect.objectContaining({ did: 'someDid' }),
+        }),
+        isDestinationCallers: true,
       });
+    });
+
+    it('should treat a Portfolio of another Identity as a named destination', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+      const otherPortfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' });
+      assetHolderLikeToAssetHolderSpy.mockReturnValue(otherPortfolio);
+
+      const result = await boundFunc({
+        asset,
+        originPortfolio,
+        amount,
+        destination: otherPortfolio,
+      });
+
+      expect(result.isDestinationCallers).toBe(false);
+    });
+
+    it("should treat only the acting Account as the caller's own Account", async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+      const { address } = await mockContext.getActingAccount();
+
+      const actingAccount = entityMockUtils.getAccountInstance({ address });
+      assetHolderLikeToAssetHolderSpy.mockReturnValue(actingAccount);
+
+      let result = await boundFunc({ asset, originPortfolio, amount, destination: address });
+
+      expect(result.isDestinationCallers).toBe(true);
+
+      const otherAccount = entityMockUtils.getAccountInstance({ address: 'otherAccount' });
+      assetHolderLikeToAssetHolderSpy.mockReturnValue(otherAccount);
+
+      result = await boundFunc({ asset, originPortfolio, amount, destination: 'otherAccount' });
+
+      expect(result.isDestinationCallers).toBe(false);
     });
   });
 });

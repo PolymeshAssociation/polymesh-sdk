@@ -1,6 +1,13 @@
-import { getAssetHolderDid } from '~/api/procedures/utils';
-import { Account, DefaultPortfolio, NftCollection, PolymeshError, Procedure } from '~/internal';
-import { AssetHolder, ErrorCode, NftControllerTransferParams, RoleType, TxTags } from '~/types';
+import {
+  assertAssetHolderExists,
+  assertControllerTransferDestinationAccepted,
+  assertTxSupported,
+  ControllerTransferDestination,
+  getAssetHolderDid,
+  getControllerTransferDestination,
+} from '~/api/procedures/utils';
+import { Account, NftCollection, PolymeshError, Procedure } from '~/internal';
+import { ErrorCode, NftControllerTransferParams, RoleType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   assetHolderIdToMeshAssetHolder,
@@ -12,10 +19,10 @@ import {
 } from '~/utils/conversion';
 import { asNftId } from '~/utils/internal';
 
-export interface Storage {
-  did: string;
-  destinationAssetHolder: AssetHolder;
-}
+/**
+ * @hidden
+ */
+export type Storage = ControllerTransferDestination;
 
 /**
  * @hidden
@@ -28,33 +35,47 @@ export type Params = { collection: NftCollection } & NftControllerTransferParams
 export async function prepareNftControllerTransfer(
   this: Procedure<Params, void, Storage>,
   args: Params
-): Promise<TransactionSpec<void, ExtrinsicParams<'nft', 'controllerTransfer'>>> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'nft', 'controllerTransfer'>>
+  | TransactionSpec<void, ExtrinsicParams<'nft', 'controllerTransferTo'>>
+> {
   const {
     context: {
       polymeshApi: { tx },
     },
-    storage: { did, destinationAssetHolder },
+    storage: { did, actingAddress, destinationAssetHolder, isDestinationCallers },
     context,
   } = this;
   const { collection, originPortfolio, nfts: givenNfts } = args;
   const nftIds = givenNfts.map(nft => asNftId(nft));
 
-  const originHolderDid = await getAssetHolderDid(originPortfolio, context);
+  const [originHolderDid, destinationDid] = await Promise.all([
+    getAssetHolderDid(originPortfolio, context),
+    getAssetHolderDid(destinationAssetHolder, context),
+  ]);
 
-  if (originPortfolio && did === originHolderDid) {
+  // the chain refuses any transfer between two holders of the same Identity, a controller
+  // transfer included, so seizing from a holder and delivering to another of its own is not possible
+  if (originHolderDid && originHolderDid === destinationDid) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Controller transfers to self are not allowed',
+      message: 'The origin and destination must belong to different Identities',
+      data: { did: originHolderDid },
     });
   }
 
-  const destinationDid = await getAssetHolderDid(destinationAssetHolder, context);
+  const destinationAssetHolderId = assetHolderLikeToAssetHolderId(destinationAssetHolder);
 
-  if (did !== destinationDid) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: "Controller transfer must send to one of the signer's portfolios or accounts",
-    });
+  if (!isDestinationCallers) {
+    assertTxSupported(TxTags.nft.ControllerTransferTo, '8.1.1', context);
+
+    await assertAssetHolderExists(destinationAssetHolderId, context);
+    await assertControllerTransferDestinationAccepted(
+      destinationAssetHolder,
+      collection,
+      { did, address: actingAddress },
+      context
+    );
   }
 
   const fromAssetHolder = assetHolderLikeToAssetHolder(originPortfolio, context);
@@ -76,14 +97,22 @@ export async function prepareNftControllerTransfer(
   }
 
   const rawNfts = nftToMeshNft(collection, nftIds, context);
+  const rawSource = assetHolderIdToMeshAssetHolder(
+    assetHolderLikeToAssetHolderId(fromAssetHolder),
+    context
+  );
+
+  if (isDestinationCallers) {
+    return {
+      transaction: tx.nft.controllerTransfer,
+      args: [rawNfts, rawSource, assetHolderToAssetHolderKind(destinationAssetHolder, context)],
+      resolver: undefined,
+    };
+  }
 
   return {
-    transaction: tx.nft.controllerTransfer,
-    args: [
-      rawNfts,
-      assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(fromAssetHolder), context),
-      assetHolderToAssetHolderKind(destinationAssetHolder, context),
-    ],
+    transaction: tx.nft.controllerTransferTo,
+    args: [rawNfts, rawSource, assetHolderIdToMeshAssetHolder(destinationAssetHolderId, context)],
     resolver: undefined,
   };
 }
@@ -96,8 +125,19 @@ export function getAuthorization(
   { collection }: Params
 ): ProcedureAuthorization {
   const {
-    storage: { destinationAssetHolder },
+    storage: { destinationAssetHolder, isDestinationCallers },
   } = this;
+
+  // the chain checks only the agent's Asset permission for a transfer to a named destination
+  if (!isDestinationCallers) {
+    return {
+      permissions: {
+        assets: [collection],
+        transactions: [TxTags.nft.ControllerTransferTo],
+        portfolios: [],
+      },
+    };
+  }
 
   if (destinationAssetHolder instanceof Account) {
     return {
@@ -124,21 +164,11 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export async function prepareStorage(
+export function prepareStorage(
   this: Procedure<Params, void, Storage>,
   { destination }: Params
 ): Promise<Storage> {
-  const { context } = this;
-
-  const { did } = await context.getSigningIdentity();
-  const destinationAssetHolder = destination
-    ? assetHolderLikeToAssetHolder(destination, context)
-    : new DefaultPortfolio({ did }, context);
-
-  return {
-    did,
-    destinationAssetHolder,
-  };
+  return getControllerTransferDestination(destination, this.context);
 }
 
 /**

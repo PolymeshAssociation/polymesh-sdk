@@ -10,6 +10,7 @@ import {
   CheckpointSchedule,
   Context,
   CustomPermissionGroup,
+  DefaultPortfolio,
   Identity,
   Instruction,
   KnownPermissionGroup,
@@ -42,8 +43,11 @@ import {
   TxTag,
 } from '~/types';
 import {
+  assetHolderLikeToAssetHolder,
   assetHolderLikeToAssetHolderId,
   assetIdToString,
+  assetToMeshAssetId,
+  boolToBoolean,
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -790,6 +794,132 @@ export async function assertBallotRecordDateValid(
         checkpointDate,
         startDate,
       },
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * The storage a controller transfer keeps about where it delivers, shared by the fungible and NFT
+ *   procedures
+ */
+export interface ControllerTransferDestination {
+  did: string;
+  actingAddress: string;
+  destinationAssetHolder: Account | DefaultPortfolio | NumberedPortfolio;
+  /**
+   * whether the destination is somewhere `controllerTransfer` can deliver to, i.e. the acting
+   *   Account itself or a Portfolio of the signing Identity. Anywhere else takes
+   *   `controllerTransferTo`, available from Polymesh 8.1.1
+   */
+  isDestinationCallers: boolean;
+}
+
+/**
+ * @hidden
+ *
+ * Resolve where a controller transfer delivers, defaulting to the signing Identity's default
+ *   Portfolio, and decide which of the chain's two extrinsics can reach it
+ */
+export async function getControllerTransferDestination(
+  destination: AssetHolderLike | undefined,
+  context: Context
+): Promise<ControllerTransferDestination> {
+  const [{ did }, { address: actingAddress }] = await Promise.all([
+    context.getSigningIdentity(),
+    context.getActingAccount(),
+  ]);
+
+  const destinationAssetHolder = destination
+    ? assetHolderLikeToAssetHolder(destination, context)
+    : new DefaultPortfolio({ did }, context);
+
+  /*
+   * `controller_transfer` names only the kind of destination, and resolves an Account kind to the
+   *   caller's own Account. So an Account destination is the caller's only if it is the acting
+   *   Account, even when another Account of the same Identity is named
+   */
+  const isDestinationCallers =
+    destinationAssetHolder instanceof Account
+      ? destinationAssetHolder.address === actingAddress
+      : destinationAssetHolder.owner.did === did;
+
+  return {
+    did,
+    actingAddress,
+    destinationAssetHolder,
+    isDestinationCallers,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Mirror the chain's receiver affirmation check on a controller transfer to a named destination
+ *   (`controller_transfer_to`). A forced transfer cannot affirm on the receiver's behalf, so a
+ *   destination that would have to affirm the incoming transfer is accepted only if the caller
+ *   controls it: the caller's own Account, or a Portfolio in the caller's custody
+ *
+ * A destination has to affirm when the Identity governing it (a Portfolio's custodian, else the
+ *   Account's or Portfolio's owner) has opted in to mandatory receiver affirmation, unless the
+ *   Asset is exempt from affirmation or has been pre-approved by that Identity or, for a Portfolio,
+ *   by the Portfolio itself
+ *
+ * @param caller.did - Identity the extrinsic is dispatched for
+ * @param caller.address - Account the extrinsic is dispatched from
+ */
+export async function assertControllerTransferDestinationAccepted(
+  destination: Account | NumberedPortfolio | DefaultPortfolio,
+  asset: BaseAsset,
+  caller: { did: string; address: string },
+  context: Context
+): Promise<void> {
+  let governingIdentity: Identity | null;
+  let isControlledByCaller: boolean;
+  let isPortfolioPreApproved = false;
+
+  if (destination instanceof Account) {
+    governingIdentity = await destination.getIdentity();
+    isControlledByCaller = destination.address === caller.address;
+  } else {
+    [governingIdentity, isPortfolioPreApproved] = await Promise.all([
+      destination.getCustodian(),
+      destination.isAssetPreApproved(asset),
+    ]);
+    isControlledByCaller = governingIdentity.did === caller.did;
+  }
+
+  if (isControlledByCaller) {
+    return;
+  }
+
+  if (!governingIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The destination Account has no Identity to receive the Asset',
+    });
+  }
+
+  const rawAssetId = assetToMeshAssetId(asset, context);
+
+  const [requiresAffirmation, rawIsExempt, isIdentityPreApproved] = await Promise.all([
+    governingIdentity.isMandatoryReceiverAffirmationEnabled(),
+    context.polymeshApi.query.asset.assetsExemptFromAffirmation(rawAssetId),
+    governingIdentity.isAssetPreApproved(asset),
+  ]);
+
+  if (
+    requiresAffirmation &&
+    !boolToBoolean(rawIsExempt) &&
+    !isIdentityPreApproved &&
+    !isPortfolioPreApproved
+  ) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message:
+        'The destination must affirm incoming transfers of this Asset, which a controller transfer cannot do. It must pre-approve the Asset first',
+      data: { receiverIdentity: governingIdentity.did },
     });
   }
 }

@@ -16,6 +16,7 @@ import { TxGroup, TxTag, TxTags } from '~/types';
  * Values:
  * - TxTags.asset.AcceptAssetOwnershipTransfer
  * - TxTags.asset.ControllerTransfer
+ * - TxTags.asset.ControllerTransferTo
  * - TxTags.asset.Freeze
  * - TxTags.asset.FreezePartialTokens
  * - TxTags.asset.SetFrozenTokens
@@ -23,6 +24,7 @@ import { TxGroup, TxTag, TxTags } from '~/types';
  * - TxTags.asset.Unfreeze
  * - TxTags.asset.UnfreezePartialTokens
  * - TxTags.nft.ControllerTransfer
+ * - TxTags.nft.ControllerTransferTo
  *
  * @note AcceptAssetOwnershipTransfer has unique permission checking - it verifies that the identity
  * that created the authorization was an agent with AcceptAssetOwnershipTransfer permission so an agent with this
@@ -31,6 +33,7 @@ import { TxGroup, TxTag, TxTags } from '~/types';
 export const ADVANCED_ASSET_MANAGEMENT_TX_TAGS = [
   TxTags.asset.AcceptAssetOwnershipTransfer, // Agent (via authorization creator check)
   TxTags.asset.ControllerTransfer, // Agent
+  TxTags.asset.ControllerTransferTo, // Agent
   TxTags.asset.Freeze, // Agent
   TxTags.asset.FreezePartialTokens, // Agent
   TxTags.asset.SetFrozenTokens, // Agent
@@ -38,6 +41,7 @@ export const ADVANCED_ASSET_MANAGEMENT_TX_TAGS = [
   TxTags.asset.Unfreeze, // Agent
   TxTags.asset.UnfreezePartialTokens, // Agent
   TxTags.nft.ControllerTransfer, // Agent
+  TxTags.nft.ControllerTransferTo, // Agent
 ] as const satisfies TxTag[];
 
 /**
