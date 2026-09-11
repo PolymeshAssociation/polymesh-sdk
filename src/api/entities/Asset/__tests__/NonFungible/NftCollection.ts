@@ -80,6 +80,18 @@ describe('NftCollection class', () => {
     });
   });
 
+  describe('getter: evmAddress', () => {
+    it('should return the checksummed address of the ERC-721 precompile for the collection', () => {
+      const context = dsMockUtils.getContextInstance();
+      const nftCollection = new NftCollection(
+        { assetId: '12345678-90ab-cdef-1234-567890abcdef' },
+        context
+      );
+
+      expect(nftCollection.evmAddress).toBe('0x1234567890aBcdeF1234567890aBcdeF00090000');
+    });
+  });
+
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
       expect(

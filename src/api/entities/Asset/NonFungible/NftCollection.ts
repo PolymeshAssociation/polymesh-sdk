@@ -35,6 +35,7 @@ import {
   portfolioIdStringToPortfolio,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { assetIdToPrecompileAddress } from '~/utils/eth';
 import {
   calculateNextKey,
   createProcedureMethod,
@@ -134,6 +135,21 @@ export class NftCollection extends BaseAsset {
       },
       context
     );
+  }
+
+  /**
+   * The address at which this collection can be called as an ERC-721 token from EVM contracts and
+   *   Ethereum tooling, i.e. `0x<Asset ID>00090000`, EIP-55 checksummed. The ERC-721 `tokenId` of
+   *   an NFT is its {@link Nft.id | id} within the collection
+   *
+   * @note every collection is exposed automatically, with nothing to deploy or register. Calls run
+   *   the same checks as the equivalent extrinsic, so compliance and transfer restrictions still
+   *   apply
+   * @note the ERC-721 precompile is available from Polymesh 8.1.1. The address is computed, not
+   *   read from the chain, so it is returned on an older chain too, where nothing answers at it
+   */
+  public get evmAddress(): string {
+    return assetIdToPrecompileAddress(this.id, 'nonFungible');
   }
 
   /**
