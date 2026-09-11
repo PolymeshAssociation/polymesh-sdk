@@ -16,6 +16,7 @@ import {
   GLOBAL_TOKEN_URI_NAME,
 } from '~/utils/constants';
 import {
+  accountIdToString,
   assetToMeshAssetId,
   bigNumberToU64,
   boolToBoolean,
@@ -27,7 +28,7 @@ import {
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { asOptionalApi, createProcedureMethod } from '~/utils/internal';
 
 export type NftUniqueIdentifiers = {
   assetId: string;
@@ -229,6 +230,45 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
     }
 
     return meshAssetHolderToAssetHolder(owner.unwrap(), context);
+  }
+
+  /**
+   * Retrieve the Account approved to transfer this NFT on its holder's behalf, if any. This is
+   *   ERC-721's `getApproved`
+   *
+   * @note an NFT has at most one approved Account: each approval replaces the last. The approval
+   *   is cleared whenever the NFT changes hands, by any route, without an event
+   * @note an operator approved for the whole collection may also transfer the NFT, without being
+   *   named here. See {@link NftCollection.isOperatorApproved}
+   * @note always `null` before Polymesh 8.1.1, which has no NFT approvals
+   */
+  public async getApproval(): Promise<Account | null> {
+    const {
+      collection,
+      id,
+      context: {
+        polymeshApi: {
+          query: { nft },
+        },
+      },
+      context,
+    } = this;
+
+    // absent before Polymesh 8.1.1
+    const tokenApproval = asOptionalApi(nft.tokenApproval);
+
+    if (!tokenApproval) {
+      return null;
+    }
+
+    const rawSpender = await tokenApproval(
+      assetToMeshAssetId(collection, context),
+      bigNumberToU64(id, context)
+    );
+
+    return rawSpender.isSome
+      ? new Account({ address: accountIdToString(rawSpender.unwrap()) }, context)
+      : null;
   }
 
   /**
