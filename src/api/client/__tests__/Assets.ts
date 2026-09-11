@@ -353,6 +353,73 @@ describe('Assets Class', () => {
     });
   });
 
+  describe('method: getAssetFromEvmAddress', () => {
+    const fungibleAddress = '0x1234567890abcdEF1234567890aBCdeF00080000';
+    const nftAddress = '0x1234567890aBcdeF1234567890aBcdeF00090000';
+
+    it('should return the FungibleAsset behind a fungible precompile address', async () => {
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: { exists: true },
+        nftCollectionOptions: { exists: false },
+      });
+
+      const asset = await assets.getAssetFromEvmAddress({ address: fungibleAddress });
+
+      expect(asset).toBeInstanceOf(FungibleAsset);
+      expect(asset.id).toBe('12345678-90ab-cdef-1234-567890abcdef');
+    });
+
+    it('should return the NftCollection behind a non-fungible precompile address', async () => {
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: { exists: false },
+        nftCollectionOptions: { exists: true },
+      });
+
+      const asset = await assets.getAssetFromEvmAddress({ address: nftAddress });
+
+      expect(asset).toBeInstanceOf(NftCollection);
+    });
+
+    it('should throw if a fungible precompile address encodes an NFT collection', () => {
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: { exists: false },
+        nftCollectionOptions: { exists: true },
+      });
+
+      return expect(assets.getAssetFromEvmAddress({ address: fungibleAddress })).rejects.toThrow(
+        'The supplied address is a fungible precompile address, but the Asset it encodes is an NFT collection'
+      );
+    });
+
+    it('should throw if a non-fungible precompile address encodes a fungible Asset', () => {
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: { exists: true },
+        nftCollectionOptions: { exists: false },
+      });
+
+      return expect(assets.getAssetFromEvmAddress({ address: nftAddress })).rejects.toThrow(
+        'The supplied address is a non-fungible precompile address, but the Asset it encodes is fungible'
+      );
+    });
+
+    it('should throw if no Asset has the encoded Asset ID', () => {
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: { exists: false },
+        nftCollectionOptions: { exists: false },
+      });
+
+      return expect(assets.getAssetFromEvmAddress({ address: fungibleAddress })).rejects.toThrow(
+        'No asset exists with asset ID: "12345678-90ab-cdef-1234-567890abcdef"'
+      );
+    });
+
+    it('should throw if the address is not an Asset precompile address', () => {
+      return expect(
+        assets.getAssetFromEvmAddress({ address: '0x00000000000000000000000000000000ffff0000' })
+      ).rejects.toThrow('The supplied EVM address is not the address of an Asset precompile');
+    });
+  });
+
   describe('method: getAssets', () => {
     beforeAll(() => {
       jest.spyOn(utilsConversionModule, 'signerValueToSignatory');

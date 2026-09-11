@@ -46,6 +46,7 @@ import {
   stringToAccountId,
   u128ToBigNumber,
 } from '~/utils/conversion';
+import { assetIdToPrecompileAddress } from '~/utils/eth';
 import {
   asAccount,
   calculateNextKey,
@@ -95,6 +96,18 @@ export class FungibleAsset extends BaseAsset {
       { getProcedureAndArgs: args => [approveAllowance, { asset: this, ...args }] },
       context
     );
+  }
+
+  /**
+   * The address of the fungible precompile through which EVM contracts and Ethereum tooling can
+   *   call this Asset, i.e. `0x<Asset ID>00080000`, EIP-55 checksummed
+   *
+   * @note every fungible Asset is exposed automatically, with nothing to deploy or register. Calls
+   *   run the same checks as the equivalent extrinsic, so compliance, transfer restrictions and
+   *   freezes still apply
+   */
+  public get evmAddress(): string {
+    return assetIdToPrecompileAddress(this.id, 'fungible');
   }
 
   /**

@@ -35,6 +35,7 @@ import {
   portfolioIdStringToPortfolio,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { assetIdToPrecompileAddress } from '~/utils/eth';
 import {
   calculateNextKey,
   createProcedureMethod,
@@ -134,6 +135,19 @@ export class NftCollection extends BaseAsset {
       },
       context
     );
+  }
+
+  /**
+   * The address of the non-fungible precompile through which EVM contracts and Ethereum tooling can
+   *   call this collection, i.e. `0x<Asset ID>00090000`, EIP-55 checksummed. The precompile
+   *   identifies an NFT by its {@link Nft.id | id} within the collection
+   *
+   * @note every collection is exposed automatically, with nothing to deploy or register. Calls run
+   *   the same checks as the equivalent extrinsic, so compliance and transfer restrictions still
+   *   apply
+   */
+  public get evmAddress(): string {
+    return assetIdToPrecompileAddress(this.id, 'nonFungible');
   }
 
   /**
