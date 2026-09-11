@@ -16,6 +16,7 @@ import {
   Context,
   controllerTransfer,
   Identity,
+  modifyFrozenTokens,
   redeemTokens,
 } from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
@@ -26,6 +27,7 @@ import {
   AssetAllowance,
   ControllerTransferParams,
   EventIdentifier,
+  FrozenTokensParams,
   HistoricAgentOperation,
   HistoricAssetTransaction,
   MiddlewarePaginationOptions,
@@ -96,7 +98,70 @@ export class FungibleAsset extends BaseAsset {
       { getProcedureAndArgs: args => [approveAllowance, { asset: this, ...args }] },
       context
     );
+
+    this.setFrozenTokens = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          modifyFrozenTokens,
+          { ...args, asset: this, operation: 'set' as const },
+        ],
+      },
+      context
+    );
+
+    this.freezeTokens = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          modifyFrozenTokens,
+          { ...args, asset: this, operation: 'increase' as const },
+        ],
+      },
+      context
+    );
+
+    this.unfreezeTokens = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          modifyFrozenTokens,
+          { ...args, asset: this, operation: 'decrease' as const },
+        ],
+      },
+      context
+    );
   }
+
+  /**
+   * Set how many of a holder's tokens are frozen, replacing whatever amount was frozen before. The
+   *   holder cannot send frozen tokens
+   *
+   * @note absolute: setting 100 twice leaves 100 frozen. Use {@link freezeTokens} and
+   *   {@link unfreezeTokens} to adjust the amount instead. Passing 0 unfreezes every token
+   * @note the chain does not check this against the holder's balance, so more can be frozen than
+   *   the holder holds, leaving nothing it can send
+   * @note freezing applies to the holder given, not to its Identity
+   * @note a controller transfer can still take frozen tokens
+   * @note requires Polymesh 8.1.1 or later, and throws `NotSupported` on an older chain
+   */
+  public setFrozenTokens: ProcedureMethod<FrozenTokensParams, void>;
+
+  /**
+   * Freeze more of a holder's tokens, on top of whatever is already frozen. The holder cannot send
+   *   frozen tokens
+   *
+   * @note relative: freezing 100 twice leaves 200 frozen
+   * @throws if the frozen amount would exceed the holder's balance
+   * @note requires Polymesh 8.1.1 or later, and throws `NotSupported` on an older chain
+   */
+  public freezeTokens: ProcedureMethod<FrozenTokensParams, void>;
+
+  /**
+   * Release some of a holder's frozen tokens
+   *
+   * @note relative: this reduces the frozen amount by `amount`
+   * @throws if `amount` exceeds what is frozen
+   * @note requires Polymesh 8.1.1 or later, and throws `NotSupported` on an older chain
+   */
+  public unfreezeTokens: ProcedureMethod<FrozenTokensParams, void>;
 
   /**
    * The address at which this Asset can be called as an ERC-20 token from EVM contracts and

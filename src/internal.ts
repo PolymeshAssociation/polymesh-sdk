@@ -65,6 +65,8 @@ export {
   toggleFreezeTransfers,
   ToggleFreezeTransfersParams,
 } from '~/api/procedures/toggleFreezeTransfers';
+export { toggleFreezeHolder } from '~/api/procedures/toggleFreezeHolder';
+export { modifyFrozenTokens } from '~/api/procedures/modifyFrozenTokens';
 export {
   togglePauseRequirements,
   TogglePauseRequirementsParams,

@@ -2104,3 +2104,23 @@ export interface ApproveAllowanceParams {
 export type TransferFundsParams = (InstructionFungibleLeg | InstructionNftLeg) & {
   memo?: string;
 };
+
+export interface FreezeHolderParams {
+  /**
+   * the Account or Portfolio to freeze or unfreeze. This holder alone is affected, not its
+   *   Identity's other Accounts or Portfolios
+   */
+  holder: AssetHolderLike;
+}
+
+export interface FrozenTokensParams {
+  /**
+   * the Account or Portfolio whose balance is frozen. This holder alone is affected, not its
+   *   Identity's other Accounts or Portfolios
+   */
+  holder: AssetHolderLike;
+  /**
+   * number of tokens
+   */
+  amount: BigNumber;
+}

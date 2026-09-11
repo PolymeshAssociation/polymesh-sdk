@@ -22,6 +22,7 @@ import {
   PolymeshError,
   removeAssetMediators,
   setVenueFiltering,
+  toggleFreezeHolder,
   toggleFreezeTransfers,
   transferAssetOwnership,
   unlinkTickerFromAsset,
@@ -33,6 +34,7 @@ import {
   AssetMediatorParams,
   AuthorizationRequest,
   ErrorCode,
+  FreezeHolderParams,
   LinkTickerToAssetParams,
   ModifyAssetParams,
   NoArgsProcedureMethod,
@@ -158,6 +160,18 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       context
     );
 
+    this.freezeHolder = createProcedureMethod(
+      { getProcedureAndArgs: args => [toggleFreezeHolder, { ...args, asset: this, freeze: true }] },
+      context
+    );
+
+    this.unfreezeHolder = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [toggleFreezeHolder, { ...args, asset: this, freeze: false }],
+      },
+      context
+    );
+
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferAssetOwnership, { asset: this, ...args }] },
       context
@@ -211,6 +225,27 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    * Unfreeze transfers of the Asset
    */
   public unfreeze: NoArgsProcedureMethod<void>;
+
+  /**
+   * Freeze one holder of the Asset, an Account or a Portfolio, so that it cannot send any of it.
+   *   Unlike {@link freeze}, every other holder can still transfer
+   *
+   * @note freezing applies to the holder given, not to its Identity. To stop an investor moving the
+   *   Asset, freeze each Account and Portfolio that holds it
+   * @note the holder can still receive the Asset, and a controller transfer can still take it from
+   *   the holder, which is how an agent seizes from a frozen holder
+   * @note requires Polymesh 8.1.1 or later, and throws `NotSupported` on an older chain
+   */
+  public freezeHolder: ProcedureMethod<FreezeHolderParams, void>;
+
+  /**
+   * Unfreeze a holder of the Asset that was frozen with {@link freezeHolder}
+   *
+   * @note leaves any frozen part of the holder's balance frozen. See
+   *   {@link api/entities/Asset/Fungible!FungibleAsset.unfreezeTokens | unfreezeTokens}
+   * @note requires Polymesh 8.1.1 or later, and throws `NotSupported` on an older chain
+   */
+  public unfreezeHolder: ProcedureMethod<FreezeHolderParams, void>;
 
   /**
    * Add required mediators. Mediators must approve any trades involving the asset
