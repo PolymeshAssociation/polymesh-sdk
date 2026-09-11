@@ -9,6 +9,7 @@ import { Account, Context, issueNft, Nft, nftControllerTransfer, PolymeshError }
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
 import { AssetTransactionsOrderBy, Query } from '~/middleware/types';
 import {
+  AccountLike,
   AssetDetails,
   BatchIssueNftParams,
   CollectionKey,
@@ -29,14 +30,18 @@ import { Ensured } from '~/types/utils';
 import {
   assetToMeshAssetId,
   bigNumberToU64,
+  boolToBoolean,
   meshMetadataKeyToMetadataKey,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
+  stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { assetIdToPrecompileAddress } from '~/utils/eth';
 import {
+  asAccount,
+  asOptionalApi,
   calculateNextKey,
   createProcedureMethod,
   getAssetIdAndTicker,
@@ -349,6 +354,47 @@ export class NftCollection extends BaseAsset {
     const rawTokenId = await nft.collectionAsset(rawAssetId);
 
     return !rawTokenId.isZero();
+  }
+
+  /**
+   * Check whether an Account may transfer any of another Account's NFTs in this collection, as its
+   *   operator. This is ERC-721's `isApprovedForAll`, scoped to one collection
+   *
+   * @param args.owner - the Account holding the NFTs
+   * @param args.operator - the Account that may have been approved
+   *
+   * @note always `false` before Polymesh 8.1.1, which has no NFT approvals
+   */
+  public async isOperatorApproved(args: {
+    owner: AccountLike;
+    operator: AccountLike;
+  }): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { nft },
+        },
+      },
+      context,
+    } = this;
+
+    // absent before Polymesh 8.1.1
+    const operatorApproval = asOptionalApi(nft.operatorApproval);
+
+    if (!operatorApproval) {
+      return false;
+    }
+
+    const { address: owner } = asAccount(args.owner, context);
+    const { address: operator } = asAccount(args.operator, context);
+
+    const rawIsApproved = await operatorApproval(
+      stringToAccountId(owner, context),
+      stringToAccountId(operator, context),
+      assetToMeshAssetId(this, context)
+    );
+
+    return boolToBoolean(rawIsApproved);
   }
 
   /**

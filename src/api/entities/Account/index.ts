@@ -47,6 +47,7 @@ import {
   ExtrinsicData,
   MiddlewarePaginationOptions,
   MultiSigTx,
+  NftOperatorApproval,
   NftOwnerStatus,
   PaginationOptions,
   Permissions,
@@ -827,6 +828,54 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         spender: new Account({ address: accountIdToString(rawSpender) }, context),
         amount: balanceToBigNumber(rawAmount),
         unlimited: u128ToBigNumber(rawAmount).eq(UNLIMITED_ALLOWANCE),
+      };
+    });
+
+    return { data, next };
+  }
+
+  /**
+   * Retrieve the operators this Account has approved: Accounts that may transfer any of its NFTs in
+   *   a collection, set with
+   *   {@link api/entities/Asset/NonFungible/NftCollection!NftCollection.approveOperator | collection.approveOperator}
+   *
+   * @note revoking an operator removes it, so every entry returned is live. Unlike a per-NFT
+   *   approval, an operator approval is not used up, and survives the NFTs changing hands
+   * @note always empty before Polymesh 8.1.1, which has no NFT approvals
+   */
+  public async getNftOperators(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<NftOperatorApproval>> {
+    const {
+      address,
+      context,
+      context: {
+        polymeshApi: {
+          query: { nft },
+        },
+      },
+    } = this;
+
+    // absent before Polymesh 8.1.1
+    const operatorApproval = asOptionalApi(nft.operatorApproval);
+
+    if (!operatorApproval) {
+      return { data: [], next: null };
+    }
+
+    const { entries, lastKey: next } = await requestPaginated(operatorApproval, {
+      arg: stringToAccountId(address, context),
+      paginationOpts,
+    });
+
+    const data = entries.map(([storageKey]) => {
+      const {
+        args: [, rawOperator, rawAssetId],
+      } = storageKey;
+
+      return {
+        collection: new NftCollection({ assetId: assetIdToString(rawAssetId) }, context),
+        operator: new Account({ address: accountIdToString(rawOperator) }, context),
       };
     });
 

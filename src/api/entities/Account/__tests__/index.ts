@@ -1194,6 +1194,40 @@ describe('Account class', () => {
     });
   });
 
+  describe('method: getNftOperators', () => {
+    const operator = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+
+    it('should return the operators the Account has approved, with their collection', async () => {
+      dsMockUtils.createQueryMock('nft', 'operatorApproval', {
+        entries: [
+          [
+            [
+              createMockAccountId(address),
+              createMockAccountId(operator),
+              dsMockUtils.createMockAssetId('0x11111111111111111111111111111111'),
+            ],
+            dsMockUtils.createMockBool(true),
+          ],
+        ],
+      });
+
+      const { data, next } = await new Account({ address }, context).getNftOperators();
+
+      expect(data).toHaveLength(1);
+      expect(data[0]!.operator.address).toBe(operator);
+      expect(data[0]!.collection.id).toBe('11111111-1111-1111-1111-111111111111');
+      expect(next).toBeNull();
+    });
+
+    it('should return an empty set on a chain without NFT approvals', async () => {
+      dsMockUtils.createQueryMock('nft', 'owner');
+
+      const result = await new Account({ address }, context).getNftOperators();
+
+      expect(result).toEqual({ data: [], next: null });
+    });
+  });
+
   describe('method: getAllowances', () => {
     const spenderOne = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
     const spenderTwo = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
