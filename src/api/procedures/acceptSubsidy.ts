@@ -38,6 +38,12 @@ export async function prepareAcceptSubsidy(
 
   return {
     transaction: tx.relayer.acceptSubsidy,
+    /*
+     * the chain charges the paying key for an accepted subsidy (`handle_relayer_calls`), which is
+     *   what lets a beneficiary with no POLYX accept one. The pending subsidy checked above is the
+     *   same condition the chain applies before attributing the fee
+     */
+    paidForBy: subsidizerAccount,
     args: [rawSubsidizer],
     resolver: undefined,
   };
