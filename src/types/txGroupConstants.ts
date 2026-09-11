@@ -17,7 +17,11 @@ import { TxGroup, TxTag, TxTags } from '~/types';
  * - TxTags.asset.AcceptAssetOwnershipTransfer
  * - TxTags.asset.ControllerTransfer
  * - TxTags.asset.Freeze
+ * - TxTags.asset.FreezePartialTokens
+ * - TxTags.asset.SetFrozenTokens
+ * - TxTags.asset.SetHolderFrozen
  * - TxTags.asset.Unfreeze
+ * - TxTags.asset.UnfreezePartialTokens
  * - TxTags.nft.ControllerTransfer
  *
  * @note AcceptAssetOwnershipTransfer has unique permission checking - it verifies that the identity
@@ -28,7 +32,11 @@ export const ADVANCED_ASSET_MANAGEMENT_TX_TAGS = [
   TxTags.asset.AcceptAssetOwnershipTransfer, // Agent (via authorization creator check)
   TxTags.asset.ControllerTransfer, // Agent
   TxTags.asset.Freeze, // Agent
+  TxTags.asset.FreezePartialTokens, // Agent
+  TxTags.asset.SetFrozenTokens, // Agent
+  TxTags.asset.SetHolderFrozen, // Agent
   TxTags.asset.Unfreeze, // Agent
+  TxTags.asset.UnfreezePartialTokens, // Agent
   TxTags.nft.ControllerTransfer, // Agent
 ] as const satisfies TxTag[];
 

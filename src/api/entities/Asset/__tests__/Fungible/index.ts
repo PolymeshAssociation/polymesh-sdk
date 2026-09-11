@@ -623,6 +623,56 @@ describe('Fungible class', () => {
     });
   });
 
+  describe.each([
+    ['freezeHolder', { freeze: true }],
+    ['unfreezeHolder', { freeze: false }],
+  ] as const)('method: %s', (method, extraArgs) => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const holder = 'someAccount';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ assetId }, context);
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { holder, asset, ...extraArgs }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset[method]({ holder });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe.each([
+    ['setFrozenTokens', 'set'],
+    ['freezeTokens', 'increase'],
+    ['unfreezeTokens', 'decrease'],
+  ] as const)('method: %s', (method, operation) => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const holder = 'someAccount';
+      const amount = new BigNumber(100);
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ assetId }, context);
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { holder, amount, asset, operation }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset[method]({ holder, amount });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: isFrozen', () => {
     let frozenMock: jest.Mock;
     let boolValue: boolean;
