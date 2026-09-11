@@ -3,7 +3,15 @@ import BigNumber from 'bignumber.js';
 
 import { createAddInstructionResolver } from '~/api/procedures/addInstruction';
 import { getAssetHolderDid } from '~/api/procedures/utils';
-import { Account, Context, Instruction, Nft, PolymeshError, Procedure } from '~/internal';
+import {
+  Account,
+  Context,
+  Instruction,
+  Nft,
+  NftCollection,
+  PolymeshError,
+  Procedure,
+} from '~/internal';
 import {
   AssetHolder,
   ErrorCode,
@@ -20,7 +28,13 @@ import {
   fungibleMovementToPortfolioFund,
   nftMovementToPortfolioFund,
 } from '~/utils/conversion';
-import { asAssetId, asFungibleAsset, asNftId, filterEventRecords } from '~/utils/internal';
+import {
+  asAssetId,
+  asFungibleAsset,
+  asNftId,
+  asOptionalApi,
+  filterEventRecords,
+} from '~/utils/internal';
 import { isFungibleLegBuilder, isPortfolioAssetHolder } from '~/utils/typeguards';
 
 export interface Storage {
@@ -94,6 +108,41 @@ async function getFungibleFund(
 
 /**
  * @hidden
+ *
+ * Mirror the chain's check that a spender may move NFTs out of another Account: it must be an
+ *   operator the owner approved for the collection, or else the Account approved for every NFT
+ */
+async function assertSpenderApprovedForNfts(
+  context: Context,
+  owner: Account,
+  spender: string,
+  assetId: string,
+  nftIds: BigNumber[]
+): Promise<void> {
+  const collection = new NftCollection({ assetId }, context);
+
+  if (await collection.isOperatorApproved({ owner, operator: spender })) {
+    return;
+  }
+
+  const approvals = await Promise.all(
+    nftIds.map(id => new Nft({ id, assetId }, context).getApproval())
+  );
+
+  const unapprovedNfts = nftIds.filter((_, index) => approvals[index]?.address !== spender);
+
+  if (unapprovedNfts.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message:
+        'The signing Account is neither an operator for the owner nor approved for some of the NFTs',
+      data: { unapprovedNfts },
+    });
+  }
+}
+
+/**
+ * @hidden
  */
 async function getNftFund(
   context: Context,
@@ -104,9 +153,12 @@ async function getNftFund(
   const { fromHolder, signingAccount } = storage;
   const { asset, nfts } = leg;
 
-  // NFTs have no allowance mechanism, so only the owning key (or the owning identity's
-  // custodied Portfolio) can authorize their transfer
-  if (fromHolder instanceof Account && fromHolder.address !== signingAccount) {
+  // approvals are granted key to key, so spender mode applies whenever the submitting Account
+  // isn't the source Account itself. Portfolio sources are authorized via custody on-chain
+  const isSpender = fromHolder instanceof Account && fromHolder.address !== signingAccount;
+
+  // NFT approvals arrive in Polymesh 8.1.1. Before that only the owning key could move them
+  if (isSpender && !asOptionalApi(context.polymeshApi.tx.nft)?.approve) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message:
@@ -115,6 +167,16 @@ async function getNftFund(
   }
 
   const assetId = await asAssetId(asset, context);
+
+  if (isSpender) {
+    await assertSpenderApprovedForNfts(
+      context,
+      fromHolder,
+      signingAccount,
+      assetId,
+      nfts.map(nft => asNftId(nft))
+    );
+  }
 
   const unavailableNfts: BigNumber[] = [];
   await Promise.all(

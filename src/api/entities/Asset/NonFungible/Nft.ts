@@ -1,12 +1,23 @@
 import BigNumber from 'bignumber.js';
 
-import { Account, Context, Entity, NftCollection, PolymeshError, redeemNft } from '~/internal';
 import {
+  Account,
+  Context,
+  Entity,
+  NftCollection,
+  PolymeshError,
+  redeemNft,
+  setNftApproval,
+} from '~/internal';
+import {
+  ApproveNftParams,
   AssetHolder,
   ErrorCode,
   NftMetadata,
   NftOwnerStatus,
+  NoArgsProcedureMethod,
   OptionalArgsProcedureMethod,
+  ProcedureMethod,
   RedeemNftParams,
 } from '~/types';
 import {
@@ -57,6 +68,25 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
   public redeem: OptionalArgsProcedureMethod<RedeemNftParams, void>;
 
   /**
+   * Approve an Account to transfer this NFT on its holder's behalf, with `transferFunds`. This is
+   *   ERC-721's `approve`
+   *
+   * @note only the Account holding the NFT, or an operator it has approved for the collection, can
+   *   approve. An NFT held in a Portfolio cannot be approved
+   * @note an NFT has at most one approved Account, so this replaces any approved before. The
+   *   approval is used up by the transfer, and cleared if the NFT changes hands any other way
+   * @note requires Polymesh 8.1.1 or later, and throws `NotSupported` on an older chain
+   */
+  public approve: ProcedureMethod<ApproveNftParams, void>;
+
+  /**
+   * Clear the approval set with {@link approve}
+   *
+   * @note requires Polymesh 8.1.1 or later, and throws `NotSupported` on an older chain
+   */
+  public clearApproval: NoArgsProcedureMethod<void>;
+
+  /**
    * @hidden
    * Check if a value is of type {@link UniqueIdentifiers}
    */
@@ -84,6 +114,19 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
       {
         getProcedureAndArgs: args => [redeemNft, { collection: this.collection, id, ...args }],
         optionalArgs: true,
+      },
+      context
+    );
+
+    this.approve = createProcedureMethod(
+      { getProcedureAndArgs: ({ spender }) => [setNftApproval, { nft: this, spender }] },
+      context
+    );
+
+    this.clearApproval = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [setNftApproval, { nft: this, spender: null }],
+        voidArgs: true,
       },
       context
     );
@@ -181,6 +224,10 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    * The URI values can include `{tokenId}` that will be replaced with the NFTs ID. If a base URI does not specify this the ID will be appended onto the URL. Examples:
    *  - `https://example.com/nfts/{tokenId}/info.json` becomes `https://example.com/nfts/1/info.json`
    *  - `https://example.com/nfts` becomes `https://example.com/nfts/1` if used a base value, but remain unchanged as a local value
+   *
+   * @note the ERC-721 precompile's `tokenURI` (Polymesh 8.1.1) resolves the same two values, but also fills in or appends the ID
+   *   for a token level value. So for a token level value without `{tokenId}`, EVM tooling sees the ID appended where this
+   *   method returns the value unchanged
    */
   public async getTokenUri(): Promise<string | null> {
     const [localId, baseId] = await Promise.all([

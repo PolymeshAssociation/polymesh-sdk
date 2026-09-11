@@ -377,6 +377,29 @@ describe('Nft class', () => {
     });
   });
 
+  describe.each([
+    ['approve', { spender: 'someSpender' }, 'someSpender'],
+    ['clearApproval', undefined, null],
+  ] as const)('method: %s', (method, args, spender) => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const nft = new Nft(
+        { assetId: '12341234-1234-1234-1234-123412341234', id: new BigNumber(1) },
+        context
+      );
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { nft, spender }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = method === 'approve' ? await nft.approve(args!) : await nft.clearApproval();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: getApproval', () => {
     const assetId = '12341234-1234-1234-1234-123412341234';
     const id = new BigNumber(1);

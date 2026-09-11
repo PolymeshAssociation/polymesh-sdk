@@ -417,6 +417,99 @@ describe('transferFunds procedure', () => {
       );
     });
 
+    describe('with NFT approvals (Polymesh 8.1.1)', () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      let getApprovalSpy: jest.SpyInstance;
+
+      const buildProc = (): ReturnType<
+        typeof procedureMockUtils.getInstance<TransferFundsParams, Instruction | undefined, Storage>
+      > =>
+        procedureMockUtils.getInstance<TransferFundsParams, Instruction | undefined, Storage>(
+          mockContext,
+          {
+            fromHolder: fromAccountHolder,
+            toHolder: toPortfolioHolder,
+            fromDid: 'someDid',
+            toDid: 'someDid',
+            signingDid: 'otherDid',
+            signingAccount: 'someOtherAccount',
+          }
+        );
+
+      beforeEach(() => {
+        dsMockUtils.createTxMock('nft', 'approve');
+        getApprovalSpy = jest.spyOn(Nft.prototype, 'getApproval').mockResolvedValue(null);
+        asAssetIdSpy.mockResolvedValue(assetId);
+        getOwnerSpy.mockResolvedValue(fromAccountHolder as unknown as AssetHolder);
+        isLockedSpy.mockResolvedValue(false);
+        nftMovementToPortfolioFundSpy.mockResolvedValue('rawNftFund');
+        assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someHolderId');
+        assetHolderIdToMeshAssetHolderSpy.mockReturnValue('rawHolder');
+        createAddInstructionResolverSpy.mockReturnValue(() => []);
+      });
+
+      afterEach(() => {
+        getApprovalSpy.mockRestore();
+      });
+
+      it('should let an operator approved by the owning Account transfer its NFTs', async () => {
+        entityMockUtils.configureMocks({ nftCollectionOptions: { isOperatorApproved: true } });
+        const transaction = dsMockUtils.createTxMock('settlement', 'transferFunds');
+
+        const result = await prepareTransferFunds.call(buildProc(), {
+          from: fromAccountHolder,
+          to: toPortfolioHolder,
+          asset: entityMockUtils.getNftCollectionInstance({ assetId }),
+          nfts: [new BigNumber(1)],
+        });
+
+        expect(getApprovalSpy).not.toHaveBeenCalled();
+        expect(result.transaction).toBe(transaction);
+      });
+
+      it('should let the Account approved for every NFT transfer them', async () => {
+        getApprovalSpy.mockResolvedValue(
+          entityMockUtils.getAccountInstance({ address: 'someOtherAccount' })
+        );
+        const transaction = dsMockUtils.createTxMock('settlement', 'transferFunds');
+
+        const result = await prepareTransferFunds.call(buildProc(), {
+          from: fromAccountHolder,
+          to: toPortfolioHolder,
+          asset: entityMockUtils.getNftCollectionInstance({ assetId }),
+          nfts: [new BigNumber(1), new BigNumber(2)],
+        });
+
+        expect(getApprovalSpy).toHaveBeenCalledTimes(2);
+        expect(result.transaction).toBe(transaction);
+      });
+
+      it('should throw if the signing Account is not approved for some of the NFTs', async () => {
+        getApprovalSpy
+          .mockResolvedValueOnce(
+            entityMockUtils.getAccountInstance({ address: 'someOtherAccount' })
+          )
+          .mockResolvedValueOnce(null);
+
+        let error;
+        try {
+          await prepareTransferFunds.call(buildProc(), {
+            from: fromAccountHolder,
+            to: toPortfolioHolder,
+            asset: entityMockUtils.getNftCollectionInstance({ assetId }),
+            nfts: [new BigNumber(1), new BigNumber(2)],
+          });
+        } catch (err) {
+          error = err;
+        }
+
+        expect(error.message).toBe(
+          'The signing Account is neither an operator for the owner nor approved for some of the NFTs'
+        );
+        expect(error.data.unapprovedNfts).toEqual([new BigNumber(2)]);
+      });
+    });
+
     it('should throw an error if an NFT is not owned by the sender or is locked', async () => {
       const assetId = '12341234-1234-1234-1234-123412341234';
       const asset = entityMockUtils.getNftCollectionInstance({ assetId });
