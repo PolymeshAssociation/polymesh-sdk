@@ -235,7 +235,14 @@ export class FungibleAsset extends BaseAsset {
   }
 
   /**
-   * Force a transfer from a given Portfolio to the caller’s default Portfolio
+   * Force a transfer from a given Portfolio, by default to the caller's default Portfolio
+   *
+   * @note from Polymesh 8.1.1 `destination` can be any Account or Portfolio, such as the rightful
+   *   owner of seized tokens. Before 8.1.1 it must be the signing Account or one of the signing
+   *   Identity's Portfolios
+   * @note a destination the caller does not control must not require receiver affirmation for the
+   *   Asset, since a forced transfer cannot affirm on its behalf
+   * @note the transfer ignores holder freezes, so it can seize tokens an agent has frozen
    */
   public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
 

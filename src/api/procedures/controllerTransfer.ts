@@ -1,6 +1,13 @@
-import { getAssetHolderDid } from '~/api/procedures/utils';
+import {
+  assertAssetHolderExists,
+  assertControllerTransferDestinationAccepted,
+  assertTxSupported,
+  ControllerTransferDestination,
+  getAssetHolderDid,
+  getControllerTransferDestination,
+} from '~/api/procedures/utils';
 import { DefaultPortfolio, FungibleAsset, PolymeshError, Procedure } from '~/internal';
-import { AssetHolder, ControllerTransferParams, ErrorCode, RoleType, TxTags } from '~/types';
+import { ControllerTransferParams, ErrorCode, RoleType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   assetHolderIdToMeshAssetHolder,
@@ -11,10 +18,10 @@ import {
   bigNumberToBalance,
 } from '~/utils/conversion';
 
-export interface Storage {
-  did: string;
-  destinationAssetHolder: AssetHolder;
-}
+/**
+ * @hidden
+ */
+export type Storage = ControllerTransferDestination;
 
 /**
  * @hidden
@@ -27,34 +34,48 @@ export type Params = { asset: FungibleAsset } & ControllerTransferParams;
 export async function prepareControllerTransfer(
   this: Procedure<Params, void, Storage>,
   args: Params
-): Promise<TransactionSpec<void, ExtrinsicParams<'asset', 'controllerTransfer'>>> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'asset', 'controllerTransfer'>>
+  | TransactionSpec<void, ExtrinsicParams<'asset', 'controllerTransferTo'>>
+> {
   const {
     context: {
       polymeshApi: { tx },
     },
-    storage: { did, destinationAssetHolder },
+    storage: { did, actingAddress, destinationAssetHolder, isDestinationCallers },
     context,
   } = this;
   const { asset, originPortfolio, amount } = args;
 
   const originAssetHolderId = assetHolderLikeToAssetHolderId(originPortfolio);
 
-  const originHolderDid = await getAssetHolderDid(originPortfolio, context);
+  const [originHolderDid, destinationDid] = await Promise.all([
+    getAssetHolderDid(originPortfolio, context),
+    getAssetHolderDid(destinationAssetHolder, context),
+  ]);
 
-  if (originPortfolio && did === originHolderDid) {
+  // the chain refuses any transfer between two holders of the same Identity, a controller
+  // transfer included, so seizing from a holder and delivering to another of its own is not possible
+  if (originHolderDid && originHolderDid === destinationDid) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Controller transfers to self are not allowed',
+      message: 'The origin and destination must belong to different Identities',
+      data: { did: originHolderDid },
     });
   }
 
-  const destinationDid = await getAssetHolderDid(destinationAssetHolder, context);
+  const destinationAssetHolderId = assetHolderLikeToAssetHolderId(destinationAssetHolder);
 
-  if (did !== destinationDid) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: "Controller transfer must send to one of the signer's portfolios or accounts",
-    });
+  if (!isDestinationCallers) {
+    assertTxSupported(TxTags.asset.ControllerTransferTo, '8.1.1', context);
+
+    await assertAssetHolderExists(destinationAssetHolderId, context);
+    await assertControllerTransferDestinationAccepted(
+      destinationAssetHolder,
+      asset,
+      { did, address: actingAddress },
+      context
+    );
   }
 
   const fromPortfolio = assetHolderLikeToAssetHolder(originPortfolio, context);
@@ -77,14 +98,29 @@ export async function prepareControllerTransfer(
   }
 
   const rawAssetId = assetToMeshAssetId(asset, context);
+  const rawAmount = bigNumberToBalance(amount, context);
+  const rawSource = assetHolderIdToMeshAssetHolder(originAssetHolderId, context);
+
+  if (isDestinationCallers) {
+    return {
+      transaction: tx.asset.controllerTransfer,
+      args: [
+        rawAssetId,
+        rawAmount,
+        rawSource,
+        assetHolderToAssetHolderKind(destinationAssetHolder, context),
+      ],
+      resolver: undefined,
+    };
+  }
 
   return {
-    transaction: tx.asset.controllerTransfer,
+    transaction: tx.asset.controllerTransferTo,
     args: [
       rawAssetId,
-      bigNumberToBalance(amount, context),
-      assetHolderIdToMeshAssetHolder(originAssetHolderId, context),
-      assetHolderToAssetHolderKind(destinationAssetHolder, context),
+      rawAmount,
+      rawSource,
+      assetHolderIdToMeshAssetHolder(destinationAssetHolderId, context),
     ],
     resolver: undefined,
   };
@@ -99,8 +135,19 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const {
     context,
-    storage: { did },
+    storage: { did, isDestinationCallers },
   } = this;
+
+  // the chain checks only the agent's Asset permission for a transfer to a named destination
+  if (!isDestinationCallers) {
+    return {
+      permissions: {
+        assets: [asset],
+        transactions: [TxTags.asset.ControllerTransferTo],
+        portfolios: [],
+      },
+    };
+  }
 
   const portfolioId = { did };
 
@@ -117,21 +164,11 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export async function prepareStorage(
+export function prepareStorage(
   this: Procedure<Params, void, Storage>,
   { destination }: Params
 ): Promise<Storage> {
-  const { context } = this;
-
-  const { did } = await context.getSigningIdentity();
-  const destinationAssetHolder = destination
-    ? assetHolderLikeToAssetHolder(destination, context)
-    : new DefaultPortfolio({ did }, context);
-
-  return {
-    did,
-    destinationAssetHolder,
-  };
+  return getControllerTransferDestination(destination, this.context);
 }
 
 /**

@@ -14,10 +14,11 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/nftControllerTransfer';
+import * as proceduresUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, Nft } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Account, NftCollection, PortfolioBalance, RoleType, TxTags } from '~/types';
+import { Account, ErrorCode, NftCollection, PortfolioBalance, RoleType, TxTags } from '~/types';
 import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -151,14 +152,16 @@ describe('nftControllerTransfer procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error in case of self Transfer', async () => {
+  it('should throw if the origin and destination belong to the same Identity', async () => {
     const selfPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       did: signerDid,
       getAssetBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
     });
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: signerDid,
+      actingAddress: signerAddress,
       destinationAssetHolder: destinationPortfolio,
+      isDestinationCallers: true,
     });
 
     await expect(
@@ -167,13 +170,15 @@ describe('nftControllerTransfer procedure', () => {
         originPortfolio: selfPortfolio,
         nfts,
       })
-    ).rejects.toThrow('Controller transfers to self are not allowed');
+    ).rejects.toThrow('The origin and destination must belong to different Identities');
   });
 
-  it('should throw an error if transferring to another identity portfolio', () => {
+  it("should throw NotSupported for another Identity's Portfolio before Polymesh 8.1.1", () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: signerDid,
+      actingAddress: signerAddress,
       destinationAssetHolder: entityMockUtils.getDefaultPortfolioInstance({ did: 'strangerDid' }),
+      isDestinationCallers: false,
     });
 
     return expect(
@@ -182,15 +187,53 @@ describe('nftControllerTransfer procedure', () => {
         originPortfolio,
         nfts,
       })
-    ).rejects.toThrow(
-      "Controller transfer must send to one of the signer's portfolios or accounts"
+    ).rejects.toThrow(expect.objectContaining({ code: ErrorCode.NotSupported }));
+  });
+
+  it("should use controllerTransferTo for another Identity's Portfolio", async () => {
+    const strangerPortfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'strangerDid' });
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      did: signerDid,
+      actingAddress: signerAddress,
+      destinationAssetHolder: strangerPortfolio,
+      isDestinationCallers: false,
+    });
+
+    assetHolderLikeToAssetHolderSpy.mockReturnValueOnce(originPortfolio);
+    const assertDestinationAcceptedSpy = jest
+      .spyOn(proceduresUtilsModule, 'assertControllerTransferDestinationAccepted')
+      .mockResolvedValue();
+    jest.spyOn(proceduresUtilsModule, 'assertAssetHolderExists').mockResolvedValue();
+
+    const transaction = dsMockUtils.createTxMock('nft', 'controllerTransferTo');
+
+    const result = await prepareNftControllerTransfer.call(proc, {
+      collection,
+      originPortfolio,
+      nfts,
+    });
+
+    expect(assertDestinationAcceptedSpy).toHaveBeenCalledWith(
+      strangerPortfolio,
+      collection,
+      { did: signerDid, address: signerAddress },
+      mockContext
     );
+    expect(result).toEqual({
+      transaction,
+      args: [rawNfts, rawPortfolioAssetHolder, rawPortfolioAssetHolder],
+      resolver: undefined,
+    });
+
+    assertDestinationAcceptedSpy.mockRestore();
   });
 
   it('should throw an error if the Portfolio does not have enough balance to transfer', () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: signerDid,
+      actingAddress: signerAddress,
       destinationAssetHolder: destinationPortfolio,
+      isDestinationCallers: true,
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -208,7 +251,9 @@ describe('nftControllerTransfer procedure', () => {
   it('should return an nft controller transfer transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: signerDid,
+      actingAddress: signerAddress,
       destinationAssetHolder: destinationPortfolio,
+      isDestinationCallers: true,
     });
 
     assetHolderLikeToAssetHolderSpy.mockReturnValue(originPortfolio);
@@ -234,7 +279,9 @@ describe('nftControllerTransfer procedure', () => {
 
       let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         did: 'oneDid',
+        actingAddress: signerAddress,
         destinationAssetHolder: destinationPortfolio,
+        isDestinationCallers: true,
       });
       let boundFunc = getAuthorization.bind(proc);
 
@@ -258,7 +305,9 @@ describe('nftControllerTransfer procedure', () => {
 
       proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         did: 'oneDid',
+        actingAddress: signerAddress,
         destinationAssetHolder: destinationAccount,
+        isDestinationCallers: true,
       });
       boundFunc = getAuthorization.bind(proc);
 
@@ -267,6 +316,24 @@ describe('nftControllerTransfer procedure', () => {
       ).toEqual({
         permissions: {
           transactions: [TxTags.nft.ControllerTransfer],
+          assets: [collection],
+          portfolios: [],
+        },
+      });
+    });
+
+    it('should require only the Asset permission for a named destination', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        did: 'oneDid',
+        actingAddress: signerAddress,
+        destinationAssetHolder: destinationPortfolio,
+        isDestinationCallers: false,
+      });
+      const boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc({ collection, originPortfolio, nfts })).toEqual({
+        permissions: {
+          transactions: [TxTags.nft.ControllerTransferTo],
           assets: [collection],
           portfolios: [],
         },
@@ -289,12 +356,10 @@ describe('nftControllerTransfer procedure', () => {
         destination: destinationPortfolio,
       });
 
-      expect(JSON.stringify(result)).toEqual(
-        JSON.stringify({
-          did: 'someDid',
-          destinationAssetHolder: destinationPortfolio,
-        })
-      );
+      expect(result.did).toBe('someDid');
+      expect(result.destinationAssetHolder).toBe(destinationPortfolio);
+      // the mock signing Identity is `someDid`, which does not own `signerDid`'s Portfolio
+      expect(result.isDestinationCallers).toBe(false);
 
       when(assetHolderLikeToAssetHolderSpy)
         .calledWith(destinationAccount, mockContext)
@@ -307,12 +372,9 @@ describe('nftControllerTransfer procedure', () => {
         destination: destinationAccount,
       });
 
-      expect(JSON.stringify(result)).toEqual(
-        JSON.stringify({
-          did: 'someDid',
-          destinationAssetHolder: destinationAccount,
-        })
-      );
+      expect(result.destinationAssetHolder).toBe(destinationAccount);
+      // `someAddress` is not the mock acting Account
+      expect(result.isDestinationCallers).toBe(false);
     });
 
     it('should return the default portfolio if destination is not provided', async () => {
@@ -323,12 +385,11 @@ describe('nftControllerTransfer procedure', () => {
       const boundFunc = prepareStorage.bind(proc);
       const result = await boundFunc({ collection, originPortfolio, nfts });
 
-      expect(JSON.stringify(result)).toEqual(
-        JSON.stringify({
-          did: 'signerDid',
-          destinationAssetHolder: destinationPortfolio,
-        })
+      expect(result.did).toBe('signerDid');
+      expect(JSON.stringify(result.destinationAssetHolder)).toEqual(
+        JSON.stringify(destinationPortfolio)
       );
+      expect(result.isDestinationCallers).toBe(true);
     });
   });
 });

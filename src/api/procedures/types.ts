@@ -1283,7 +1283,8 @@ export interface ControllerTransferParams {
   amount: BigNumber;
 
   /**
-   * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to default portfolio. If specified it must be one of the callers own portfolios or accounts
+   * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to the caller's default portfolio.
+   *   From Polymesh 8.1.1 it can be any portfolio or account; before, it must be one of the caller's own portfolios or the signing account
    */
   destination?: AssetHolderLike;
 }
@@ -1299,7 +1300,8 @@ export interface NftControllerTransferParams {
   nfts: (Nft | BigNumber)[];
 
   /**
-   * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to default portfolio. If specified it must be one of the callers own portfolios or accounts
+   * (optional) portfolio (or portfolio ID) or account to which NFTs will be transferred to. Defaults to the caller's default portfolio.
+   *   From Polymesh 8.1.1 it can be any portfolio or account; before, it must be one of the caller's own portfolios or the signing account
    */
   destination?: AssetHolderLike;
 }

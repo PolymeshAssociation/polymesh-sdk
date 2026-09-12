@@ -8,6 +8,7 @@ import {
   assertAuthorizationRequestValid,
   assertCaCheckpointValid,
   assertCaTaxWithholdingsValid,
+  assertControllerTransferDestinationAccepted,
   assertDistributionDatesValid,
   assertGroupDoesNotExist,
   assertInstructionValid,
@@ -437,6 +438,164 @@ describe('assertTxSupported', () => {
     expect(() => assertTxSupported(TxTags.nft.Approve, '8.1.1', context)).toThrow(
       expect.objectContaining({ code: ErrorCode.NotSupported })
     );
+  });
+});
+
+describe('assertControllerTransferDestinationAccepted', () => {
+  const caller = { did: 'callerDid', address: 'callerAddress' };
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    jest.spyOn(utilsConversionModule, 'assetToMeshAssetId').mockReturnValue(
+      dsMockUtils.createMockAssetId('0x12341234123412341234123412341234')
+    );
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  const setExempt = (isExempt: boolean): void => {
+    dsMockUtils.createQueryMock('asset', 'assetsExemptFromAffirmation', {
+      returnValue: dsMockUtils.createMockBool(isExempt),
+    });
+  };
+
+  const receiver = (opts: {
+    requiresAffirmation: boolean;
+    isAssetPreApproved?: boolean;
+    did?: string;
+  }): Identity =>
+    entityMockUtils.getIdentityInstance({
+      did: opts.did ?? 'receiverDid',
+      isMandatoryReceiverAffirmationEnabled: opts.requiresAffirmation,
+      isAssetPreApproved: opts.isAssetPreApproved ?? false,
+    });
+
+  it("should accept the caller's own Account without reading anything else", async () => {
+    const context = dsMockUtils.getContextInstance();
+    const identity = receiver({ requiresAffirmation: true });
+    const destination = entityMockUtils.getAccountInstance({
+      address: caller.address,
+      getIdentity: identity,
+    });
+
+    await expect(
+      assertControllerTransferDestinationAccepted(
+        destination,
+        entityMockUtils.getFungibleAssetInstance(),
+        caller,
+        context
+      )
+    ).resolves.not.toThrow();
+    expect(identity.isMandatoryReceiverAffirmationEnabled).not.toHaveBeenCalled();
+  });
+
+  it("should accept a Portfolio in the caller's custody", async () => {
+    const context = dsMockUtils.getContextInstance();
+    const destination = entityMockUtils.getNumberedPortfolioInstance({
+      getCustodian: receiver({ requiresAffirmation: true, did: caller.did }),
+    });
+
+    await expect(
+      assertControllerTransferDestinationAccepted(
+        destination,
+        entityMockUtils.getFungibleAssetInstance(),
+        caller,
+        context
+      )
+    ).resolves.not.toThrow();
+  });
+
+  it.each([
+    ['does not require affirmation', { requiresAffirmation: false }, false],
+    ['is exempt from affirmation', { requiresAffirmation: true }, true],
+    ['has been pre-approved', { requiresAffirmation: true, isAssetPreApproved: true }, false],
+  ])('should accept a receiver whose Asset %s', async (_, receiverOpts, isExempt) => {
+    const context = dsMockUtils.getContextInstance();
+    setExempt(isExempt);
+    const destination = entityMockUtils.getAccountInstance({
+      address: 'receiverAddress',
+      getIdentity: receiver(receiverOpts),
+    });
+
+    await expect(
+      assertControllerTransferDestinationAccepted(
+        destination,
+        entityMockUtils.getFungibleAssetInstance(),
+        caller,
+        context
+      )
+    ).resolves.not.toThrow();
+  });
+
+  it('should accept a Portfolio that has pre-approved the Asset', async () => {
+    const context = dsMockUtils.getContextInstance();
+    setExempt(false);
+    const destination = entityMockUtils.getNumberedPortfolioInstance({
+      getCustodian: receiver({ requiresAffirmation: true }),
+      isAssetPreApproved: true,
+    });
+
+    await expect(
+      assertControllerTransferDestinationAccepted(
+        destination,
+        entityMockUtils.getFungibleAssetInstance(),
+        caller,
+        context
+      )
+    ).resolves.not.toThrow();
+  });
+
+  it('should throw if the receiver would have to affirm the transfer', () => {
+    const context = dsMockUtils.getContextInstance();
+    setExempt(false);
+    const destination = entityMockUtils.getNumberedPortfolioInstance({
+      getCustodian: receiver({ requiresAffirmation: true }),
+      isAssetPreApproved: false,
+    });
+
+    return expect(
+      assertControllerTransferDestinationAccepted(
+        destination,
+        entityMockUtils.getFungibleAssetInstance(),
+        caller,
+        context
+      )
+    ).rejects.toThrow(
+      new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message:
+          'The destination must affirm incoming transfers of this Asset, which a controller transfer cannot do. It must pre-approve the Asset first',
+      })
+    );
+  });
+
+  it('should throw if the destination Account has no Identity', () => {
+    const context = dsMockUtils.getContextInstance();
+    const destination = entityMockUtils.getAccountInstance({
+      address: 'receiverAddress',
+      getIdentity: null,
+    });
+
+    return expect(
+      assertControllerTransferDestinationAccepted(
+        destination,
+        entityMockUtils.getFungibleAssetInstance(),
+        caller,
+        context
+      )
+    ).rejects.toThrow('The destination Account has no Identity to receive the Asset');
   });
 });
 
