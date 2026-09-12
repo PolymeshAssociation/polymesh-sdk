@@ -26,7 +26,7 @@ import {
   subscribeForTransactionFinalization,
   TransactionInclusionInfo,
 } from '~/base/utils';
-import { Context, Identity, MultiSigProposal, PolymeshError } from '~/internal';
+import { Account, Context, Identity, MultiSigProposal, PolymeshError } from '~/internal';
 import { latestBlockQuery } from '~/middleware/queries/common';
 import { Query } from '~/middleware/types';
 import {
@@ -155,10 +155,13 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
-   * Identity that will pay for this transaction's fees. This value overrides any subsidy,
-   *   and is seen as having infinite allowance (but still constrained by its current balance)
+   * Identity, or Account, that will pay for this transaction's fees. This value overrides any
+   *   subsidy, and is seen as having infinite allowance (but still constrained by its current
+   *   balance). An Identity pays through its primary key; an Account pays itself, which is what
+   *   the chain does for a key named by the call, such as the paying key of a subsidy being
+   *   accepted
    */
-  protected paidForBy?: Identity | undefined;
+  protected paidForBy?: Identity | Account | undefined;
 
   /**
    * @hidden
@@ -1582,11 +1585,14 @@ export abstract class PolymeshTransactionBase<
       !context.supportsEthFeeDelegation();
 
     if (paidForBy && !paysOwnFees) {
-      const { account: primaryAccount } = await paidForBy.getPrimaryAccount();
+      const account =
+        paidForBy instanceof Account
+          ? paidForBy
+          : (await paidForBy.getPrimaryAccount()).account;
 
       return {
         type: PayingAccountType.Other,
-        account: primaryAccount,
+        account,
       };
     }
 

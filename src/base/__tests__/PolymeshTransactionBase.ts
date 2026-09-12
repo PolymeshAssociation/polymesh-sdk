@@ -1649,6 +1649,39 @@ describe('Polymesh Transaction Base class', () => {
       expect(payingAccountData.balance).toEqual(new BigNumber(100000));
     });
 
+    it('should charge an Account named as the payer directly, without resolving a primary key', async () => {
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
+        gas: rawGasFees[0]!,
+      });
+      // a subsidy's paying key pays for its own acceptance, and need not be a primary key
+      const payingKey = entityMockUtils.getAccountInstance({
+        address: 'payingKey',
+        getBalance: {
+          free: new BigNumber(50000),
+          locked: new BigNumber(0),
+          total: new BigNumber(50000),
+        },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { fee, ...rest } = txSpec;
+      const tx = new PolymeshTransaction<void>(
+        {
+          ...rest,
+          transaction: tx1,
+          args: tuple('TEST'),
+          resolver: undefined,
+          paidForBy: payingKey,
+        },
+        context
+      );
+
+      const { payingAccountData } = await tx.getTotalFees();
+
+      expect(payingAccountData.type).toBe(PayingAccountType.Other);
+      expect(payingAccountData.account.address).toBe('payingKey');
+    });
+
     it('should use MultiSig payer when asProposal is true and signing account is MultiSig signer', async () => {
       const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         gas: rawGasFees[0]!,

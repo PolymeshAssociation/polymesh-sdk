@@ -20,7 +20,7 @@ import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/ty
 import BigNumber from 'bignumber.js';
 
 import { ExtrinsicMatcher } from '~/base/utils';
-import { Identity, Procedure } from '~/internal';
+import { Account, Identity, Procedure } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   ClaimType,
@@ -175,11 +175,14 @@ export function isResolverFunction<ReturnValue>(
  */
 export interface BaseTransactionSpec<ReturnValue, TransformedReturnValue = ReturnValue> {
   /**
-   * third party Identity that will pay for the transaction (for example when joining an Identity/multisig as a secondary key).
+   * third party that will pay for the transaction (for example when joining an Identity/multisig as a secondary key).
    *   This is separate from a subsidy, and takes precedence over it. If the signing Account is being subsidized and
-   *   they try to execute a transaction with `paidForBy` set, the fees will be paid for by the `paidForBy` Identity
+   *   they try to execute a transaction with `paidForBy` set, the fees will be paid for by the `paidForBy` party
+   *
+   * @note an Identity pays through its primary key. Pass an Account where the chain charges the key
+   *   the call names, rather than an Identity, as it does for the paying key of a subsidy being accepted
    */
-  paidForBy?: Identity | undefined;
+  paidForBy?: Identity | Account | undefined;
 
   /**
    * If present that means the current transaction is a MultiSigProposal and the `signingAccount` is a signer for this MultiSig
