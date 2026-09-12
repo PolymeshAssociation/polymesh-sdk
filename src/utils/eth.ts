@@ -1,4 +1,4 @@
-import { BN, hexToU8a, isHex } from '@polkadot/util';
+import { BN, hexToU8a, isHex, u8aToHex } from '@polkadot/util';
 import { HexString } from '@polkadot/util/types';
 import { decodeAddress, encodeAddress, ethereumEncode, keccakAsU8a } from '@polkadot/util-crypto';
 import { PalletRevivePrimitivesEthTransactError } from '@polymeshassociation/polymesh-types/polkadot/types-lookup';
@@ -6,6 +6,7 @@ import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshError } from '~/internal';
 import { ErrorCode } from '~/types';
+import { hexToUuid, uuidToHex } from '~/utils/strings';
 
 /**
  * @hidden
@@ -31,6 +32,30 @@ const H160_LENGTH = 20;
  *   digest's last 20 bytes
  */
 const KECCAK_ADDRESS_OFFSET = 12;
+
+/**
+ * @hidden
+ *
+ * Length of an `AssetId`, which occupies the leading bytes of an Asset precompile's address
+ */
+const ASSET_ID_LENGTH = 16;
+
+/**
+ * @hidden
+ *
+ * The ids `pallet_revive` routes an Asset precompile call on. Revive reads the id from bytes
+ *   `[16, 18)` of the address, big-endian, and reserves bytes `[18, 20)` for its builtin
+ *   precompiles, so an Asset precompile's address is `<16 byte AssetId> ++ <id> ++ 0x0000`
+ */
+export const ASSET_PRECOMPILE_IDS = {
+  fungible: 0x0008,
+  nonFungible: 0x0009,
+} as const;
+
+/**
+ * @hidden
+ */
+export type AssetPrecompileKind = keyof typeof ASSET_PRECOMPILE_IDS;
 
 /**
  * Return whether the given SS58 address was derived from an Ethereum key, i.e. whether the last
@@ -163,6 +188,66 @@ export function evmAddressFromSs58(address: string, ss58Format: BigNumber): HexS
   }
 
   return ethereumEncode(keccakAsU8a(decoded).subarray(KECCAK_ADDRESS_OFFSET)) as HexString;
+}
+
+/**
+ * @hidden
+ *
+ * Compute the address of the precompile exposing an Asset to EVM contracts:
+ *   `<16 byte AssetId> ++ <precompile id, big-endian> ++ 0x0000`
+ *
+ * @returns the checksummed (EIP-55) `0x`-prefixed address
+ */
+export function assetIdToPrecompileAddress(assetId: string, kind: AssetPrecompileKind): HexString {
+  const precompileId = ASSET_PRECOMPILE_IDS[kind];
+
+  const address = new Uint8Array(H160_LENGTH);
+  address.set(hexToU8a(uuidToHex(assetId)), 0);
+  address[ASSET_ID_LENGTH] = precompileId >> 8;
+  address[ASSET_ID_LENGTH + 1] = precompileId & 0xff;
+
+  return ethereumEncode(address);
+}
+
+/**
+ * @hidden
+ *
+ * Decode the Asset ID, and the kind of Asset precompile, from an Asset precompile's address. The
+ *   inverse of {@link assetIdToPrecompileAddress}
+ *
+ * @throws if the address is not 20 bytes of hex, or does not have the layout of an Asset
+ *   precompile's address
+ */
+export function precompileAddressToAssetId(address: string): {
+  assetId: string;
+  kind: AssetPrecompileKind;
+} {
+  // `hexToU8a` decodes non-hex input to garbage rather than throwing, so validate it up front
+  if (!isHex(address) || hexToU8a(address).length !== H160_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied EVM address must be 20 bytes of hex',
+      data: { address },
+    });
+  }
+
+  const bytes = hexToU8a(address);
+  const precompileId = (bytes[ASSET_ID_LENGTH]! << 8) | bytes[ASSET_ID_LENGTH + 1]!;
+  const reservedBytes = bytes.subarray(ASSET_ID_LENGTH + 2);
+
+  const kind = (Object.keys(ASSET_PRECOMPILE_IDS) as AssetPrecompileKind[]).find(
+    key => ASSET_PRECOMPILE_IDS[key] === precompileId
+  );
+
+  if (!kind || reservedBytes.some(byte => byte !== 0)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied EVM address is not the address of an Asset precompile',
+      data: { address },
+    });
+  }
+
+  return { assetId: hexToUuid(u8aToHex(bytes.subarray(0, ASSET_ID_LENGTH))), kind };
 }
 
 /**

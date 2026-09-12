@@ -46,6 +46,7 @@ import {
   stringToAccountId,
   u128ToBigNumber,
 } from '~/utils/conversion';
+import { assetIdToPrecompileAddress } from '~/utils/eth';
 import {
   asAccount,
   calculateNextKey,
@@ -95,6 +96,20 @@ export class FungibleAsset extends BaseAsset {
       { getProcedureAndArgs: args => [approveAllowance, { asset: this, ...args }] },
       context
     );
+  }
+
+  /**
+   * The address at which this Asset can be called as an ERC-20 token from EVM contracts and
+   *   Ethereum tooling, i.e. `0x<Asset ID>00080000`, EIP-55 checksummed
+   *
+   * @note every fungible Asset is exposed automatically, with nothing to deploy or register. Calls
+   *   run the same checks as the equivalent extrinsic, so compliance, transfer restrictions and
+   *   freezes still apply
+   * @note the ERC-20 precompile is available from Polymesh 8.1. The address is computed, not read
+   *   from the chain, so it is returned on an older chain too, where nothing answers at it
+   */
+  public get evmAddress(): string {
+    return assetIdToPrecompileAddress(this.id, 'fungible');
   }
 
   /**

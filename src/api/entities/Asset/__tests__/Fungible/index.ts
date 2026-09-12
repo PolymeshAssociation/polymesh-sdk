@@ -71,6 +71,15 @@ describe('Fungible class', () => {
     });
   });
 
+  describe('getter: evmAddress', () => {
+    it('should return the checksummed address of the ERC-20 precompile for the Asset', () => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ assetId: '12345678-90ab-cdef-1234-567890abcdef' }, context);
+
+      expect(asset.evmAddress).toBe('0x1234567890abcdEF1234567890aBCdeF00080000');
+    });
+  });
+
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
       expect(

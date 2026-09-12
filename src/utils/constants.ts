@@ -157,6 +157,16 @@ export const MAX_LEGS_LENGTH = 10;
 export const DEFAULT_CDD_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
 /**
+ * Address of the `IPolymeshRuntime` precompile, which exposes Asset creation, ticker registration,
+ *   DID onboarding and external agent authorization to EVM contracts. The address is the same on
+ *   every network
+ *
+ * @note available from Polymesh 8.1.1. Every one of its methods changes state, so it cannot be
+ *   simulated with a read-only `eth_call`
+ */
+export const POLYMESH_RUNTIME_PRECOMPILE_ADDRESS = '0x00000000000000000000000000000000ffFF0000';
+
+/**
  * Minimum version of Middleware V2 GraphQL Service (SubQuery) that is compatible with this version of the SDK
  */
 export const MINIMUM_SQ_VERSION = 'v19.6.0-alpha.2 ';

@@ -43,6 +43,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { precompileAddressToAssetId } from '~/utils/eth';
 import {
   asAsset,
   assembleAssetQuery,
@@ -53,6 +54,7 @@ import {
   isPrintableAscii,
   requestPaginated,
 } from '~/utils/internal';
+import { isNftCollection } from '~/utils/typeguards';
 
 /**
  * Handles all Asset related functionality
@@ -255,6 +257,39 @@ export class Assets {
     }
 
     return asAsset(assetIdValue!, context);
+  }
+
+  /**
+   * Retrieve the FungibleAsset or NftCollection that an EVM precompile address exposes, i.e. the
+   *   inverse of {@link api/entities/Asset/Fungible!FungibleAsset.evmAddress | FungibleAsset.evmAddress}
+   *   and {@link api/entities/Asset/NonFungible/NftCollection!NftCollection.evmAddress | NftCollection.evmAddress}
+   *
+   * @param args.address - the `0x`-prefixed 20 byte address, in any letter case
+   *
+   * @throws if the address does not have the layout of an Asset precompile's address, if no Asset
+   *   exists with the Asset ID it encodes, or if it is the ERC-20 address of an NFT collection or
+   *   the ERC-721 address of a fungible Asset (neither answers on chain)
+   */
+  public async getAssetFromEvmAddress(args: { address: string }): Promise<Asset> {
+    const { context } = this;
+    const { address } = args;
+
+    const { assetId, kind } = precompileAddressToAssetId(address);
+
+    const asset = await asAsset(assetId, context);
+
+    if (isNftCollection(asset) !== (kind === 'nonFungible')) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          kind === 'nonFungible'
+            ? 'The supplied address is the ERC-721 precompile address of a fungible Asset'
+            : 'The supplied address is the ERC-20 precompile address of an NFT collection',
+        data: { address, assetId },
+      });
+    }
+
+    return asset;
   }
 
   /**

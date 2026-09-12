@@ -7,14 +7,17 @@ import { PolymeshError } from '~/base/PolymeshError';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
 import {
+  assetIdToPrecompileAddress,
   ethAddressFromSs58,
   evmAddressFromSs58,
   isEthDerivedAddress,
   parseEthTransactError,
+  precompileAddressToAssetId,
   ss58FromEthAddress,
 } from '~/utils/eth';
 
 describe('eth utils', () => {
+  const malformedAddress = 'not an address';
   const h160 = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd';
   const checksummedH160 = ethereumEncode(hexToU8a(h160));
 
@@ -59,7 +62,7 @@ describe('eth utils', () => {
     );
 
     it('should return false rather than throw for a malformed address', () => {
-      expect(isEthDerivedAddress('not an address', new BigNumber(42))).toBe(false);
+      expect(isEthDerivedAddress(malformedAddress, new BigNumber(42))).toBe(false);
       expect(isEthDerivedAddress('', new BigNumber(42))).toBe(false);
     });
 
@@ -184,7 +187,7 @@ describe('eth utils', () => {
     });
 
     it('should throw a ValidationError if the address is not a valid ss58 address', () => {
-      expect(() => evmAddressFromSs58('not an address', new BigNumber(42))).toThrow(
+      expect(() => evmAddressFromSs58(malformedAddress, new BigNumber(42))).toThrow(
         expect.objectContaining({
           code: ErrorCode.ValidationError,
           message: 'The supplied address is not a valid SS58 address',
@@ -268,6 +271,76 @@ describe('eth utils', () => {
         expect(isEthDerivedAddress(ss58Format12, format12)).toBe(true);
       }
     );
+  });
+
+  describe('assetIdToPrecompileAddress', () => {
+    const assetId = '12345678-90ab-cdef-1234-567890abcdef';
+
+    it('should lay out the Asset ID, the ERC-20 precompile id and the reserved bytes', () => {
+      expect(assetIdToPrecompileAddress(assetId, 'fungible')).toBe(
+        '0x1234567890abcdEF1234567890aBCdeF00080000'
+      );
+    });
+
+    it('should lay out the Asset ID, the ERC-721 precompile id and the reserved bytes', () => {
+      expect(assetIdToPrecompileAddress(assetId, 'nonFungible')).toBe(
+        '0x1234567890aBcdeF1234567890aBcdeF00090000'
+      );
+    });
+
+    it('should throw if the Asset ID is not a UUID', () => {
+      expect(() => assetIdToPrecompileAddress('not a uuid', 'fungible')).toThrow(
+        expect.objectContaining({ code: ErrorCode.ValidationError })
+      );
+    });
+  });
+
+  describe('precompileAddressToAssetId', () => {
+    const assetId = '12345678-90ab-cdef-1234-567890abcdef';
+
+    it.each(['fungible', 'nonFungible'] as const)(
+      'should round trip a %s precompile address',
+      kind => {
+        expect(precompileAddressToAssetId(assetIdToPrecompileAddress(assetId, kind))).toEqual({
+          assetId,
+          kind,
+        });
+      }
+    );
+
+    it('should accept an address in any letter case', () => {
+      expect(
+        precompileAddressToAssetId('0x1234567890ABCDEF1234567890ABCDEF00080000').assetId
+      ).toBe(assetId);
+    });
+
+    it('should throw if the address is not hex', () => {
+      expect(() => precompileAddressToAssetId(malformedAddress)).toThrow(
+        expect.objectContaining({
+          code: ErrorCode.ValidationError,
+          message: 'The supplied EVM address must be 20 bytes of hex',
+        })
+      );
+    });
+
+    it('should throw if the address is not 20 bytes', () => {
+      expect(() => precompileAddressToAssetId('0x1234567890abcdef1234567890abcdef0008')).toThrow(
+        expect.objectContaining({ message: 'The supplied EVM address must be 20 bytes of hex' })
+      );
+    });
+
+    it.each([
+      ['an unknown precompile id', '0x1234567890abcdef1234567890abcdef00070000'],
+      ['non zero reserved bytes', '0x1234567890abcdef1234567890abcdef00080001'],
+      ['the runtime precompile', '0x00000000000000000000000000000000ffff0000'],
+    ])('should throw for %s', (_, address) => {
+      expect(() => precompileAddressToAssetId(address)).toThrow(
+        expect.objectContaining({
+          code: ErrorCode.ValidationError,
+          message: 'The supplied EVM address is not the address of an Asset precompile',
+        })
+      );
+    });
   });
 
   describe('parseEthTransactError', () => {
