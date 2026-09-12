@@ -2107,6 +2107,21 @@ export type TransferFundsParams = (InstructionFungibleLeg | InstructionNftLeg) &
   memo?: string;
 };
 
+export interface ApproveNftParams {
+  /**
+   * the Account that may transfer the NFT on its holder's behalf. It replaces any Account approved
+   *   before, since an NFT has at most one
+   */
+  spender: AccountLike;
+}
+
+export interface NftOperatorParams {
+  /**
+   * the Account that may transfer any of the signing Account's NFTs in the collection
+   */
+  operator: AccountLike;
+}
+
 export interface FreezeHolderParams {
   /**
    * the Account or Portfolio to freeze or unfreeze. This holder alone is affected, not its

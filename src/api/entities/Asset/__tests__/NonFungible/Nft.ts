@@ -377,6 +377,63 @@ describe('Nft class', () => {
     });
   });
 
+  describe.each([
+    ['approve', { spender: 'someSpender' }, 'someSpender'],
+    ['clearApproval', undefined, null],
+  ] as const)('method: %s', (method, args, spender) => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const nft = new Nft(
+        { assetId: '12341234-1234-1234-1234-123412341234', id: new BigNumber(1) },
+        context
+      );
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { nft, spender }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = method === 'approve' ? await nft.approve(args!) : await nft.clearApproval();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getApproval', () => {
+    const assetId = '12341234-1234-1234-1234-123412341234';
+    const id = new BigNumber(1);
+
+    it('should return the approved Account', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const spender = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+      dsMockUtils.createQueryMock('nft', 'tokenApproval', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId(spender)),
+      });
+      jest.spyOn(utilsConversionModule, 'accountIdToString').mockReturnValue(spender);
+
+      const result = await new Nft({ assetId, id }, context).getApproval();
+
+      expect(result).toEqual(expect.objectContaining({ address: spender }));
+    });
+
+    it('should return null if no Account is approved', async () => {
+      const context = dsMockUtils.getContextInstance();
+      dsMockUtils.createQueryMock('nft', 'tokenApproval', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      await expect(new Nft({ assetId, id }, context).getApproval()).resolves.toBeNull();
+    });
+
+    it('should return null on a chain without NFT approvals', async () => {
+      const context = dsMockUtils.getContextInstance();
+      dsMockUtils.createQueryMock('nft', 'owner');
+
+      await expect(new Nft({ assetId, id }, context).getApproval()).resolves.toBeNull();
+    });
+  });
+
   describe('method: getOwner', () => {
     const assetId = '12341234-1234-1234-1234-123412341234';
     const id = new BigNumber(1);
