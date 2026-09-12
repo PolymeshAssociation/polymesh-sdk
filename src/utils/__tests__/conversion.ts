@@ -4031,6 +4031,14 @@ describe('assetDispatchErrorToTransferError', () => {
 
     expect(result).toEqual(TransferError.TransfersFrozen);
 
+    dsMockUtils.setErrorMock('asset', 'InvalidTransferSenderIsFrozen', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.SenderFrozen);
+
     dsMockUtils.setErrorMock('asset', 'InvalidTransferComplianceFailure', {
       returnValue: { is: jest.fn().mockReturnValueOnce(true) },
     });

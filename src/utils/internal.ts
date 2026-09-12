@@ -7,12 +7,13 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { Bytes, Option, StorageKey, u32, u64 } from '@polkadot/types';
+import { Bytes, Option, StorageKey, u32, u64, u128 } from '@polkadot/types';
 import { EventRecord, RewardDestination } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
   PalletAssetAssetDetails,
   PalletCorporateActionsCorporateAction,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatType,
@@ -47,6 +48,7 @@ import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/typ
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   Asset,
+  AssetHolderLike,
   AssetStat,
   AttestPrimaryKeyRotationAuthorizationData,
   Authorization,
@@ -62,6 +64,7 @@ import {
   ErrorCode,
   GenericAuthorizationData,
   GenericPolymeshTransaction,
+  HolderFreezeStatus,
   InputCaCheckpoint,
   InputCondition,
   ModuleName,
@@ -71,6 +74,7 @@ import {
   OptionalArgsProcedureMethod,
   PaginationOptions,
   PermissionedAccount,
+  PortfolioBalance,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
   ProcedureOpts,
@@ -113,8 +117,10 @@ import {
   SUPPORTED_SPEC_VERSION_RANGE,
 } from '~/utils/constants';
 import {
+  assetHolderLikeToAssetHolderId,
   assetIdToString,
   assetToMeshAssetId,
+  balanceToBigNumber,
   bigNumberToU32,
   boolToBoolean,
   claimIssuerToMeshClaimIssuer,
@@ -124,6 +130,7 @@ import {
   meshPermissionsToPermissionsV2,
   middlewareScopeToScope,
   momentToDate,
+  portfolioIdToMeshPortfolioId,
   signerToString,
   stakingRewardDestinationToRaw,
   statisticsOpTypeToStatType,
@@ -1162,6 +1169,108 @@ export async function asAssetId(asset: string | BaseAsset, context: Context): Pr
   const base = await asBaseAsset(asset, context);
 
   return base.id;
+}
+
+/**
+ * @hidden
+ *
+ * Assemble a holder's balance of a fungible Asset. `free` is what the holder can send, since the
+ *   chain moves neither locked nor frozen tokens on the holder's behalf. It is clamped at zero,
+ *   because an agent can set the frozen amount above the balance
+ */
+export function assembleHolderBalance(
+  asset: FungibleAsset,
+  total: BigNumber,
+  locked: BigNumber,
+  frozen: BigNumber
+): PortfolioBalance {
+  return {
+    asset,
+    total,
+    locked,
+    frozen,
+    free: BigNumber.max(total.minus(locked).minus(frozen), 0),
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Type a chain API member as possibly absent
+ *
+ * The augmented types describe the newest runtime the SDK supports, so a storage entry or extrinsic
+ *   added in a later release is typed as always present — even when connected to a chain that
+ *   predates it, where it is `undefined` at runtime. Assigning through this keeps the guard
+ *   honest to the type system, which would otherwise narrow it away
+ */
+export function asOptionalApi<T>(member: T): T | undefined {
+  return member;
+}
+
+/**
+ * @hidden
+ *
+ * Read how an Asset agent has frozen one holder of an Asset: whether it is frozen outright, and how
+ *   much of its balance is frozen. An Account's freeze is kept by the Asset pallet, a Portfolio's by
+ *   the Portfolio pallet
+ *
+ * @note reports an unfrozen holder before Polymesh 8.1.1, whose metadata has none of this storage
+ */
+export async function getHolderFreezeStatus(
+  holder: AssetHolderLike,
+  asset: BaseAsset,
+  context: Context
+): Promise<HolderFreezeStatus> {
+  const {
+    polymeshApi: {
+      query: { asset: assetQuery, portfolio: portfolioQuery },
+    },
+  } = context;
+
+  const holderId = assetHolderLikeToAssetHolderId(holder);
+  const rawAssetId = assetToMeshAssetId(asset, context);
+
+  let rawIsFrozen;
+  let rawFrozen;
+
+  if (typeof holderId === 'string') {
+    const rawAccountId = stringToAccountId(holderId, context);
+
+    [rawIsFrozen, rawFrozen] = await Promise.all([
+      asOptionalApi(assetQuery.frozenAccounts)?.(rawAccountId, rawAssetId),
+      asOptionalApi(assetQuery.frozenBalance)?.(rawAccountId, rawAssetId),
+    ]);
+  } else {
+    const rawPortfolioId = portfolioIdToMeshPortfolioId(holderId, context);
+
+    [rawIsFrozen, rawFrozen] = await Promise.all([
+      asOptionalApi(portfolioQuery.frozenPortfolios)?.(rawPortfolioId, rawAssetId),
+      asOptionalApi(portfolioQuery.portfolioFrozenAssets)?.(rawPortfolioId, rawAssetId),
+    ]);
+  }
+
+  return {
+    isFrozen: rawIsFrozen ? boolToBoolean(rawIsFrozen) : false,
+    frozen: rawFrozen ? balanceToBigNumber(rawFrozen) : new BigNumber(0),
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Index balance storage entries keyed `(holder, AssetId)` by Asset ID, for a holder whose entries
+ *   were read with a prefix scan
+ */
+export function balanceEntriesByAssetId(
+  entries: [StorageKey<[Codec, PolymeshPrimitivesAssetAssetId]>, u128][]
+): Record<string, BigNumber> {
+  const balances: Record<string, BigNumber> = {};
+
+  entries.forEach(([key, balance]) => {
+    balances[assetIdToString(key.args[1])] = balanceToBigNumber(balance);
+  });
+
+  return balances;
 }
 
 /**
