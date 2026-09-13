@@ -535,7 +535,8 @@ describe('investInOffering procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        getAssetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+        // funding off chain pays nothing on chain, so an empty Portfolio can still invest
+        getAssetBalances: [{ free: new BigNumber(0) }] as PortfolioBalance[],
       },
     });
 
@@ -560,6 +561,87 @@ describe('investInOffering procedure', () => {
       transaction,
       args: [rawAssetId, rawId, rawPurchasePortfolio, rawOffChainFunding, rawPurchaseAmount, null],
       resolver: undefined,
+    });
+  });
+
+  describe('with on chain funding', () => {
+    let portfolioIdToPortfolioSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      entityMockUtils.configureMocks({
+        offeringOptions: {
+          details: {
+            status: {
+              sale: OfferingSaleStatus.Live,
+              timing: OfferingTimingStatus.Started,
+              balance: OfferingBalanceStatus.Available,
+            },
+            end: new Date('12/12/2030'),
+            minInvestment: new BigNumber(25),
+            tiers: [
+              {
+                remaining: new BigNumber(50),
+                amount: new BigNumber(100),
+                price: new BigNumber(1),
+              },
+            ],
+          },
+        },
+      });
+    });
+
+    afterEach(() => {
+      portfolioIdToPortfolioSpy.mockRestore();
+    });
+
+    const mockPortfolioBalances = (purchaseFree: BigNumber, fundingFree: BigNumber): void => {
+      const purchase = entityMockUtils.getDefaultPortfolioInstance({
+        did: purchasePortfolioId.did,
+        getAssetBalances: [{ free: purchaseFree }] as PortfolioBalance[],
+      });
+      const funding = entityMockUtils.getDefaultPortfolioInstance({
+        did: fundingPortfolioId.did,
+        getAssetBalances: [{ free: fundingFree }] as PortfolioBalance[],
+      });
+
+      portfolioIdToPortfolioSpy = jest
+        .spyOn(utilsConversionModule, 'portfolioIdToPortfolio')
+        .mockImplementation(
+          ({ did }) =>
+            (did === fundingPortfolioId.did ? funding : purchase) as unknown as DefaultPortfolio
+        );
+    };
+
+    it('should check the funding Portfolio can pay, whatever the purchase Portfolio holds', async () => {
+      mockPortfolioBalances(new BigNumber(0), new BigNumber(50));
+
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        purchasePortfolioId,
+        fundingPortfolioId,
+      });
+
+      const transaction = dsMockUtils.createTxMock('sto', 'invest');
+
+      const result = await prepareInvestInSto.call(proc, args);
+
+      expect(result).toEqual({
+        transaction,
+        args: [rawAssetId, rawId, rawPurchasePortfolio, rawFunding, rawPurchaseAmount, null],
+        resolver: undefined,
+      });
+    });
+
+    it('should throw if the funding Portfolio cannot pay, whatever the purchase Portfolio holds', () => {
+      mockPortfolioBalances(new BigNumber(200), new BigNumber(1));
+
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        purchasePortfolioId,
+        fundingPortfolioId,
+      });
+
+      return expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
+        'The Portfolio does not have enough free balance for this investment'
+      );
     });
   });
 

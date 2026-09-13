@@ -1,7 +1,7 @@
 import { PalletStoFundingMethod } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
-import { Offering, PolymeshError, Procedure } from '~/internal';
+import { Context, Offering, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
   FungibleAsset,
@@ -114,6 +114,40 @@ export const calculateTierStats = (
 
 /**
  * @hidden
+ *
+ * Throw if the Portfolio paying for an investment on chain cannot cover its price. The chain takes
+ *   payment from the funding Portfolio, not the purchase Portfolio, and funding off chain moves no
+ *   raising currency on chain, so there is nothing to check
+ */
+async function assertFundingBalanceSufficient(
+  storage: Storage,
+  raisingCurrency: string,
+  priceTotal: BigNumber,
+  context: Context
+): Promise<void> {
+  if (!('fundingPortfolioId' in storage)) {
+    return;
+  }
+
+  const fundingPortfolio = portfolioIdToPortfolio(storage.fundingPortfolioId, context);
+
+  const [balanceResult] = await fundingPortfolio.getAssetBalances({
+    assets: [raisingCurrency],
+  });
+
+  const { free } = balanceResult!;
+
+  if (free.lt(priceTotal)) {
+    throw new PolymeshError({
+      code: ErrorCode.InsufficientBalance,
+      message: 'The Portfolio does not have enough free balance for this investment',
+      data: { free, priceTotal },
+    });
+  }
+}
+
+/**
+ * @hidden
  */
 export async function prepareInvestInSto(
   this: Procedure<Params, void, Storage>,
@@ -163,21 +197,7 @@ export async function prepareInvestInSto(
     });
   }
 
-  const portfolio = portfolioIdToPortfolio(purchasePortfolioId, context);
-
-  const [balanceResult] = await portfolio.getAssetBalances({
-    assets: [raisingCurrency],
-  });
-
-  const { free: freeAssetBalance } = balanceResult!;
-
-  if (freeAssetBalance.lt(priceTotal)) {
-    throw new PolymeshError({
-      code: ErrorCode.InsufficientBalance,
-      message: 'The Portfolio does not have enough free balance for this investment',
-      data: { free: freeAssetBalance, priceTotal },
-    });
-  }
+  await assertFundingBalanceSufficient(storage, raisingCurrency, priceTotal, context);
 
   if (remainingTotal.lt(purchaseAmount)) {
     throw new PolymeshError({
