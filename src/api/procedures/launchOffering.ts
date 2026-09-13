@@ -1,7 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
-import { assertPortfolioExists } from '~/api/procedures/utils';
+import { assertHoldersNotFrozen, assertPortfolioExists } from '~/api/procedures/utils';
 import { Context, FungibleAsset, Identity, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, LaunchOfferingParams, PortfolioId, RoleType, TxTags, VenueType } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
@@ -72,6 +72,7 @@ export async function prepareLaunchOffering(
     portfolio.getAssetBalances({
       assets: [asset],
     }),
+    assertHoldersNotFrozen([{ holder: portfolio, asset }], context),
   ]);
 
   const { free } = balanceResult!;

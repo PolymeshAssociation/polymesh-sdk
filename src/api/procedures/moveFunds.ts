@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { uniq } from 'lodash';
 
-import { assertPortfolioExists } from '~/api/procedures/utils';
+import { assertHoldersNotFrozen, assertPortfolioExists } from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
@@ -145,6 +145,11 @@ export async function prepareMoveFunds(
       message: 'Origin and destination should be different Portfolios',
     });
   }
+
+  await assertHoldersNotFrozen(
+    [...fungibleMovements, ...nftMovements].map(({ asset }) => ({ holder: fromPortfolio, asset })),
+    context
+  );
 
   const [fungibleBalances, heldCollections] = await Promise.all([
     fromPortfolio.getAssetBalances({

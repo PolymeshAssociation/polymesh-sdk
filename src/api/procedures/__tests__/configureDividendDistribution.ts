@@ -18,6 +18,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/configureDividendDistribution';
+import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DividendDistribution, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -96,6 +97,8 @@ describe('configureDividendDistribution procedure', () => {
   let corporateActionParamsToMeshCorporateActionArgsSpy: jest.SpyInstance;
   let asFungibleAssetSpy: jest.SpyInstance;
 
+  let assertHoldersNotFrozenSpy: jest.SpyInstance;
+
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
@@ -165,6 +168,9 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   beforeEach(() => {
+    assertHoldersNotFrozenSpy = jest
+      .spyOn(procedureUtilsModule, 'assertHoldersNotFrozen')
+      .mockResolvedValue(undefined);
     initiateCorporateActionAndDistributeTransaction = dsMockUtils.createTxMock(
       'corporateAction',
       'initiateCorporateActionAndDistribute'
@@ -621,6 +627,26 @@ describe('configureDividendDistribution procedure', () => {
       resolver: expect.any(Function),
       args: [rawCorporateActionArgs, null, rawCurrency, rawPerShare, rawAmount, rawPaymentAt, null],
     });
+
+    expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith(
+      [{ holder: originPortfolio, asset: expect.objectContaining({ id: currency }) }],
+      mockContext
+    );
+
+    const frozenError = new Error('frozen');
+    assertHoldersNotFrozenSpy.mockRejectedValue(frozenError);
+
+    await expect(
+      prepareConfigureDividendDistribution.call(proc, {
+        asset,
+        checkpoint,
+        description,
+        currency,
+        perShare,
+        maxAmount,
+        paymentDate,
+      })
+    ).rejects.toThrow(frozenError);
   });
 
   describe('dividendDistributionResolver', () => {

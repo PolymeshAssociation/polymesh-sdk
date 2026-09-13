@@ -11,6 +11,7 @@ import {
   redeemTokens,
   Storage,
 } from '~/api/procedures/redeemTokens';
+import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, NumberedPortfolio, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -55,6 +56,8 @@ describe('redeemTokens procedure', () => {
     [BigNumber, Context, (boolean | undefined)?]
   >;
 
+  let assertHoldersNotFrozenSpy: jest.SpyInstance;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
@@ -69,6 +72,9 @@ describe('redeemTokens procedure', () => {
   });
 
   beforeEach(() => {
+    assertHoldersNotFrozenSpy = jest
+      .spyOn(procedureUtilsModule, 'assertHoldersNotFrozen')
+      .mockResolvedValue(undefined);
     mockContext = dsMockUtils.getContextInstance();
     when(assetToMeshAssetIdSpy)
       .calledWith(expect.objectContaining({ id: assetId }), mockContext)
@@ -107,6 +113,15 @@ describe('redeemTokens procedure', () => {
     });
 
     expect(result).toEqual({ transaction, args: [rawAssetId, rawAmount], resolver: undefined });
+    expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith(
+      [expect.objectContaining({ asset })],
+      mockContext
+    );
+
+    const frozenError = new Error('frozen');
+    assertHoldersNotFrozenSpy.mockRejectedValue(frozenError);
+
+    await expect(prepareRedeemTokens.call(proc, { asset, amount })).rejects.toThrow(frozenError);
   });
 
   it('should return a redeemFromPortfolio transaction spec', async () => {

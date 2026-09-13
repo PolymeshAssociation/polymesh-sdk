@@ -72,6 +72,8 @@ describe('moveFunds procedure', () => {
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
   let assertPortfolioExistsSpy: jest.SpyInstance;
 
+  let assertHoldersNotFrozenSpy: jest.SpyInstance;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
@@ -93,6 +95,9 @@ describe('moveFunds procedure', () => {
   });
 
   beforeEach(() => {
+    assertHoldersNotFrozenSpy = jest
+      .spyOn(procedureUtilsModule, 'assertHoldersNotFrozen')
+      .mockResolvedValue(undefined);
     mockContext = dsMockUtils.getContextInstance();
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
@@ -614,6 +619,18 @@ describe('moveFunds procedure', () => {
       args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
       resolver: undefined,
     });
+
+    expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith(
+      [{ holder: defaultFrom, asset: asset.id }],
+      mockContext
+    );
+
+    const frozenError = new Error('frozen');
+    assertHoldersNotFrozenSpy.mockRejectedValue(frozenError);
+
+    await expect(prepareMoveFunds.call(proc, { from: defaultFrom, to, items })).rejects.toThrow(
+      frozenError
+    );
   });
 
   it('should handle NFT movements', async () => {

@@ -16,6 +16,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/investInOffering';
+import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, FungibleAsset } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -78,6 +79,8 @@ describe('investInOffering procedure', () => {
   let rawPurchaseAmount: Balance;
   let rawMaxPrice: Balance;
   let args: Params;
+
+  let assertHoldersNotFrozenSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -142,6 +145,9 @@ describe('investInOffering procedure', () => {
   });
 
   beforeEach(() => {
+    assertHoldersNotFrozenSpy = jest
+      .spyOn(procedureUtilsModule, 'assertHoldersNotFrozen')
+      .mockResolvedValue(undefined);
     mockContext = dsMockUtils.getContextInstance();
     when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     when(portfolioLikeToPortfolioIdSpy)
@@ -409,6 +415,17 @@ describe('investInOffering procedure', () => {
       args: [rawAssetId, rawId, rawPurchasePortfolio, rawFunding, rawPurchaseAmount, rawMaxPrice],
       resolver: undefined,
     });
+
+    // the offering Portfolio sends the tokens bought, and the funding Portfolio sends the price
+    const { calls } = assertHoldersNotFrozenSpy.mock;
+    const [senders] = calls[calls.length - 1];
+    expect(senders).toHaveLength(2);
+    expect(senders[0]).toMatchObject({ asset });
+
+    const frozenError = new Error('frozen');
+    assertHoldersNotFrozenSpy.mockRejectedValue(frozenError);
+
+    await expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(frozenError);
   });
 
   it('should throw an error if offchain funding is not enabled for the Offering', async () => {
@@ -562,6 +579,11 @@ describe('investInOffering procedure', () => {
       args: [rawAssetId, rawId, rawPurchasePortfolio, rawOffChainFunding, rawPurchaseAmount, null],
       resolver: undefined,
     });
+
+    // with off chain funding no Portfolio sends the price, so only the offering Portfolio is checked
+    const { calls } = assertHoldersNotFrozenSpy.mock;
+    const [senders] = calls[calls.length - 1];
+    expect(senders).toEqual([expect.objectContaining({ asset })]);
   });
 
   describe('with on chain funding', () => {

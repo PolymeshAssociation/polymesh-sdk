@@ -10,6 +10,7 @@ import {
   assertCaTaxWithholdingsValid,
   assertDistributionDatesValid,
   assertGroupDoesNotExist,
+  assertHoldersNotFrozen,
   assertInstructionValid,
   assertInstructionValidForLocking,
   assertInstructionValidForManualExecution,
@@ -26,6 +27,7 @@ import {
 } from '~/api/procedures/utils';
 import {
   AuthorizationRequest,
+  BaseAsset,
   CheckpointSchedule,
   Context,
   CustomPermissionGroup,
@@ -58,6 +60,7 @@ import {
 } from '~/types';
 import { hexToUuid } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -411,9 +414,7 @@ describe('assertTxSupported', () => {
     dsMockUtils.createTxMock('asset', 'setFrozenTokens');
     const context = dsMockUtils.getContextInstance();
 
-    expect(() =>
-      assertTxSupported(TxTags.asset.SetFrozenTokens, '8.1.1', context)
-    ).not.toThrow();
+    expect(() => assertTxSupported(TxTags.asset.SetFrozenTokens, '8.1.1', context)).not.toThrow();
   });
 
   it('should throw NotSupported if the chain lacks the extrinsic', () => {
@@ -1879,5 +1880,73 @@ describe('addManualFees', () => {
     );
 
     expect(result).toEqual(new BigNumber(400));
+  });
+});
+
+describe('assertHoldersNotFrozen', () => {
+  let context: Mocked<Context>;
+  let getHolderFreezeStatusSpy: jest.SpyInstance;
+
+  beforeAll(() => {
+    entityMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    jest
+      .spyOn(utilsInternalModule, 'asBaseAsset')
+      .mockImplementation(
+        (asset): Promise<BaseAsset> =>
+          Promise.resolve(
+            typeof asset === 'string'
+              ? entityMockUtils.getBaseAssetInstance({ assetId: asset })
+              : asset
+          )
+      );
+    getHolderFreezeStatusSpy = jest.spyOn(utilsInternalModule, 'getHolderFreezeStatus');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    entityMockUtils.reset();
+    dsMockUtils.reset();
+  });
+
+  it('should resolve if no holder is frozen for the Asset it would send', async () => {
+    // a partly frozen balance does not stop a holder sending, so only `isFrozen` counts
+    getHolderFreezeStatusSpy.mockResolvedValue({ isFrozen: false, frozen: new BigNumber(10) });
+
+    await expect(
+      assertHoldersNotFrozen([{ holder: 'someAccount', asset: 'someAssetId' }], context)
+    ).resolves.toBeUndefined();
+    expect(getHolderFreezeStatusSpy).toHaveBeenCalledWith(
+      'someAccount',
+      expect.objectContaining({ id: 'someAssetId' }),
+      context
+    );
+  });
+
+  it('should throw, naming each holder frozen for the Asset it would send', async () => {
+    const portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' });
+    const asset = entityMockUtils.getFungibleAssetInstance({ assetId: 'frozenAssetId' });
+    getHolderFreezeStatusSpy.mockImplementation(holder =>
+      Promise.resolve({ isFrozen: holder === portfolio, frozen: new BigNumber(0) })
+    );
+
+    const error = await assertHoldersNotFrozen(
+      [
+        { holder: 'someAccount', asset: 'someAssetId' },
+        { holder: portfolio, asset },
+      ],
+      context
+    ).catch(err => err);
+
+    expect(error).toBeInstanceOf(PolymeshError);
+    expect(error.code).toBe(ErrorCode.UnmetPrerequisite);
+    expect(error.message).toBe('A sender is frozen for the Asset it would send');
+    expect(error.data).toEqual({
+      frozenHolders: [{ holder: portfolio, assetId: 'frozenAssetId' }],
+    });
   });
 });

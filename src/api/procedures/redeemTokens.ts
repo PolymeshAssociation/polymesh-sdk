@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { assertHoldersNotFrozen } from '~/api/procedures/utils';
 import {
   Account,
   DefaultPortfolio,
@@ -48,6 +49,7 @@ export async function prepareRedeemTokens(
   const [[portfolioBalance], { isDivisible }] = await Promise.all([
     fromAssetHolder.getAssetBalances({ assets: [asset.id] }),
     asset.details(),
+    assertHoldersNotFrozen([{ holder: fromAssetHolder, asset }], context),
   ]);
 
   if (!portfolioBalance || portfolioBalance.free.lt(amount)) {

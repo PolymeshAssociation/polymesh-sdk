@@ -17,6 +17,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/launchOffering';
+import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, Offering, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -95,6 +96,8 @@ describe('launchOffering procedure', () => {
 
   let args: Params;
 
+  let assertHoldersNotFrozenSpy: jest.SpyInstance;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
@@ -151,6 +154,9 @@ describe('launchOffering procedure', () => {
   });
 
   beforeEach(() => {
+    assertHoldersNotFrozenSpy = jest
+      .spyOn(procedureUtilsModule, 'assertHoldersNotFrozen')
+      .mockResolvedValue(undefined);
     venue = entityMockUtils.getVenueInstance({
       id: venueId,
       details: {
@@ -363,6 +369,16 @@ describe('launchOffering procedure', () => {
       ],
       resolver: expect.any(Function),
     });
+
+    expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith(
+      [{ holder: portfolio, asset }],
+      mockContext
+    );
+
+    const frozenError = new Error('frozen');
+    assertHoldersNotFrozenSpy.mockRejectedValue(frozenError);
+
+    await expect(prepareLaunchOffering.call(proc, args)).rejects.toThrow(frozenError);
   });
 
   describe('stoResolver', () => {

@@ -47,7 +47,13 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { asAsset, asIdentity, filterEventRecords } from '~/utils/internal';
+import {
+  asAsset,
+  asBaseAsset,
+  asIdentity,
+  filterEventRecords,
+  getHolderFreezeStatus,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -805,5 +811,40 @@ export async function getAssetHolderDid(
     return identity?.did;
   } else {
     return assetHolderId.did;
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Throw if any holder is frozen outright for the Asset it would send. The chain refuses to move an
+ *   Asset out of a frozen holder by any route but a controller transfer
+ *
+ * @note the frozen part of a balance is already netted out of `free`, so this checks only a freeze
+ *   on the holder itself
+ */
+export async function assertHoldersNotFrozen(
+  holdings: { holder: AssetHolderLike; asset: string | BaseAsset }[],
+  context: Context
+): Promise<void> {
+  const statuses = await Promise.all(
+    holdings.map(async ({ holder, asset }) => {
+      const baseAsset = await asBaseAsset(asset, context);
+      const { isFrozen } = await getHolderFreezeStatus(holder, baseAsset, context);
+
+      return { holder, assetId: baseAsset.id, isFrozen };
+    })
+  );
+
+  const frozenHolders = statuses
+    .filter(({ isFrozen }) => isFrozen)
+    .map(({ holder, assetId }) => ({ holder, assetId }));
+
+  if (frozenHolders.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'A sender is frozen for the Asset it would send',
+      data: { frozenHolders },
+    });
   }
 }

@@ -1,6 +1,7 @@
 import { PalletStoFundingMethod } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
+import { assertHoldersNotFrozen } from '~/api/procedures/utils';
 import { Context, Offering, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
@@ -178,6 +179,7 @@ export async function prepareInvestInSto(
     minInvestment,
     tiers,
     raisingCurrency,
+    offeringPortfolio,
   } = await offering.details();
 
   if (sale !== OfferingSaleStatus.Live || timing !== OfferingTimingStatus.Started) {
@@ -196,6 +198,22 @@ export async function prepareInvestInSto(
       data: { priceTotal },
     });
   }
+
+  // the offering Portfolio sends the tokens bought, and an on chain funding Portfolio sends the price
+  await assertHoldersNotFrozen(
+    [
+      { holder: offeringPortfolio, asset },
+      ...('fundingPortfolioId' in storage
+        ? [
+            {
+              holder: portfolioIdToPortfolio(storage.fundingPortfolioId, context),
+              asset: raisingCurrency,
+            },
+          ]
+        : []),
+    ],
+    context
+  );
 
   await assertFundingBalanceSufficient(storage, raisingCurrency, priceTotal, context);
 

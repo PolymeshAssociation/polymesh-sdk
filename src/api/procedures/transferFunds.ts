@@ -2,7 +2,7 @@ import { PolymeshPrimitivesPortfolioFund } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { createAddInstructionResolver } from '~/api/procedures/addInstruction';
-import { getAssetHolderDid } from '~/api/procedures/utils';
+import { assertHoldersNotFrozen, getAssetHolderDid } from '~/api/procedures/utils';
 import { Account, Context, Instruction, Nft, PolymeshError, Procedure } from '~/internal';
 import {
   AssetHolder,
@@ -75,6 +75,8 @@ async function getFungibleFund(
     }
   }
 
+  await assertHoldersNotFrozen([{ holder: fromHolder, asset }], context);
+
   const [balance] = await fromHolder.getAssetBalances({ assets: [asset] });
   if (!balance || balance.free.lt(amount)) {
     throw new PolymeshError({
@@ -113,6 +115,8 @@ async function getNftFund(
         'Only the owning key can transfer NFTs from an Account. Allowances do not apply to NFTs',
     });
   }
+
+  await assertHoldersNotFrozen([{ holder: fromHolder, asset }], context);
 
   const assetId = await asAssetId(asset, context);
 

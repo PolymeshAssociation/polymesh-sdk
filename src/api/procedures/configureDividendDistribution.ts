@@ -1,7 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
-import { assertDistributionDatesValid } from '~/api/procedures/utils';
+import { assertDistributionDatesValid, assertHoldersNotFrozen } from '~/api/procedures/utils';
 import {
   Checkpoint,
   Context,
@@ -176,6 +176,8 @@ export async function prepareConfigureDividendDistribution(
   }
 
   const currencyAsset = await asFungibleAsset(currency, context);
+
+  await assertHoldersNotFrozen([{ holder: portfolio, asset: currencyAsset }], context);
 
   const [result] = await portfolio.getAssetBalances({ assets: [currencyAsset] });
 

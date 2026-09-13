@@ -67,6 +67,8 @@ describe('transferFunds procedure', () => {
   let isLockedSpy: jest.SpyInstance;
   let filterEventRecordsSpy: jest.SpyInstance;
 
+  let assertHoldersNotFrozenSpy: jest.SpyInstance;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
@@ -102,6 +104,9 @@ describe('transferFunds procedure', () => {
   });
 
   beforeEach(() => {
+    assertHoldersNotFrozenSpy = jest
+      .spyOn(procedureUtilsModule, 'assertHoldersNotFrozen')
+      .mockResolvedValue(undefined);
     mockContext = dsMockUtils.getContextInstance();
     assetHolderIdToMeshAssetHolderSpy.mockReturnValue('someMeshAssetHolder');
     assetHolderLikeToAssetHolderIdSpy.mockReturnValue('someAssetHolderId');
@@ -605,6 +610,22 @@ describe('transferFunds procedure', () => {
       expect(result.transaction).toBe(transaction);
       expect(result.args).toEqual(['rawHolder', 'rawHolder', 'rawFund']);
       await expect(callResolver(result.resolver)).resolves.toBeUndefined();
+      expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith(
+        [{ holder: fromPortfolioHolder, asset }],
+        mockContext
+      );
+
+      const frozenError = new Error('frozen');
+      assertHoldersNotFrozenSpy.mockRejectedValue(frozenError);
+
+      await expect(
+        prepareTransferFunds.call(proc, {
+          from: fromPortfolioHolder,
+          to: toPortfolioHolder,
+          asset,
+          amount: new BigNumber(100),
+        })
+      ).rejects.toThrow(frozenError);
     });
 
     it('should return a transfer funds transaction spec for NFT assets', async () => {
@@ -647,6 +668,22 @@ describe('transferFunds procedure', () => {
 
       expect(result.transaction).toBe(transaction);
       expect(result.args).toEqual(['rawHolder', 'rawHolder', 'rawNftFund']);
+      expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith(
+        [{ holder: fromPortfolioHolder, asset }],
+        mockContext
+      );
+
+      const frozenError = new Error('frozen');
+      assertHoldersNotFrozenSpy.mockRejectedValue(frozenError);
+
+      await expect(
+        prepareTransferFunds.call(proc, {
+          from: fromPortfolioHolder,
+          to: toPortfolioHolder,
+          asset,
+          nfts: [new BigNumber(1)],
+        })
+      ).rejects.toThrow(frozenError);
     });
 
     it('should return a transfer funds transaction spec for a cross-DID portfolio transfer, leaving the instruction pending', async () => {
