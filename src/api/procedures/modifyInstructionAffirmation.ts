@@ -13,8 +13,16 @@ import {
 import BigNumber from 'bignumber.js';
 
 import { getMissingPortfolioPermissions } from '~/api/entities/Account/helpers';
-import { assertInstructionValid } from '~/api/procedures/utils';
-import { Account, Context, Identity, Instruction, PolymeshError, Procedure } from '~/internal';
+import { assertHoldersNotFrozen, assertInstructionValid } from '~/api/procedures/utils';
+import {
+  Account,
+  Context,
+  FungibleAsset,
+  Identity,
+  Instruction,
+  PolymeshError,
+  Procedure,
+} from '~/internal';
 import {
   AffirmationStatus,
   AffirmInstructionParams,
@@ -74,6 +82,7 @@ export interface Storage {
   signer: Identity;
   offChainLegIndices: number[];
   instructionInfo: ExecuteInstructionInfo;
+  fungibleSenderLegs: { holder: AssetHolder; asset: FungibleAsset }[];
 }
 
 /**
@@ -383,6 +392,7 @@ export async function prepareModifyInstructionAffirmation(
       signer,
       instructionInfo,
       offChainLegIndices,
+      fungibleSenderLegs,
     },
   } = this;
 
@@ -449,6 +459,17 @@ export async function prepareModifyInstructionAffirmation(
       message: 'The Instruction is already affirmed',
     });
   }
+
+  const affirmingHolders = new Set(
+    allowedAssetHolders.filter(
+      (_, index) => affirmationStatuses[index] !== AffirmationStatus.Affirmed
+    )
+  );
+
+  await assertHoldersNotFrozen(
+    fungibleSenderLegs.filter(({ holder }) => affirmingHolders.has(holder)),
+    context
+  );
 
   const rawAffirmCount = await call.settlementApi.getAffirmationCount<AffirmationCount>(
     rawInstructionId,
@@ -688,6 +709,7 @@ export async function prepareStorage(
           allowedAssetHolders: [] as AssetHolder[],
           senderLegCount: new BigNumber(0),
           offChainIndex: index,
+          fungibleSenderLeg: undefined,
         };
       } else {
         const { from, to } = leg;
@@ -702,7 +724,12 @@ export async function prepareStorage(
           },
           assetHolderIdParams
         );
-        return { allowedAssetHolders, senderLegCount, offChainIndex: undefined };
+        // affirming locks a fungible leg's tokens in its sender, which the chain refuses for a frozen
+        // sender. Locking an NFT does not check the freeze, so an NFT leg is refused on execution
+        const fungibleSenderLeg =
+          senderLegCount.gt(0) && 'amount' in leg ? { holder: from, asset: leg.asset } : undefined;
+
+        return { allowedAssetHolders, senderLegCount, offChainIndex: undefined, fungibleSenderLeg };
       }
     })
   );
@@ -716,6 +743,10 @@ export async function prepareStorage(
     .filter(c => c.offChainIndex !== undefined)
     .map(c => c.offChainIndex);
 
+  const fungibleSenderLegs = legContributions.flatMap(({ fungibleSenderLeg }) =>
+    fungibleSenderLeg ? [fungibleSenderLeg] : []
+  );
+
   const instructionInfo = executeInstructionInfo.unwrapOrDefault();
 
   return {
@@ -726,6 +757,7 @@ export async function prepareStorage(
     signer,
     offChainLegIndices,
     instructionInfo,
+    fungibleSenderLegs,
   };
 }
 

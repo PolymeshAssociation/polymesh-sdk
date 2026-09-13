@@ -72,6 +72,8 @@ describe('executeManualInstruction procedure', () => {
   let assetHolderIdToMeshAssetHolderSpy: jest.SpyInstance;
   let instructionDetails: InstructionDetails;
 
+  let assertHoldersNotFrozenSpy: jest.SpyInstance;
+
   beforeAll(() => {
     dsMockUtils.initMocks({
       contextOptions: {
@@ -100,6 +102,9 @@ describe('executeManualInstruction procedure', () => {
   });
 
   beforeEach(() => {
+    assertHoldersNotFrozenSpy = jest
+      .spyOn(procedureUtilsModule, 'assertHoldersNotFrozen')
+      .mockResolvedValue(undefined);
     rawLegAmount = dsMockUtils.createMockU32(legAmount);
     dsMockUtils.createTxMock('settlement', 'executeManualInstruction');
     mockContext = dsMockUtils.getContextInstance();
@@ -150,6 +155,7 @@ describe('executeManualInstruction procedure', () => {
       instructionDetails,
       signerDid: 'someOtherDid',
       mediatorDids: [],
+      senders: [],
     });
 
     await expect(
@@ -168,6 +174,7 @@ describe('executeManualInstruction procedure', () => {
       },
       signerDid: 'someOtherDid',
       mediatorDids: [],
+      senders: [],
     });
     await expect(
       prepareExecuteManualInstruction.call(proc, {
@@ -188,6 +195,7 @@ describe('executeManualInstruction procedure', () => {
       instructionDetails,
       signerDid: did,
       mediatorDids: [],
+      senders: [],
     });
 
     return expect(
@@ -209,6 +217,7 @@ describe('executeManualInstruction procedure', () => {
       instructionDetails,
       signerDid: did,
       mediatorDids: [],
+      senders: [],
     });
 
     return expect(
@@ -226,12 +235,15 @@ describe('executeManualInstruction procedure', () => {
       returnValue: dsMockUtils.createMockU64(new BigNumber(0)),
     });
 
+    const senderAsset = entityMockUtils.getFungibleAssetInstance({ assetId: 'senderAssetId' });
+
     let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       allowedAssetHolders: [portfolio, portfolio],
       offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
       mediatorDids: [],
+      senders: [{ holder: portfolio, asset: senderAsset }],
     });
 
     let result = await prepareExecuteManualInstruction.call(proc, {
@@ -259,6 +271,7 @@ describe('executeManualInstruction procedure', () => {
       instructionDetails,
       signerDid: did,
       mediatorDids: [],
+      senders: [],
     });
 
     result = await prepareExecuteManualInstruction.call(proc, {
@@ -287,6 +300,7 @@ describe('executeManualInstruction procedure', () => {
       instructionDetails,
       signerDid: 'offChainSender',
       mediatorDids: [],
+      senders: [],
     });
 
     result = await prepareExecuteManualInstruction.call(proc, {
@@ -307,6 +321,22 @@ describe('executeManualInstruction procedure', () => {
       ],
       resolver: expect.objectContaining({ id }),
     });
+
+    expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith(
+      [{ holder: portfolio, asset: senderAsset }],
+      mockContext
+    );
+
+    const frozenError = new Error('frozen');
+    assertHoldersNotFrozenSpy.mockRejectedValue(frozenError);
+
+    await expect(
+      prepareExecuteManualInstruction.call(proc, {
+        id,
+        skipAffirmationCheck: false,
+        operation: InstructionAffirmationOperation.Affirm,
+      })
+    ).rejects.toThrow(frozenError);
   });
 
   describe('getAuthorization', () => {
@@ -320,6 +350,7 @@ describe('executeManualInstruction procedure', () => {
         instructionDetails,
         signerDid: did,
         mediatorDids: [],
+        senders: [],
       });
       const boundFunc = getAuthorization.bind(proc);
 
@@ -393,6 +424,7 @@ describe('executeManualInstruction procedure', () => {
         signerDid: did,
         offChainParties: new Set<string>([senderDid, receiverDid]),
         mediatorDids: [],
+        senders: [{ holder: from, asset }],
       });
     });
 
@@ -427,6 +459,7 @@ describe('executeManualInstruction procedure', () => {
         signerDid: did,
         offChainParties: new Set<string>(),
         mediatorDids: [],
+        senders: [{ holder: from, asset }],
       });
     });
 
@@ -468,6 +501,7 @@ describe('executeManualInstruction procedure', () => {
         signerDid: did,
         offChainParties: new Set<string>(),
         mediatorDids: [mediatorDid],
+        senders: [{ holder: from, asset }],
       });
     });
 
@@ -502,6 +536,7 @@ describe('executeManualInstruction procedure', () => {
         signerDid: did,
         offChainParties: new Set<string>(),
         mediatorDids: [],
+        senders: [{ holder: from, asset }],
       });
     });
   });

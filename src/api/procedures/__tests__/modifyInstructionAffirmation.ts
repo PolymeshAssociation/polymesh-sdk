@@ -90,6 +90,8 @@ describe('modifyInstructionAffirmation procedure', () => {
   let mockAssetCount: PolymeshPrimitivesSettlementAssetCount;
   let rawPortfolioIds: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>;
 
+  let assertHoldersNotFrozenSpy: jest.SpyInstance;
+
   beforeAll(() => {
     dsMockUtils.initMocks({
       contextOptions: {
@@ -140,6 +142,9 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   beforeEach(() => {
+    assertHoldersNotFrozenSpy = jest
+      .spyOn(procedureUtilsModule, 'assertHoldersNotFrozen')
+      .mockResolvedValue(undefined);
     rawLegAmount = dsMockUtils.createMockU32(new BigNumber(2));
     dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
     dsMockUtils.createTxMock('settlement', 'rejectInstructionWithCount');
@@ -198,6 +203,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [],
     });
 
     return expect(
@@ -229,6 +235,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [],
     });
 
     return expect(
@@ -260,6 +267,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [],
     });
 
     return expect(
@@ -279,6 +287,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       .calledWith(rawAffirmationStatus)
       .mockReturnValue(AffirmationStatus.Pending);
 
+    // only a leg sent from a holder being affirmed is locked by affirming
+    const senderAsset = entityMockUtils.getFungibleAssetInstance({ assetId: 'senderAssetId' });
+    const otherHolder = entityMockUtils.getNumberedPortfolioInstance({ did: 'otherDid' });
+
     const proc = procedureMockUtils.getInstance<
       ModifyInstructionAffirmationParams,
       Instruction,
@@ -291,6 +303,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [
+        { holder: portfolio, asset: senderAsset },
+        { holder: otherHolder, asset: senderAsset },
+      ],
     });
 
     const transaction = dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
@@ -306,6 +322,21 @@ describe('modifyInstructionAffirmation procedure', () => {
       args: [rawInstructionId, rawPortfolioIds, mockAffirmCount],
       resolver: expect.objectContaining({ id }),
     });
+
+    expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith(
+      [{ holder: portfolio, asset: senderAsset }],
+      mockContext
+    );
+
+    const frozenError = new Error('frozen');
+    assertHoldersNotFrozenSpy.mockRejectedValue(frozenError);
+
+    await expect(
+      prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.Affirm,
+      })
+    ).rejects.toThrow(frozenError);
   });
 
   it('should only affirm the non-affirmed holders when some are already affirmed', async () => {
@@ -329,18 +360,27 @@ describe('modifyInstructionAffirmation procedure', () => {
       .calledWith([rawPortfolioId], mockContext)
       .mockReturnValue(rawSinglePortfolioIds);
 
+    // the Affirmed holder's leg is already locked, so only the Pending holder's leg is checked
+    const affirmedHolder = entityMockUtils.getNumberedPortfolioInstance({ did: 'affirmedDid' });
+    when(assetHolderLikeToAssetHolderIdSpy).calledWith(affirmedHolder).mockReturnValue(portfolioId);
+    const senderAsset = entityMockUtils.getFungibleAssetInstance({ assetId: 'senderAssetId' });
+
     const proc = procedureMockUtils.getInstance<
       ModifyInstructionAffirmationParams,
       Instruction,
       Storage
     >(mockContext, {
-      allowedAssetHolders: [portfolio, portfolio],
+      allowedAssetHolders: [affirmedHolder, portfolio],
       assetHolderParams: [],
       senderLegCount: legAmount,
       totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [
+        { holder: affirmedHolder, asset: senderAsset },
+        { holder: portfolio, asset: senderAsset },
+      ],
     });
 
     const transaction = dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
@@ -356,6 +396,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       args: [rawInstructionId, rawSinglePortfolioIds, mockAffirmCount],
       resolver: expect.objectContaining({ id }),
     });
+
+    expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith(
+      [{ holder: portfolio, asset: senderAsset }],
+      mockContext
+    );
   });
 
   describe('offchain settlement affirmation', () => {
@@ -387,6 +432,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         signer,
         offChainLegIndices: [0],
         instructionInfo: mockExecuteInfo,
+        fungibleSenderLegs: [],
       };
       receipt = {
         legId: new BigNumber(0),
@@ -605,6 +651,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [],
     });
 
     const expectedError = new PolymeshError({
@@ -641,6 +688,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [],
     });
 
     const expectedError = new PolymeshError({
@@ -681,6 +729,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [],
     });
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
@@ -722,6 +771,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [],
     });
 
     await expect(
@@ -767,6 +817,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [],
     });
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
@@ -803,6 +854,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [],
     });
 
     const expectedError = new PolymeshError({
@@ -840,6 +892,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
+      fungibleSenderLegs: [],
     });
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
@@ -875,6 +928,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         signer,
         offChainLegIndices: [],
         instructionInfo: mockExecuteInfo,
+        fungibleSenderLegs: [],
       });
       let boundFunc = getAuthorization.bind(proc);
 
@@ -900,6 +954,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         signer,
         offChainLegIndices: [2],
         instructionInfo: mockExecuteInfo,
+        fungibleSenderLegs: [],
       });
 
       boundFunc = getAuthorization.bind(proc);
@@ -930,6 +985,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         signer,
         offChainLegIndices: [],
         instructionInfo: mockExecuteInfo,
+        fungibleSenderLegs: [],
       });
 
       boundFunc = getAuthorization.bind(proc);
@@ -1039,6 +1095,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         signer: expect.objectContaining({ did: signer.did }),
         offChainLegIndices: [2],
         instructionInfo: mockExecuteInfo,
+        fungibleSenderLegs: [{ holder: from1, asset }],
       });
 
       result = await boundFunc({
@@ -1055,6 +1112,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         signer: expect.objectContaining({ did: signer.did }),
         offChainLegIndices: [2],
         instructionInfo: mockExecuteInfo,
+        fungibleSenderLegs: [],
       });
 
       result = await boundFunc({
@@ -1071,6 +1129,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         signer: expect.objectContaining({ did: signer.did }),
         offChainLegIndices: [2],
         instructionInfo: mockExecuteInfo,
+        fungibleSenderLegs: [],
       });
 
       result = await boundFunc({
@@ -1111,6 +1170,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         signer: expect.objectContaining({ did: signer.did }),
         offChainLegIndices: [],
         instructionInfo: mockExecuteInfo,
+        fungibleSenderLegs: [],
       });
     });
 
@@ -1149,6 +1209,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result.allowedAssetHolders).toEqual([myAccount]);
       expect(result.senderLegCount).toEqual(new BigNumber(1));
+      expect(result.fungibleSenderLegs).toEqual([{ holder: myAccount, asset }]);
     });
   });
 });

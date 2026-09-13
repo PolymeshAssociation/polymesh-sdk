@@ -147,6 +147,8 @@ describe('addInstruction procedure', () => {
   let rawEmptyMediatorSet: BTreeSet<PolymeshPrimitivesIdentityId>;
   let rawAssetHolderIds: BTreeSet<PolymeshPrimitivesAssetAssetHolder>;
 
+  let assertHoldersNotFrozenSpy: jest.SpyInstance;
+
   beforeAll(() => {
     dsMockUtils.initMocks({
       contextOptions: {
@@ -281,6 +283,9 @@ describe('addInstruction procedure', () => {
   let addWithMediatorsTransaction: PolymeshTx;
 
   beforeEach(() => {
+    assertHoldersNotFrozenSpy = jest
+      .spyOn(procedureUtilsModule, 'assertHoldersNotFrozen')
+      .mockResolvedValue(undefined);
     jest.spyOn(utilsInternalModule, 'asBaseAsset').mockImplementation((a): Promise<BaseAsset> => {
       return Promise.resolve(
         typeof a === 'string' ? entityMockUtils.getBaseAssetInstance({ assetId: a }) : a
@@ -934,6 +939,14 @@ describe('addInstruction procedure', () => {
       ],
       resolver: expect.any(Function),
     });
+
+    // the leg is sent from `from`, which is the Portfolio being affirmed
+    expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith([{ holder: from, asset }], mockContext);
+
+    const frozenError = new Error('frozen');
+    assertHoldersNotFrozenSpy.mockRejectedValue(frozenError);
+
+    await expect(prepareAddInstruction.call(proc, args)).rejects.toThrow(frozenError);
   });
 
   it('should throw an error if key "amount" is not in a fungible leg', async () => {

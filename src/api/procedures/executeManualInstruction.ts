@@ -1,7 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import { assertInstructionValidForManualExecution } from '~/api/procedures/utils';
-import { Account, Instruction, PolymeshError, Procedure } from '~/internal';
+import {
+  assertHoldersNotFrozen,
+  assertInstructionValidForManualExecution,
+} from '~/api/procedures/utils';
+import { Account, BaseAsset, Instruction, PolymeshError, Procedure } from '~/internal';
 import {
   AssetHolder,
   ErrorCode,
@@ -26,6 +29,7 @@ export interface Storage {
   instructionDetails: InstructionDetails;
   signerDid: string;
   mediatorDids: string[];
+  senders: { holder: AssetHolder; asset: BaseAsset }[];
 }
 
 /**
@@ -53,7 +57,14 @@ export async function prepareExecuteManualInstruction(
       },
     },
     context,
-    storage: { allowedAssetHolders, instructionDetails, signerDid, offChainParties, mediatorDids },
+    storage: {
+      allowedAssetHolders,
+      instructionDetails,
+      signerDid,
+      offChainParties,
+      mediatorDids,
+      senders,
+    },
   } = this;
 
   const { id, skipAffirmationCheck } = args;
@@ -94,6 +105,8 @@ export async function prepareExecuteManualInstruction(
       });
     }
   }
+
+  await assertHoldersNotFrozen(senders, context);
 
   const rawInfo = await settlementApi.getExecuteInstructionInfo(rawInstructionId);
 
@@ -155,6 +168,11 @@ export async function prepareStorage(
     ({ identity: { did: mediatorDid } }) => mediatorDid
   );
 
+  // executing refuses a frozen sender of any on chain leg, fungible or not
+  const senders = legs.flatMap(leg =>
+    isOffChainLeg(leg) ? [] : [{ holder: leg.from, asset: leg.asset }]
+  );
+
   const [allowedHolders, offChainParties] = await legs.reduce<
     Promise<[AssetHolder[], Set<string>]>
   >(async (accPromise, leg) => {
@@ -212,6 +230,7 @@ export async function prepareStorage(
     signerDid: did,
     offChainParties,
     mediatorDids,
+    senders,
   };
 }
 

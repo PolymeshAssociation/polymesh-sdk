@@ -13,6 +13,7 @@ import { isEqual, union, unionWith } from 'lodash';
 
 import {
   assertAssetHolderExists,
+  assertHoldersNotFrozen,
   assertVenueExists,
   getAssetHolderDid,
 } from '~/api/procedures/utils';
@@ -30,6 +31,7 @@ import {
   AddInstructionParams,
   AddInstructionsParams,
   AssetHolder,
+  AssetHolderLike,
   ErrorCode,
   FungibleLeg,
   InstructionEndCondition,
@@ -653,6 +655,27 @@ function buildInstructionParams(
 
 /**
  * @hidden
+ *
+ * The fungible legs sent from a holder the signer affirms for. Affirming locks their tokens in the
+ *   sender, which the chain refuses for a frozen sender. Locking an NFT does not check the freeze
+ */
+function getAffirmingSenders(
+  fungibleLegs: InstructionFungibleLeg[],
+  assetHoldersToAffirm: AssetHolder[]
+): { holder: AssetHolderLike; asset: string | BaseAsset }[] {
+  const affirmingIds = assetHoldersToAffirm.map(holder => assetHolderLikeToAssetHolderId(holder));
+
+  return fungibleLegs
+    .filter(({ from }) => {
+      const fromId = assetHolderLikeToAssetHolderId(from);
+
+      return affirmingIds.some(id => isEqual(id, fromId));
+    })
+    .map(({ from, asset }) => ({ holder: from, asset }));
+}
+
+/**
+ * @hidden
  */
 async function getTxArgsAndErrors(
   instructions: AddInstructionParams[],
@@ -664,9 +687,11 @@ async function getTxArgsAndErrors(
   errIndexes: ErrIndexes;
   addAndAffirmInstructionParams: InternalAddAndAffirmInstructionParams;
   addInstructionParams: InternalAddInstructionParams;
+  affirmingSenders: { holder: AssetHolderLike; asset: string | BaseAsset }[];
 }> {
   const addAndAffirmInstructionParams: InternalAddAndAffirmInstructionParams = [];
   const addInstructionParams: InternalAddInstructionParams = [];
+  const affirmingSenders: { holder: AssetHolderLike; asset: string | BaseAsset }[] = [];
 
   const errIndexes: ErrIndexes = {
     legEmptyErrIndexes: [],
@@ -720,6 +745,8 @@ async function getTxArgsAndErrors(
       const rawLegs: PolymeshPrimitivesSettlementLeg[] = rawLegValues.flat();
 
       if (assetHoldersToAffirm[i]!.length) {
+        affirmingSenders.push(...getAffirmingSenders(legs.fungibleLegs, assetHoldersToAffirm[i]!));
+
         const rawAssetHolders = assetHoldersToAffirm[i]!.map(portfolio =>
           assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(portfolio), context)
         );
@@ -751,6 +778,7 @@ async function getTxArgsAndErrors(
     errIndexes,
     addAndAffirmInstructionParams,
     addInstructionParams,
+    affirmingSenders,
   };
 }
 
@@ -794,10 +822,12 @@ export async function prepareAddInstruction(
     });
   }
 
-  const { errIndexes, addAndAffirmInstructionParams, addInstructionParams } =
+  const { errIndexes, addAndAffirmInstructionParams, addInstructionParams, affirmingSenders } =
     await getTxArgsAndErrors(instructions, portfoliosToAffirm, latestBlock, venueId, context);
 
   validateInstructionErrors(errIndexes);
+
+  await assertHoldersNotFrozen(affirmingSenders, context);
 
   /**
    * After the upgrade is out, the "withMediator" variants are safe to use exclusively
