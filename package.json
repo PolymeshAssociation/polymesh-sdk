@@ -123,7 +123,7 @@
     "@polkadot/types-codec": "16.5.2",
     "@polkadot/util": "13.5.9",
     "@polkadot/util-crypto": "13.5.9",
-    "@polymeshassociation/polymesh-types": "^7.5.0",
+    "@polymeshassociation/polymesh-types": "^7.6.0",
     "bignumber.js": "^9.0.1",
     "dayjs": "1.11.9",
     "graphql": "^16.8.0",
