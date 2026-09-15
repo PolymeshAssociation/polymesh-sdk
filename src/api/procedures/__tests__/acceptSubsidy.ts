@@ -88,6 +88,8 @@ describe('acceptSubsidy procedure', () => {
     expect(result).toEqual({
       transaction: acceptSubsidyTransaction,
       args: [rawSubsidizerAccount],
+      // the chain charges the paying key for an accepted subsidy
+      paidForBy: expect.objectContaining({ address: subsidizerAddress }),
       resolver: undefined,
     });
   });
