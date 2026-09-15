@@ -5,10 +5,19 @@ import BigNumber from 'bignumber.js';
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
-import { Account, Context, issueNft, Nft, nftControllerTransfer, PolymeshError } from '~/internal';
+import {
+  Account,
+  Context,
+  issueNft,
+  Nft,
+  nftControllerTransfer,
+  PolymeshError,
+  toggleNftOperator,
+} from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
 import { AssetTransactionsOrderBy, Query } from '~/middleware/types';
 import {
+  AccountLike,
   AssetDetails,
   BatchIssueNftParams,
   CollectionKey,
@@ -19,6 +28,7 @@ import {
   MetadataType,
   MiddlewarePaginationOptions,
   NftControllerTransferParams,
+  NftOperatorParams,
   ProcedureMethod,
   ResultSet,
   SubCallback,
@@ -29,14 +39,18 @@ import { Ensured } from '~/types/utils';
 import {
   assetToMeshAssetId,
   bigNumberToU64,
+  boolToBoolean,
   meshMetadataKeyToMetadataKey,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
+  stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { assetIdToPrecompileAddress } from '~/utils/eth';
 import {
+  asAccount,
+  asOptionalApi,
   calculateNextKey,
   createProcedureMethod,
   getAssetIdAndTicker,
@@ -103,6 +117,25 @@ export class NftCollection extends BaseAsset {
   public controllerTransfer: ProcedureMethod<NftControllerTransferParams, void>;
 
   /**
+   * Approve an operator: an Account that may transfer any of the signing Account's NFTs in this
+   *   collection, with `transferFunds`, and approve other Accounts for them. The non-fungible
+   *   precompile's equivalent is `setApprovalForAll`
+   *
+   * @note the approval covers every NFT the signing Account holds in the collection, including any
+   *   it receives after approving. It is not used up by a transfer, and lasts until
+   *   {@link revokeOperator}
+   * @note requires Polymesh 8.1.1 or later, and throws `NotSupported` on an older chain
+   */
+  public approveOperator: ProcedureMethod<NftOperatorParams, void>;
+
+  /**
+   * Revoke an operator approved with {@link approveOperator}
+   *
+   * @note requires Polymesh 8.1.1 or later, and throws `NotSupported` on an older chain
+   */
+  public revokeOperator: ProcedureMethod<NftOperatorParams, void>;
+
+  /**
    * Local cache for `getCollectionId`
    *
    * @hidden
@@ -139,6 +172,26 @@ export class NftCollection extends BaseAsset {
     this.controllerTransfer = createProcedureMethod(
       {
         getProcedureAndArgs: args => [nftControllerTransfer, { collection: this, ...args }],
+      },
+      context
+    );
+
+    this.approveOperator = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          toggleNftOperator,
+          { ...args, collection: this, approve: true },
+        ],
+      },
+      context
+    );
+
+    this.revokeOperator = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          toggleNftOperator,
+          { ...args, collection: this, approve: false },
+        ],
       },
       context
     );
@@ -347,6 +400,47 @@ export class NftCollection extends BaseAsset {
     const rawTokenId = await nft.collectionAsset(rawAssetId);
 
     return !rawTokenId.isZero();
+  }
+
+  /**
+   * Check whether an Account may transfer any of another Account's NFTs in this collection, as its
+   *   operator. The non-fungible precompile's equivalent is `isApprovedForAll`
+   *
+   * @param args.owner - the Account holding the NFTs
+   * @param args.operator - the Account that may have been approved
+   *
+   * @note always `false` before Polymesh 8.1.1, which has no NFT approvals
+   */
+  public async isOperatorApproved(args: {
+    owner: AccountLike;
+    operator: AccountLike;
+  }): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { nft },
+        },
+      },
+      context,
+    } = this;
+
+    // absent before Polymesh 8.1.1
+    const operatorApproval = asOptionalApi(nft.operatorApproval);
+
+    if (!operatorApproval) {
+      return false;
+    }
+
+    const { address: owner } = asAccount(args.owner, context);
+    const { address: operator } = asAccount(args.operator, context);
+
+    const rawIsApproved = await operatorApproval(
+      stringToAccountId(owner, context),
+      stringToAccountId(operator, context),
+      assetToMeshAssetId(this, context)
+    );
+
+    return boolToBoolean(rawIsApproved);
   }
 
   /**

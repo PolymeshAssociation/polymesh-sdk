@@ -491,6 +491,33 @@ describe('NftCollection class', () => {
     });
   });
 
+  describe('method: isOperatorApproved', () => {
+    const owner = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const operator = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+    const assetId = '12341234-1234-1234-1234-123412341234';
+
+    it('should report whether the operator is approved for the owner', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const operatorApprovalMock = dsMockUtils.createQueryMock('nft', 'operatorApproval', {
+        returnValue: dsMockUtils.createMockBool(true),
+      });
+
+      const collection = new NftCollection({ assetId }, context);
+
+      await expect(collection.isOperatorApproved({ owner, operator })).resolves.toBe(true);
+      expect(operatorApprovalMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return false on a chain without NFT approvals', async () => {
+      const context = dsMockUtils.getContextInstance();
+      dsMockUtils.createQueryMock('nft', 'owner');
+
+      const collection = new NftCollection({ assetId }, context);
+
+      await expect(collection.isOperatorApproved({ owner, operator })).resolves.toBe(false);
+    });
+  });
+
   describe('method: getCollectionId', () => {
     it('should return and cache the collection ID', async () => {
       const context = dsMockUtils.getContextInstance();
@@ -631,6 +658,34 @@ describe('NftCollection class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await collection.controllerTransfer(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe.each([
+    ['approveOperator', true],
+    ['revokeOperator', false],
+  ] as const)('method: %s', (method, approve) => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const collection = new NftCollection(
+        { assetId: '12341234-1234-1234-1234-123412341234' },
+        context
+      );
+      const operator = 'someOperator';
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { operator, collection, approve }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await collection[method]({ operator });
 
       expect(tx).toBe(expectedTransaction);
     });

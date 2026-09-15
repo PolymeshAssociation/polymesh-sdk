@@ -430,6 +430,17 @@ export interface AssetAllowance {
 }
 
 /**
+ * A collection-wide operator approval an Account has granted
+ */
+export interface NftOperatorApproval {
+  collection: NftCollection;
+  /**
+   * the Account that may transfer any of the approving Account's NFTs in `collection`
+   */
+  operator: Account;
+}
+
+/**
  * For all claim types except Jurisdiction - tracks holders with and without the claim
  */
 export type ClaimValue = {
