@@ -59,7 +59,12 @@ import {
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import { DEFAULT_GQL_PAGE_SIZE, MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
+import {
+  DEFAULT_GQL_PAGE_SIZE,
+  ETH_FEE_DELEGATION_SPEC_VERSION,
+  MAX_CONCURRENT_REQUESTS,
+  MAX_PAGE_SIZE,
+} from '~/utils/constants';
 import {
   accountIdToString,
   assetIdToString,
@@ -697,6 +702,20 @@ export class Context {
     }
 
     return this._ethChainId;
+  }
+
+  /**
+   * @hidden
+   *
+   * Whether the chain attributes the fee of a transaction signed by an Ethereum key the way it does
+   *   a native one's: a subsidy, the issuer of an authorization being accepted, or a MultiSig's
+   *   payer can pay it, and an Ethereum key can sign for a MultiSig. From Polymesh 8.1.1
+   *
+   * @note this is runtime behaviour with nothing to detect in the metadata, so it reads the spec
+   *   version
+   */
+  public supportsEthFeeDelegation(): boolean {
+    return this.specVersion >= ETH_FEE_DELEGATION_SPEC_VERSION;
   }
 
   /**

@@ -147,6 +147,15 @@ export const CONFIDENTIAL_ASSETS_SUPPORTED_CALL = {
   id: 'confidentialAssetsSupported',
 };
 /**
+ * @hidden
+ *
+ * First spec version (Polymesh 8.1.1) whose runtime attributes the fee of a transaction signed by
+ *   an Ethereum key the way it does a native one's, so a subsidy, the issuer of an authorization
+ *   being accepted, or a MultiSig's payer can pay it
+ */
+export const ETH_FEE_DELEGATION_SPEC_VERSION = 8_001_010;
+
+/**
  * Maximum amount of legs allowed in a single instruction
  */
 export const MAX_LEGS_LENGTH = 10;
