@@ -40,9 +40,9 @@ import { createProcedureMethod, getHolderFreezeStatus } from '~/utils/internal';
 /**
  * @hidden
  *
- * Add a frozen sender to a transfer breakdown. The chain's NFT transfer report does not check
- *   whether the sender is frozen, although the transfer itself refuses a frozen sender, so the
- *   SDK checks it separately
+ * Add a frozen sender to a transfer breakdown. On Polymesh 8.1.1 the chain's NFT transfer report
+ *   does not check whether the sender is frozen, although the transfer itself refuses a frozen sender,
+ *   so the SDK checks it separately. From 8.1.2 the report checks it too, and the error is not repeated
  */
 function withFrozenSender(breakdown: TransferBreakdown): TransferBreakdown {
   const { general } = breakdown;
