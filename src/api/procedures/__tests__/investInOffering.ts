@@ -21,6 +21,7 @@ import { Context, DefaultPortfolio, FungibleAsset } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
+  ErrorCode,
   OffChainFundingReceipt,
   OfferingBalanceStatus,
   OfferingSaleStatus,
@@ -34,6 +35,10 @@ import {
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
 jest.mock(
   '~/api/entities/Offering',
   require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
@@ -584,6 +589,125 @@ describe('investInOffering procedure', () => {
     const { calls } = assertHoldersNotFrozenSpy.mock;
     const [senders] = calls[calls.length - 1];
     expect(senders).toEqual([expect.objectContaining({ asset })]);
+  });
+
+  describe('with mandatory mediators', () => {
+    beforeEach(() => {
+      entityMockUtils.configureMocks({
+        offeringOptions: {
+          details: {
+            status: {
+              sale: OfferingSaleStatus.Live,
+              timing: OfferingTimingStatus.Started,
+              balance: OfferingBalanceStatus.Available,
+            },
+            end: new Date('12/12/2030'),
+            minInvestment: new BigNumber(10),
+            raisingCurrency: 'RAISING_ASSET',
+            tiers: [
+              {
+                remaining: new BigNumber(100),
+                amount: new BigNumber(100),
+                price: new BigNumber(1),
+              },
+            ],
+          },
+          offChainFundingDetails: {
+            enabled: true,
+            offChainTicker,
+          },
+        },
+        defaultPortfolioOptions: {
+          getAssetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+        },
+      });
+    });
+
+    it('should throw if the offering Asset has mandatory mediators', () => {
+      const mediatedAsset = entityMockUtils.getFungibleAssetInstance({
+        assetId,
+        getRequiredMediators: [entityMockUtils.getIdentityInstance({ did: 'mediatorDid' })],
+      });
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        purchasePortfolioId,
+        fundingPortfolioId,
+      });
+
+      return expect(
+        prepareInvestInSto.call(proc, { ...args, asset: mediatedAsset })
+      ).rejects.toMatchObject({
+        code: ErrorCode.UnmetPrerequisite,
+        message:
+          'An Asset in the investment has mandatory mediators, so the investment cannot settle within the call',
+        data: { assetIds: [assetId] },
+      });
+    });
+
+    it('should throw if the raising Asset has mandatory mediators and funding is on chain', () => {
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: {
+          getRequiredMediators: [entityMockUtils.getIdentityInstance({ did: 'mediatorDid' })],
+        },
+      });
+      const unmediatedAsset = entityMockUtils.getFungibleAssetInstance({
+        assetId,
+        getRequiredMediators: [],
+      });
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        purchasePortfolioId,
+        fundingPortfolioId,
+      });
+
+      return expect(
+        prepareInvestInSto.call(proc, { ...args, asset: unmediatedAsset })
+      ).rejects.toMatchObject({
+        code: ErrorCode.UnmetPrerequisite,
+        data: { assetIds: ['RAISING_ASSET'] },
+      });
+    });
+
+    it('should ignore the raising Asset when funding is off chain', async () => {
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: {
+          getRequiredMediators: [entityMockUtils.getIdentityInstance({ did: 'mediatorDid' })],
+        },
+      });
+      const unmediatedAsset = entityMockUtils.getFungibleAssetInstance({
+        assetId,
+        getRequiredMediators: [],
+      });
+      when(assetToMeshAssetIdSpy)
+        .calledWith(unmediatedAsset, mockContext)
+        .mockReturnValue(rawAssetId);
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        purchasePortfolioId,
+        offChainFundingReceipt,
+        offChainTicker,
+      });
+      const transaction = dsMockUtils.createTxMock('sto', 'invest');
+
+      const result = await prepareInvestInSto.call(proc, {
+        id,
+        asset: unmediatedAsset,
+        purchasePortfolio,
+        purchaseAmount,
+        offChainFundingReceipt,
+        offChainTicker,
+      });
+
+      expect(result).toEqual({
+        transaction,
+        args: [
+          rawAssetId,
+          rawId,
+          rawPurchasePortfolio,
+          rawOffChainFunding,
+          rawPurchaseAmount,
+          null,
+        ],
+        resolver: undefined,
+      });
+    });
   });
 
   describe('with on chain funding', () => {

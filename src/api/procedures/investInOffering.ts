@@ -2,10 +2,9 @@ import { PalletStoFundingMethod } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { assertHoldersNotFrozen } from '~/api/procedures/utils';
-import { Context, Offering, PolymeshError, Procedure } from '~/internal';
+import { Context, FungibleAsset, Offering, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
-  FungibleAsset,
   InvestInOfferingParams,
   OffChainFundingReceipt,
   OfferingSaleStatus,
@@ -116,6 +115,49 @@ export const calculateTierStats = (
 /**
  * @hidden
  *
+ * Throw if an Asset the investment moves has mandatory mediators. `sto.invest` must settle its
+ *   Instruction within the call, and a mediator cannot affirm in time, so from Polymesh 8.1.2 the chain
+ *   refuses the investment (`InstructionNotSettled`). An Instruction takes the mediators of every Asset
+ *   in its legs, and funding off chain moves no raising Asset, so only then does the offering Asset
+ *   alone count
+ */
+async function assertNoMandatoryMediators(
+  asset: FungibleAsset,
+  storage: Storage,
+  raisingCurrency: string,
+  context: Context
+): Promise<void> {
+  const movedAssets = [
+    asset,
+    ...('fundingPortfolioId' in storage
+      ? [new FungibleAsset({ assetId: raisingCurrency }, context)]
+      : []),
+  ];
+
+  const mediatedAssets = await Promise.all(
+    movedAssets.map(async movedAsset => ({
+      assetId: movedAsset.id,
+      mediators: await movedAsset.getRequiredMediators(),
+    }))
+  );
+
+  const assetIds = mediatedAssets
+    .filter(({ mediators }) => mediators.length)
+    .map(({ assetId }) => assetId);
+
+  if (assetIds.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message:
+        'An Asset in the investment has mandatory mediators, so the investment cannot settle within the call',
+      data: { assetIds },
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
  * Throw if the Portfolio paying for an investment on chain cannot cover its price. The chain takes
  *   payment from the funding Portfolio, not the purchase Portfolio, and funding off chain moves no
  *   raising currency on chain, so there is nothing to check
@@ -216,6 +258,8 @@ export async function prepareInvestInSto(
   );
 
   await assertFundingBalanceSufficient(storage, raisingCurrency, priceTotal, context);
+
+  await assertNoMandatoryMediators(asset, storage, raisingCurrency, context);
 
   if (remainingTotal.lt(purchaseAmount)) {
     throw new PolymeshError({
