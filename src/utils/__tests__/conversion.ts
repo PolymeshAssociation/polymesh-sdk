@@ -1919,54 +1919,13 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       result = permissionsToMeshPermissions(value, context);
       expect(result).toEqual(fakeResult);
 
-      fakeExtrinsicPermissionsResult = {
-        These: [
-          {
-            palletName: 'Sto',
-            dispatchableNames: { Except: ['invest', 'stop'] },
-          },
-        ],
-      };
+      // asset and portfolio permissions may still exclude; only transaction permissions may not
+      fakeExtrinsicPermissionsResult = 'wholeStoPermissions';
 
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
-        .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
-        );
-
-      value = {
-        assets: null,
-        transactions: {
-          values: [ModuleName.Sto],
-          type: PermissionType.Include,
-          exceptions: [TxTags.sto.Invest, TxTags.sto.Stop],
-        },
-        transactionGroups: [],
-        portfolios: null,
-      };
-
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', {
-          asset: 'Whole',
-          extrinsic: fakeExtrinsicPermissionsResult,
-          portfolio: 'Whole',
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', {
+          These: new Map([['Sto', { extrinsics: 'Whole' }]]),
         })
-        .mockReturnValue(fakeResult);
-
-      result = permissionsToMeshPermissions(value, context);
-      expect(result).toEqual(fakeResult);
-
-      fakeExtrinsicPermissionsResult = {
-        Except: [
-          {
-            palletName: 'Sto',
-            dispatchableNames: 'Whole',
-          },
-        ],
-      };
-
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
         .mockReturnValue(
           fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
@@ -1978,7 +1937,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         },
         transactions: {
           values: [ModuleName.Sto],
-          type: PermissionType.Exclude,
+          type: PermissionType.Include,
         },
         transactionGroups: [],
         portfolios: {
@@ -2079,39 +2038,20 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       );
     });
 
-    it('should throw an error if user simultaneously include and exclude transactions belonging to the same module', () => {
+    it('should refuse transaction permissions that exclude transactions', () => {
+      const context = dsMockUtils.getContextInstance();
       const value: Permissions = {
         assets: null,
         transactions: {
-          values: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
+          values: [ModuleName.Sto],
           type: PermissionType.Exclude,
-          exceptions: [TxTags.sto.Stop],
         },
         transactionGroups: [],
         portfolios: null,
       };
-      const context = dsMockUtils.getContextInstance();
 
       expect(() => permissionsToMeshPermissions(value, context)).toThrow(
-        'Cannot simultaneously include and exclude transactions belonging to the same module'
-      );
-    });
-
-    it('should throw an error if attempting to add a transaction permission exception without its corresponding module being included/excluded', () => {
-      const value: Permissions = {
-        assets: null,
-        transactions: {
-          values: [],
-          type: PermissionType.Exclude,
-          exceptions: [TxTags.sto.Stop],
-        },
-        transactionGroups: [],
-        portfolios: null,
-      };
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => permissionsToMeshPermissions(value, context)).toThrow(
-        'Attempting to add a transaction permission exception without its corresponding module being included/excluded'
+        'Transaction permissions cannot exclude transactions. List the transactions to allow instead'
       );
     });
   });
@@ -8464,7 +8404,9 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
     const fakeResult = 'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
+      .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', {
+        These: new Map([['Sto', { extrinsics: { These: ['invest'] } }]]),
+      })
       .mockReturnValue(fakeResult);
 
     let result = transactionPermissionsToExtrinsicPermissions(value, context);
@@ -8476,6 +8418,56 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
       .mockReturnValue(fakeResult);
 
     result = transactionPermissionsToExtrinsicPermissions(null, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  it('should refuse permissions that exclude transactions, which the chain refuses', () => {
+    const context = dsMockUtils.getContextInstance();
+    const message =
+      'Transaction permissions cannot exclude transactions. List the transactions to allow instead';
+
+    expect(() =>
+      transactionPermissionsToExtrinsicPermissions(
+        { values: [ModuleName.Sto], type: PermissionType.Exclude },
+        context
+      )
+    ).toThrow(
+      expect.objectContaining({
+        code: ErrorCode.ValidationError,
+        message,
+        data: { type: PermissionType.Exclude, exceptions: [] },
+      })
+    );
+
+    expect(() =>
+      transactionPermissionsToExtrinsicPermissions(
+        { values: [ModuleName.Sto], type: PermissionType.Include, exceptions: [TxTags.sto.Stop] },
+        context
+      )
+    ).toThrow(
+      expect.objectContaining({
+        code: ErrorCode.ValidationError,
+        message,
+        data: { type: PermissionType.Include, exceptions: [TxTags.sto.Stop] },
+      })
+    );
+  });
+
+  it('should allow an empty list of exceptions', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeResult = 'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', {
+        These: new Map([['Sto', { extrinsics: 'Whole' }]]),
+      })
+      .mockReturnValue(fakeResult);
+
+    const result = transactionPermissionsToExtrinsicPermissions(
+      { values: [ModuleName.Sto], type: PermissionType.Include, exceptions: [] },
+      context
+    );
 
     expect(result).toEqual(fakeResult);
   });

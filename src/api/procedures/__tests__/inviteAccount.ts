@@ -42,6 +42,7 @@ describe('inviteAccount procedure', () => {
     [SignerValue, Context]
   >;
   let permissionsLikeToPermissionsSpy: jest.SpyInstance;
+  let realAuthorizationToAuthorizationData: typeof utilsConversionModule.authorizationToAuthorizationData;
 
   let args: InviteAccountParams;
   const authId = new BigNumber(1);
@@ -52,6 +53,7 @@ describe('inviteAccount procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
+    realAuthorizationToAuthorizationData = utilsConversionModule.authorizationToAuthorizationData;
     authorizationToAuthorizationDataSpy = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
@@ -288,7 +290,7 @@ describe('inviteAccount procedure', () => {
     );
   });
 
-  it('should throw an error if Exclude is specified for transactions', () => {
+  it('should refuse permissions that exclude transactions when encoding them', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         sentAuthorizations: { data: [], next: null },
@@ -305,13 +307,17 @@ describe('inviteAccount procedure', () => {
       transactions: { type: PermissionType.Exclude, values: [TxTags.asset.Issue] },
     });
 
+    // the chain refuses `Except` extrinsic permissions, which the encoder checks for every procedure
+    authorizationToAuthorizationDataSpy.mockImplementation(realAuthorizationToAuthorizationData);
+
     const proc = procedureMockUtils.getInstance<InviteAccountParams, AuthorizationRequest>(
       mockContext
     );
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Cannot use "Exclude" when specifying permissions',
+      message:
+        'Transaction permissions cannot exclude transactions. List the transactions to allow instead',
     });
 
     return expect(

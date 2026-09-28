@@ -1034,12 +1034,12 @@ function splitTag(tag: TxTag): { palletName: string; dispatchableName: string } 
 
 /**
  * @hidden
+ *
+ * Group transaction tags by pallet. A pallet named whole maps to `null`, and a pallet named by
+ *   some of its transactions maps to their dispatchable names
  */
-function initExtrinsicDict(
-  txValues: (TxTag | ModuleName)[],
-  message: string
-): Record<string, { tx: string[]; exception?: true } | null> {
-  const extrinsicDict: Record<string, { tx: string[]; exception?: true } | null> = {};
+function initExtrinsicDict(txValues: (TxTag | ModuleName)[]): Record<string, string[] | null> {
+  const extrinsicDict: Record<string, string[] | null> = {};
 
   [...new Set(txValues)]
     .sort((a, b) => a.localeCompare(b))
@@ -1051,15 +1051,16 @@ function initExtrinsicDict(
         if (pallet === null) {
           throw new PolymeshError({
             code: ErrorCode.ValidationError,
-            message,
+            message:
+              'Attempting to add permissions for specific transactions as well as the entire module',
             data: {
               module: palletName,
               transactions: [dispatchableName],
             },
           });
-        } else pallet ??= extrinsicDict[palletName] = { tx: [] };
+        } else pallet ??= extrinsicDict[palletName] = [];
 
-        pallet.tx.push(dispatchableName);
+        pallet.push(dispatchableName);
       } else {
         extrinsicDict[stringUpperFirst(tag)] = null;
       }
@@ -1070,81 +1071,38 @@ function initExtrinsicDict(
 
 /**
  * @hidden
+ *
+ * Throw for transaction permissions that exclude transactions. The chain refuses `Except` extrinsic
+ *   permissions, at the pallet and the extrinsic level, because a new extrinsic would silently widen
+ *   them. Secondary keys have refused them since Polymesh 8.0, and agent groups and MultiSigs since 8.1.2
+ */
+function assertTransactionsNotExcluded({ type, exceptions = [] }: TransactionPermissions): void {
+  if (type === PermissionType.Exclude || exceptions.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message:
+        'Transaction permissions cannot exclude transactions. List the transactions to allow instead',
+      data: { type, exceptions },
+    });
+  }
+}
+
+/**
+ * @hidden
  */
 function buildPalletPermissions(
   transactions: TransactionPermissions
 ): PermissionsEnum<PalletPermissions> {
-  let extrinsic: PermissionsEnum<PalletPermissions>;
-  const message =
-    'Attempting to add permissions for specific transactions as well as the entire module';
-  const { values: txValues, exceptions = [], type } = transactions;
+  assertTransactionsNotExcluded(transactions);
 
-  const extrinsicDict = initExtrinsicDict(txValues, message);
-
-  exceptions.forEach(exception => {
-    const { palletName, dispatchableName } = splitTag(exception);
-
-    const pallet = extrinsicDict[palletName];
-
-    if (pallet === undefined) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message:
-          'Attempting to add a transaction permission exception without its corresponding module being included/excluded',
-      });
-    } else if (pallet === null) {
-      extrinsicDict[palletName] = { tx: [dispatchableName], exception: true };
-    } else if (pallet.exception) {
-      pallet.tx.push(dispatchableName);
-    } else {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message:
-          'Cannot simultaneously include and exclude transactions belonging to the same module',
-      });
-    }
-  });
-
-  const getDispatchables = (
-    val: { tx: string[]; exception?: true } | null
-  ): PermissionsEnum<string[]> => {
-    let dispatchables: PermissionsEnum<string[]>;
-
-    if (val === null) {
-      dispatchables = 'Whole';
-    } else {
-      const { tx, exception } = val;
-
-      if (exception) {
-        dispatchables = {
-          Except: tx,
-        };
-      } else {
-        dispatchables = {
-          These: tx,
-        };
-      }
-    }
-
-    return dispatchables;
-  };
+  const extrinsicDict = initExtrinsicDict(transactions.values);
 
   const pallets: PalletPermissions = new Map();
-  forEach(extrinsicDict, (val, key) => {
-    pallets.set(key, { extrinsics: getDispatchables(val) });
+  forEach(extrinsicDict, (tx, palletName) => {
+    pallets.set(palletName, { extrinsics: tx === null ? 'Whole' : { These: tx } });
   });
 
-  if (type === PermissionType.Include) {
-    extrinsic = {
-      These: pallets,
-    };
-  } else {
-    extrinsic = {
-      Except: pallets,
-    };
-  }
-
-  return extrinsic;
+  return { These: pallets };
 }
 
 /**

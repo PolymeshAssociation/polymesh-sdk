@@ -666,13 +666,19 @@ export interface SectionPermissions<T> {
 
 /**
  * Permissions related to Transactions. Can include/exclude individual transactions or entire modules
+ *
+ * @note the chain refuses transaction permissions that exclude anything, because a transaction added
+ *   in a later runtime would silently fall inside them. A `type` of `Exclude`, or any `exceptions`, can
+ *   be read back from permissions already on chain, but passing either when setting permissions throws
+ *   a `ValidationError`. Name the modules and transactions to allow instead
  */
 export interface TransactionPermissions extends SectionPermissions<TxTag | ModuleName> {
   /**
-   * Transactions to be exempted from inclusion/exclusion. This allows more granularity when
-   *   setting permissions. For example, let's say we want to include only the `asset` and `staking` modules,
-   *   but exclude the `asset.registerUniqueTicker` transaction. We could add both modules to `values`, and add
-   *   `TxTags.asset.RegisterUniqueTicker` to `exceptions`
+   * Transactions exempted from a module included in `values`. For example, permissions over the whole
+   *   `asset` module except `asset.registerUniqueTicker` read back as the `asset` module in `values` and
+   *   `TxTags.asset.RegisterUniqueTicker` in `exceptions`
+   *
+   * @note read only: setting permissions with `exceptions` throws. See {@link TransactionPermissions}
    */
   exceptions?: TxTag[];
 }
