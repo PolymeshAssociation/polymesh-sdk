@@ -1049,6 +1049,9 @@ describe('addInstruction procedure', () => {
       ],
       resolver: expect.any(Function),
     });
+
+    // affirming locks the NFT in `from`, which the chain refuses for a frozen sender
+    expect(assertHoldersNotFrozenSpy).toHaveBeenCalledWith([{ holder: from, asset }], mockContext);
   });
 
   it('should return an add instruction transaction spec', async () => {

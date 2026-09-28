@@ -16,8 +16,8 @@ import { getMissingPortfolioPermissions } from '~/api/entities/Account/helpers';
 import { assertHoldersNotFrozen, assertInstructionValid } from '~/api/procedures/utils';
 import {
   Account,
+  BaseAsset,
   Context,
-  FungibleAsset,
   Identity,
   Instruction,
   PolymeshError,
@@ -82,7 +82,7 @@ export interface Storage {
   signer: Identity;
   offChainLegIndices: number[];
   instructionInfo: ExecuteInstructionInfo;
-  fungibleSenderLegs: { holder: AssetHolder; asset: FungibleAsset }[];
+  senderLegs: { holder: AssetHolder; asset: BaseAsset }[];
 }
 
 /**
@@ -392,7 +392,7 @@ export async function prepareModifyInstructionAffirmation(
       signer,
       instructionInfo,
       offChainLegIndices,
-      fungibleSenderLegs,
+      senderLegs,
     },
   } = this;
 
@@ -467,7 +467,7 @@ export async function prepareModifyInstructionAffirmation(
   );
 
   await assertHoldersNotFrozen(
-    fungibleSenderLegs.filter(({ holder }) => affirmingHolders.has(holder)),
+    senderLegs.filter(({ holder }) => affirmingHolders.has(holder)),
     context
   );
 
@@ -709,7 +709,7 @@ export async function prepareStorage(
           allowedAssetHolders: [] as AssetHolder[],
           senderLegCount: new BigNumber(0),
           offChainIndex: index,
-          fungibleSenderLeg: undefined,
+          senderLeg: undefined,
         };
       } else {
         const { from, to } = leg;
@@ -724,12 +724,11 @@ export async function prepareStorage(
           },
           assetHolderIdParams
         );
-        // affirming locks a fungible leg's tokens in its sender, which the chain refuses for a frozen
-        // sender. Locking an NFT does not check the freeze, so an NFT leg is refused on execution
-        const fungibleSenderLeg =
-          senderLegCount.gt(0) && 'amount' in leg ? { holder: from, asset: leg.asset } : undefined;
+        // affirming locks the leg's tokens or NFTs in its sender, which the chain refuses for a frozen
+        // sender. Polymesh 8.1.1 did not check the freeze when locking an NFT, but 8.1.2 does
+        const senderLeg = senderLegCount.gt(0) ? { holder: from, asset: leg.asset } : undefined;
 
-        return { allowedAssetHolders, senderLegCount, offChainIndex: undefined, fungibleSenderLeg };
+        return { allowedAssetHolders, senderLegCount, offChainIndex: undefined, senderLeg };
       }
     })
   );
@@ -743,9 +742,7 @@ export async function prepareStorage(
     .filter(c => c.offChainIndex !== undefined)
     .map(c => c.offChainIndex);
 
-  const fungibleSenderLegs = legContributions.flatMap(({ fungibleSenderLeg }) =>
-    fungibleSenderLeg ? [fungibleSenderLeg] : []
-  );
+  const senderLegs = legContributions.flatMap(({ senderLeg }) => (senderLeg ? [senderLeg] : []));
 
   const instructionInfo = executeInstructionInfo.unwrapOrDefault();
 
@@ -757,7 +754,7 @@ export async function prepareStorage(
     signer,
     offChainLegIndices,
     instructionInfo,
-    fungibleSenderLegs,
+    senderLegs,
   };
 }
 

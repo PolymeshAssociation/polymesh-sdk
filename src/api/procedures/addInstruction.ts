@@ -656,16 +656,17 @@ function buildInstructionParams(
 /**
  * @hidden
  *
- * The fungible legs sent from a holder the signer affirms for. Affirming locks their tokens in the
- *   sender, which the chain refuses for a frozen sender. Locking an NFT does not check the freeze
+ * The legs sent from a holder the signer affirms for. Affirming locks their tokens or NFTs in the
+ *   sender, which the chain refuses for a frozen sender. Polymesh 8.1.1 did not check the freeze when
+ *   locking an NFT, but 8.1.2 does
  */
 function getAffirmingSenders(
-  fungibleLegs: InstructionFungibleLeg[],
+  onChainLegs: (InstructionFungibleLeg | InstructionNftLeg)[],
   assetHoldersToAffirm: AssetHolder[]
 ): { holder: AssetHolderLike; asset: string | BaseAsset }[] {
   const affirmingIds = assetHoldersToAffirm.map(holder => assetHolderLikeToAssetHolderId(holder));
 
-  return fungibleLegs
+  return onChainLegs
     .filter(({ from }) => {
       const fromId = assetHolderLikeToAssetHolderId(from);
 
@@ -745,7 +746,9 @@ async function getTxArgsAndErrors(
       const rawLegs: PolymeshPrimitivesSettlementLeg[] = rawLegValues.flat();
 
       if (assetHoldersToAffirm[i]!.length) {
-        affirmingSenders.push(...getAffirmingSenders(legs.fungibleLegs, assetHoldersToAffirm[i]!));
+        affirmingSenders.push(
+          ...getAffirmingSenders([...legs.fungibleLegs, ...legs.nftLegs], assetHoldersToAffirm[i]!)
+        );
 
         const rawAssetHolders = assetHoldersToAffirm[i]!.map(portfolio =>
           assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(portfolio), context)
