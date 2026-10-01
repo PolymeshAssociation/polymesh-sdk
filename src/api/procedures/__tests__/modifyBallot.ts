@@ -178,9 +178,9 @@ describe('modifyBallot procedure', () => {
 
   describe('assertEndDateChange', () => {
     it('should throw if the end date is the same', () => {
-      expect(() => assertEndDateChange(ballotDetails.endDate, ballotDetails)).toThrow(
-        'Provided CorporateBallot end date is the same as the current one'
-      );
+      expect(() =>
+        assertEndDateChange(new Date(ballotDetails.endDate.getTime()), ballotDetails)
+      ).toThrow('Provided CorporateBallot end date is the same as the current one');
     });
 
     it('should throw if the end date is before the start date', () => {
@@ -236,10 +236,7 @@ describe('modifyBallot procedure', () => {
 
       expect(result).toEqual({
         transactions: [{ transaction, args: [rawCaId, mockRawMeta] }],
-        resolver: {
-          ballot: expect.any(CorporateBallot),
-          details: expect.any(Object),
-        },
+        resolver: expect.any(Function),
       });
 
       result = await prepareModifyBallot.call(proc, {
@@ -250,10 +247,7 @@ describe('modifyBallot procedure', () => {
 
       expect(result).toEqual({
         transactions: [{ transaction, args: [rawCaId, mockRawMeta] }],
-        resolver: {
-          ballot: expect.any(CorporateBallot),
-          details: expect.any(Object),
-        },
+        resolver: expect.any(Function),
       });
     });
 
@@ -273,10 +267,7 @@ describe('modifyBallot procedure', () => {
 
       expect(result).toEqual({
         transactions: [{ transaction, args: [rawCaId, mockMoment] }],
-        resolver: {
-          ballot: expect.any(CorporateBallot),
-          details: expect.any(Object),
-        },
+        resolver: expect.any(Function),
       });
 
       result = await prepareModifyBallot.call(proc, {
@@ -287,10 +278,31 @@ describe('modifyBallot procedure', () => {
 
       expect(result).toEqual({
         transactions: [{ transaction, args: [rawCaId, mockMoment] }],
-        resolver: {
-          ballot: expect.any(CorporateBallot),
-          details: expect.any(Object),
-        },
+        resolver: expect.any(Function),
+      });
+    });
+
+    it('should resolve to the Ballot as it is after the change', async () => {
+      dsMockUtils.createTxMock('corporateBallot', 'changeRcv');
+      const getCorporateBallotDetailsOrThrowSpy = jest.spyOn(
+        utilsInternalModule,
+        'getCorporateBallotDetailsOrThrow'
+      );
+      const updatedDetails = { ...ballotDetails, rcv: !ballotDetails.rcv };
+
+      const result = await prepareModifyBallot.call(proc, {
+        asset,
+        ballot,
+        rcv: !ballotDetails.rcv,
+      });
+
+      getCorporateBallotDetailsOrThrowSpy.mockResolvedValue(updatedDetails);
+
+      const resolved = await (result.resolver as () => Promise<unknown>)();
+
+      expect(resolved).toEqual({
+        ballot: expect.any(CorporateBallot),
+        details: updatedDetails,
       });
     });
 
@@ -311,10 +323,7 @@ describe('modifyBallot procedure', () => {
 
       expect(result).toEqual({
         transactions: [{ transaction, args: [rawCaId, mockBool] }],
-        resolver: {
-          ballot: expect.any(CorporateBallot),
-          details: expect.any(Object),
-        },
+        resolver: expect.any(Function),
       });
 
       result = await prepareModifyBallot.call(proc, {
@@ -325,10 +334,7 @@ describe('modifyBallot procedure', () => {
 
       expect(result).toEqual({
         transactions: [{ transaction, args: [rawCaId, mockBool] }],
-        resolver: {
-          ballot: expect.any(CorporateBallot),
-          details: expect.any(Object),
-        },
+        resolver: expect.any(Function),
       });
     });
   });

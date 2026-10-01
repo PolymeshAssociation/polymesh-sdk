@@ -13,8 +13,7 @@ import { TransferRestrictions } from '~/api/entities/Asset/Fungible/TransferRest
 import { Context, FungibleAsset, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockAssetId, createMockStatisticsOpType } from '~/testUtils/mocks/dataSources';
-import { ClaimType, CountryCode, StatType, TransferRestrictionType } from '~/types';
-import { tuple } from '~/types/utils';
+import { ClaimType, StatType, TransferRestrictionType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -297,361 +296,106 @@ describe('TransferRestrictions class', () => {
       jest.restoreAllMocks();
     });
 
-    it('should return the identities with exemptions', async () => {
-      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances', {
-        returnValue: {
-          paused: dsMockUtils.createMockBool(false),
-          requirements: dsMockUtils.createMockBtreeSet([
-            dsMockUtils.createMockTransferCondition({
-              MaxInvestorOwnership: dsMockUtils.createMockPermill(new BigNumber(400000)),
-            }),
-          ]),
-        },
+    it('should read every exemption key the chain consults, whether or not a restriction uses it', async () => {
+      const statTypeToStatOpTypeSpy = jest.spyOn(utilsConversionModule, 'statTypeToStatOpType');
+      when(statTypeToStatOpTypeSpy)
+        .calledWith(StatType.Count, context)
+        .mockReturnValue(createMockStatisticsOpType(StatType.Count));
+      when(statTypeToStatOpTypeSpy)
+        .calledWith(StatType.Balance, context)
+        .mockReturnValue(createMockStatisticsOpType(StatType.Balance));
+      const toExemptKeySpy = jest.spyOn(utilsConversionModule, 'toExemptKey');
+
+      const countAccreditedKey = dsMockUtils.createMockExemptKey({
+        assetId: rawAssetId,
+        op: createMockStatisticsOpType(StatType.Count),
+        claimType: dsMockUtils.createMockOption(
+          dsMockUtils.createMockClaimType(ClaimType.Accredited)
+        ),
+      });
+      const balanceKey = dsMockUtils.createMockExemptKey({
+        assetId: rawAssetId,
+        op: createMockStatisticsOpType(StatType.Balance),
+        claimType: dsMockUtils.createMockOption(),
       });
 
-      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
-        entries: [
-          tuple(
+      const { entries } = dsMockUtils.createQueryMock(
+        'statistics',
+        'transferConditionExemptEntities'
+      );
+      entries.mockImplementation(exemptKey => {
+        const { op, claimType } = exemptKey as unknown as {
+          op: { type: string };
+          claimType?: ClaimType;
+        };
+
+        if (op.type === StatType.Count && claimType === ClaimType.Accredited) {
+          return Promise.resolve([
             [
-              dsMockUtils.createMockExemptKey({
-                assetId: createMockAssetId('0x12341234123412341234123412341234'),
-                op: createMockStatisticsOpType(),
-                claimType: dsMockUtils.createMockOption(),
-              }),
-              dsMockUtils.createMockIdentityId('someDid'),
+              { args: [countAccreditedKey, dsMockUtils.createMockIdentityId('countDid')] },
+              dsMockUtils.createMockBool(true),
             ],
-            dsMockUtils.createMockBool(true)
-          ),
-        ],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ] as any);
+        }
+
+        if (op.type === StatType.Balance && claimType === undefined) {
+          return Promise.resolve([
+            [
+              { args: [balanceKey, dsMockUtils.createMockIdentityId('balanceDid')] },
+              dsMockUtils.createMockBool(true),
+            ],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ] as any);
+        }
+
+        return Promise.resolve([]);
       });
 
-      let result = await transferRestrictions.getExemptions();
+      const result = await transferRestrictions.getExemptions();
+
+      expect(toExemptKeySpy).toHaveBeenCalledTimes(8);
+      [StatType.Count, StatType.Balance].forEach(statType => {
+        [undefined, ClaimType.Accredited, ClaimType.Affiliate, ClaimType.Jurisdiction].forEach(
+          claimType => {
+            expect(toExemptKeySpy).toHaveBeenCalledWith(
+              rawAssetId,
+              expect.objectContaining({ type: statType }),
+              claimType
+            );
+          }
+        );
+      });
+      expect(entries).toHaveBeenCalledTimes(8);
 
       expect(result).toEqual([
         {
-          exemptKey: expect.objectContaining({
-            assetId: '12341234-1234-1234-1234-123412341234',
+          exemptKey: {
+            assetId,
+            claimType: ClaimType.Accredited,
+            opType: StatType.Count,
+          },
+          identity: expect.objectContaining({ did: 'countDid' }),
+        },
+        {
+          exemptKey: {
+            assetId,
             claimType: null,
             opType: StatType.Balance,
-          }),
-          identity: expect.objectContaining({ did: 'someDid' }),
-        },
-      ]);
-
-      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances', {
-        returnValue: {
-          paused: dsMockUtils.createMockBool(false),
-          requirements: dsMockUtils.createMockBtreeSet([
-            dsMockUtils.createMockTransferCondition({
-              ClaimCount: [
-                dsMockUtils.createMockStatisticsStatClaim({
-                  Jurisdiction: dsMockUtils.createMockOption(
-                    dsMockUtils.createMockCountryCode(CountryCode.Us)
-                  ),
-                }),
-                dsMockUtils.createMockIdentityId('issuerDid'),
-                dsMockUtils.createMockU64(new BigNumber(0)),
-                dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(5))),
-              ],
-            }),
-          ]),
-        },
-      });
-
-      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
-        entries: [
-          tuple(
-            [
-              dsMockUtils.createMockExemptKey({
-                assetId: createMockAssetId('0x12341234123412341234123412341234'),
-                op: createMockStatisticsOpType(StatType.Count),
-                claimType: dsMockUtils.createMockOption(
-                  dsMockUtils.createMockClaimType(ClaimType.Jurisdiction)
-                ),
-              }),
-              dsMockUtils.createMockIdentityId('someDid'),
-            ],
-            dsMockUtils.createMockBool(true)
-          ),
-        ],
-      });
-
-      result = await transferRestrictions.getExemptions();
-
-      expect(result).toEqual([
-        {
-          exemptKey: expect.objectContaining({
-            assetId: '12341234-1234-1234-1234-123412341234',
-            claimType: ClaimType.Jurisdiction,
-            opType: StatType.Count,
-          }),
-          identity: expect.objectContaining({ did: 'someDid' }),
+          },
+          identity: expect.objectContaining({ did: 'balanceDid' }),
         },
       ]);
     });
 
-    it('should return empty array when there are no active restrictions', async () => {
-      // Mock getRestrictions to return no restrictions
-      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances', {
-        returnValue: {
-          paused: dsMockUtils.createMockBool(false),
-          requirements: dsMockUtils.createMockBtreeSet([]),
-        },
+    it('should return an empty array when the Asset has no exemptions', async () => {
+      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
+        entries: [],
       });
 
       const result = await transferRestrictions.getExemptions();
 
       expect(result).toEqual([]);
-    });
-
-    it('should return exemptions for all restriction types including ClaimPercentage', async () => {
-      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances', {
-        returnValue: {
-          paused: dsMockUtils.createMockBool(false),
-          requirements: dsMockUtils.createMockBtreeSet([
-            dsMockUtils.createMockTransferCondition({
-              MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(10)),
-            }),
-            dsMockUtils.createMockTransferCondition({
-              MaxInvestorOwnership: dsMockUtils.createMockPermill(new BigNumber(400000)),
-            }),
-            dsMockUtils.createMockTransferCondition({
-              ClaimCount: [
-                dsMockUtils.createMockStatisticsStatClaim({
-                  Accredited: dsMockUtils.createMockBool(true),
-                }),
-                dsMockUtils.createMockIdentityId('issuerDid'),
-                dsMockUtils.createMockU64(new BigNumber(0)),
-                dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(5))),
-              ],
-            }),
-            dsMockUtils.createMockTransferCondition({
-              ClaimOwnership: [
-                dsMockUtils.createMockStatisticsStatClaim({
-                  Accredited: dsMockUtils.createMockBool(true),
-                }),
-                dsMockUtils.createMockIdentityId('issuerDid'),
-                dsMockUtils.createMockPermill(new BigNumber(0)),
-                dsMockUtils.createMockPermill(new BigNumber(500000)),
-              ],
-            }),
-          ]),
-        },
-      });
-
-      // Mock exemptions for each restriction type
-      const countExemptKey = dsMockUtils.createMockExemptKey({
-        assetId: createMockAssetId('0x12341234123412341234123412341234'),
-        op: createMockStatisticsOpType(StatType.Count),
-        claimType: dsMockUtils.createMockOption(),
-      });
-
-      const balanceExemptKey = dsMockUtils.createMockExemptKey({
-        assetId: createMockAssetId('0x12341234123412341234123412341234'),
-        op: createMockStatisticsOpType(StatType.Balance),
-        claimType: dsMockUtils.createMockOption(),
-      });
-
-      const claimCountExemptKey = dsMockUtils.createMockExemptKey({
-        assetId: createMockAssetId('0x12341234123412341234123412341234'),
-        op: createMockStatisticsOpType(StatType.Count),
-        claimType: dsMockUtils.createMockOption(
-          dsMockUtils.createMockClaimType(ClaimType.Accredited)
-        ),
-      });
-
-      const claimPercentageExemptKey = dsMockUtils.createMockExemptKey({
-        assetId: createMockAssetId('0x12341234123412341234123412341234'),
-        op: createMockStatisticsOpType(StatType.Balance),
-        claimType: dsMockUtils.createMockOption(
-          dsMockUtils.createMockClaimType(ClaimType.Accredited)
-        ),
-      });
-
-      // Mock entries to return different exemptions for each key
-      const entriesMock = dsMockUtils.createQueryMock(
-        'statistics',
-        'transferConditionExemptEntities'
-      );
-      entriesMock.entries
-        .mockResolvedValueOnce([
-          [
-            { args: [countExemptKey, dsMockUtils.createMockIdentityId('countDid')] },
-            dsMockUtils.createMockBool(true),
-          ],
-        ])
-        .mockResolvedValueOnce([
-          [
-            { args: [balanceExemptKey, dsMockUtils.createMockIdentityId('balanceDid')] },
-            dsMockUtils.createMockBool(true),
-          ],
-        ])
-        .mockResolvedValueOnce([
-          [
-            { args: [claimCountExemptKey, dsMockUtils.createMockIdentityId('claimCountDid')] },
-            dsMockUtils.createMockBool(true),
-          ],
-        ])
-        .mockResolvedValueOnce([
-          [
-            {
-              args: [
-                claimPercentageExemptKey,
-                dsMockUtils.createMockIdentityId('claimPercentageDid'),
-              ],
-            },
-            dsMockUtils.createMockBool(true),
-          ],
-        ]);
-
-      const result = await transferRestrictions.getExemptions();
-
-      expect(result).toHaveLength(4);
-      expect(result).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            exemptKey: expect.objectContaining({
-              assetId: '12341234-1234-1234-1234-123412341234',
-              claimType: null,
-              opType: StatType.Count,
-            }),
-            identity: expect.objectContaining({ did: 'countDid' }),
-          }),
-          expect.objectContaining({
-            exemptKey: expect.objectContaining({
-              assetId: '12341234-1234-1234-1234-123412341234',
-              claimType: null,
-              opType: StatType.Balance,
-            }),
-            identity: expect.objectContaining({ did: 'balanceDid' }),
-          }),
-          expect.objectContaining({
-            exemptKey: expect.objectContaining({
-              assetId: '12341234-1234-1234-1234-123412341234',
-              claimType: ClaimType.Accredited,
-              opType: StatType.Count,
-            }),
-            identity: expect.objectContaining({ did: 'claimCountDid' }),
-          }),
-          expect.objectContaining({
-            exemptKey: expect.objectContaining({
-              assetId: '12341234-1234-1234-1234-123412341234',
-              claimType: ClaimType.Accredited,
-              opType: StatType.Balance,
-            }),
-            identity: expect.objectContaining({ did: 'claimPercentageDid' }),
-          }),
-        ])
-      );
-    });
-
-    it('should deduplicate exemptions when the same identity appears multiple times', async () => {
-      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances', {
-        returnValue: {
-          paused: dsMockUtils.createMockBool(false),
-          requirements: dsMockUtils.createMockBtreeSet([
-            dsMockUtils.createMockTransferCondition({
-              MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(10)),
-            }),
-            dsMockUtils.createMockTransferCondition({
-              MaxInvestorOwnership: dsMockUtils.createMockPermill(new BigNumber(400000)),
-            }),
-          ]),
-        },
-      });
-
-      const sameIdentityId = dsMockUtils.createMockIdentityId('sameDid');
-      const countExemptKey = dsMockUtils.createMockExemptKey({
-        assetId: createMockAssetId('0x12341234123412341234123412341234'),
-        op: createMockStatisticsOpType(StatType.Count),
-        claimType: dsMockUtils.createMockOption(),
-      });
-
-      const balanceExemptKey = dsMockUtils.createMockExemptKey({
-        assetId: createMockAssetId('0x12341234123412341234123412341234'),
-        op: createMockStatisticsOpType(StatType.Balance),
-        claimType: dsMockUtils.createMockOption(),
-      });
-
-      const entriesMock = dsMockUtils.createQueryMock(
-        'statistics',
-        'transferConditionExemptEntities'
-      );
-      entriesMock.entries
-        .mockResolvedValueOnce([
-          [{ args: [countExemptKey, sameIdentityId] }, dsMockUtils.createMockBool(true)],
-        ])
-        .mockResolvedValueOnce([
-          [{ args: [balanceExemptKey, sameIdentityId] }, dsMockUtils.createMockBool(true)],
-        ]);
-
-      const result = await transferRestrictions.getExemptions();
-
-      expect(result).toHaveLength(2);
-      expect(result[0]?.identity.did).toBe('sameDid');
-      expect(result[1]?.identity.did).toBe('sameDid');
-      expect(result[0]?.exemptKey.opType).toBe(StatType.Count);
-      expect(result[1]?.exemptKey.opType).toBe(StatType.Balance);
-    });
-
-    it('should handle Custom claim type with object stringification', async () => {
-      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances', {
-        returnValue: {
-          paused: dsMockUtils.createMockBool(false),
-          requirements: dsMockUtils.createMockBtreeSet([
-            dsMockUtils.createMockTransferCondition({
-              ClaimCount: [
-                dsMockUtils.createMockStatisticsStatClaim({
-                  Accredited: dsMockUtils.createMockBool(true),
-                }),
-                dsMockUtils.createMockIdentityId('issuerDid'),
-                dsMockUtils.createMockU64(new BigNumber(0)),
-                dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(5))),
-              ],
-            }),
-          ]),
-        },
-      });
-
-      const customClaimType: { type: ClaimType.Custom; customClaimTypeId: BigNumber } = {
-        type: ClaimType.Custom,
-        customClaimTypeId: new BigNumber(123),
-      };
-      const customExemptKey = dsMockUtils.createMockExemptKey({
-        assetId: createMockAssetId('0x12341234123412341234123412341234'),
-        op: createMockStatisticsOpType(StatType.Count),
-        claimType: dsMockUtils.createMockOption(
-          dsMockUtils.createMockClaimType(ClaimType.Accredited)
-        ),
-      });
-
-      // Mock exemptionToTransferExemption to return Custom claim type
-      const exemptionToTransferExemptionSpy = jest.spyOn(
-        utilsConversionModule,
-        'exemptionToTransferExemption'
-      );
-      exemptionToTransferExemptionSpy.mockReturnValue({
-        assetId: '12341234-1234-1234-1234-123412341234',
-        opType: StatType.Count,
-        claimType: customClaimType,
-      });
-
-      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
-        entries: [
-          tuple(
-            [customExemptKey, dsMockUtils.createMockIdentityId('customDid')],
-            dsMockUtils.createMockBool(true)
-          ),
-        ],
-      });
-
-      const result = await transferRestrictions.getExemptions();
-
-      expect(result).toHaveLength(1);
-      expect(result[0]?.exemptKey.claimType).toEqual(customClaimType);
-      expect(result[0]?.identity.did).toBe('customDid');
-
-      exemptionToTransferExemptionSpy.mockRestore();
     });
   });
 

@@ -152,16 +152,12 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
 
     const entries = await query.nft.metadataValue.entries([rawCollectionId, rawId]);
 
-    const data = [];
-    for (const [storageKey, rawValue] of entries) {
-      const rawMetadataKey = storageKey.args[1];
-      const key = await meshMetadataKeyToMetadataKey(rawMetadataKey, collection, context);
-      const value = bytesToString(rawValue);
-
-      data.push({ key, value });
-    }
-
-    return data;
+    return Promise.all(
+      entries.map(async ([storageKey, rawValue]) => ({
+        key: await meshMetadataKeyToMetadataKey(storageKey.args[1], collection, context),
+        value: bytesToString(rawValue),
+      }))
+    );
   }
 
   /**

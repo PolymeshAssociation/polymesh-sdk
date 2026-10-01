@@ -975,18 +975,20 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const rawAccountId = stringToAccountId(address, context);
 
-    let queriedCollections: string[] | undefined;
+    let queriedCollections: PolymeshPrimitivesAssetAssetId[] | undefined;
 
     if (args?.collections) {
-      queriedCollections = await Promise.all(
-        args.collections.map(asset => asAssetId(asset, context))
+      const assetIds = new Set(
+        await Promise.all(args.collections.map(asset => asAssetId(asset, context)))
       );
+
+      queriedCollections = [...assetIds].map(assetId => stringToAssetId(assetId, context));
     }
 
     const collectionEntries = queriedCollections
       ? (
           await Promise.all(
-            queriedCollections.map(assetId => nft.nftHolder.entries(rawAccountId, assetId))
+            queriedCollections.map(rawAssetId => nft.nftHolder.entries(rawAccountId, rawAssetId))
           )
         ).flat()
       : await (
@@ -1047,18 +1049,15 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const collections: PortfolioCollection[] = [];
     seenAssetIds.forEach(assetId => {
-      const held = heldCollections[assetId]!;
-      const locked = lockedCollections[assetId] || [];
-      // calculate free NFTs by filtering held NFTs by locked NFT IDs
-      const lockedIds = new Set(locked.map(({ id }) => id.toString()));
-      const free = held.filter(({ id }) => !lockedIds.has(id.toString()));
-      const total = new BigNumber(held.length);
+      // an NFT is either `Owner` or `OwnerLocked`, so the two lists never overlap
+      const free = heldCollections[assetId] ?? [];
+      const locked = lockedCollections[assetId] ?? [];
 
       collections.push({
         collection: new NftCollection({ assetId }, context),
         free,
         locked,
-        total,
+        total: new BigNumber(free.length + locked.length),
       });
     });
 

@@ -11,6 +11,7 @@ import {
   CorporateBallotWithParticipation,
 } from '~/api/entities/CorporateBallot/types';
 import { castBallotVote } from '~/api/procedures/castBallotVote';
+import { modifyBallot } from '~/api/procedures/modifyBallot';
 import { removeBallot } from '~/api/procedures/removeBallot';
 import {
   Context,
@@ -23,9 +24,11 @@ import {
   CastBallotVoteParams,
   CorporateActionKind,
   CorporateActionTargets,
+  CorporateBallotWithDetails,
   ErrorCode,
   Identity,
   InputCaCheckpoint,
+  ModifyCorporateBallotParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
   TaxWithholding,
@@ -95,6 +98,16 @@ export class CorporateBallot extends CorporateActionBase {
       {
         getProcedureAndArgs: params => [
           castBallotVote,
+          { asset: this.asset, ballot: this, ...params },
+        ],
+      },
+      context
+    );
+
+    this.modify = createProcedureMethod(
+      {
+        getProcedureAndArgs: params => [
+          modifyBallot,
           { asset: this.asset, ballot: this, ...params },
         ],
       },
@@ -319,6 +332,20 @@ export class CorporateBallot extends CorporateActionBase {
    * @throws if the fallback vote is not pointing to a choice in the motion
    */
   public vote: ProcedureMethod<CastBallotVoteParams, void>;
+
+  /**
+   * Change the Ballot's metadata (title and motions), its end date, or whether it uses Ranked
+   *   Choice Voting (RCV). Pass any of them; each one given is changed in the same batch
+   *
+   * @note the Ballot can only be modified before its voting period starts
+   * @throws if none of `meta`, `endDate` or `rcv` is given
+   * @throws if a given value is the same as the current one
+   * @throws if the new end date is before the start date
+   */
+  public modify: ProcedureMethod<
+    Omit<ModifyCorporateBallotParams, 'ballot'>,
+    CorporateBallotWithDetails
+  >;
 
   /**
    * Modify the Corporate Ballot's Record Date

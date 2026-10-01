@@ -230,6 +230,7 @@ import {
   HistoricSettlement,
   IdentityCondition,
   IdentityWithClaims,
+  InputCondition,
   InputCorporateActionTargets,
   InputCorporateActionTaxWithholdings,
   InputRequirement,
@@ -2686,7 +2687,9 @@ export async function requirementToComplianceRequirement(
   const senderConditions: PolymeshPrimitivesCondition[] = [];
   const receiverConditions: PolymeshPrimitivesCondition[] = [];
 
-  for (const condition of requirement.conditions) {
+  const toMeshCondition = async (
+    condition: InputCondition
+  ): Promise<PolymeshPrimitivesCondition> => {
     let conditionContent:
       | PolymeshPrimitivesIdentityClaimClaim
       | PolymeshPrimitivesIdentityClaimClaim[]
@@ -2707,19 +2710,22 @@ export async function requirementToComplianceRequirement(
       conditionContent = stringToTargetIdentity(null, context);
     }
 
-    const { target, trustedClaimIssuers = [] } = condition;
+    const { trustedClaimIssuers = [] } = condition;
 
-    const meshCondition = context.createType<PolymeshPrimitivesCondition>(
-      'PolymeshPrimitivesCondition',
-      {
-        conditionType: {
-          [type]: conditionContent,
-        },
-        issuers: trustedClaimIssuers.map(issuer =>
-          trustedClaimIssuerToTrustedIssuer(issuer, context)
-        ),
-      }
-    );
+    return context.createType<PolymeshPrimitivesCondition>('PolymeshPrimitivesCondition', {
+      conditionType: {
+        [type]: conditionContent,
+      },
+      issuers: trustedClaimIssuers.map(issuer =>
+        trustedClaimIssuerToTrustedIssuer(issuer, context)
+      ),
+    });
+  };
+
+  const meshConditions = await Promise.all(requirement.conditions.map(toMeshCondition));
+
+  requirement.conditions.forEach(({ target }, index) => {
+    const meshCondition = meshConditions[index]!;
 
     if ([ConditionTarget.Both, ConditionTarget.Receiver].includes(target)) {
       receiverConditions.push(meshCondition);
@@ -2728,7 +2734,7 @@ export async function requirementToComplianceRequirement(
     if ([ConditionTarget.Both, ConditionTarget.Sender].includes(target)) {
       senderConditions.push(meshCondition);
     }
-  }
+  });
 
   return context.createType('PolymeshPrimitivesComplianceManagerComplianceRequirement', {
     senderConditions,
