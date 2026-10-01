@@ -2043,43 +2043,35 @@ export async function getSecondaryAccountPermissions(
   const assembleResult = async (
     optKeyRecords: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[]
   ): Promise<PermissionedAccount[]> => {
-    const result: PermissionedAccount[] = [];
-    let index = 0;
-    const getAccountAsSecondaryKey = async (
-      record: PolymeshPrimitivesSecondaryKeyKeyRecord,
-      account: Account | MultiSig
-    ): Promise<void> => {
-      const rawIdentityId = record.asSecondaryKey;
-      if (!identity || identityIdToString(rawIdentityId) === identity.did) {
+    const permissionedAccounts = await Promise.all(
+      optKeyRecords.map(async (optKeyRecord, index): Promise<PermissionedAccount | undefined> => {
+        const account = accounts[index];
+
+        if (!account || optKeyRecord.isNone) {
+          return undefined;
+        }
+
+        const record = optKeyRecord.unwrap();
+
+        if (
+          !record.isSecondaryKey ||
+          (identity && identityIdToString(record.asSecondaryKey) !== identity.did)
+        ) {
+          return undefined;
+        }
+
         const { permissions, unmatchedPermissions } = await meshPermissionsToPermissionsV2(
           account,
           context
         );
 
-        result.push({
-          account,
-          permissions,
-          unmatchedPermissions,
-        });
-      }
-    };
+        return { account, permissions, unmatchedPermissions };
+      })
+    );
 
-    for (const optKeyRecord of optKeyRecords) {
-      const account = accounts[index];
-      if (!account) {
-        index++;
-        continue;
-      }
-      if (optKeyRecord.isSome) {
-        const record = optKeyRecord.unwrap();
-
-        if (record.isSecondaryKey) {
-          await getAccountAsSecondaryKey(record, account);
-        }
-      }
-      index++;
-    }
-    return result;
+    return permissionedAccounts.filter(
+      (permissionedAccount): permissionedAccount is PermissionedAccount => !!permissionedAccount
+    );
   };
 
   const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
