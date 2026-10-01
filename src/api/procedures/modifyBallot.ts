@@ -51,7 +51,7 @@ export function assertEndDateChange(
   newEndDate: Date,
   { startDate, endDate }: CorporateBallotDetails
 ): void {
-  if (endDate === newEndDate) {
+  if (endDate.getTime() === newEndDate.getTime()) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'Provided CorporateBallot end date is the same as the current one',
@@ -177,7 +177,8 @@ export async function prepareModifyBallot(
 
   return {
     transactions,
-    resolver: await modifyCorporateBallotResolver(asset, ballotId, context),
+    resolver: (): Promise<CorporateBallotWithDetails> =>
+      modifyCorporateBallotResolver(asset, ballotId, context),
   };
 }
 

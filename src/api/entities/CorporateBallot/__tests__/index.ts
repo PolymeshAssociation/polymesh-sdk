@@ -512,6 +512,31 @@ describe('CorporateBallot class', () => {
     });
   });
 
+  describe('method: modify', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = { endDate: new Date('2030/01/01'), rcv: true };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<
+        Awaited<ReturnType<CorporateBallot['details']>>
+      >;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { asset: corporateBallot.asset, ballot: corporateBallot, ...args },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await corporateBallot.modify(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: modifyCheckpoint', () => {
     afterAll(() => {
       jest.restoreAllMocks();
