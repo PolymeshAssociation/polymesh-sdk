@@ -332,7 +332,7 @@ import {
   middlewareAssetHolderToAssetHolder,
   middlewareAuthorizationDataToAuthorization,
   middlewareClaimToClaimData,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareEventToEventIdentifier,
   middlewareInstructionToHistoricInstruction,
   middlewarePermissionsDataToPermissions,
   middlewarePortfolioDataToPortfolio,
@@ -5138,28 +5138,20 @@ describe('middlewareInstructionToHistoricInstruction', () => {
   });
 });
 
-describe('middlewareEventDetailsToEventIdentifier', () => {
-  it('should convert Event details to an EventIdentifier', () => {
-    const eventIdx = 3;
+describe('middlewareEventToEventIdentifier', () => {
+  it('should convert a middleware Event to an EventIdentifier', () => {
     const block = {
       blockId: 3000,
       hash: 'someHash',
       datetime: new Date('10/14/1987').toISOString(),
     } as Block;
 
-    const fakeResult = {
+    expect(middlewareEventToEventIdentifier({ block, eventIdx: 3 })).toEqual({
       blockNumber: new BigNumber(3000),
       blockDate: new Date('10/14/1987'),
       blockHash: 'someHash',
       eventIndex: new BigNumber(3),
-    };
-
-    expect(middlewareEventDetailsToEventIdentifier(block)).toEqual({
-      ...fakeResult,
-      eventIndex: new BigNumber(0),
     });
-
-    expect(middlewareEventDetailsToEventIdentifier(block, eventIdx)).toEqual(fakeResult);
   });
 });
 

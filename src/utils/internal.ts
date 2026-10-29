@@ -2168,13 +2168,9 @@ export function areSameClaims(
   claim: Claim,
   { scope, type, customClaimTypeId }: MiddlewareClaim
 ): boolean {
-  // filter out deprecated claim types
-  if (
-    type === ClaimTypeEnum.NoData ||
-    type === ClaimTypeEnum.NoType ||
-    type === ClaimTypeEnum.InvestorUniqueness ||
-    type === ClaimTypeEnum.InvestorUniquenessV2
-  ) {
+  // filter out deprecated claim types. The middleware does not index `NoData` or the investor
+  // uniqueness claims at all
+  if (type === ClaimTypeEnum.NoType) {
     return false;
   }
 

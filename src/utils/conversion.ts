@@ -163,11 +163,11 @@ import {
 import {
   AffirmStatusEnum,
   AuthTypeEnum,
-  Block,
   CallIdEnum,
   Claim as MiddlewareClaim,
   ClaimTypeEnum,
   CustomClaimType as MiddlewareCustomClaimType,
+  Event as MiddlewareEvent,
   Instruction as MiddlewareInstruction,
   InstructionStatusEnum,
   InstructionTypeEnum,
@@ -2439,12 +2439,16 @@ export async function scopeToMiddlewareScope(
 
 /**
  * @hidden
+ *
+ * Convert a middleware event (usually an entity's `createdEvent` or `updatedEvent`) selected with
+ * `eventIdentifierFields` into an EventIdentifier
  */
-export function middlewareEventDetailsToEventIdentifier(
-  block: Block,
-  eventIdx = 0
+export function middlewareEventToEventIdentifier(
+  event: Pick<MiddlewareEvent, 'eventIdx' | 'block'>
 ): EventIdentifier {
-  const { blockId, datetime, hash } = block;
+  const { eventIdx } = event;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const { blockId, datetime, hash } = event.block!;
 
   return {
     blockNumber: new BigNumber(blockId),
