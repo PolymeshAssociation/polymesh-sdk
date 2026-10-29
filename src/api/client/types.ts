@@ -28,7 +28,11 @@ export interface ExtrinsicData {
    */
   nonce: BigNumber | null;
   txTag: TxTag;
-  params: Record<string, unknown>[];
+  /**
+   * the call's arguments, keyed by argument name. Integers are decimal strings, Accounts are SS58
+   *   addresses and Identities are DIDs. Null when the middleware could not decode them
+   */
+  params: Record<string, unknown> | null;
   success: boolean;
   specVersionId: BigNumber;
   extrinsicHash: string;

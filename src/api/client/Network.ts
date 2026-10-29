@@ -679,7 +679,7 @@ export class Network {
         nonce,
         moduleId,
         callId,
-        paramsTxt,
+        args: extrinsicArgs,
         success: txSuccess,
         specVersionId,
         extrinsicHash,
@@ -718,7 +718,7 @@ export class Network {
         address: rawAddress ?? null,
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag,
-        params: JSON.parse(paramsTxt),
+        params: extrinsicArgs ?? null,
         success: !!txSuccess,
         specVersionId: new BigNumber(specVersionId),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
