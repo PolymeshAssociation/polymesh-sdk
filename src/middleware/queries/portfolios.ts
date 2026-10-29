@@ -1,6 +1,7 @@
 import { DocumentNode, QueryOptions } from '@apollo/client/core';
 import gql from 'graphql-tag';
 
+import { eventIdentifierFields } from '~/middleware/queries/common';
 import { QuerySettlementFilters } from '~/middleware/queries/settlements';
 import { Portfolio, PortfolioMovement, PortfolioMovementsOrderBy } from '~/middleware/types';
 import { QueryArgs } from '~/types/utils';
@@ -17,11 +18,8 @@ export function portfolioQuery(
     query PortfolioQuery($identityId: String!, $number: Int!) {
       portfolios(filter: { identityId: { equalTo: $identityId }, number: { equalTo: $number } }) {
         nodes {
-          eventIdx
-          createdBlock {
-            blockId
-            datetime
-            hash
+          createdEvent {
+            ${eventIdentifierFields}
           }
         }
       }

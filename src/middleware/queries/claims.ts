@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import {
+  eventIdentifierFields,
   getSizeAndOffset,
   orderByClause,
   removeUndefinedValues,
@@ -11,10 +12,9 @@ import {
   ClaimsOrderBy,
   ClaimTypeEnum,
   CustomClaimTypesOrderBy,
-  TrustedClaimIssuer,
   TrustedClaimIssuersOrderBy,
 } from '~/middleware/types';
-import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
+import { PaginatedQueryArgs } from '~/types/utils';
 
 /**
  *  @hidden
@@ -126,11 +126,10 @@ export function claimsQuery(
 ): QueryOptions<PaginatedQueryArgs<ClaimsQueryFilter>> {
   const { args, filter } = createClaimsFilters(filters);
 
-  // block and event index together are unique, so this is a total order per target
+  // `createdEventId` is `<block>/<event index>`, zero padded, so this is a total order per target
   const ordering = orderByClause(orderBy, [
     ClaimsOrderBy.TargetIdAsc,
-    ClaimsOrderBy.CreatedBlockIdAsc,
-    ClaimsOrderBy.EventIdxAsc,
+    ClaimsOrderBy.CreatedEventIdAsc,
   ]);
 
   const query = gql`
@@ -172,26 +171,34 @@ export function claimsQuery(
 
 /**
  * @hidden
+ */
+export interface TrustedClaimIssuerVariables {
+  assetId: string;
+  /**
+   * DID of the trusted claim issuer
+   */
+  issuer: string;
+}
+
+/**
+ * @hidden
  *
  * Get an trusted claim issuer event for an asset and an issuer
  */
 export function trustedClaimIssuerQuery(
-  variables: QueryArgs<TrustedClaimIssuer, 'issuer' | 'assetId'>
-): QueryOptions<QueryArgs<TrustedClaimIssuer, 'issuer' | 'assetId'>> {
-  const orderBy = `${TrustedClaimIssuersOrderBy.CreatedBlockIdDesc}`;
+  variables: TrustedClaimIssuerVariables
+): QueryOptions<TrustedClaimIssuerVariables> {
+  const orderBy = `${TrustedClaimIssuersOrderBy.CreatedEventIdDesc}`;
 
   const query = gql`
     query TrustedClaimIssuerQuery($assetId: String!, $issuer: String!) {
       trustedClaimIssuers(
-        filter: { assetId: { equalTo: $assetId }, issuer: { equalTo: $issuer } }
+        filter: { assetId: { equalTo: $assetId }, issuerId: { equalTo: $issuer } }
         orderBy: [${orderBy}]
       ) {
         nodes {
-          eventIdx
-          createdBlock {
-            blockId
-            datetime
-            hash
+          createdEvent {
+            ${eventIdentifierFields}
           }
         }
       }
@@ -210,12 +217,12 @@ export function trustedClaimIssuerQuery(
  * Get an trusted claim issuer event for an asset and an issuer
  */
 export function trustingAssetsQuery(
-  variables: QueryArgs<TrustedClaimIssuer, 'issuer'>
-): QueryOptions<QueryArgs<TrustedClaimIssuer, 'issuer'>> {
+  variables: Pick<TrustedClaimIssuerVariables, 'issuer'>
+): QueryOptions<Pick<TrustedClaimIssuerVariables, 'issuer'>> {
   const query = gql`
     query TrustedClaimIssuerQuery($issuer: String!) {
       trustedClaimIssuers(
-        filter: { issuer: { equalTo: $issuer } },
+        filter: { issuerId: { equalTo: $issuer } },
         orderBy: [${TrustedClaimIssuersOrderBy.AssetIdAsc}]
       ) {
         nodes {
@@ -275,7 +282,7 @@ export function customClaimTypeQuery(
 
   // a custom claim type's `id` is the chain's numeric id, unpadded, so it serves only as a tiebreaker
   const ordering = orderByClause(orderBy, [
-    CustomClaimTypesOrderBy.CreatedBlockIdAsc,
+    CustomClaimTypesOrderBy.CreatedEventIdAsc,
     CustomClaimTypesOrderBy.IdAsc,
   ]);
 

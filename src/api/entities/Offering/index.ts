@@ -273,8 +273,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     } = await context.queryMiddleware<Ensured<Query, 'investments'>>(
       investmentsQuery(
         {
-          stoId: id.toNumber(),
-          offeringAssetId: middlewareAssetId,
+          stoId: `${middlewareAssetId}/${id.toString()}`,
         },
         size,
         start,

@@ -4,6 +4,7 @@ import gql from 'graphql-tag';
 
 import {
   createArgsAndFilters,
+  eventIdentifierFields,
   getSizeAndOffset,
   orderByClause,
   toOrderByList,
@@ -31,11 +32,8 @@ export function assetQuery(
     query AssetQuery($id: String!) {
       assets(filter: { id: { equalTo: $id } }) {
         nodes {
-          eventIdx
-          createdBlock {
-            blockId
-            datetime
-            hash
+          createdEvent {
+            ${eventIdentifierFields}
           }
         }
       }
@@ -59,13 +57,13 @@ export function assetHoldersQuery(
   start?: BigNumber,
   orderBy?: AssetHoldersOrderBy | AssetHoldersOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetHolder, 'identityId'> & { amount?: string }>> {
-  // the indexer exposes no `createdAt` ordering; both map onto block order
+  // the indexer exposes no `createdAt` ordering; both map onto event order
   const supplied = toOrderByList(orderBy).map(key => {
     if (key === AssetHoldersOrderBy.CreatedAtAsc) {
-      return AssetHoldersOrderBy.CreatedBlockIdAsc;
+      return AssetHoldersOrderBy.CreatedEventIdAsc;
     }
     if (key === AssetHoldersOrderBy.CreatedAtDesc) {
-      return AssetHoldersOrderBy.CreatedBlockIdDesc;
+      return AssetHoldersOrderBy.CreatedEventIdDesc;
     }
 
     return key;
@@ -206,22 +204,18 @@ export function assetTransactionQuery(
           amount
           nftIds
           fromPortfolioId
-          fromAccount
+          fromAccountId
           fromIdentityId
           toPortfolioId
-          toAccount
+          toAccountId
           toIdentityId
           eventId
-          eventIdx
-          extrinsicIdx
           fundingRound
           instructionId
           instructionMemo
-          datetime
-          createdBlock {
-            blockId
-            hash
-            datetime
+          createdEvent {
+            ${eventIdentifierFields}
+            extrinsicIdx
           }
         }
       }

@@ -538,9 +538,9 @@ export class DividendDistribution extends CorporateActionBase {
     const count = new BigNumber(totalCount);
     const data: DistributionPayment[] = [];
 
-    nodes.forEach(({ createdBlock, datetime, targetId: did, amount, tax }) => {
+    nodes.forEach(({ createdEvent, targetId: did, amount, tax }) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const { blockId, hash } = createdBlock!;
+      const { blockId, hash, datetime } = createdEvent!.block!;
 
       data.push({
         blockNumber: new BigNumber(blockId),
