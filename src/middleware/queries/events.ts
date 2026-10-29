@@ -3,25 +3,39 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
-import { Event, EventsOrderBy } from '~/middleware/types';
-import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
+import { EventIdEnum, EventsOrderBy, ModuleIdEnum } from '~/middleware/types';
+import { PaginatedQueryArgs } from '~/types/utils';
 
-type EventArgs = 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2';
+export interface EventsByArgsFilters {
+  moduleId: ModuleIdEnum;
+  eventId: EventIdEnum;
+  /**
+   * what the event must involve, each as `<kind>:<value>`
+   */
+  refs?: string[] | undefined;
+  /**
+   * arguments the event's own must contain, keyed by field name
+   */
+  args?: Record<string, unknown> | undefined;
+}
 
 /**
  * @hidden
  *
- * Get a single event by any of its indexed arguments
+ * Get events of one type by what they involve and by their arguments
  */
 export function eventsByArgs(
-  filters: QueryArgs<Event, EventArgs>,
+  filters: EventsByArgsFilters,
   size?: BigNumber,
   start?: BigNumber,
   orderBy?: EventsOrderBy | EventsOrderBy[]
-): QueryOptions<PaginatedQueryArgs<QueryArgs<Event, EventArgs>>> {
-  const { args, filter } = createArgsAndFilters(filters, {
+): QueryOptions<PaginatedQueryArgs<EventsByArgsFilters>> {
+  // `args` is not indexed, so it is only ever filtered together with the event type
+  const { args, filter } = createArgsAndFilters(filters as unknown as Record<string, unknown>, {
     moduleId: 'ModuleIdEnum',
     eventId: 'EventIdEnum',
+    refs: { type: 'JSON', operator: 'contains' },
+    args: { type: 'JSON', operator: 'contains' },
   });
 
   // `id` is `<block>/<event index>`, zero padded: block order, and unique
