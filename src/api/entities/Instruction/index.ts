@@ -86,11 +86,13 @@ import {
   meshNftToNftId,
   meshSettlementTypeToEndCondition,
   middlewareAffirmStatusToAffirmationStatus,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareEventToEventIdentifier,
   middlewareInstructionStatusToInstructionStatus,
   middlewareInstructionToInstructionEndCondition,
   middlewareLegToLeg,
+  middlewarePortfolioToPortfolio,
   momentToDate,
+  portfolioIdStringToPortfolio,
   stringToBytes,
   tickerToString,
   u32ToBigNumber,
@@ -596,11 +598,11 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
       const endCondition = middlewareInstructionToInstructionEndCondition(instruction);
 
-      const { status, tradeDate, valueDate, venueId, memo, createdBlock } = instruction;
+      const { status, tradeDate, valueDate, venueId, memo, createdEvent } = instruction;
 
       return {
         status: middlewareInstructionStatusToInstructionStatus(status),
-        createdAt: new Date(createdBlock!.datetime),
+        createdAt: new Date(createdEvent!.block!.datetime),
         tradeDate: tradeDate ? new Date(tradeDate) : null,
         valueDate: valueDate ? new Date(valueDate) : null,
         venue: venueId ? new Venue({ id: new BigNumber(venueId) }, context) : null,
@@ -649,6 +651,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         instructionAffirmationsQuery(
           {
             instructionId: id.toString(),
+            isMediator: false,
           },
           paginationOpts?.size,
           start
@@ -658,16 +661,21 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       const count = new BigNumber(totalCount);
 
       const data = affirmations.map(affirmation => {
-        const { identity, account, status } = affirmation;
+        const { identityId, accountId, portfolioId, status } = affirmation;
 
-        if (account) {
+        if (accountId) {
           return {
-            party: new Account({ address: account }, context),
+            party: new Account({ address: accountId }, context),
             status: middlewareAffirmStatusToAffirmationStatus(status),
           };
         }
         return {
-          party: new Identity({ did: identity as string }, context),
+          party: new Identity({ did: identityId }, context),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          portfolio: middlewarePortfolioToPortfolio(
+            portfolioIdStringToPortfolio(portfolioId!),
+            context
+          ),
           status: middlewareAffirmStatusToAffirmationStatus(status),
         };
       });
@@ -706,6 +714,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       }
       return {
         party: accountHolder.owner,
+        portfolio: accountHolder,
         status,
       };
     });
@@ -1022,10 +1031,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       )
     );
 
-    return optionize(middlewareEventDetailsToEventIdentifier)(
-      details?.updatedBlock,
-      details?.eventIdx
-    );
+    return optionize(middlewareEventToEventIdentifier)(details?.createdEvent);
   }
 
   /**
@@ -1136,7 +1142,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
       return (mediators as string[]).map(mediator => {
         const affirmation = mediatorAffirmations.find(
-          mediatorAffirmation => mediatorAffirmation.identity === mediator
+          mediatorAffirmation => mediatorAffirmation.identityId === mediator
         );
         return {
           identity: new Identity({ did: mediator }, context),

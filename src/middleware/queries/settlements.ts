@@ -3,7 +3,12 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import { Context } from '~/internal';
-import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
+import {
+  createArgsAndFilters,
+  eventIdentifierFields,
+  getSizeAndOffset,
+  orderByClause,
+} from '~/middleware/queries/common';
 import {
   Instruction,
   InstructionAffirmation,
@@ -23,12 +28,12 @@ import { asAssetId, asDid } from '~/utils/internal';
 const legAttributes = `
             legIndex
             legType
-            from
-            fromPortfolio
-            fromAccount
-            to
-            toPortfolio
-            toAccount
+            fromId
+            fromPortfolioId
+            fromAccountId
+            toId
+            toPortfolioId
+            toAccountId
             assetId
             ticker
             amount
@@ -37,7 +42,7 @@ const legAttributes = `
             offChainReceipts {
               nodes {
                 uid
-                signer
+                signerId
               }
             }
 `;
@@ -58,30 +63,28 @@ const instructionAttributes = `
             }
           }
           memo
-          createdBlock {
-            blockId
-            hash
-            datetime
+          createdEvent {
+            ${eventIdentifierFields}
           }
-          updatedBlock {
-            blockId
-            hash
-            datetime
+          updatedEvent {
+            ${eventIdentifierFields}
           }
 `;
 
 const instructionAffirmationAttributes = `
       id
-      identity
-      account
-      portfolios
+      identityId
+      accountId
+      portfolioId
+      affirmedById
+      signerId
       offChainReceiptId
       offChainReceipt {
         leg {
           id
           legIndex
         }
-        signer
+        signerId
       }
       status
       isAutomaticallyAffirmed
@@ -133,25 +136,17 @@ export function instructionEventsQuery(
         nodes {
           id
           event
-          eventIdx
-          identity
-          account
-          portfolio
+          identityId
+          accountId
+          portfolioId
           offChainReceiptId
           offChainReceipt {
             legId
-            signer
+            signerId
             uid
           }
-          createdBlock {
-            blockId
-            hash
-            datetime
-          }
-          updatedBlock {
-            blockId
-            hash
-            datetime
+          createdEvent {
+            ${eventIdentifierFields}
           }
         }
       }
@@ -206,7 +201,7 @@ export function instructionsQuery(
   };
 }
 
-type InstructionAffirmationArgs = 'instructionId' | 'status' | 'identity' | 'isMediator';
+type InstructionAffirmationArgs = 'instructionId' | 'status' | 'identityId' | 'isMediator';
 
 /**
  * @hidden
@@ -224,9 +219,9 @@ export function instructionAffirmationsQuery(
     isMediator: 'Boolean',
   });
 
-  // an affirmation's `id` is not time ordered, so it serves only as a tiebreaker
+  // every holder's row is created with the instruction, so `createdEventId` ties and `id` decides
   const ordering = orderByClause(orderBy, [
-    InstructionAffirmationsOrderBy.CreatedBlockIdDesc,
+    InstructionAffirmationsOrderBy.CreatedEventIdDesc,
     InstructionAffirmationsOrderBy.IdDesc,
   ]);
 
@@ -266,7 +261,7 @@ export function instructionAffirmationsQuery(
 export function offChainAffirmationsQuery(
   filters: QueryArgs<InstructionAffirmation, 'instructionId'>
 ): QueryOptions<QueryArgs<InstructionAffirmation, 'instructionId'>> {
-  const orderBy = `${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}`;
+  const orderBy = `${InstructionAffirmationsOrderBy.CreatedEventIdAsc}`;
 
   const query = gql`
     query InstructionAffirmationsQuery($instructionId: String!) {
@@ -368,7 +363,7 @@ export const buildHistoricalInstructionsQueryFilter = async (
 
   if (identity) {
     args.push('$identity: String!');
-    instructionPartiesFilter.push('identity: { equalTo: $identity }');
+    instructionPartiesFilter.push('identityId: { equalTo: $identity }');
     variables.identity = asDid(identity);
   }
 
@@ -386,7 +381,7 @@ export const buildHistoricalInstructionsQueryFilter = async (
 
   if (party) {
     args.push('$party: String!');
-    instructionPartiesFilter.push('identity: { equalTo: $party }');
+    instructionPartiesFilter.push('identityId: { equalTo: $party }');
     variables.party = asDid(party);
   }
 
@@ -398,13 +393,13 @@ export const buildHistoricalInstructionsQueryFilter = async (
 
   if (sender) {
     args.push('$sender: String!');
-    legsFilter.push('from: { equalTo: $sender }');
+    legsFilter.push('fromId: { equalTo: $sender }');
     variables.sender = asDid(sender);
   }
 
   if (receiver) {
     args.push('$receiver: String!');
-    legsFilter.push('to: { equalTo: $receiver }');
+    legsFilter.push('toId: { equalTo: $receiver }');
     variables.receiver = asDid(receiver);
   }
 
@@ -474,7 +469,14 @@ export interface QuerySettlementFilters {
   address?: string | undefined;
 }
 
-type LegArgs = 'from' | 'fromPortfolio' | 'to' | 'toPortfolio' | 'assetId' | 'addresses';
+type LegFilterVariables = {
+  from?: string;
+  to?: string;
+  fromPortfolio?: string;
+  toPortfolio?: string;
+  assetId?: string;
+  addresses?: string[];
+};
 
 /**
  *  @hidden
@@ -485,23 +487,28 @@ function createLegFilters(
 ): {
   args: string;
   filter: string;
-  variables: QueryArgs<Leg, LegArgs>;
+  variables: LegFilterVariables;
 } {
-  const args: string[] = ['$from: String!, $to: String!'];
-  const fromIdFilters = ['from: { equalTo: $from }'];
-  const toIdFilters = ['to: { equalTo: $to }'];
-  const portfolioNumber = portfolioId ? portfolioId.toNumber() : 0;
-  const variables: QueryArgs<Leg, LegArgs> = {
-    from: identityId,
-    to: identityId,
-  };
+  const args: string[] = [];
+  const fromIdFilters: string[] = [];
+  const toIdFilters: string[] = [];
+  const variables: LegFilterVariables = {};
 
-  if (!queryAll) {
-    variables.fromPortfolio = portfolioNumber;
-    variables.toPortfolio = portfolioNumber;
-    args.push('$fromPortfolio: Int, $toPortfolio: Int');
-    fromIdFilters.push('fromPortfolio: { equalTo: $fromPortfolio }');
-    toIdFilters.push('toPortfolio: { equalTo: $toPortfolio }');
+  if (queryAll) {
+    args.push('$from: String!, $to: String!');
+    fromIdFilters.push('fromId: { equalTo: $from }');
+    toIdFilters.push('toId: { equalTo: $to }');
+    variables.from = identityId;
+    variables.to = identityId;
+  } else {
+    // a portfolio's id is `<did>/<number>`, the default portfolio being number 0
+    const portfolio = `${identityId}/${portfolioId ? portfolioId.toString() : '0'}`;
+
+    args.push('$fromPortfolio: String!, $toPortfolio: String!');
+    fromIdFilters.push('fromPortfolioId: { equalTo: $fromPortfolio }');
+    toIdFilters.push('toPortfolioId: { equalTo: $toPortfolio }');
+    variables.fromPortfolio = portfolio;
+    variables.toPortfolio = portfolio;
   }
 
   if (assetId) {
@@ -514,8 +521,8 @@ function createLegFilters(
 
   if (address) {
     variables.addresses = [address];
-    args.push('$addresses: [String!]!');
-    const addressFilter = 'addresses: { in: $addresses }';
+    args.push('$addresses: JSON!');
+    const addressFilter = 'addresses: { contains: $addresses }';
     toIdFilters.push(addressFilter);
     fromIdFilters.push(addressFilter);
   }
@@ -531,7 +538,7 @@ function createLegFilters(
  *  @hidden
  */
 function buildSettlementsQuery(args: string, filter: string): DocumentNode {
-  const orderBy = `[${LegsOrderBy.CreatedBlockIdAsc}]`;
+  const orderBy = `[${LegsOrderBy.CreatedEventIdAsc}]`;
 
   return gql`
   query SettlementsQuery
@@ -558,7 +565,7 @@ function buildSettlementsQuery(args: string, filter: string): DocumentNode {
  */
 export function settlementsQuery(
   filters: QuerySettlementFilters
-): QueryOptions<QueryArgs<Leg, LegArgs>> {
+): QueryOptions<LegFilterVariables> {
   const { args, filter, variables } = createLegFilters(filters);
   const query = buildSettlementsQuery(args, filter);
 
@@ -575,7 +582,7 @@ export function settlementsQuery(
  */
 export function settlementsForAllPortfoliosQuery(
   filters: Omit<QuerySettlementFilters, 'portfolioId'>
-): QueryOptions<QueryArgs<Leg, LegArgs>> {
+): QueryOptions<LegFilterVariables> {
   const { args, filter, variables } = createLegFilters(filters, true);
   const query = buildSettlementsQuery(args, filter);
 
