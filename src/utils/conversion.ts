@@ -2441,6 +2441,16 @@ export async function scopeToMiddlewareScope(
 /**
  * @hidden
  *
+ * Convert a chain sequence number (an Instruction, Venue or Authorization id) into the id the
+ *   middleware stores it under: zero padded to 10 digits, so that ordering by id is numeric
+ */
+export function bigNumberToMiddlewareSequenceId(id: BigNumber): string {
+  return id.toString().padStart(10, '0');
+}
+
+/**
+ * @hidden
+ *
  * Convert a middleware date into a Date. The middleware stores UTC and serialises it with no zone
  *   marker, which `new Date` would read as local time
  */

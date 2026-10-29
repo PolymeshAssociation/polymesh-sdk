@@ -234,6 +234,7 @@ import {
   balanceToBigNumber,
   ballotVoteToMeshBallotVote,
   bigNumberToBalance,
+  bigNumberToMiddlewareSequenceId,
   bigNumberToU16,
   bigNumberToU32,
   bigNumberToU64,
@@ -5142,6 +5143,13 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(resultLeg.offChainAmount).toEqual(amount3);
     expect(resultLeg.from.did).toBe(portfolioDid2);
     expect(resultLeg.to.did).toBe(portfolioDid1);
+  });
+});
+
+describe('bigNumberToMiddlewareSequenceId', () => {
+  it('should zero pad a sequence number to the 10 digits the middleware stores', () => {
+    expect(bigNumberToMiddlewareSequenceId(new BigNumber(1590))).toBe('0000001590');
+    expect(bigNumberToMiddlewareSequenceId(new BigNumber(0))).toBe('0000000000');
   });
 });
 
