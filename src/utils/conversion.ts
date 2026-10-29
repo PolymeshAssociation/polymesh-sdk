@@ -5049,11 +5049,17 @@ function middlewareExtrinsicPermissionsDataToTransactionPermissions(
   if (!isLegacy) {
     pallets = [];
 
+    // the 7.0 form, which the middleware uses for every row, keys each pallet by name, with the
+    // pallet's extrinsics as `these`, `except` or `whole`
     for (const [key, rawBody] of Object.entries(rawPallets)) {
-      const body = rawBody as unknown as { extrinsics: ExtrinsicGroup };
+      const { extrinsics } = rawBody as unknown as { extrinsics: ExtrinsicGroup };
 
-      if ('these' in body.extrinsics && body.extrinsics.these) {
-        pallets.push({ palletName: key, dispatchableNames: { these: body.extrinsics.these } });
+      if ('these' in extrinsics && extrinsics.these) {
+        pallets.push({ palletName: key, dispatchableNames: { these: extrinsics.these } });
+      } else if ('except' in extrinsics && extrinsics.except) {
+        pallets.push({ palletName: key, dispatchableNames: { except: extrinsics.except } });
+      } else {
+        pallets.push({ palletName: key, dispatchableNames: {} });
       }
     }
   }

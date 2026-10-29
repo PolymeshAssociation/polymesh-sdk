@@ -10726,6 +10726,36 @@ describe('middlewarePermissionsDataToPermissions', () => {
       transactionGroups: [],
     });
   });
+
+  it('should keep pallets given whole, or with exceptions, in the per-pallet form', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    // the middleware writes every row in this form, whatever the chain version that set it
+    const permissions = {
+      asset: { whole: null },
+      extrinsic: {
+        except: {
+          Asset: { extrinsics: { these: ['create_asset', 'register_ticker'] } },
+          Portfolio: { extrinsics: { except: ['create_portfolio', 'delete_portfolio'] } },
+          Authorship: { extrinsics: { whole: null } },
+        },
+      },
+      portfolio: { whole: null },
+    };
+
+    const result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
+
+    expect(result.transactions).toEqual({
+      type: PermissionType.Exclude,
+      values: [
+        TxTags.asset.CreateAsset,
+        TxTags.asset.RegisterTicker,
+        ModuleName.Portfolio,
+        ModuleName.Authorship,
+      ],
+      exceptions: [TxTags.portfolio.CreatePortfolio, TxTags.portfolio.DeletePortfolio],
+    });
+  });
 });
 
 describe('middlewareAuthorizationDataToAuthorization', () => {
