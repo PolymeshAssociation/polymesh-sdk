@@ -8,6 +8,21 @@ import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 /**
  * @hidden
  *
+ * The fields of an `Event` relation (such as `createdEvent` or `updatedEvent`) needed to build an
+ * EventIdentifier with `middlewareEventToEventIdentifier`
+ */
+export const eventIdentifierFields = `
+  eventIdx
+  block {
+    blockId
+    hash
+    datetime
+  }
+`;
+
+/**
+ * @hidden
+ *
  * Get the latest processed block number
  */
 export function latestBlockQuery(): QueryOptions {
