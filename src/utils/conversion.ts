@@ -2441,6 +2441,19 @@ export async function scopeToMiddlewareScope(
 /**
  * @hidden
  *
+ * Convert a middleware date into a Date. The middleware stores UTC and serialises it with no zone
+ *   marker, which `new Date` would read as local time
+ */
+export function middlewareDateToDate(value: string): Date {
+  // a date with no time is already read as UTC
+  const isLocalDateTime = value.includes('T') && !/(Z|[+-]\d{2}:?\d{2})$/.test(value);
+
+  return new Date(isLocalDateTime ? `${value}Z` : value);
+}
+
+/**
+ * @hidden
+ *
  * Convert a middleware event (usually an entity's `createdEvent` or `updatedEvent`) selected with
  * `eventIdentifierFields` into an EventIdentifier
  */
@@ -2454,7 +2467,7 @@ export function middlewareEventToEventIdentifier(
   return {
     blockNumber: new BigNumber(blockId),
     blockHash: hash,
-    blockDate: new Date(`${datetime}`),
+    blockDate: middlewareDateToDate(datetime),
     eventIndex: new BigNumber(eventIdx),
   };
 }
@@ -4911,7 +4924,7 @@ export function middlewareInstructionToHistoricInstruction(
     ...middlewareInstructionToInstructionEndCondition(instruction),
     memo: memo ?? null,
     venueId: venueId ? new BigNumber(venueId) : undefined,
-    createdAt: new Date(datetime),
+    createdAt: middlewareDateToDate(datetime),
     legs: legs.map(leg => middlewareLegToLeg(leg, context)),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */

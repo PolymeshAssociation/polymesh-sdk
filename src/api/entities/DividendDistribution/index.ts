@@ -47,6 +47,7 @@ import {
   balanceToBigNumber,
   boolToBoolean,
   corporateActionIdentifierToCaId,
+  middlewareDateToDate,
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
@@ -545,7 +546,7 @@ export class DividendDistribution extends CorporateActionBase {
       data.push({
         blockNumber: new BigNumber(blockId),
         blockHash: hash,
-        date: new Date(datetime),
+        date: middlewareDateToDate(datetime),
         target: new Identity({ did }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         /**

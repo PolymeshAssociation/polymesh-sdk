@@ -86,6 +86,7 @@ import {
   meshNftToNftId,
   meshSettlementTypeToEndCondition,
   middlewareAffirmStatusToAffirmationStatus,
+  middlewareDateToDate,
   middlewareEventToEventIdentifier,
   middlewareInstructionStatusToInstructionStatus,
   middlewareInstructionToInstructionEndCondition,
@@ -602,9 +603,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
       return {
         status: middlewareInstructionStatusToInstructionStatus(status),
-        createdAt: new Date(createdEvent!.block!.datetime),
-        tradeDate: tradeDate ? new Date(tradeDate) : null,
-        valueDate: valueDate ? new Date(valueDate) : null,
+        createdAt: middlewareDateToDate(createdEvent!.block!.datetime),
+        tradeDate: tradeDate ? middlewareDateToDate(tradeDate) : null,
+        valueDate: valueDate ? middlewareDateToDate(valueDate) : null,
         venue: venueId ? new Venue({ id: new BigNumber(venueId) }, context) : null,
         memo: memo ?? null,
         ...endCondition,
@@ -1134,7 +1135,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           const status = middlewareAffirmStatusToAffirmationStatus(mediatorAffirmation.status);
           return {
             status,
-            expiry: mediatorAffirmation.expiry ? new Date(mediatorAffirmation.expiry) : undefined,
+            expiry: mediatorAffirmation.expiry
+              ? middlewareDateToDate(mediatorAffirmation.expiry)
+              : undefined,
           };
         }
         return { status: AffirmationStatus.Pending };

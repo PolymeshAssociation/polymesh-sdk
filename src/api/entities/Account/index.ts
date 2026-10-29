@@ -70,6 +70,7 @@ import {
   balanceToBigNumber,
   extrinsicIdentifierToTxTag,
   meshNftOwnerStatusToNftOwnerStatus,
+  middlewareDateToDate,
   stringToAccountId,
   stringToAssetId,
   stringToHash,
@@ -400,7 +401,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         return {
           blockNumber: new BigNumber(blockId),
           blockHash: hash,
-          blockDate: new Date(`${datetime}Z`),
+          blockDate: middlewareDateToDate(datetime),
           extrinsicIdx: new BigNumber(extrinsicIdx),
           address: signerAddress!,
           nonce: nonce ? new BigNumber(nonce) : null,

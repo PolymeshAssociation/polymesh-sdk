@@ -41,6 +41,7 @@ import {
   balanceToBigNumber,
   extrinsicIdentifierToTxTag,
   hashToString,
+  middlewareDateToDate,
   middlewareEventToEventIdentifier,
   moduleAddressToString,
   stringToBlockHash,
@@ -711,7 +712,7 @@ export class Network {
       return {
         blockNumber: new BigNumber(blockNumber),
         blockHash,
-        blockDate: new Date(`${datetime}Z`),
+        blockDate: middlewareDateToDate(datetime),
         extrinsicIdx: new BigNumber(extrinsicIdx),
         address: rawAddress ?? null,
         nonce: nonce ? new BigNumber(nonce) : null,

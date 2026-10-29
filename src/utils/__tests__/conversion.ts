@@ -332,6 +332,7 @@ import {
   middlewareAssetHolderToAssetHolder,
   middlewareAuthorizationDataToAuthorization,
   middlewareClaimToClaimData,
+  middlewareDateToDate,
   middlewareEventToEventIdentifier,
   middlewareInstructionToHistoricInstruction,
   middlewarePermissionsDataToPermissions,
@@ -5135,6 +5136,30 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(resultLeg.offChainAmount).toEqual(amount3);
     expect(resultLeg.from.did).toBe(portfolioDid2);
     expect(resultLeg.to.did).toBe(portfolioDid1);
+  });
+});
+
+describe('middlewareDateToDate', () => {
+  it('should read a date-time with no zone marker as UTC', () => {
+    expect(middlewareDateToDate('2021-11-05T13:56:36')).toEqual(
+      new Date(Date.UTC(2021, 10, 5, 13, 56, 36))
+    );
+    expect(middlewareDateToDate('2025-08-17T08:07:44.638')).toEqual(
+      new Date(Date.UTC(2025, 7, 17, 8, 7, 44, 638))
+    );
+  });
+
+  it('should keep a zone marker the value already has', () => {
+    expect(middlewareDateToDate('2021-11-05T13:56:36Z')).toEqual(
+      new Date(Date.UTC(2021, 10, 5, 13, 56, 36))
+    );
+    expect(middlewareDateToDate('2021-11-05T13:56:36+02:00')).toEqual(
+      new Date(Date.UTC(2021, 10, 5, 11, 56, 36))
+    );
+  });
+
+  it('should read a date with no time as UTC midnight', () => {
+    expect(middlewareDateToDate('2020-10-10')).toEqual(new Date(Date.UTC(2020, 9, 10)));
   });
 });
 
