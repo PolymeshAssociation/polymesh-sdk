@@ -19,7 +19,7 @@ import {
   PolymeshTransaction,
 } from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
-import { tickerExternalAgentHistoryQuery } from '~/middleware/queries/externalAgents';
+import { assetAgentHistoryQuery } from '~/middleware/queries/externalAgents';
 import { EventIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';
@@ -550,12 +550,14 @@ describe('Fungible class', () => {
         assets: {
           nodes: [
             {
-              createdBlock: {
-                blockId: blockNumber.toNumber(),
-                datetime: blockDate,
-                hash: blockHash,
+              createdEvent: {
+                eventIdx: eventIdx.toNumber(),
+                block: {
+                  blockId: blockNumber.toNumber(),
+                  datetime: blockDate.toISOString(),
+                  hash: blockHash,
+                },
               },
-              eventIdx: eventIdx.toNumber(),
             },
           ],
         },
@@ -821,19 +823,21 @@ describe('Fungible class', () => {
       const datetime = '2020-10-10';
 
       dsMockUtils.createApolloQueryMock(
-        tickerExternalAgentHistoryQuery({
+        assetAgentHistoryQuery({
           assetId,
         }),
         {
-          tickerExternalAgentHistories: {
+          assetAgentHistories: {
             nodes: [
               {
                 identityId: did,
-                eventIdx: eventIndex.toNumber(),
-                createdBlock: {
-                  blockId: blockId.toNumber(),
-                  datetime,
-                  hash: blockHash,
+                createdEvent: {
+                  eventIdx: eventIndex.toNumber(),
+                  block: {
+                    blockId: blockId.toNumber(),
+                    datetime,
+                    hash: blockHash,
+                  },
                 },
               },
             ],
@@ -854,11 +858,11 @@ describe('Fungible class', () => {
       });
 
       dsMockUtils.createApolloQueryMock(
-        tickerExternalAgentHistoryQuery({
+        assetAgentHistoryQuery({
           assetId,
         }),
         {
-          tickerExternalAgentHistories: {
+          assetAgentHistories: {
             nodes: [],
           },
         }
@@ -892,10 +896,12 @@ describe('Fungible class', () => {
             fromPortfolioId: null,
             eventIdx: 1,
             extrinsicIdx: 1,
-            createdBlock: {
-              blockId: new BigNumber(123),
-              hash: 'SOME_HASH',
-              datetime: new Date('2022/12/31'),
+            createdEvent: {
+              block: {
+                blockId: new BigNumber(123),
+                hash: 'SOME_HASH',
+                datetime: new Date('2022/12/31').toISOString(),
+              },
             },
           },
           {
@@ -906,10 +912,12 @@ describe('Fungible class', () => {
             toPortfolioId: null,
             eventIdx: 1,
             extrinsicIdx: 1,
-            createdBlock: {
-              blockId: new BigNumber(123),
-              hash: 'SOME_HASH',
-              datetime: new Date('2022/12/31'),
+            createdEvent: {
+              block: {
+                blockId: new BigNumber(123),
+                hash: 'SOME_HASH',
+                datetime: new Date('2022/12/31').toISOString(),
+              },
             },
           },
           {
@@ -922,10 +930,12 @@ describe('Fungible class', () => {
             instructionMemo: 'Some memo',
             eventIdx: 1,
             extrinsicIdx: 1,
-            createdBlock: {
-              blockId: new BigNumber(123),
-              hash: 'SOME_HASH',
-              datetime: new Date('2022/12/31'),
+            createdEvent: {
+              block: {
+                blockId: new BigNumber(123),
+                hash: 'SOME_HASH',
+                datetime: new Date('2022/12/31').toISOString(),
+              },
             },
           },
         ],
@@ -1104,10 +1114,7 @@ describe('Fungible class', () => {
       const asset = new FungibleAsset({ assetId: thisAssetId }, context);
 
       dsMockUtils.createQueryMock('asset', 'allowances', {
-        entries: [
-          entry(otherRawId, new BigNumber(999)),
-          entry(thisRawId, new BigNumber(150)),
-        ],
+        entries: [entry(otherRawId, new BigNumber(999)), entry(thisRawId, new BigNumber(150))],
       });
 
       const result = await asset.getAllowances({ owner });

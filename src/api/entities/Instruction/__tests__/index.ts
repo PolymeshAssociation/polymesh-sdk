@@ -566,11 +566,14 @@ describe('Instruction class', () => {
           type: InstructionTypeEnum.SettleOnAffirmation,
           status: InstructionStatusEnum.Created,
           venueId,
-          createdBlock: {
-            datetime: createdAt,
+          createdEvent: {
+            block: {
+              datetime: createdAt.toISOString(),
+            },
           },
-          tradeDate,
-          valueDate,
+          // the middleware serialises UTC with no zone marker
+          tradeDate: tradeDate.toISOString().replace('Z', ''),
+          valueDate: valueDate.toISOString().replace('Z', ''),
           memo,
         };
         dsMockUtils.createApolloQueryMock(
@@ -1111,16 +1114,26 @@ describe('Instruction class', () => {
         const start = new BigNumber(0);
         const size = new BigNumber(1);
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({ instructionId: id.toString() }, size, start),
+          instructionAffirmationsQuery(
+            { instructionId: id.toString(), isMediator: false },
+            size,
+            start
+          ),
           {
             instructionAffirmations: {
               nodes: [
                 {
-                  identity: did,
+                  identityId: did,
+                  portfolioId: `${did}/1`,
                   status: AffirmStatusEnum.Affirmed,
                 },
+                {
+                  identityId: did,
+                  portfolioId: `${did}/0`,
+                  status: AffirmStatusEnum.Pending,
+                },
               ],
-              totalCount: new BigNumber(1),
+              totalCount: new BigNumber(2),
             },
           }
         );
@@ -1129,15 +1142,19 @@ describe('Instruction class', () => {
           size,
         });
 
-        expect(data).toHaveLength(1);
+        expect(data).toHaveLength(2);
         expect((data[0]!.party as Identity).did).toEqual(did);
+        expect(data[0]!.portfolio).toEqual(expect.objectContaining({ id: new BigNumber(1) }));
         expect(data[0]!.status).toEqual(status);
+        expect((data[1]!.party as Identity).did).toEqual(did);
+        expect(data[1]!.portfolio).toBeInstanceOf(DefaultPortfolio);
+        expect(data[1]!.status).toEqual(AffirmationStatus.Pending);
 
         expect(next).toBeNull();
-        expect(count).toEqual(new BigNumber(1));
+        expect(count).toEqual(new BigNumber(2));
 
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({ instructionId: id.toString() }),
+          instructionAffirmationsQuery({ instructionId: id.toString(), isMediator: false }),
           {
             instructionAffirmations: {
               nodes: [],
@@ -1158,12 +1175,17 @@ describe('Instruction class', () => {
         const size = new BigNumber(1);
         const accountAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({ instructionId: id.toString() }, size, start),
+          instructionAffirmationsQuery(
+            { instructionId: id.toString(), isMediator: false },
+            size,
+            start
+          ),
           {
             instructionAffirmations: {
               nodes: [
                 {
-                  account: accountAddress,
+                  identityId: 'someDid',
+                  accountId: accountAddress,
                   status: AffirmStatusEnum.Affirmed,
                 },
               ],
@@ -1178,6 +1200,7 @@ describe('Instruction class', () => {
 
         expect(data).toHaveLength(1);
         expect((data[0]!.party as Account).address).toEqual(accountAddress);
+        expect(data[0]!.portfolio).toBeUndefined();
         expect(data[0]!.status).toEqual(status);
       });
     });
@@ -1202,10 +1225,10 @@ describe('Instruction class', () => {
 
         const mockLeg1 = {
           legType: LegTypeEnum.Fungible,
-          from: fromDid,
-          fromPortfolio: new BigNumber(0),
-          to: toDid,
-          toPortfolio: new BigNumber(0),
+          fromPortfolioId: `${fromDid}/${new BigNumber(0)}`,
+          fromId: fromDid,
+          toPortfolioId: `${toDid}/${new BigNumber(0)}`,
+          toId: toDid,
           assetId,
           amount: amount.shiftedBy(6),
           legIndex: new BigNumber(0),
@@ -1213,10 +1236,10 @@ describe('Instruction class', () => {
 
         const mockLeg2 = {
           legType: LegTypeEnum.Fungible,
-          from: fromDid,
-          fromPortfolio: new BigNumber(0),
-          to: toDid,
-          toPortfolio: new BigNumber(0),
+          fromPortfolioId: `${fromDid}/${new BigNumber(0)}`,
+          fromId: fromDid,
+          toPortfolioId: `${toDid}/${new BigNumber(0)}`,
+          toId: toDid,
           assetId: assetId2,
           amount: amount.shiftedBy(6),
           legIndex: new BigNumber(1),
@@ -1731,8 +1754,14 @@ describe('Instruction class', () => {
       const eventIdx = new BigNumber(1);
       const blockHash = 'someHash';
       const fakeQueryResult = {
-        updatedBlock: { blockId: blockNumber.toNumber(), hash: blockHash, datetime: blockDate },
-        eventIdx: eventIdx.toNumber(),
+        createdEvent: {
+          eventIdx: eventIdx.toNumber(),
+          block: {
+            blockId: blockNumber.toNumber(),
+            hash: blockHash,
+            datetime: blockDate.toISOString(),
+          },
+        },
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
@@ -1845,8 +1874,14 @@ describe('Instruction class', () => {
       const eventIdx = new BigNumber(1);
       const blockHash = 'someHash';
       const fakeQueryResult = {
-        updatedBlock: { blockId: blockNumber.toNumber(), hash: blockHash, datetime: blockDate },
-        eventIdx: eventIdx.toNumber(),
+        createdEvent: {
+          eventIdx: eventIdx.toNumber(),
+          block: {
+            blockId: blockNumber.toNumber(),
+            hash: blockHash,
+            datetime: blockDate.toISOString(),
+          },
+        },
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
@@ -1958,8 +1993,14 @@ describe('Instruction class', () => {
       const eventIdx = new BigNumber(1);
       const blockHash = 'someHash';
       const fakeQueryResult = {
-        updatedBlock: { blockId: blockNumber.toNumber(), hash: blockHash, datetime: blockDate },
-        eventIdx: eventIdx.toNumber(),
+        createdEvent: {
+          eventIdx: eventIdx.toNumber(),
+          block: {
+            blockId: blockNumber.toNumber(),
+            hash: blockHash,
+            datetime: blockDate.toISOString(),
+          },
+        },
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
@@ -2155,8 +2196,14 @@ describe('Instruction class', () => {
       const blockDate = new Date('4/14/2020');
       const eventIdx = new BigNumber(1);
       const fakeQueryResult = {
-        updatedBlock: { blockId: blockNumber.toNumber(), hash: blockHash, datetime: blockDate },
-        eventIdx: eventIdx.toNumber(),
+        createdEvent: {
+          eventIdx: eventIdx.toNumber(),
+          block: {
+            blockId: blockNumber.toNumber(),
+            hash: blockHash,
+            datetime: blockDate.toISOString(),
+          },
+        },
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
@@ -2478,12 +2525,18 @@ describe('Instruction class', () => {
             instructionAffirmations: {
               nodes: [
                 {
-                  identity: mediatorDid2,
-                  status: AffirmStatusEnum.Affirmed,
-                  expiry: expiry.toISOString(),
+                  identityId: mediatorDid1,
+                  status: AffirmStatusEnum.Pending,
+                  expiry: null,
                 },
                 {
-                  identity: mediatorDid3,
+                  identityId: mediatorDid2,
+                  status: AffirmStatusEnum.Affirmed,
+                  // the middleware serialises UTC with no zone marker
+                  expiry: expiry.toISOString().replace('Z', ''),
+                },
+                {
+                  identityId: mediatorDid3,
                   status: AffirmStatusEnum.Affirmed,
                   expiry: null,
                 },

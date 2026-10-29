@@ -235,11 +235,13 @@ describe('MultiSigProposal class', () => {
                   signerValue: voter,
                 },
                 action,
-                eventIdx: eventIdx.toNumber(),
-                createdBlock: {
-                  blockId: blockNumber.toNumber(),
-                  datetime: blockDate,
-                  hash: blockHash,
+                createdEvent: {
+                  eventIdx: eventIdx.toNumber(),
+                  block: {
+                    blockId: blockNumber.toNumber(),
+                    datetime: blockDate.toISOString(),
+                    hash: blockHash,
+                  },
                 },
               },
             ],
@@ -278,12 +280,14 @@ describe('MultiSigProposal class', () => {
           multiSigProposals: {
             nodes: [
               {
-                creatorAccount: 'creator',
-                eventIdx: eventIdx.toNumber(),
-                createdBlock: {
-                  blockId: blockNumber.toNumber(),
-                  datetime: blockDate,
-                  hash: blockHash,
+                creatorAccountId: 'creator',
+                createdEvent: {
+                  eventIdx: eventIdx.toNumber(),
+                  block: {
+                    blockId: blockNumber.toNumber(),
+                    datetime: blockDate.toISOString(),
+                    hash: blockHash,
+                  },
                 },
               },
             ],

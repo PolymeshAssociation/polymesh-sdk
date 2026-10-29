@@ -554,8 +554,8 @@ describe('DividendDistribution class', () => {
     it('should return the amount of the withheld tax', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
-      const eventId = 'eventId';
-      const datetime = '2020-10-10';
+      // the middleware serialises UTC with no zone marker
+      const datetime = '2020-10-10T10:20:30';
       const eventDid = 'eventDid';
       const balance = new BigNumber(100);
       const tax = new BigNumber(10);
@@ -575,15 +575,16 @@ describe('DividendDistribution class', () => {
             totalCount: 1,
             nodes: [
               {
-                eventId,
                 targetId: eventDid,
-                datetime,
                 amount: balance.toNumber(),
                 tax: tax.toNumber(),
 
-                createdBlock: {
-                  blockId: blockId.toNumber(),
-                  hash: blockHash,
+                createdEvent: {
+                  block: {
+                    blockId: blockId.toNumber(),
+                    hash: blockHash,
+                    datetime,
+                  },
                 },
               },
             ],

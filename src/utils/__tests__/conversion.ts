@@ -5005,10 +5005,10 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         assetId,
         ticker,
         amount: amount1.shiftedBy(6).toString(),
-        fromPortfolio: portfolioKind1,
-        from: portfolioDid1,
-        toPortfolio: portfolioKind2,
-        to: portfolioDid2,
+        fromPortfolioId: `${portfolioDid1}/${portfolioKind1}`,
+        fromId: portfolioDid1,
+        toPortfolioId: `${portfolioDid2}/${portfolioKind2}`,
+        toId: portfolioDid2,
       },
     ];
     const legs2 = [
@@ -5017,10 +5017,10 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         assetId,
         ticker,
         nftIds: [nftId.toString()],
-        fromPortfolio: portfolioKind2,
-        from: portfolioDid2,
-        toPortfolio: portfolioKind1,
-        to: portfolioDid1,
+        fromPortfolioId: `${portfolioDid2}/${portfolioKind2}`,
+        fromId: portfolioDid2,
+        toPortfolioId: `${portfolioDid1}/${portfolioKind1}`,
+        toId: portfolioDid1,
       },
     ];
     const legs3 = [
@@ -5029,8 +5029,8 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         assetId,
         ticker,
         amount: amount3.shiftedBy(6).toString(),
-        from: portfolioDid2,
-        to: portfolioDid1,
+        fromId: portfolioDid2,
+        toId: portfolioDid1,
       },
     ];
 
@@ -5038,10 +5038,12 @@ describe('middlewareInstructionToHistoricInstruction', () => {
 
     let instruction = {
       id: instructionId1.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
+      createdEvent: {
+        block: {
+          blockId: blockNumber.toNumber(),
+          hash: blockHash,
+          datetime: createdAt.toISOString(),
+        },
       },
       status,
       memo,
@@ -5072,10 +5074,12 @@ describe('middlewareInstructionToHistoricInstruction', () => {
 
     instruction = {
       id: instructionId2.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
+      createdEvent: {
+        block: {
+          blockId: blockNumber.toNumber(),
+          hash: blockHash,
+          datetime: createdAt.toISOString(),
+        },
       },
       status,
       type: type2,
@@ -5108,10 +5112,12 @@ describe('middlewareInstructionToHistoricInstruction', () => {
 
     instruction = {
       id: instructionId3.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
+      createdEvent: {
+        block: {
+          blockId: blockNumber.toNumber(),
+          hash: blockHash,
+          datetime: createdAt.toISOString(),
+        },
       },
       status,
       type: type3,

@@ -20,10 +20,10 @@ import {
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
-import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets';
+import { assetHoldersQuery, heldNftsQuery, nftHoldersQuery } from '~/middleware/queries/assets';
 import { trustingAssetsQuery } from '~/middleware/queries/claims';
 import { historicalInstructionsQuery } from '~/middleware/queries/settlements';
-import { AssetHoldersOrderBy, NftHoldersOrderBy } from '~/middleware/types';
+import { AssetHoldersOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
@@ -590,7 +590,7 @@ describe('Identity class', () => {
           { identityId: did },
           new BigNumber(1),
           new BigNumber(0),
-          AssetHoldersOrderBy.CreatedBlockIdAsc
+          AssetHoldersOrderBy.CreatedEventIdAsc
         ),
         {
           assetHolders: {
@@ -603,7 +603,7 @@ describe('Identity class', () => {
       result = await identity.getHeldAssets({
         start: new BigNumber(0),
         size: new BigNumber(1),
-        order: AssetHoldersOrderBy.CreatedBlockIdAsc,
+        order: AssetHoldersOrderBy.CreatedEventIdAsc,
       });
 
       expect(result.data[0]!.id).toBe(assetIds[0]);
@@ -669,6 +669,13 @@ describe('Identity class', () => {
     const did = 'someDid';
     const assetIds = ['0x12341234123412341234123412341234', '0x4321'];
 
+    const mockNfts = (heldIds: string[], nodes: { assetId: string; nftId: string }[]): void => {
+      dsMockUtils.createApolloQueryMock(
+        heldNftsQuery({ identityId: did, assetIds: heldIds }, new BigNumber(100), new BigNumber(0)),
+        { nfts: { nodes, totalCount: nodes.length } }
+      );
+    };
+
     it('should return a list of HeldNfts', async () => {
       const identity = new Identity({ did }, context);
 
@@ -677,8 +684,8 @@ describe('Identity class', () => {
       );
 
       dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {
-        nftHolders: {
-          nodes: assetIds.map(assetId => ({ asset: { id: assetId }, nftIds: [] })),
+        assetHolders: {
+          nodes: assetIds.map(assetId => ({ asset: { id: assetId }, nftCount: 0 })),
           totalCount: 2,
         },
       });
@@ -687,36 +694,41 @@ describe('Identity class', () => {
 
       expect(result.data[0]!.collection.id).toBe(assetIds[0]);
       expect(result.data[1]!.collection.id).toBe(assetIds[1]);
+      expect(result.data[0]!.nfts).toEqual([]);
 
       dsMockUtils.createApolloQueryMock(
         nftHoldersQuery(
           { identityId: did },
           new BigNumber(1),
           new BigNumber(0),
-          NftHoldersOrderBy.CreatedBlockIdAsc
+          AssetHoldersOrderBy.CreatedEventIdAsc
         ),
         {
-          nftHolders: {
-            nodes: assetIds.map(assetId => ({ asset: { id: assetId }, nftIds: [1, 3] })),
+          assetHolders: {
+            nodes: assetIds.map(assetId => ({ asset: { id: assetId }, nftCount: 2 })),
             totalCount: 2,
           },
         }
       );
+      mockNfts(assetIds, [
+        { assetId: assetIds[0]!, nftId: '1' },
+        { assetId: assetIds[0]!, nftId: '3' },
+        { assetId: assetIds[1]!, nftId: '2' },
+      ]);
 
       result = await identity.getHeldNfts({
         start: new BigNumber(0),
         size: new BigNumber(1),
-        orderBy: NftHoldersOrderBy.CreatedBlockIdAsc,
+        orderBy: AssetHoldersOrderBy.CreatedEventIdAsc,
       });
 
       expect(result.data[0]!.collection.id).toBe(assetIds[0]);
       expect(result.data[1]!.collection.id).toBe(assetIds[1]);
-      expect(result.data[0]!.nfts).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: new BigNumber(1) }),
-          expect.objectContaining({ id: new BigNumber(3) }),
-        ])
-      );
+      expect(result.data[0]!.nfts).toEqual([
+        expect.objectContaining({ id: new BigNumber(1) }),
+        expect.objectContaining({ id: new BigNumber(3) }),
+      ]);
+      expect(result.data[1]!.nfts).toEqual([expect.objectContaining({ id: new BigNumber(2) })]);
     });
 
     it('should ask the indexer to exclude collections held down to nothing', async () => {
@@ -727,14 +739,15 @@ describe('Identity class', () => {
       when(getAssetIdFromMiddlewareSpy).calledWith(assetId).mockReturnValue(assetId);
 
       dsMockUtils.createApolloQueryMock(
-        nftHoldersQuery({ identityId: did, nftIds: [] }, undefined, undefined, undefined),
+        nftHoldersQuery({ identityId: did, heldNow: true }, undefined, undefined, undefined),
         {
-          nftHolders: {
-            nodes: [{ asset: { id: assetId }, nftIds: [1] }],
+          assetHolders: {
+            nodes: [{ asset: { id: assetId }, nftCount: 1 }],
             totalCount: 1,
           },
         }
       );
+      mockNfts([assetId], [{ assetId, nftId: '1' }]);
 
       const result = await identity.getHeldNfts({ heldNow: true });
 
@@ -754,17 +767,18 @@ describe('Identity class', () => {
           { identityId: did },
           undefined,
           undefined,
-          NftHoldersOrderBy.CreatedBlockIdAsc
+          AssetHoldersOrderBy.CreatedEventIdAsc
         ),
         {
-          nftHolders: {
-            nodes: [{ asset: { id: assetId }, nftIds: [1] }],
+          assetHolders: {
+            nodes: [{ asset: { id: assetId }, nftCount: 1 }],
             totalCount: 1,
           },
         }
       );
+      mockNfts([assetId], [{ assetId, nftId: '1' }]);
 
-      const result = await identity.getHeldNfts({ order: NftHoldersOrderBy.CreatedBlockIdAsc });
+      const result = await identity.getHeldNfts({ order: AssetHoldersOrderBy.CreatedEventIdAsc });
 
       expect(result.data).toHaveLength(1);
     });
@@ -774,8 +788,8 @@ describe('Identity class', () => {
 
       return expect(
         identity.getHeldNfts({
-          order: NftHoldersOrderBy.CreatedBlockIdAsc,
-          orderBy: NftHoldersOrderBy.CreatedBlockIdDesc,
+          order: AssetHoldersOrderBy.CreatedEventIdAsc,
+          orderBy: AssetHoldersOrderBy.CreatedEventIdDesc,
         })
       ).rejects.toThrow('Pass "orderBy" or the deprecated "order", not both');
     });

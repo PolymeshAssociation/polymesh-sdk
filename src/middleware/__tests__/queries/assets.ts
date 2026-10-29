@@ -5,10 +5,12 @@ import {
   assetHoldersQuery,
   assetQuery,
   assetTransactionQuery,
+  heldNftsQuery,
   nftCollectionHolders,
+  nftCollectionHoldersNftsQuery,
   nftHoldersQuery,
 } from '~/middleware/queries/assets';
-import { AssetHoldersOrderBy, NftHoldersOrderBy } from '~/middleware/types';
+import { AssetHoldersOrderBy } from '~/middleware/types';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 describe('assetQuery', () => {
@@ -85,6 +87,12 @@ describe('assetTransactionQuery', () => {
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
+    const printed = print(result.query);
+    expect(printed).toContain('fromAccountId');
+    expect(printed).toContain('toAccountId');
+    expect(printed).toContain('createdEvent {');
+    expect(printed).toContain('extrinsicIdx');
+
     result = assetTransactionQuery(variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
@@ -115,6 +123,31 @@ describe('nftCollectionHoldersQuery', () => {
   });
 });
 
+describe('heldNftsQuery', () => {
+  it('should read the NFTs an Identity holds in the given collections', () => {
+    const filters = { identityId: 'someDid', assetIds: ['0x01', '0x02'] };
+
+    const result = heldNftsQuery(filters, new BigNumber(100), new BigNumber(200));
+
+    expect(print(result.query)).toContain('assetId: {in: $assetIds}');
+    expect(print(result.query)).toContain('holding: {identityId: {equalTo: $identityId}}');
+    expect(print(result.query)).toContain('orderBy: [ASSET_ID_ASC, NFT_ID_ASC]');
+    expect(result.variables).toEqual({ ...filters, size: 100, start: 200 });
+  });
+});
+
+describe('nftCollectionHoldersNftsQuery', () => {
+  it('should read the NFTs some Identities hold in a collection', () => {
+    const filters = { assetId: '0x01', identityIds: ['someDid', 'otherDid'] };
+
+    const result = nftCollectionHoldersNftsQuery(filters, new BigNumber(100), new BigNumber(0));
+
+    expect(print(result.query)).toContain('holding: {identityId: {in: $identityIds}}');
+    expect(print(result.query)).toContain('orderBy: [NFT_ID_ASC]');
+    expect(result.variables).toEqual({ ...filters, size: 100, start: 0 });
+  });
+});
+
 describe('holder queries', () => {
   const identityId = 'someDid';
 
@@ -134,36 +167,44 @@ describe('holder queries', () => {
     expect(print(assetHoldersQuery({ identityId }).query)).not.toContain('greaterThan');
   });
 
-  it('should map the createdAt orderings onto block order, which the indexer exposes', () => {
+  it('should map the createdAt orderings onto event order, which the indexer exposes', () => {
     expect(
       print(
         assetHoldersQuery({ identityId }, undefined, undefined, AssetHoldersOrderBy.CreatedAtAsc)
           .query
       )
-    ).toContain('orderBy: [CREATED_BLOCK_ID_ASC, ASSET_ID_ASC]');
+    ).toContain('orderBy: [CREATED_EVENT_ID_ASC, ASSET_ID_ASC]');
     expect(
       print(
         assetHoldersQuery({ identityId }, undefined, undefined, AssetHoldersOrderBy.CreatedAtDesc)
           .query
       )
-    ).toContain('orderBy: [CREATED_BLOCK_ID_DESC, ASSET_ID_ASC]');
+    ).toContain('orderBy: [CREATED_EVENT_ID_DESC, ASSET_ID_ASC]');
     expect(
       print(
-        nftHoldersQuery({ identityId }, undefined, undefined, NftHoldersOrderBy.CreatedAtAsc).query
+        nftHoldersQuery({ identityId }, undefined, undefined, AssetHoldersOrderBy.CreatedAtAsc)
+          .query
       )
-    ).toContain('orderBy: [CREATED_BLOCK_ID_ASC, ASSET_ID_ASC]');
+    ).toContain('orderBy: [CREATED_EVENT_ID_ASC, ASSET_ID_ASC]');
     expect(
       print(
-        nftHoldersQuery({ identityId }, undefined, undefined, NftHoldersOrderBy.CreatedAtDesc).query
+        nftHoldersQuery({ identityId }, undefined, undefined, AssetHoldersOrderBy.CreatedAtDesc)
+          .query
       )
-    ).toContain('orderBy: [CREATED_BLOCK_ID_DESC, ASSET_ID_ASC]');
+    ).toContain('orderBy: [CREATED_EVENT_ID_DESC, ASSET_ID_ASC]');
+  });
+
+  it('should only read NFT collections', () => {
+    expect(print(nftHoldersQuery({ identityId }).query)).toContain(
+      'asset: {isNftCollection: {equalTo: true}}'
+    );
   });
 
   it('should exclude collections held down to nothing in the query', () => {
-    const { query, variables } = nftHoldersQuery({ identityId, nftIds: [] });
+    const { query, variables } = nftHoldersQuery({ identityId, heldNow: true });
 
-    expect(print(query)).toContain('nftIds: {notEqualTo: $nftIds}');
-    expect(print(query)).toContain('$nftIds: JSON!');
-    expect(variables).toMatchObject({ nftIds: [] });
+    expect(print(query)).toContain('nftCount: {greaterThan: 0}');
+    expect(variables).toEqual({ identityId, size: DEFAULT_GQL_PAGE_SIZE, start: 0 });
+    expect(print(nftHoldersQuery({ identityId }).query)).not.toContain('nftCount: {');
   });
 });

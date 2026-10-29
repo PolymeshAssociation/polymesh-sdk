@@ -3,7 +3,7 @@ import { when } from 'jest-when';
 
 import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
 import { Context, Namespace } from '~/internal';
-import { nftCollectionHolders } from '~/middleware/queries/assets';
+import { nftCollectionHolders, nftCollectionHoldersNftsQuery } from '~/middleware/queries/assets';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { NftCollection } from '~/types';
 import * as utilsInternalModule from '~/utils/internal';
@@ -54,24 +54,16 @@ describe('AssetHolder class', () => {
       assetHolders = new AssetHolders(collection, context);
       when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
-      const nftHoldersResponse = {
-        nodes: [
-          {
-            identityId: 'someDid',
-            nftIds: [1],
-          },
-          {
-            identityId: 'anotherDid',
-            nftIds: [2],
-          },
-        ],
-        totalCount: 2,
-      };
-
       dsMockUtils.createApolloQueryMock(
         nftCollectionHolders(assetId, new BigNumber(2), new BigNumber(0)),
         {
-          nftHolders: nftHoldersResponse,
+          assetHolders: {
+            nodes: [
+              { identityId: 'someDid', nftCount: 2 },
+              { identityId: 'anotherDid', nftCount: 1 },
+            ],
+            totalCount: 2,
+          },
         }
       );
     });
@@ -85,22 +77,70 @@ describe('AssetHolder class', () => {
     });
 
     it('should retrieve all the NFT Holders with NFTs', async () => {
+      dsMockUtils.createApolloQueryMock(
+        nftCollectionHoldersNftsQuery(
+          { assetId, identityIds: ['someDid', 'anotherDid'] },
+          new BigNumber(100),
+          new BigNumber(0)
+        ),
+        {
+          nfts: {
+            nodes: [
+              { nftId: '1', holding: { identityId: 'someDid' } },
+              { nftId: '2', holding: { identityId: 'anotherDid' } },
+              { nftId: '3', holding: { identityId: 'someDid' } },
+            ],
+            totalCount: 3,
+          },
+        }
+      );
+
       const result = await assetHolders.get({ size: new BigNumber(2), start: new BigNumber(0) });
 
       expect(result).toEqual({
-        data: expect.arrayContaining([
+        data: [
           expect.objectContaining({
             identity: expect.objectContaining({ did: 'someDid' }),
-            nfts: [expect.objectContaining({ id: new BigNumber(1) })],
+            nfts: [
+              expect.objectContaining({ id: new BigNumber(1) }),
+              expect.objectContaining({ id: new BigNumber(3) }),
+            ],
           }),
           expect.objectContaining({
             identity: expect.objectContaining({ did: 'anotherDid' }),
             nfts: [expect.objectContaining({ id: new BigNumber(2) })],
           }),
-        ]),
+        ],
         next: null,
         count: new BigNumber(2),
       });
+    });
+
+    it('should read every NFT of the page, past the middleware page limit', async () => {
+      const firstPage = Array.from({ length: 100 }, (_, i) => ({
+        nftId: `${i + 1}`,
+        holding: { identityId: 'someDid' },
+      }));
+      const filters = { assetId, identityIds: ['someDid', 'anotherDid'] };
+
+      dsMockUtils.createApolloQueryMock(
+        nftCollectionHoldersNftsQuery(filters, new BigNumber(100), new BigNumber(0)),
+        { nfts: { nodes: firstPage, totalCount: 101 } }
+      );
+      dsMockUtils.createApolloQueryMock(
+        nftCollectionHoldersNftsQuery(filters, new BigNumber(100), new BigNumber(100)),
+        {
+          nfts: {
+            nodes: [{ nftId: '101', holding: { identityId: 'anotherDid' } }],
+            totalCount: 101,
+          },
+        }
+      );
+
+      const { data } = await assetHolders.get({ size: new BigNumber(2), start: new BigNumber(0) });
+
+      expect(data[0]!.nfts).toHaveLength(100);
+      expect(data[1]!.nfts).toEqual([expect.objectContaining({ id: new BigNumber(101) })]);
     });
   });
 
