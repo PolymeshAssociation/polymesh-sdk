@@ -41,7 +41,7 @@ import {
   balanceToBigNumber,
   extrinsicIdentifierToTxTag,
   hashToString,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareEventToEventIdentifier,
   moduleAddressToString,
   stringToBlockHash,
   textToString,
@@ -262,7 +262,7 @@ export class Network {
       )
     );
 
-    return optionize(middlewareEventDetailsToEventIdentifier)(event?.block, event?.eventIdx);
+    return optionize(middlewareEventToEventIdentifier)(event);
   }
 
   /**
