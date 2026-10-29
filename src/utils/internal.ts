@@ -1,3 +1,4 @@
+import { QueryOptions } from '@apollo/client/core';
 import {
   ApiDecoration,
   AugmentedEvent,
@@ -44,7 +45,12 @@ import {
   PolymeshError,
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries/common';
-import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
+import {
+  Claim as MiddlewareClaim,
+  ClaimTypeEnum,
+  Nft as MiddlewareNft,
+  Query,
+} from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   Asset,
@@ -107,6 +113,7 @@ import {
 import {
   BABE_ENGINE_ID,
   CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
+  MAX_GQL_PAGE_SIZE,
   MAX_META_LENGTH,
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
@@ -1695,6 +1702,43 @@ function assertExpectedSpecVersion(
 
     reject(error);
   }
+}
+
+/**
+ * @hidden
+ *
+ * Read every NFT a middleware `nfts` query matches, a page at a time, since the middleware
+ *   returns no more than `MAX_GQL_PAGE_SIZE` rows to a request
+ *
+ * @param buildQuery - the query for one page, given its size and offset
+ */
+export async function getAllMiddlewareNfts(
+  context: Context,
+  buildQuery: (size: BigNumber, start: BigNumber) => QueryOptions
+): Promise<MiddlewareNft[]> {
+  const size = new BigNumber(MAX_GQL_PAGE_SIZE);
+  const nfts: MiddlewareNft[] = [];
+  let totalCount = 0;
+
+  do {
+    const {
+      data: {
+        nfts: { nodes, totalCount: total },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'nfts'>>(
+      buildQuery(size, new BigNumber(nfts.length))
+    );
+
+    totalCount = total;
+    nfts.push(...nodes);
+
+    // a page that comes back empty means the set shrank since the first page was read
+    if (!nodes.length) {
+      break;
+    }
+  } while (nfts.length < totalCount);
+
+  return nfts;
 }
 
 /**
