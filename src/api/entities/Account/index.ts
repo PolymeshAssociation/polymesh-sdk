@@ -36,7 +36,7 @@ import {
   Staking,
 } from '~/internal';
 import { extrinsicsByArgs } from '~/middleware/queries/extrinsics';
-import { ExtrinsicsOrderBy, PolyxTransactionsOrderBy, Query } from '~/middleware/types';
+import { ExtrinsicsOrderBy, PolyxEntriesOrderBy, Query } from '~/middleware/types';
 import {
   AccountBalance,
   AccountCollection,
@@ -674,19 +674,19 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Returns POLYX transactions associated with this account
+   * Returns the changes POLYX movements made to this Account's balance, one entry per movement
    *
    * @param filters.size - page size
    * @param filters.start - page offset
-   * @param filters.orderBy - ordering of the results. Defaults to `PolyxTransactionsOrderBy.IdDesc`, newest first.
-   *   The indexer's `id` is `<block number>/<event index>`, so it orders by block and then by position within
-   *   the block — ordering by block alone leaves transactions sharing a block in no defined order
+   * @param filters.orderBy - ordering of the results. Defaults to `PolyxEntriesOrderBy.IdDesc`, newest first.
+   *   The indexer's `id` is `<block number>/<event index>/<side>`, so it orders by block and then by position
+   *   within the block — ordering by block alone leaves entries sharing a block in no defined order
    *
    * @note uses the middleware
    */
   public getPolyxTransactions(
     filters: MiddlewarePaginationOptions & {
-      orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[];
+      orderBy?: PolyxEntriesOrderBy | PolyxEntriesOrderBy[];
     }
   ): Promise<ResultSet<HistoricPolyxTransaction>> {
     const { context } = this;

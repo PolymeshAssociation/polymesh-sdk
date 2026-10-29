@@ -36,7 +36,7 @@ import {
 import { claimsQuery } from '~/middleware/queries/claims';
 import { heartbeatQuery, metadataQuery } from '~/middleware/queries/common';
 import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
-import { PolyxTransactionsOrderBy, Query } from '~/middleware/types';
+import { PolyxEntriesOrderBy, Query } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
@@ -80,7 +80,7 @@ import {
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
   middlewareClaimToClaimData,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareEventToEventIdentifier,
   momentToDate,
   posRatioToBigNumber,
   signerToString,
@@ -1457,7 +1457,7 @@ export class Context {
     args: MiddlewarePaginationOptions & {
       identity?: string | Identity;
       accounts?: (string | Account)[];
-      orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[];
+      orderBy?: PolyxEntriesOrderBy | PolyxEntriesOrderBy[];
     }
   ): Promise<ResultSet<HistoricPolyxTransaction>> {
     const {
@@ -1470,9 +1470,9 @@ export class Context {
 
     const {
       data: {
-        polyxTransactions: { nodes: transactions, totalCount },
+        polyxEntries: { nodes: transactions, totalCount },
       },
-    } = await this.queryMiddleware<Ensured<Query, 'polyxTransactions'>>(
+    } = await this.queryMiddleware<Ensured<Query, 'polyxEntries'>>(
       polyxTransactionsQuery(
         {
           identityId: identity ? asDid(identity) : undefined,
@@ -1488,37 +1488,44 @@ export class Context {
 
     const data: HistoricPolyxTransaction[] = transactions.map(transaction => {
       const {
+        accountId,
         identityId,
-        address,
-        toId,
-        toAddress,
+        counterpartyAddress,
+        counterpartyIdentityId,
         amount,
-        type,
+        direction,
+        kind,
+        pool,
         memo,
-        createdBlock,
+        createdEvent,
         callId,
         eventId,
         moduleId,
         extrinsic,
-        eventIdx,
       } = transaction;
 
-      /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
-        fromIdentity: identityId ? new Identity({ did: identityId }, this) : undefined,
-        fromAccount: address ? new Account({ address }, this) : undefined,
-        toIdentity: toId ? new Identity({ did: toId }, this) : undefined,
-        toAccount: toAddress ? new Account({ address: toAddress }, this) : undefined,
-        amount: new BigNumber(amount).shiftedBy(-6),
-        type,
-        memo,
-        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
-        callId,
-        eventId: eventId!,
-        moduleId: moduleId!,
+        account: new Account({ address: accountId }, this),
+        identity: identityId ? new Identity({ did: identityId }, this) : undefined,
+        counterpartyAccount: counterpartyAddress
+          ? new Account({ address: counterpartyAddress }, this)
+          : undefined,
+        counterpartyIdentity: counterpartyIdentityId
+          ? new Identity({ did: counterpartyIdentityId }, this)
+          : undefined,
+        // the middleware signs the amount by direction
+        amount: new BigNumber(amount).abs().shiftedBy(-6),
+        direction,
+        kind,
+        pool,
+        memo: memo ?? undefined,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ...middlewareEventToEventIdentifier(createdEvent!),
+        callId: callId ?? undefined,
+        eventId,
+        moduleId: moduleId ?? undefined,
         extrinsicIdx: extrinsic ? new BigNumber(extrinsic.extrinsicIdx) : undefined,
       };
-      /* eslint-enable @typescript-eslint/no-non-null-assertion */
     });
 
     const next = calculateNextKey(count, data.length, start);
