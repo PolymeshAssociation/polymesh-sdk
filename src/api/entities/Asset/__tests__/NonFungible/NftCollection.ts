@@ -227,12 +227,14 @@ describe('NftCollection class', () => {
         assets: {
           nodes: [
             {
-              createdBlock: {
-                blockId: blockNumber.toNumber(),
-                datetime: blockDate,
-                hash: blockHash,
+              createdEvent: {
+                eventIdx: eventIdx.toNumber(),
+                block: {
+                  blockId: blockNumber.toNumber(),
+                  datetime: blockDate.toISOString(),
+                  hash: blockHash,
+                },
               },
-              eventIdx: eventIdx.toNumber(),
             },
           ],
         },
@@ -747,11 +749,13 @@ describe('NftCollection class', () => {
             toPortfolioId: 'SOME_DID/0',
             fromPortfolioId: null,
             extrinsicIdx: 1,
-            eventIdx: 1,
-            createdBlock: {
-              blockId: new BigNumber(123),
-              hash: 'SOME_HASH',
-              datetime: new Date('2022/12/31'),
+            createdEvent: {
+              eventIdx: 1,
+              block: {
+                blockId: new BigNumber(123),
+                hash: 'SOME_HASH',
+                datetime: new Date('2022/12/31').toISOString(),
+              },
             },
           },
           {
@@ -763,11 +767,13 @@ describe('NftCollection class', () => {
             instructionId: 1,
             instructionMemo: 'some memo',
             extrinsicIdx: 1,
-            eventIdx: 1,
-            createdBlock: {
-              blockId: new BigNumber(123),
-              hash: 'SOME_HASH',
-              datetime: new Date('2022/12/31'),
+            createdEvent: {
+              eventIdx: 1,
+              block: {
+                blockId: new BigNumber(123),
+                hash: 'SOME_HASH',
+                datetime: new Date('2022/12/31').toISOString(),
+              },
             },
           },
         ],

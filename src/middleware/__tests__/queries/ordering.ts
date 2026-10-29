@@ -4,7 +4,7 @@ import { assetTransactionQuery } from '~/middleware/queries/assets';
 import { customClaimTypeQuery } from '~/middleware/queries/claims';
 import { distributionPaymentsQuery } from '~/middleware/queries/distributions';
 import { eventsByArgs } from '~/middleware/queries/events';
-import { tickerExternalAgentActionsQuery } from '~/middleware/queries/externalAgents';
+import { assetAgentActionsQuery } from '~/middleware/queries/externalAgents';
 import { extrinsicsByArgs } from '~/middleware/queries/extrinsics';
 import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
 import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
@@ -12,13 +12,17 @@ import { instructionAffirmationsQuery } from '~/middleware/queries/settlements';
 import { investmentsQuery } from '~/middleware/queries/stos';
 import {
   AssetTransactionsOrderBy,
+  EventIdEnum,
   EventsOrderBy,
   InvestmentsOrderBy,
+  ModuleIdEnum,
   MultiSigProposalsOrderBy,
 } from '~/middleware/types';
 
 const assetId = 'someAsset';
 const multisigId = 'someAddress';
+const stoId = `${assetId}/1`;
+const eventType = { moduleId: ModuleIdEnum.Asset, eventId: EventIdEnum.AssetCreated };
 
 const ID_ASC = 'orderBy: [ID_ASC]';
 const ID_DESC = 'orderBy: [ID_DESC]';
@@ -37,13 +41,13 @@ describe('paginated query ordering', () => {
     ['assetTransactionQuery', print(assetTransactionQuery({ assetId }).query)],
     [CUSTOM_CLAIM_TYPES, print(customClaimTypeQuery().query)],
     ['distributionPaymentsQuery', print(distributionPaymentsQuery({ distributionId: '1' }).query)],
-    ['eventsByArgs', print(eventsByArgs({}).query)],
-    ['tickerExternalAgentActionsQuery', print(tickerExternalAgentActionsQuery({ assetId }).query)],
+    ['eventsByArgs', print(eventsByArgs(eventType).query)],
+    ['assetAgentActionsQuery', print(assetAgentActionsQuery({ assetId }).query)],
     ['extrinsicsByArgs', print(extrinsicsByArgs({}).query)],
     [PROPOSALS, print(multiSigProposalsQuery({ multisigId }).query)],
     ['polyxTransactionsQuery', print(polyxTransactionsQuery({}).query)],
     [AFFIRMATIONS, print(instructionAffirmationsQuery({ instructionId: '1' }).query)],
-    ['investmentsQuery', print(investmentsQuery({ stoId: 1, offeringAssetId: assetId }).query)],
+    ['investmentsQuery', print(investmentsQuery({ stoId }).query)],
   ];
 
   const queryFor = (name: string): string => {
@@ -68,20 +72,19 @@ describe('paginated query ordering', () => {
       extrinsicsByArgs: ID_ASC,
       investmentsQuery: ID_ASC,
       polyxTransactionsQuery: ID_DESC,
-      tickerExternalAgentActionsQuery: ID_DESC,
+      assetAgentActionsQuery: 'orderBy: [CREATED_EVENT_ID_DESC]',
     };
 
     Object.entries(expected).forEach(([name, order]) => expect(queryFor(name)).toContain(order));
   });
 
   it('should use a unique tiebreaker where the id is not block derived', () => {
-    expect(queryFor(CUSTOM_CLAIM_TYPES)).toContain('orderBy: [CREATED_BLOCK_ID_ASC, ID_ASC]');
-    expect(queryFor(AFFIRMATIONS)).toContain('orderBy: [CREATED_BLOCK_ID_DESC, ID_DESC]');
+    expect(queryFor(CUSTOM_CLAIM_TYPES)).toContain('orderBy: [CREATED_EVENT_ID_ASC, ID_ASC]');
   });
 
-  it('should fall back to a tiebreaker only where no composite event id exists', () => {
-    // `instructions` and `instructionEvents` order by `createdEventId`; affirmations have none
-    expect(queryFor(AFFIRMATIONS)).not.toContain('CREATED_EVENT_ID');
+  it('should break ties between affirmations created by the same event', () => {
+    // every holder's affirmation is created with the instruction, so they share `createdEventId`
+    expect(queryFor(AFFIRMATIONS)).toContain('orderBy: [CREATED_EVENT_ID_DESC, ID_DESC]');
   });
 
   it('should order MultiSig proposals numerically, since their id embeds an unpadded number', () => {
@@ -98,13 +101,13 @@ describe('paginated query ordering', () => {
             { assetId },
             undefined,
             undefined,
-            AssetTransactionsOrderBy.DatetimeDesc
+            AssetTransactionsOrderBy.CreatedEventIdDesc
           ).query
         ),
-        'orderBy: [DATETIME_DESC, ID_ASC]',
+        'orderBy: [CREATED_EVENT_ID_DESC, ID_ASC]',
       ],
       [
-        print(eventsByArgs({}, undefined, undefined, EventsOrderBy.BlockIdDesc).query),
+        print(eventsByArgs(eventType, undefined, undefined, EventsOrderBy.BlockIdDesc).query),
         'orderBy: [BLOCK_ID_DESC, ID_ASC]',
       ],
       [
@@ -120,14 +123,10 @@ describe('paginated query ordering', () => {
       ],
       [
         print(
-          investmentsQuery(
-            { stoId: 1, offeringAssetId: assetId },
-            undefined,
-            undefined,
-            InvestmentsOrderBy.DatetimeAsc
-          ).query
+          investmentsQuery({ stoId }, undefined, undefined, InvestmentsOrderBy.CreatedEventIdAsc)
+            .query
         ),
-        'orderBy: [DATETIME_ASC, ID_ASC]',
+        'orderBy: [CREATED_EVENT_ID_ASC, ID_ASC]',
       ],
     ];
 
@@ -136,31 +135,26 @@ describe('paginated query ordering', () => {
 
   it('should order by every key a caller supplies, in the order they supplied them', () => {
     const query = print(
-      investmentsQuery({ stoId: 1, offeringAssetId: assetId }, undefined, undefined, [
+      investmentsQuery({ stoId }, undefined, undefined, [
         InvestmentsOrderBy.OfferingTokenAsc,
-        InvestmentsOrderBy.DatetimeDesc,
+        InvestmentsOrderBy.CreatedEventIdDesc,
       ]).query
     );
 
-    expect(query).toContain('orderBy: [OFFERING_TOKEN_ASC, DATETIME_DESC, ID_ASC]');
+    expect(query).toContain('orderBy: [OFFERING_TOKEN_ASC, CREATED_EVENT_ID_DESC, ID_ASC]');
   });
 
   it('should not append a key the caller already orders by, in either direction', () => {
     // the caller wants the newest first; appending `ID_ASC` behind it would say nothing, and
     // appending it *ahead* of their key would quietly ignore what they asked for
     const query = print(
-      investmentsQuery(
-        { stoId: 1, offeringAssetId: assetId },
-        undefined,
-        undefined,
-        InvestmentsOrderBy.IdDesc
-      ).query
+      investmentsQuery({ stoId }, undefined, undefined, InvestmentsOrderBy.IdDesc).query
     );
 
     expect(query).toContain('orderBy: [ID_DESC]');
   });
 
   it('should order by the unique key alone when a caller supplies nothing', () => {
-    expect(print(investmentsQuery({ stoId: 1, offeringAssetId: assetId }).query)).toContain(ID_ASC);
+    expect(print(investmentsQuery({ stoId }).query)).toContain(ID_ASC);
   });
 });

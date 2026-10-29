@@ -142,12 +142,14 @@ describe('NumberedPortfolio class', () => {
         portfolios: {
           nodes: [
             {
-              createdBlock: {
-                datetime: blockDate,
-                hash: blockHash,
-                blockId: blockNumber.toNumber(),
+              createdEvent: {
+                eventIdx: eventIdx.toNumber(),
+                block: {
+                  datetime: blockDate.toISOString(),
+                  hash: blockHash,
+                  blockId: blockNumber.toNumber(),
+                },
               },
-              eventIdx: eventIdx.toNumber(),
             },
           ],
         },
