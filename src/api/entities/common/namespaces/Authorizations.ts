@@ -28,6 +28,7 @@ import {
   booleanToBool,
   identityIdToString,
   middlewareAuthorizationDataToAuthorization,
+  middlewareDateToDate,
   momentToDate,
   signerToSignerValue,
   signerValueToSignatory,
@@ -210,7 +211,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
       return new AuthorizationRequest(
         {
           authId: new BigNumber(id),
-          expiry: expiry ? new Date(expiry) : null,
+          expiry: expiry ? middlewareDateToDate(expiry) : null,
           data: middlewareAuthorizationDataToAuthorization(context, authType, authData),
           target: toAccountId
             ? new Account({ address: toAccountId }, context)
