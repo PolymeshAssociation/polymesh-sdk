@@ -5,7 +5,7 @@ import {
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { chunk, differenceWith, intersectionWith, uniqBy } from 'lodash';
+import { chunk, differenceWith, groupBy, intersectionWith, uniqBy } from 'lodash';
 
 import { AssetPermissions } from '~/api/entities/Identity/AssetPermissions';
 import { IdentityAuthorizations } from '~/api/entities/Identity/IdentityAuthorizations';
@@ -26,10 +26,10 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
-import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets';
+import { assetHoldersQuery, heldNftsQuery, nftHoldersQuery } from '~/middleware/queries/assets';
 import { trustingAssetsQuery } from '~/middleware/queries/claims';
 import { historicalInstructionsQuery } from '~/middleware/queries/settlements';
-import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
+import { AssetHoldersOrderBy, Query } from '~/middleware/types';
 import {
   Asset,
   CheckRolesResult,
@@ -87,6 +87,7 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAccount,
+  getAllMiddlewareNfts,
   getAssetIdFromMiddleware,
   getSecondaryAccountPermissions,
   requestPaginated,
@@ -535,7 +536,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *   Passing both throws, since neither can be said to have been meant
    *
    * @note uses the middlewareV2
-   * @note supports pagination
+   * @note supports pagination. A page is a page of collections, each with every NFT the Identity
+   *   holds in it, so a collection with many NFTs takes several middleware requests
    */
   public async getHeldNfts(
     opts: MiddlewarePaginationOptions & {
@@ -544,8 +546,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
        * @deprecated in favour of `orderBy`, which every other read is ordered by. Passing both
        *   throws
        */
-      order?: NftHoldersOrderBy;
-      orderBy?: NftHoldersOrderBy | NftHoldersOrderBy[];
+      order?: AssetHoldersOrderBy;
+      orderBy?: AssetHoldersOrderBy | AssetHoldersOrderBy[];
     } = {}
   ): Promise<ResultSet<HeldNfts>> {
     const { context, did } = this;
@@ -555,37 +557,36 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const {
       data: {
-        nftHolders: { nodes, totalCount },
+        assetHolders: { nodes, totalCount },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'nftHolders'>>(
-      nftHoldersQuery(
-        {
-          identityId: did,
-          ...(heldNow && { nftIds: [] }),
-        },
-        size,
-        start,
-        ordering
-      )
+    } = await context.queryMiddleware<Ensured<Query, 'assetHolders'>>(
+      nftHoldersQuery({ identityId: did, heldNow }, size, start, ordering)
     );
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ asset, nftIds }) => {
-      const assetId = getAssetIdFromMiddleware(asset!.id);
-      const collection = new NftCollection({ assetId }, context);
-      const nfts = nftIds.map(
-        (id: number) =>
-          new Nft(
-            {
-              assetId,
-              id: new BigNumber(id),
-            },
-            context
-          )
-      );
+    // the holdings are one page of collections; their NFTs are read in full for that page
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const heldIds = nodes.filter(({ nftCount }) => nftCount > 0).map(({ asset }) => asset!.id);
+    const nfts = heldIds.length
+      ? await getAllMiddlewareNfts(context, (pageSize, offset) =>
+          heldNftsQuery({ identityId: did, assetIds: heldIds }, pageSize, offset)
+        )
+      : [];
+    const nftsByAsset = groupBy(nfts, 'assetId');
 
-      return { collection, nfts };
+    const data = nodes.map(({ asset }) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const middlewareAssetId = asset!.id;
+      const assetId = getAssetIdFromMiddleware(middlewareAssetId);
+      const collection = new NftCollection({ assetId }, context);
+
+      return {
+        collection,
+        nfts: (nftsByAsset[middlewareAssetId] ?? []).map(
+          ({ nftId }) => new Nft({ assetId, id: new BigNumber(nftId) }, context)
+        ),
+      };
     });
 
     const next = calculateNextKey(count, data.length, start);
