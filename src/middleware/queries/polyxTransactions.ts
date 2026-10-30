@@ -2,8 +2,12 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
-import { PolyxTransactionsOrderBy } from '~/middleware/types';
+import {
+  eventIdentifierFields,
+  getSizeAndOffset,
+  orderByClause,
+} from '~/middleware/queries/common';
+import { PolyxEntriesOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs } from '~/types/utils';
 
 export interface QueryPolyxTransactionFilters {
@@ -20,30 +24,33 @@ function createPolyxTransactionFilters({ identityId, addresses }: QueryPolyxTran
   variables: QueryPolyxTransactionFilters;
 } {
   const args = ['$size: Int, $start: Int'];
-  const fromIdFilters = [];
-  const toIdFilters = [];
+  const filters = [];
   const variables: QueryPolyxTransactionFilters = {};
 
+  // an entry is one side of a movement, so the entries of an Account or an Identity are exactly
+  // the movements it took part in
   if (identityId) {
     variables.identityId = identityId;
     args.push('$identityId: String!');
-    fromIdFilters.push('identityId: { equalTo: $identityId }');
-    toIdFilters.push('toId: { equalTo: $identityId }');
+    filters.push('{ identityId: { equalTo: $identityId } }');
   }
 
   if (addresses?.length) {
     variables.addresses = addresses;
     args.push('$addresses: [String!]!');
-    fromIdFilters.push('address: { in: $addresses }');
-    toIdFilters.push('toAddress: { in: $addresses }');
+    filters.push('{ accountId: { in: $addresses } }');
+  }
+
+  let filter = '';
+  if (filters.length === 1) {
+    filter = `filter: ${filters[0]}`;
+  } else if (filters.length) {
+    filter = `filter: { or: [ ${filters.join(', ')} ] }`;
   }
 
   return {
     args: `(${args.join()})`,
-    filter:
-      fromIdFilters.length && toIdFilters.length
-        ? `filter: { or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`
-        : '',
+    filter,
     variables,
   };
 }
@@ -51,24 +58,24 @@ function createPolyxTransactionFilters({ identityId, addresses }: QueryPolyxTran
 /**
  * @hidden
  *
- * Get POLYX transactions where an Account or an Identity is involved
+ * Get the POLYX balance entries of an Identity's or some Accounts' balances
  */
 export function polyxTransactionsQuery(
   filters: QueryPolyxTransactionFilters,
   size?: BigNumber,
   start?: BigNumber,
-  orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[]
+  orderBy?: PolyxEntriesOrderBy | PolyxEntriesOrderBy[]
 ): QueryOptions<PaginatedQueryArgs<QueryPolyxTransactionFilters>> {
   const { args, filter, variables } = createPolyxTransactionFilters(filters);
 
-  // `id` is `<block>/<event index>`, zero padded: block order, and unique
-  const ordering = orderByClause(orderBy, [PolyxTransactionsOrderBy.IdDesc]);
+  // `id` is `<block>/<event index>/<side>`, zero padded: block order, and unique
+  const ordering = orderByClause(orderBy, [PolyxEntriesOrderBy.IdDesc]);
 
   const query = gql`
     query PolyxTransactionsQuery
       ${args}
      {
-      polyxTransactions(
+      polyxEntries(
         ${filter}
         first: $size
         offset: $start
@@ -77,25 +84,23 @@ export function polyxTransactionsQuery(
         totalCount
         nodes {
           id
+          accountId
           identityId
-          address
-          toId
-          toAddress
+          counterpartyAddress
+          counterpartyIdentityId
+          pool
           amount
-          type
+          kind
+          direction
+          memo
+          moduleId
+          callId
+          eventId
           extrinsic {
             extrinsicIdx
           }
-          callId
-          eventId
-          moduleId
-          eventIdx
-          memo
-          datetime
-          createdBlock {
-            blockId
-            datetime
-            hash
+          createdEvent {
+            ${eventIdentifierFields}
           }
         }
       }

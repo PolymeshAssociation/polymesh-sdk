@@ -20,7 +20,7 @@ import {
   redeemTokens,
 } from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
-import { tickerExternalAgentHistoryQuery } from '~/middleware/queries/externalAgents';
+import { assetAgentHistoryQuery } from '~/middleware/queries/externalAgents';
 import { AssetTransactionsOrderBy, Query } from '~/middleware/types';
 import {
   ApproveAllowanceParams,
@@ -42,7 +42,7 @@ import {
   assetIdToString,
   assetToMeshAssetId,
   balanceToBigNumber,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
   stringToAccountId,
@@ -198,7 +198,7 @@ export class FungibleAsset extends BaseAsset {
       })
     );
 
-    return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
+    return optionize(middlewareEventToEventIdentifier)(asset?.createdEvent);
   }
 
   /**
@@ -258,10 +258,10 @@ export class FungibleAsset extends BaseAsset {
 
     const {
       data: {
-        tickerExternalAgentHistories: { nodes },
+        assetAgentHistories: { nodes },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistories'>>(
-      tickerExternalAgentHistoryQuery({
+    } = await context.queryMiddleware<Ensured<Query, 'assetAgentHistories'>>(
+      assetAgentHistoryQuery({
         assetId: middlewareAssetId,
       })
     );
@@ -270,9 +270,9 @@ export class FungibleAsset extends BaseAsset {
 
     return map(groupedData, (history, did) => ({
       identity: new Identity({ did }, context),
-      history: history.map(({ createdBlock, eventIdx }) =>
+      history: history.map(({ createdEvent }) =>
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx)
+        middlewareEventToEventIdentifier(createdEvent!)
       ),
     }));
   }
@@ -319,13 +319,11 @@ export class FungibleAsset extends BaseAsset {
       asset,
       amount,
       fromPortfolioId,
-      fromAccount: fromAddress,
+      fromAccountId: fromAddress,
       toPortfolioId,
-      toAccount: toAddress,
-      createdBlock,
+      toAccountId: toAddress,
+      createdEvent,
       eventId,
-      eventIdx,
-      extrinsicIdx,
       fundingRound,
       instructionId,
       instructionMemo,
@@ -349,9 +347,9 @@ export class FungibleAsset extends BaseAsset {
         instructionId: instructionId ? new BigNumber(instructionId) : undefined,
         instructionMemo,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extrinsicIndex: new BigNumber(extrinsicIdx!),
+        extrinsicIndex: new BigNumber(createdEvent!.extrinsicIdx!),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        ...middlewareEventToEventIdentifier(createdEvent!),
       });
     }
 

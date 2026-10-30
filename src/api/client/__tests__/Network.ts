@@ -267,7 +267,7 @@ describe('Network Class', () => {
               {
                 block: {
                   blockId: blockNumber.toNumber(),
-                  datetime: blockDate,
+                  datetime: blockDate.toISOString(),
                   hash: blockHash,
                 },
                 eventIdx: eventIdx.toNumber(),
@@ -286,7 +286,7 @@ describe('Network Class', () => {
         eventsByArgs(
           {
             ...variables,
-            eventArg0: 'someDid',
+            refs: ['identity:someDid'],
           },
           new BigNumber(1)
         ),
@@ -296,7 +296,10 @@ describe('Network Class', () => {
           },
         }
       );
-      const result = await network.getEventByIndexedArgs({ ...variables, eventArg0: 'someDid' });
+      const result = await network.getEventByIndexedArgs({
+        ...variables,
+        refs: ['identity:someDid'],
+      });
       expect(result).toBeNull();
     });
   });
@@ -332,7 +335,7 @@ describe('Network Class', () => {
               {
                 block: {
                   blockId: blockNumber.toNumber(),
-                  datetime: blockDate,
+                  datetime: blockDate.toISOString(),
                   hash: blockHash,
                 },
                 eventIdx: eventIdx.toNumber(),
@@ -354,7 +357,7 @@ describe('Network Class', () => {
       dsMockUtils.createApolloQueryMock(
         eventsByArgs({
           ...variables,
-          eventArg0: 'someDid',
+          refs: ['identity:someDid'],
         }),
         {
           events: { nodes: [] },
@@ -362,7 +365,7 @@ describe('Network Class', () => {
       );
       const result = await network.getEventsByIndexedArgs({
         ...variables,
-        eventArg0: 'someDid',
+        refs: ['identity:someDid'],
       });
       expect(result).toBeNull();
     });
@@ -407,7 +410,7 @@ describe('Network Class', () => {
               callId: CallIdEnum.RegisterTicker,
               extrinsicIdx: extrinsicIdx.toNumber(),
               specVersionId: specVersionId.toNumber(),
-              paramsTxt: '[]',
+              args: { ticker: 'TICKER' },
               address,
               success: 0,
               block: {
@@ -463,7 +466,7 @@ describe('Network Class', () => {
         address,
         nonce: null,
         txTag: 'asset.registerTicker',
-        params: [],
+        params: { ticker: 'TICKER' },
         success: false,
         specVersionId,
         extrinsicHash: undefined,
@@ -482,7 +485,7 @@ describe('Network Class', () => {
               callId: CallIdEnum.RegisterTicker,
               extrinsicIdx,
               specVersionId,
-              paramsTxt: '[]',
+              args: null,
               nonce: 12345,
               address: null,
               success: 0,
@@ -505,7 +508,7 @@ describe('Network Class', () => {
         address: null,
         nonce: new BigNumber(12345),
         txTag: 'asset.registerTicker',
-        params: [],
+        params: null,
         success: false,
         specVersionId,
         extrinsicHash: undefined,

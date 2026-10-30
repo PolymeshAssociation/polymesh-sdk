@@ -430,6 +430,9 @@ export type ExtrinsicGroup =
     }
   | {
       these: string[];
+    }
+  | {
+      except: string[];
     };
 
 /**

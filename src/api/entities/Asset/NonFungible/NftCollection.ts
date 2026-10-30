@@ -41,7 +41,7 @@ import {
   bigNumberToU64,
   boolToBoolean,
   meshMetadataKeyToMetadataKey,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
   stringToAccountId,
@@ -380,7 +380,7 @@ export class NftCollection extends BaseAsset {
       })
     );
 
-    return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
+    return optionize(middlewareEventToEventIdentifier)(asset?.createdEvent);
   }
 
   /**
@@ -508,13 +508,11 @@ export class NftCollection extends BaseAsset {
       asset,
       nftIds,
       fromPortfolioId,
-      fromAccount: fromAddress,
+      fromAccountId: fromAddress,
       toPortfolioId,
-      toAccount: toAddress,
-      createdBlock,
+      toAccountId: toAddress,
+      createdEvent,
       eventId,
-      eventIdx,
-      extrinsicIdx,
       fundingRound,
       instructionId,
       instructionMemo,
@@ -540,9 +538,9 @@ export class NftCollection extends BaseAsset {
         instructionId: instructionId ? new BigNumber(instructionId) : undefined,
         instructionMemo,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extrinsicIndex: new BigNumber(extrinsicIdx!),
+        extrinsicIndex: new BigNumber(createdEvent!.extrinsicIdx!),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        ...middlewareEventToEventIdentifier(createdEvent!),
       });
     }
 

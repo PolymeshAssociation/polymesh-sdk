@@ -13,12 +13,14 @@ import { claimsQuery } from '~/middleware/queries/claims';
 import { heartbeatQuery, metadataQuery } from '~/middleware/queries/common';
 import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
 import {
-  BalanceTypeEnum,
   CallIdEnum,
   ClaimTypeEnum,
+  EntryDirection,
   EventIdEnum,
   ModuleIdEnum,
-  PolyxTransactionsOrderBy,
+  MovementKind,
+  PolyxEntriesOrderBy,
+  PolyxPool,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
@@ -2502,22 +2504,34 @@ describe('Context class', () => {
           blockNumber: new BigNumber(123),
           blockHash: 'someHash',
           blockDate: new Date(date),
-          type: BalanceTypeEnum.Free,
+          pool: PolyxPool.Free,
+          kind: MovementKind.Fee,
+          direction: EntryDirection.Debit,
           amount: new BigNumber(3000).shiftedBy(-6),
-          fromIdentity: expect.objectContaining({ did: 'someDid' }),
-          fromAccount: expect.objectContaining({ address: 'someAddress' }),
+          account: expect.objectContaining({ address: 'someAddress' }),
+          identity: expect.objectContaining({ did: 'someDid' }),
+          counterpartyAccount: undefined,
+          counterpartyIdentity: undefined,
+          memo: 'someMemo',
         }),
         expect.objectContaining({
-          moduleId: ModuleIdEnum.Staking,
-          eventId: EventIdEnum.Reward,
-          eventIndex: new BigNumber(0),
+          callId: undefined,
+          moduleId: ModuleIdEnum.Balances,
+          eventId: EventIdEnum.Transfer,
+          extrinsicIdx: undefined,
+          eventIndex: new BigNumber(1),
           blockNumber: new BigNumber(124),
           blockHash: 'someHash2',
           blockDate: new Date(date),
-          type: BalanceTypeEnum.Free,
+          pool: PolyxPool.Free,
+          kind: MovementKind.Transfer,
+          direction: EntryDirection.Credit,
           amount: new BigNumber(876023429).shiftedBy(-6),
-          toIdentity: expect.objectContaining({ did: 'someDid' }),
-          toAccount: expect.objectContaining({ address: 'someAddress' }),
+          account: expect.objectContaining({ address: 'someAddress' }),
+          identity: undefined,
+          counterpartyAccount: expect.objectContaining({ address: 'otherAddress' }),
+          counterpartyIdentity: expect.objectContaining({ did: 'otherDid' }),
+          memo: undefined,
         }),
       ];
       const transactionsQueryResponse = {
@@ -2530,31 +2544,47 @@ describe('Context class', () => {
             extrinsic: {
               extrinsicIdx: 3,
             },
-            eventIdx: 0,
-            createdBlock: {
-              blockId: '123',
-              hash: 'someHash',
-              datetime: date,
+            createdEvent: {
+              eventIdx: 0,
+              block: {
+                blockId: '123',
+                hash: 'someHash',
+                datetime: date.toISOString(),
+              },
             },
-            type: BalanceTypeEnum.Free,
-            amount: '3000',
+            pool: PolyxPool.Free,
+            kind: MovementKind.Fee,
+            direction: EntryDirection.Debit,
+            // the middleware signs an entry's amount by its direction
+            amount: '-3000',
+            accountId: 'someAddress',
             identityId: 'someDid',
-            address: 'someAddress',
+            counterpartyAddress: null,
+            counterpartyIdentityId: null,
             memo: 'someMemo',
           },
           {
-            moduleId: ModuleIdEnum.Staking,
-            eventId: EventIdEnum.Reward,
-            eventIdx: 0,
-            createdBlock: {
-              blockId: '124',
-              hash: 'someHash2',
-              datetime: date,
+            callId: null,
+            moduleId: ModuleIdEnum.Balances,
+            eventId: EventIdEnum.Transfer,
+            extrinsic: null,
+            createdEvent: {
+              eventIdx: 1,
+              block: {
+                blockId: '124',
+                hash: 'someHash2',
+                datetime: date.toISOString(),
+              },
             },
-            type: BalanceTypeEnum.Free,
+            pool: PolyxPool.Free,
+            kind: MovementKind.Transfer,
+            direction: EntryDirection.Credit,
             amount: '876023429',
-            toId: 'someDid',
-            toAddress: 'someAddress',
+            accountId: 'someAddress',
+            identityId: null,
+            counterpartyAddress: 'otherAddress',
+            counterpartyIdentityId: 'otherDid',
+            memo: null,
           },
         ],
       };
@@ -2569,7 +2599,7 @@ describe('Context class', () => {
           new BigNumber(0)
         ),
         {
-          polyxTransactions: transactionsQueryResponse,
+          polyxEntries: transactionsQueryResponse,
         }
       );
 
@@ -2588,7 +2618,7 @@ describe('Context class', () => {
       dsMockUtils.createApolloQueryMock(
         polyxTransactionsQuery({}, new BigNumber(25), new BigNumber(0)),
         {
-          polyxTransactions: { nodes: [], totalCount: 0 },
+          polyxEntries: { nodes: [], totalCount: 0 },
         }
       );
 
@@ -2611,15 +2641,15 @@ describe('Context class', () => {
           {},
           new BigNumber(25),
           new BigNumber(0),
-          PolyxTransactionsOrderBy.CreatedBlockIdAsc
+          PolyxEntriesOrderBy.CreatedEventIdAsc
         ),
         {
-          polyxTransactions: { nodes: [], totalCount: 0 },
+          polyxEntries: { nodes: [], totalCount: 0 },
         }
       );
 
       const result = await context.getPolyxTransactions({
-        orderBy: PolyxTransactionsOrderBy.CreatedBlockIdAsc,
+        orderBy: PolyxEntriesOrderBy.CreatedEventIdAsc,
       });
 
       expect(result.data).toEqual([]);

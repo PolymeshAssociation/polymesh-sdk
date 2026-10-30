@@ -234,6 +234,7 @@ import {
   balanceToBigNumber,
   ballotVoteToMeshBallotVote,
   bigNumberToBalance,
+  bigNumberToMiddlewareSequenceId,
   bigNumberToU16,
   bigNumberToU32,
   bigNumberToU64,
@@ -332,7 +333,8 @@ import {
   middlewareAssetHolderToAssetHolder,
   middlewareAuthorizationDataToAuthorization,
   middlewareClaimToClaimData,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareDateToDate,
+  middlewareEventToEventIdentifier,
   middlewareInstructionToHistoricInstruction,
   middlewarePermissionsDataToPermissions,
   middlewarePortfolioDataToPortfolio,
@@ -5004,10 +5006,10 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         assetId,
         ticker,
         amount: amount1.shiftedBy(6).toString(),
-        fromPortfolio: portfolioKind1,
-        from: portfolioDid1,
-        toPortfolio: portfolioKind2,
-        to: portfolioDid2,
+        fromPortfolioId: `${portfolioDid1}/${portfolioKind1}`,
+        fromId: portfolioDid1,
+        toPortfolioId: `${portfolioDid2}/${portfolioKind2}`,
+        toId: portfolioDid2,
       },
     ];
     const legs2 = [
@@ -5016,10 +5018,10 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         assetId,
         ticker,
         nftIds: [nftId.toString()],
-        fromPortfolio: portfolioKind2,
-        from: portfolioDid2,
-        toPortfolio: portfolioKind1,
-        to: portfolioDid1,
+        fromPortfolioId: `${portfolioDid2}/${portfolioKind2}`,
+        fromId: portfolioDid2,
+        toPortfolioId: `${portfolioDid1}/${portfolioKind1}`,
+        toId: portfolioDid1,
       },
     ];
     const legs3 = [
@@ -5028,8 +5030,8 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         assetId,
         ticker,
         amount: amount3.shiftedBy(6).toString(),
-        from: portfolioDid2,
-        to: portfolioDid1,
+        fromId: portfolioDid2,
+        toId: portfolioDid1,
       },
     ];
 
@@ -5037,10 +5039,12 @@ describe('middlewareInstructionToHistoricInstruction', () => {
 
     let instruction = {
       id: instructionId1.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
+      createdEvent: {
+        block: {
+          blockId: blockNumber.toNumber(),
+          hash: blockHash,
+          datetime: createdAt.toISOString(),
+        },
       },
       status,
       memo,
@@ -5071,10 +5075,12 @@ describe('middlewareInstructionToHistoricInstruction', () => {
 
     instruction = {
       id: instructionId2.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
+      createdEvent: {
+        block: {
+          blockId: blockNumber.toNumber(),
+          hash: blockHash,
+          datetime: createdAt.toISOString(),
+        },
       },
       status,
       type: type2,
@@ -5107,10 +5113,12 @@ describe('middlewareInstructionToHistoricInstruction', () => {
 
     instruction = {
       id: instructionId3.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
+      createdEvent: {
+        block: {
+          blockId: blockNumber.toNumber(),
+          hash: blockHash,
+          datetime: createdAt.toISOString(),
+        },
       },
       status,
       type: type3,
@@ -5138,28 +5146,51 @@ describe('middlewareInstructionToHistoricInstruction', () => {
   });
 });
 
-describe('middlewareEventDetailsToEventIdentifier', () => {
-  it('should convert Event details to an EventIdentifier', () => {
-    const eventIdx = 3;
+describe('bigNumberToMiddlewareSequenceId', () => {
+  it('should zero pad a sequence number to the 10 digits the middleware stores', () => {
+    expect(bigNumberToMiddlewareSequenceId(new BigNumber(1590))).toBe('0000001590');
+    expect(bigNumberToMiddlewareSequenceId(new BigNumber(0))).toBe('0000000000');
+  });
+});
+
+describe('middlewareDateToDate', () => {
+  it('should read a date-time with no zone marker as UTC', () => {
+    expect(middlewareDateToDate('2021-11-05T13:56:36')).toEqual(
+      new Date(Date.UTC(2021, 10, 5, 13, 56, 36))
+    );
+    expect(middlewareDateToDate('2025-08-17T08:07:44.638')).toEqual(
+      new Date(Date.UTC(2025, 7, 17, 8, 7, 44, 638))
+    );
+  });
+
+  it('should keep a zone marker the value already has', () => {
+    expect(middlewareDateToDate('2021-11-05T13:56:36Z')).toEqual(
+      new Date(Date.UTC(2021, 10, 5, 13, 56, 36))
+    );
+    expect(middlewareDateToDate('2021-11-05T13:56:36+02:00')).toEqual(
+      new Date(Date.UTC(2021, 10, 5, 11, 56, 36))
+    );
+  });
+
+  it('should read a date with no time as UTC midnight', () => {
+    expect(middlewareDateToDate('2020-10-10')).toEqual(new Date(Date.UTC(2020, 9, 10)));
+  });
+});
+
+describe('middlewareEventToEventIdentifier', () => {
+  it('should convert a middleware Event to an EventIdentifier', () => {
     const block = {
       blockId: 3000,
       hash: 'someHash',
       datetime: new Date('10/14/1987').toISOString(),
     } as Block;
 
-    const fakeResult = {
+    expect(middlewareEventToEventIdentifier({ block, eventIdx: 3 })).toEqual({
       blockNumber: new BigNumber(3000),
       blockDate: new Date('10/14/1987'),
       blockHash: 'someHash',
       eventIndex: new BigNumber(3),
-    };
-
-    expect(middlewareEventDetailsToEventIdentifier(block)).toEqual({
-      ...fakeResult,
-      eventIndex: new BigNumber(0),
     });
-
-    expect(middlewareEventDetailsToEventIdentifier(block, eventIdx)).toEqual(fakeResult);
   });
 });
 
@@ -10732,6 +10763,36 @@ describe('middlewarePermissionsDataToPermissions', () => {
         values: ['asset.registerCustomAssetType', 'nft.issueNft'],
       },
       transactionGroups: [],
+    });
+  });
+
+  it('should keep pallets given whole, or with exceptions, in the per-pallet form', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    // the middleware writes every row in this form, whatever the chain version that set it
+    const permissions = {
+      asset: { whole: null },
+      extrinsic: {
+        except: {
+          Asset: { extrinsics: { these: ['create_asset', 'register_ticker'] } },
+          Portfolio: { extrinsics: { except: ['create_portfolio', 'delete_portfolio'] } },
+          Authorship: { extrinsics: { whole: null } },
+        },
+      },
+      portfolio: { whole: null },
+    };
+
+    const result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
+
+    expect(result.transactions).toEqual({
+      type: PermissionType.Exclude,
+      values: [
+        TxTags.asset.CreateAsset,
+        TxTags.asset.RegisterTicker,
+        ModuleName.Portfolio,
+        ModuleName.Authorship,
+      ],
+      exceptions: [TxTags.portfolio.CreatePortfolio, TxTags.portfolio.DeletePortfolio],
     });
   });
 });

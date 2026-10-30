@@ -266,10 +266,10 @@ describe('Portfolios class', () => {
           amount: amount1,
           direction: SettlementDirectionEnum.Incoming,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
-          from: portfolioDid1,
-          fromPortfolio: portfolioNumber1,
-          toPortfolio: portfolioNumber2,
-          to: did,
+          fromPortfolioId: `${portfolioDid1}/${portfolioNumber1}`,
+          fromId: portfolioDid1,
+          toPortfolioId: `${did}/${portfolioNumber2}`,
+          toId: did,
         },
       ];
       const legs2 = [
@@ -280,10 +280,10 @@ describe('Portfolios class', () => {
           amount: amount2,
           direction: SettlementDirectionEnum.Outgoing,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
-          from: did,
-          fromPortfolio: portfolioNumber2,
-          toPortfolio: portfolioNumber1,
-          to: portfolioDid1,
+          fromPortfolioId: `${did}/${portfolioNumber2}`,
+          fromId: did,
+          toPortfolioId: `${portfolioDid1}/${portfolioNumber1}`,
+          toId: portfolioDid1,
         },
       ];
 
@@ -295,10 +295,10 @@ describe('Portfolios class', () => {
           amount: amount2,
           direction: SettlementDirectionEnum.None,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
-          from: did,
-          fromPortfolio: portfolioNumber2,
-          toPortfolio: portfolioNumber1,
-          to: did,
+          fromPortfolioId: `${did}/${portfolioNumber2}`,
+          fromId: did,
+          toPortfolioId: `${did}/${portfolioNumber1}`,
+          toId: did,
         },
       ];
 
@@ -310,10 +310,10 @@ describe('Portfolios class', () => {
           amount: amount2,
           direction: SettlementDirectionEnum.None,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
-          from: did,
-          fromPortfolio: portfolioNumber1,
-          to: did,
-          toPortfolio: portfolioNumber1,
+          fromPortfolioId: `${did}/${portfolioNumber1}`,
+          fromId: did,
+          toPortfolioId: `${did}/${portfolioNumber1}`,
+          toId: did,
         },
       ];
 
@@ -321,9 +321,11 @@ describe('Portfolios class', () => {
         nodes: [
           {
             instruction: {
-              createdBlock: {
-                blockId: blockNumber1.toNumber(),
-                hash: blockHash1,
+              createdEvent: {
+                block: {
+                  blockId: blockNumber1.toNumber(),
+                  hash: blockHash1,
+                },
               },
               status: InstructionStatusEnum.Executed,
               legs: { nodes: legs1 },
@@ -331,9 +333,11 @@ describe('Portfolios class', () => {
           },
           {
             instruction: {
-              createdBlock: {
-                blockId: blockNumber2.toNumber(),
-                hash: blockHash2,
+              createdEvent: {
+                block: {
+                  blockId: blockNumber2.toNumber(),
+                  hash: blockHash2,
+                },
               },
               status: InstructionStatusEnum.Executed,
               legs: { nodes: legs2 },
@@ -341,9 +345,11 @@ describe('Portfolios class', () => {
           },
           {
             instruction: {
-              createdBlock: {
-                blockId: blockNumber2.toNumber(),
-                hash: blockHash3,
+              createdEvent: {
+                block: {
+                  blockId: blockNumber2.toNumber(),
+                  hash: blockHash3,
+                },
               },
               status: InstructionStatusEnum.Executed,
               legs: { nodes: legs3 },
@@ -351,9 +357,11 @@ describe('Portfolios class', () => {
           },
           {
             instruction: {
-              createdBlock: {
-                blockId: blockNumber2.toNumber(),
-                hash: blockHash3,
+              createdEvent: {
+                block: {
+                  blockId: blockNumber2.toNumber(),
+                  hash: blockHash3,
+                },
               },
               status: InstructionStatusEnum.Executed,
               legs: { nodes: legs4 },
@@ -380,7 +388,7 @@ describe('Portfolios class', () => {
             assetId: '0x12341234123412341234123412341234',
           }),
           returnData: {
-            portfolioMovements: {
+            assetTransactions: {
               nodes: [],
             },
           },
@@ -440,29 +448,20 @@ describe('Portfolios class', () => {
             assetId: '0x12341234123412341234123412341234',
           }),
           returnData: {
-            portfolioMovements: {
+            assetTransactions: {
               nodes: [
                 {
-                  createdBlock: {
-                    blockId: blockNumber1.toNumber(),
-                    hash: 'someHash',
+                  createdEvent: {
+                    block: {
+                      blockId: blockNumber1.toNumber(),
+                      hash: 'someHash',
+                    },
                   },
-                  asset: {
-                    id: assetId2,
-                    ticker: ticker2,
-                  },
+                  assetId: assetId2,
                   amount: amount2,
                   address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-                  from: {
-                    number: portfolioNumber1,
-                    identityId: portfolioDid1,
-                  },
-                  fromId: `${portfolioDid1}/${portfolioNumber1}`,
-                  to: {
-                    number: portfolioNumber2,
-                    identityId: portfolioDid1,
-                  },
-                  toId: `${portfolioDid1}/${portfolioNumber2}`,
+                  fromPortfolioId: `${portfolioDid1}/${portfolioNumber1}`,
+                  toPortfolioId: `${portfolioDid1}/${portfolioNumber2}`,
                 },
               ],
             },
@@ -506,7 +505,7 @@ describe('Portfolios class', () => {
             identityId: did,
           }),
           returnData: {
-            portfolioMovements: {
+            assetTransactions: {
               nodes: [],
             },
           },

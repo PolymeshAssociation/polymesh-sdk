@@ -3726,7 +3726,7 @@ describe('areSameClaims deprecated middleware types', () => {
   it('should return false for deprecated middleware claim type enums', () => {
     const claim = { type: ClaimType.Accredited, accredited: true } as unknown as Claim;
     const middlewareClaim: MiddlewareClaim = {
-      type: ClaimTypeEnum.NoData,
+      type: ClaimTypeEnum.NoType,
       scope: null,
     } as MiddlewareClaim;
 

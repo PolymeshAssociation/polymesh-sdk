@@ -47,6 +47,7 @@ import {
   balanceToBigNumber,
   boolToBoolean,
   corporateActionIdentifierToCaId,
+  middlewareDateToDate,
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
@@ -538,14 +539,14 @@ export class DividendDistribution extends CorporateActionBase {
     const count = new BigNumber(totalCount);
     const data: DistributionPayment[] = [];
 
-    nodes.forEach(({ createdBlock, datetime, targetId: did, amount, tax }) => {
+    nodes.forEach(({ createdEvent, targetId: did, amount, tax }) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const { blockId, hash } = createdBlock!;
+      const { blockId, hash, datetime } = createdEvent!.block!;
 
       data.push({
         blockNumber: new BigNumber(blockId),
         blockHash: hash,
-        date: new Date(datetime),
+        date: middlewareDateToDate(datetime),
         target: new Identity({ did }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         /**
