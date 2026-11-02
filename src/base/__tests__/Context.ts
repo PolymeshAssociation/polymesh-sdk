@@ -2516,7 +2516,7 @@ describe('Context class', () => {
         }),
         expect.objectContaining({
           callId: undefined,
-          moduleId: ModuleIdEnum.Balances,
+          moduleId: undefined,
           eventId: EventIdEnum.Transfer,
           extrinsicIdx: undefined,
           eventIndex: new BigNumber(1),
@@ -2564,8 +2564,9 @@ describe('Context class', () => {
             memo: 'someMemo',
           },
           {
+            // an entry with no extrinsic, such as one made by a block hook, has no module or call
             callId: null,
-            moduleId: ModuleIdEnum.Balances,
+            moduleId: null,
             eventId: EventIdEnum.Transfer,
             extrinsic: null,
             createdEvent: {
