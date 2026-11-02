@@ -59,7 +59,8 @@ function createPortfolioMovementFilters(
   const toIdFilters = queryAll
     ? ['toIdentityId: { equalTo: $to }']
     : ['toPortfolioId: { equalTo: $to }'];
-  const id = queryAll ? identityId : `${identityId}/${portfolioId ? portfolioId.toString() : '0'}`;
+  const portfolioNumber = portfolioId?.toString() ?? '0';
+  const id = queryAll ? identityId : `${identityId}/${portfolioNumber}`;
   const variables: PortfolioMovementVariables = { from: id, to: id };
 
   if (assetId) {

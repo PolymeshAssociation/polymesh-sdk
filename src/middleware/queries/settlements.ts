@@ -502,7 +502,7 @@ function createLegFilters(
     variables.to = identityId;
   } else {
     // a portfolio's id is `<did>/<number>`, the default portfolio being number 0
-    const portfolio = `${identityId}/${portfolioId ? portfolioId.toString() : '0'}`;
+    const portfolio = `${identityId}/${portfolioId?.toString() ?? '0'}`;
 
     args.push('$fromPortfolio: String!, $toPortfolio: String!');
     fromIdFilters.push('fromPortfolioId: { equalTo: $fromPortfolio }');
