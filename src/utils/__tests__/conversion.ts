@@ -105,6 +105,7 @@ import {
   Portfolio,
 } from '~/internal';
 import {
+  AssetTransaction,
   AuthTypeEnum,
   Block,
   CallIdEnum,
@@ -113,11 +114,16 @@ import {
   CustomClaimType as MiddlewareCustomClaimType,
   Instruction,
   InstructionStatusEnum,
+  Leg as MiddlewareLeg,
   LegTypeEnum,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
-import { ClaimScopeTypeEnum, MultiSigProposalStatusEnum } from '~/middleware/typesV1';
+import {
+  ClaimScopeTypeEnum,
+  MultiSigProposalStatusEnum,
+  SettlementDirectionEnum,
+} from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetHolder,
@@ -336,6 +342,7 @@ import {
   middlewareDateToDate,
   middlewareEventToEventIdentifier,
   middlewareInstructionToHistoricInstruction,
+  middlewareLegToLeg,
   middlewarePermissionsDataToPermissions,
   middlewarePortfolioDataToPortfolio,
   middlewarePortfolioToPortfolio,
@@ -404,6 +411,7 @@ import {
   tickerToDid,
   tickerToString,
   toCustomClaimTypeWithIdentity,
+  toHistoricalSettlements,
   toIdentityWithClaimsArray,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
@@ -4970,6 +4978,81 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
     });
+  });
+});
+
+describe('middlewareLegToLeg', () => {
+  it('should read an Account holder by its address, and a portfolio holder by its id', () => {
+    const context = dsMockUtils.getContextInstance();
+    const assetId = '0x12341234123412341234123412341234';
+
+    const leg = middlewareLegToLeg(
+      {
+        legType: LegTypeEnum.Fungible,
+        assetId,
+        amount: '1000000',
+        fromId: 'someDid',
+        fromAccountId: 'someAddress',
+        fromPortfolioId: null,
+        toId: 'otherDid',
+        toAccountId: null,
+        toPortfolioId: 'otherDid/2',
+      } as unknown as MiddlewareLeg,
+      context
+    ) as FungibleLeg;
+
+    expect(leg.from).toEqual(expect.objectContaining({ address: 'someAddress' }));
+    expect(leg.to).toEqual(
+      expect.objectContaining({
+        owner: expect.objectContaining({ did: 'otherDid' }),
+        id: new BigNumber(2),
+      })
+    );
+    expect(leg.amount).toEqual(new BigNumber(1));
+  });
+});
+
+describe('toHistoricalSettlements', () => {
+  it('should list an NFT movement between portfolios as an NFT leg', () => {
+    const context = dsMockUtils.getContextInstance();
+    const assetId = '0x12341234123412341234123412341234';
+
+    const [settlement] = toHistoricalSettlements(
+      [],
+      [
+        {
+          createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+          assetId,
+          nftIds: ['1', '3'],
+          fromPortfolioId: 'someDid/0',
+          toPortfolioId: 'someDid/1',
+          address: null,
+        },
+        {
+          // a movement between Accounts has no portfolio on either side
+          createdEvent: { eventIdx: 2, block: { blockId: 11, hash: 'otherHash' } },
+          assetId,
+          amount: '1',
+          fromPortfolioId: null,
+          toPortfolioId: null,
+          address: 'someAddress',
+        },
+      ] as unknown as AssetTransaction[],
+      { identityId: 'someDid' },
+      context
+    );
+
+    expect(settlement!.blockNumber).toEqual(new BigNumber(10));
+    expect(settlement!.accounts).toEqual([]);
+    expect(settlement!.legs).toEqual([
+      expect.objectContaining({
+        nfts: [
+          expect.objectContaining({ id: new BigNumber(1) }),
+          expect.objectContaining({ id: new BigNumber(3) }),
+        ],
+        direction: SettlementDirectionEnum.None,
+      }),
+    ]);
   });
 });
 

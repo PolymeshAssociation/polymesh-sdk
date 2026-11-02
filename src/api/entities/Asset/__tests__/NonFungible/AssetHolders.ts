@@ -116,6 +116,32 @@ describe('AssetHolder class', () => {
       });
     });
 
+    it('should not read NFTs for an empty page of holders', async () => {
+      dsMockUtils.createApolloQueryMock(
+        nftCollectionHolders(assetId, new BigNumber(2), new BigNumber(10)),
+        { assetHolders: { nodes: [], totalCount: 2 } }
+      );
+
+      const result = await assetHolders.get({ size: new BigNumber(2), start: new BigNumber(10) });
+
+      expect(result).toEqual({ data: [], next: null, count: new BigNumber(2) });
+    });
+
+    it('should list a holder whose NFTs the read does not return with none', async () => {
+      dsMockUtils.createApolloQueryMock(
+        nftCollectionHoldersNftsQuery(
+          { assetId, identityIds: ['someDid', 'anotherDid'] },
+          new BigNumber(100),
+          new BigNumber(0)
+        ),
+        { nfts: { nodes: [{ nftId: '1', holding: { identityId: 'someDid' } }], totalCount: 1 } }
+      );
+
+      const { data } = await assetHolders.get({ size: new BigNumber(2), start: new BigNumber(0) });
+
+      expect(data[1]!.nfts).toEqual([]);
+    });
+
     it('should read every NFT of the page, past the middleware page limit', async () => {
       const firstPage = Array.from({ length: 100 }, (_, i) => ({
         nftId: `${i + 1}`,
