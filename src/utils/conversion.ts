@@ -341,6 +341,7 @@ import {
   TX_TAG_VALUES,
 } from '~/utils/constants';
 import {
+  allInOrder,
   asAccount,
   asAssetId,
   asBaseAsset,
@@ -2722,7 +2723,7 @@ export async function requirementToComplianceRequirement(
     });
   };
 
-  const meshConditions = await Promise.all(requirement.conditions.map(toMeshCondition));
+  const meshConditions = await allInOrder(requirement.conditions.map(toMeshCondition));
 
   requirement.conditions.forEach(({ target }, index) => {
     const meshCondition = meshConditions[index]!;

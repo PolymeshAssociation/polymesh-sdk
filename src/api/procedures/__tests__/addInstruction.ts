@@ -980,6 +980,75 @@ describe('addInstruction procedure', () => {
     ).rejects.toThrow(expectedError);
   });
 
+  it("should throw an earlier instruction's error before a later one's, whichever read fails first", async () => {
+    entityMockUtils.configureMocks({ venueOptions: { exists: true } });
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      assetHoldersToAffirm: [[], []],
+    });
+
+    const earlierError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'No asset exists with asset ID: "AAA"',
+    });
+    const laterError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'No asset exists with asset ID: "BBB"',
+    });
+
+    // the later instruction's Asset is found missing first, as a parallel read may be
+    const asAssetSpy = jest
+      .spyOn(utilsInternalModule, 'asAsset')
+      .mockImplementationOnce(
+        () => new Promise((_resolve, reject) => setImmediate(() => reject(earlierError)))
+      )
+      .mockRejectedValueOnce(laterError);
+
+    await expect(
+      prepareAddInstruction.call(proc, {
+        venueId,
+        instructions: [
+          { legs: [{ from, to, amount, asset: 'AAA' }] },
+          { legs: [{ from, to, amount, asset: 'BBB' }] },
+        ],
+      })
+    ).rejects.toBe(earlierError);
+
+    asAssetSpy.mockRestore();
+  });
+
+  it("should throw a later instruction's validation error before building an earlier one", async () => {
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
+    });
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      assetHoldersToAffirm: [[], []],
+    });
+
+    // building the first instruction would fail, but no instruction is built once any is invalid
+    assertAssetHolderExistsSpy.mockRejectedValue(new Error('The sender does not exist'));
+
+    await expect(
+      prepareAddInstruction.call(proc, {
+        venueId,
+        instructions: [
+          {
+            legs: [
+              {
+                from,
+                to,
+                amount: new BigNumber(1),
+                asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
+              },
+            ],
+          },
+          { legs: [] },
+        ],
+      })
+    ).rejects.toThrow("The legs array can't be empty");
+  });
+
   it('should throw an error if key "nfts" is not in an NFT leg', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
     entityMockUtils.configureMocks({

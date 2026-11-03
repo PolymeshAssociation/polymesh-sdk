@@ -535,6 +535,13 @@ describe('CorporateBallot class', () => {
 
       expect(tx).toBe(expectedTransaction);
     });
+
+    it('should require at least one change', () => {
+      // @ts-expect-error -- a modification that changes nothing does not type-check
+      const noChanges: Parameters<CorporateBallot['modify']>[0] = {};
+
+      expect(noChanges).toEqual({});
+    });
   });
 
   describe('method: modifyCheckpoint', () => {

@@ -254,6 +254,12 @@ describe('moveFunds procedure', () => {
       },
     });
 
+    // the Assets each movement resolves to, so their ids match the balances above
+    const asAssetSpy = jest
+      .spyOn(utilsInternalModule, 'asAsset')
+      .mockResolvedValueOnce(asset1)
+      .mockResolvedValueOnce(asset2);
+
     const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
     const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
 
@@ -278,6 +284,8 @@ describe('moveFunds procedure', () => {
       "Some of the amounts being transferred exceed the Portfolio's balance"
     );
     expect(error.data.balanceExceeded).toMatchObject(items);
+
+    asAssetSpy.mockRestore();
   });
 
   it('should throw if the NFT is not owned', async () => {
@@ -373,6 +381,43 @@ describe('moveFunds procedure', () => {
         items,
       })
     ).rejects.toThrow(expectedError);
+  });
+
+  it("should throw an earlier movement's error before a later movement's missing Asset", async () => {
+    const did = 'someDid';
+    const fungible = entityMockUtils.getFungibleAssetInstance({
+      assetId: '0x12341234123412341234123412341234',
+    });
+
+    const notFound = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'No asset exists with asset ID: "0x22341234123412341234123412341234"',
+    });
+
+    // the later movement's Asset is found missing first, as a parallel read may be
+    const asAssetSpy = jest
+      .spyOn(utilsInternalModule, 'asAsset')
+      .mockImplementationOnce(
+        () => new Promise(resolve => setImmediate(() => resolve(fungible)))
+      )
+      .mockRejectedValueOnce(notFound);
+
+    const items: PortfolioMovement[] = [
+      { asset: fungible.id, nfts: [new BigNumber(100)] },
+      { asset: '0x22341234123412341234123412341234', amount: new BigNumber(1) },
+    ];
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    await expect(
+      prepareMoveFunds.call(proc, {
+        from: entityMockUtils.getNumberedPortfolioInstance({ id: new BigNumber(1), did }),
+        to: entityMockUtils.getNumberedPortfolioInstance({ id: new BigNumber(2), did }),
+        items,
+      })
+    ).rejects.toThrow('The key "amount" should be present in a fungible portfolio movement');
+
+    asAssetSpy.mockRestore();
   });
 
   it('should throw an error if "nfts" is not given for a collection', async () => {

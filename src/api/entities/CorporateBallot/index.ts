@@ -28,7 +28,7 @@ import {
   ErrorCode,
   Identity,
   InputCaCheckpoint,
-  ModifyCorporateBallotParams,
+  ModifyCorporateBallotChanges,
   NoArgsProcedureMethod,
   ProcedureMethod,
   TaxWithholding,
@@ -335,17 +335,14 @@ export class CorporateBallot extends CorporateActionBase {
 
   /**
    * Change the Ballot's metadata (title and motions), its end date, or whether it uses Ranked
-   *   Choice Voting (RCV). Pass any of them; each one given is changed in the same batch
+   *   Choice Voting (RCV). Pass at least one; each one given is changed in the same batch
    *
    * @note the Ballot can only be modified before its voting period starts
    * @throws if none of `meta`, `endDate` or `rcv` is given
    * @throws if a given value is the same as the current one
    * @throws if the new end date is before the start date
    */
-  public modify: ProcedureMethod<
-    Omit<ModifyCorporateBallotParams, 'ballot'>,
-    CorporateBallotWithDetails
-  >;
+  public modify: ProcedureMethod<ModifyCorporateBallotChanges, CorporateBallotWithDetails>;
 
   /**
    * Modify the Corporate Ballot's Record Date

@@ -33,14 +33,12 @@ import {
   AssetHolder,
   AssetHolderLike,
   ErrorCode,
-  FungibleLeg,
   InstructionEndCondition,
   InstructionFungibleLeg,
   InstructionLeg,
   InstructionNftLeg,
   InstructionOffChainLeg,
   InstructionType,
-  NftLeg,
   RoleType,
   SettlementTx,
   TxTags,
@@ -48,8 +46,8 @@ import {
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
-  isFungibleLegBuilder,
-  isNftLegBuilder,
+  isFungibleAsset,
+  isNftCollection,
   isOffChainLeg,
   isPortfolioAssetHolder,
 } from '~/utils';
@@ -75,6 +73,8 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  allInOrder,
+  asAsset,
   asAssetId,
   asBaseAsset,
   asDid,
@@ -83,6 +83,8 @@ import {
   assertIdentityExists,
   filterEventRecords,
   optionize,
+  settleAll,
+  unwrapSettled,
 } from '~/utils/internal';
 
 /**
@@ -311,7 +313,10 @@ function getEndCondition(
 /**
  * @hidden
  */
-function validateFungibleLeg(leg: FungibleLeg, assetId: string): void {
+function validateFungibleLeg(
+  leg: InstructionLeg,
+  assetId: string
+): asserts leg is InstructionFungibleLeg {
   if (!('amount' in leg)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -324,7 +329,10 @@ function validateFungibleLeg(leg: FungibleLeg, assetId: string): void {
 /**
  * @hidden
  */
-function validateNonFungibleLeg(leg: NftLeg, assetId: string): void {
+function validateNonFungibleLeg(
+  leg: InstructionLeg,
+  assetId: string
+): asserts leg is InstructionNftLeg {
   if (!('nfts' in leg)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -456,25 +464,17 @@ async function separateLegs(
     }
   });
 
-  const onChainLegTypes = await Promise.all(
-    onChainLegs.map(leg =>
-      Promise.all([
-        isFungibleLegBuilder(leg, context),
-        isNftLegBuilder(leg, context),
-        asAssetId(leg.asset, context),
-      ])
-    )
-  );
+  const onChainAssets = await settleAll(onChainLegs.map(({ asset }) => asAsset(asset, context)));
 
   onChainLegs.forEach((leg, i) => {
-    // `Promise.all` returns one result per leg, so this is always defined
-    const [isFungible, isNft, assetId] = onChainLegTypes[i]!;
+    // each leg is validated before the next leg's Asset is looked at, as if read one at a time
+    const asset = unwrapSettled(onChainAssets[i]!);
 
-    if (isFungible(leg)) {
-      validateFungibleLeg(leg, assetId);
+    if (isFungibleAsset(asset)) {
+      validateFungibleLeg(leg, asset.id);
       fungibleLegs.push(leg);
-    } else if (isNft(leg)) {
-      validateNonFungibleLeg(leg, assetId);
+    } else if (isNftCollection(asset)) {
+      validateNonFungibleLeg(leg, asset.id);
       nftLegs.push(leg);
     }
   });
@@ -719,7 +719,7 @@ async function getTxArgsAndErrors(
   };
 
   // Each instruction is validated independently, so all of them are read at once
-  const validations = await Promise.all(
+  const validations = await allInOrder(
     instructions.map((instruction, i) => validateInstruction(instruction, i, venueId, context))
   );
 
@@ -757,7 +757,7 @@ async function getTxArgsAndErrors(
     return { errIndexes, addAndAffirmInstructionParams, addInstructionParams, affirmingSenders };
   }
 
-  const rawLegsPerInstruction = await Promise.all(
+  const rawLegsPerInstruction = await allInOrder(
     validations.map(async ({ legs }) => {
       const rawOnChainLegs = await Promise.all([
         ...legs.fungibleLegs.map(leg => mapFungibleLeg(leg, context)),

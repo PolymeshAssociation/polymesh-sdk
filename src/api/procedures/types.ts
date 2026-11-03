@@ -2045,6 +2045,14 @@ export type ModifyCorporateBallotParams = Partial<
   ballot: CorporateBallot | BigNumber;
 };
 
+/**
+ * The changes to make to a Ballot. At least one of `meta`, `endDate` or `rcv` must be given
+ */
+export type ModifyCorporateBallotChanges =
+  | (Pick<CreateBallotParams, 'meta'> & Partial<Pick<CreateBallotParams, 'endDate' | 'rcv'>>)
+  | (Pick<CreateBallotParams, 'endDate'> & Partial<Pick<CreateBallotParams, 'meta' | 'rcv'>>)
+  | (Pick<CreateBallotParams, 'rcv'> & Partial<Pick<CreateBallotParams, 'meta' | 'endDate'>>);
+
 export type CastBallotVoteParams = {
   /**
    * The votes to be cast.

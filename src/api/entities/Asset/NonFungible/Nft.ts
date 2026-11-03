@@ -39,7 +39,7 @@ import {
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { asOptionalApi, createProcedureMethod } from '~/utils/internal';
+import { allInOrder, asOptionalApi, createProcedureMethod } from '~/utils/internal';
 
 export type NftUniqueIdentifiers = {
   assetId: string;
@@ -152,7 +152,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
 
     const entries = await query.nft.metadataValue.entries([rawCollectionId, rawId]);
 
-    return Promise.all(
+    return allInOrder(
       entries.map(async ([storageKey, rawValue]) => ({
         key: await meshMetadataKeyToMetadataKey(storageKey.args[1], collection, context),
         value: bytesToString(rawValue),

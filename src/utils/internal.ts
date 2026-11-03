@@ -213,6 +213,52 @@ export function withTimeout<T>(
 
 /**
  * @hidden
+ */
+export type Settled<T> = { isOk: true; value: T } | { isOk: false; error: unknown };
+
+/**
+ * @hidden
+ * Wait for every promise to settle, fulfilled or rejected, keeping input order
+ *
+ * @note `Promise.allSettled` is not in the `es2017` lib this package compiles against
+ */
+export function settleAll<T>(promises: Promise<T>[]): Promise<Settled<T>[]> {
+  return Promise.all(
+    promises.map(promise =>
+      promise.then(
+        (value): Settled<T> => ({ isOk: true, value }),
+        (error: unknown): Settled<T> => ({ isOk: false, error })
+      )
+    )
+  );
+}
+
+/**
+ * @hidden
+ * Return a settled promise's value, or throw the error it rejected with
+ */
+export function unwrapSettled<T>(settled: Settled<T>): T {
+  if (!settled.isOk) {
+    throw settled.error;
+  }
+
+  return settled.value;
+}
+
+/**
+ * @hidden
+ * Like `Promise.all`, but if several promises reject, throw the error of the first in input order
+ *   rather than the first to reject in time. This keeps the error a caller sees the same as when
+ *   the promises were awaited one at a time, and independent of which request happens to fail first
+ */
+export async function allInOrder<T>(promises: Promise<T>[]): Promise<T[]> {
+  const settled = await settleAll(promises);
+
+  return settled.map(unwrapSettled);
+}
+
+/**
+ * @hidden
  * Convert an entity type and its unique Identifiers to a base64 string
  */
 export function serialize<UniqueIdentifiers>(
@@ -2043,7 +2089,7 @@ export async function getSecondaryAccountPermissions(
   const assembleResult = async (
     optKeyRecords: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[]
   ): Promise<PermissionedAccount[]> => {
-    const permissionedAccounts = await Promise.all(
+    const permissionedAccounts = await allInOrder(
       optKeyRecords.map(async (optKeyRecord, index): Promise<PermissionedAccount | undefined> => {
         const account = accounts[index];
 

@@ -77,6 +77,7 @@ import {
 } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import {
+  allInOrder,
   areSameAccounts,
   areSameClaims,
   asAccount,
@@ -147,9 +148,11 @@ import {
   requestPaginated,
   segmentEventsByTransaction,
   serialize,
+  settleAll,
   sliceBatchReceipt,
   toHumanReadable,
   unserialize,
+  unwrapSettled,
   warnUnexpectedSqVersion,
   withTimeout,
   xor,
@@ -191,6 +194,39 @@ describe('delay', () => {
     jest.advanceTimersByTime(5000);
 
     expect(await delayPromise).toBeUndefined();
+  });
+});
+
+describe('settleAll and unwrapSettled', () => {
+  it('should settle every promise in input order, and unwrap each value or throw its error', async () => {
+    const error = new Error('failed');
+
+    const settled = await settleAll([Promise.resolve(1), Promise.reject(error)]);
+
+    expect(settled).toEqual([
+      { isOk: true, value: 1 },
+      { isOk: false, error },
+    ]);
+    expect(unwrapSettled(settled[0]!)).toBe(1);
+    expect(() => unwrapSettled(settled[1]!)).toThrow(error);
+  });
+});
+
+describe('allInOrder', () => {
+  it('should resolve every value in input order', () => {
+    return expect(allInOrder([Promise.resolve('a'), Promise.resolve('b')])).resolves.toEqual([
+      'a',
+      'b',
+    ]);
+  });
+
+  it('should throw the error of the first promise in input order to reject, not the first in time', () => {
+    const first = new Error('first in input order');
+    const second = new Error('first in time');
+
+    const slow = new Promise<never>((_resolve, reject) => setImmediate(() => reject(first)));
+
+    return expect(allInOrder([slow, Promise.reject(second)])).rejects.toBe(first);
   });
 });
 

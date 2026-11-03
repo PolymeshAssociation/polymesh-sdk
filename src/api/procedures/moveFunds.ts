@@ -21,7 +21,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
-import { asAsset, asAssetId, asNftId } from '~/utils/internal';
+import { asAsset, asNftId, settleAll, unwrapSettled } from '~/utils/internal';
 
 /**
  * @hidden
@@ -39,16 +39,21 @@ async function segregateItems(
   context: Context
 ): Promise<{
   fungibleMovements: FungiblePortfolioMovement[];
+  fungibleAssetIds: string[];
   nftMovements: NonFungiblePortfolioMovement[];
+  nftAssetIds: string[];
 }> {
   const fungibleMovements: FungiblePortfolioMovement[] = [];
+  const fungibleAssetIds: string[] = [];
   const nftMovements: NonFungiblePortfolioMovement[] = [];
+  const nftAssetIds: string[] = [];
   const assetIds: string[] = [];
 
-  const typedAssets = await Promise.all(items.map(({ asset }) => asAsset(asset, context)));
+  const typedAssets = await settleAll(items.map(({ asset }) => asAsset(asset, context)));
 
   for (const [index, item] of items.entries()) {
-    const typedAsset = typedAssets[index]!;
+    // each item is validated before the next item's Asset is looked at, as if read one at a time
+    const typedAsset = unwrapSettled(typedAssets[index]!);
     const assetId = typedAsset.id;
     assetIds.push(assetId);
 
@@ -61,6 +66,7 @@ async function segregateItems(
         });
       }
       fungibleMovements.push(item);
+      fungibleAssetIds.push(assetId);
     } else if (isNftCollection(typedAsset)) {
       if (!('nfts' in item)) {
         throw new PolymeshError({
@@ -70,6 +76,7 @@ async function segregateItems(
         });
       }
       nftMovements.push(item);
+      nftAssetIds.push(assetId);
     }
   }
 
@@ -84,7 +91,9 @@ async function segregateItems(
 
   return {
     fungibleMovements,
+    fungibleAssetIds,
     nftMovements,
+    nftAssetIds,
   };
 }
 
@@ -106,7 +115,10 @@ export async function prepareMoveFunds(
 
   const { from: fromPortfolio, to, items } = args;
 
-  const { fungibleMovements, nftMovements } = await segregateItems(items, context);
+  const { fungibleMovements, fungibleAssetIds, nftMovements, nftAssetIds } = await segregateItems(
+    items,
+    context
+  );
 
   const {
     owner: { did: fromDid },
@@ -152,13 +164,9 @@ export async function prepareMoveFunds(
     context
   );
 
-  const [fungibleBalances, heldCollections, fungibleAssetIds, nftAssetIds] = await Promise.all([
-    fromPortfolio.getAssetBalances({
-      assets: fungibleMovements.map(({ asset }) => asset),
-    }),
-    fromPortfolio.getCollections({ collections: nftMovements.map(({ asset }) => asset) }),
-    Promise.all(fungibleMovements.map(({ asset }) => asAssetId(asset, context))),
-    Promise.all(nftMovements.map(({ asset }) => asAssetId(asset, context))),
+  const [fungibleBalances, heldCollections] = await Promise.all([
+    fromPortfolio.getAssetBalances({ assets: fungibleAssetIds }),
+    fromPortfolio.getCollections({ collections: nftAssetIds }),
   ]);
   const balanceExceeded: (PortfolioMovement & { free: BigNumber })[] = [];
 
