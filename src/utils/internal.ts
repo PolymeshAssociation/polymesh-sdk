@@ -213,6 +213,52 @@ export function withTimeout<T>(
 
 /**
  * @hidden
+ */
+export type Settled<T> = { isOk: true; value: T } | { isOk: false; error: unknown };
+
+/**
+ * @hidden
+ * Wait for every promise to settle, fulfilled or rejected, keeping input order
+ *
+ * @note `Promise.allSettled` is not in the `es2017` lib this package compiles against
+ */
+export function settleAll<T>(promises: Promise<T>[]): Promise<Settled<T>[]> {
+  return Promise.all(
+    promises.map(promise =>
+      promise.then(
+        (value): Settled<T> => ({ isOk: true, value }),
+        (error: unknown): Settled<T> => ({ isOk: false, error })
+      )
+    )
+  );
+}
+
+/**
+ * @hidden
+ * Return a settled promise's value, or throw the error it rejected with
+ */
+export function unwrapSettled<T>(settled: Settled<T>): T {
+  if (!settled.isOk) {
+    throw settled.error;
+  }
+
+  return settled.value;
+}
+
+/**
+ * @hidden
+ * Like `Promise.all`, but if several promises reject, throw the error of the first in input order
+ *   rather than the first to reject in time. This keeps the error a caller sees the same as when
+ *   the promises were awaited one at a time, and independent of which request happens to fail first
+ */
+export async function allInOrder<T>(promises: Promise<T>[]): Promise<T[]> {
+  const settled = await settleAll(promises);
+
+  return settled.map(unwrapSettled);
+}
+
+/**
+ * @hidden
  * Convert an entity type and its unique Identifiers to a base64 string
  */
 export function serialize<UniqueIdentifiers>(
@@ -2043,43 +2089,35 @@ export async function getSecondaryAccountPermissions(
   const assembleResult = async (
     optKeyRecords: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[]
   ): Promise<PermissionedAccount[]> => {
-    const result: PermissionedAccount[] = [];
-    let index = 0;
-    const getAccountAsSecondaryKey = async (
-      record: PolymeshPrimitivesSecondaryKeyKeyRecord,
-      account: Account | MultiSig
-    ): Promise<void> => {
-      const rawIdentityId = record.asSecondaryKey;
-      if (!identity || identityIdToString(rawIdentityId) === identity.did) {
+    const permissionedAccounts = await allInOrder(
+      optKeyRecords.map(async (optKeyRecord, index): Promise<PermissionedAccount | undefined> => {
+        const account = accounts[index];
+
+        if (!account || optKeyRecord.isNone) {
+          return undefined;
+        }
+
+        const record = optKeyRecord.unwrap();
+
+        if (
+          !record.isSecondaryKey ||
+          (identity && identityIdToString(record.asSecondaryKey) !== identity.did)
+        ) {
+          return undefined;
+        }
+
         const { permissions, unmatchedPermissions } = await meshPermissionsToPermissionsV2(
           account,
           context
         );
 
-        result.push({
-          account,
-          permissions,
-          unmatchedPermissions,
-        });
-      }
-    };
+        return { account, permissions, unmatchedPermissions };
+      })
+    );
 
-    for (const optKeyRecord of optKeyRecords) {
-      const account = accounts[index];
-      if (!account) {
-        index++;
-        continue;
-      }
-      if (optKeyRecord.isSome) {
-        const record = optKeyRecord.unwrap();
-
-        if (record.isSecondaryKey) {
-          await getAccountAsSecondaryKey(record, account);
-        }
-      }
-      index++;
-    }
-    return result;
+    return permissionedAccounts.filter(
+      (permissionedAccount): permissionedAccount is PermissionedAccount => !!permissionedAccount
+    );
   };
 
   const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));

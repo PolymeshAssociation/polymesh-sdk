@@ -33,14 +33,12 @@ import {
   AssetHolder,
   AssetHolderLike,
   ErrorCode,
-  FungibleLeg,
   InstructionEndCondition,
   InstructionFungibleLeg,
   InstructionLeg,
   InstructionNftLeg,
   InstructionOffChainLeg,
   InstructionType,
-  NftLeg,
   RoleType,
   SettlementTx,
   TxTags,
@@ -48,8 +46,8 @@ import {
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
-  isFungibleLegBuilder,
-  isNftLegBuilder,
+  isFungibleAsset,
+  isNftCollection,
   isOffChainLeg,
   isPortfolioAssetHolder,
 } from '~/utils';
@@ -75,6 +73,8 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  allInOrder,
+  asAsset,
   asAssetId,
   asBaseAsset,
   asDid,
@@ -83,6 +83,8 @@ import {
   assertIdentityExists,
   filterEventRecords,
   optionize,
+  settleAll,
+  unwrapSettled,
 } from '~/utils/internal';
 
 /**
@@ -311,7 +313,10 @@ function getEndCondition(
 /**
  * @hidden
  */
-function validateFungibleLeg(leg: FungibleLeg, assetId: string): void {
+function validateFungibleLeg(
+  leg: InstructionLeg,
+  assetId: string
+): asserts leg is InstructionFungibleLeg {
   if (!('amount' in leg)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -324,7 +329,10 @@ function validateFungibleLeg(leg: FungibleLeg, assetId: string): void {
 /**
  * @hidden
  */
-function validateNonFungibleLeg(leg: NftLeg, assetId: string): void {
+function validateNonFungibleLeg(
+  leg: InstructionLeg,
+  assetId: string
+): asserts leg is InstructionNftLeg {
   if (!('nfts' in leg)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -446,25 +454,30 @@ async function separateLegs(
   const nftLegs: InstructionNftLeg[] = [];
   const offChainLegs: InstructionOffChainLeg[] = [];
 
-  for (const leg of legs) {
+  const onChainLegs: InstructionLeg[] = [];
+
+  legs.forEach(leg => {
     if (isOffChainLeg(leg)) {
       offChainLegs.push(leg);
     } else {
-      const [isFungible, isNft] = await Promise.all([
-        isFungibleLegBuilder(leg, context),
-        isNftLegBuilder(leg, context),
-      ]);
-      const assetId = await asAssetId(leg.asset, context);
-
-      if (isFungible(leg)) {
-        validateFungibleLeg(leg, assetId);
-        fungibleLegs.push(leg);
-      } else if (isNft(leg)) {
-        validateNonFungibleLeg(leg, assetId);
-        nftLegs.push(leg);
-      }
+      onChainLegs.push(leg);
     }
-  }
+  });
+
+  const onChainAssets = await settleAll(onChainLegs.map(({ asset }) => asAsset(asset, context)));
+
+  onChainLegs.forEach((leg, i) => {
+    // each leg is validated before the next leg's Asset is looked at, as if read one at a time
+    const asset = unwrapSettled(onChainAssets[i]!);
+
+    if (isFungibleAsset(asset)) {
+      validateFungibleLeg(leg, asset.id);
+      fungibleLegs.push(leg);
+    } else if (isNftCollection(asset)) {
+      validateNonFungibleLeg(leg, asset.id);
+      nftLegs.push(leg);
+    }
+  });
 
   return { fungibleLegs, nftLegs, offChainLegs };
 }
@@ -705,10 +718,12 @@ async function getTxArgsAndErrors(
     mediatorErrIndexes: [],
   };
 
-  for (const [i, instruction] of instructions.entries()) {
-    // Validate instruction and get separated legs
-    const { errors, legs } = await validateInstruction(instruction, i, venueId, context);
+  // Each instruction is validated independently, so all of them are read at once
+  const validations = await allInOrder(
+    instructions.map((instruction, i) => validateInstruction(instruction, i, venueId, context))
+  );
 
+  const endConditions = validations.map(({ errors }, i) => {
     // Merge validation errors
     Object.entries(errors).forEach(([key, indexes]) => {
       if (indexes && indexes.length > 0) {
@@ -721,7 +736,7 @@ async function getTxArgsAndErrors(
 
     // Check end condition
     const { endCondition, errorEndBlockIndex, errorMediatorIndex } = getEndCondition(
-      instruction,
+      instructions[i]!,
       latestBlock,
       i
     );
@@ -734,48 +749,60 @@ async function getTxArgsAndErrors(
       errIndexes.mediatorErrIndexes.push(errorMediatorIndex);
     }
 
-    if (checkAllErrorsAreEmpty(errIndexes)) {
-      const baseParams = buildInstructionParams(instruction, endCondition, venueId, context);
+    return endCondition;
+  });
 
-      const rawLegValues = await Promise.all([
-        ...legs.fungibleLegs.map(async leg => await mapFungibleLeg(leg, context)),
-        ...legs.nftLegs.map(async leg => await mapNftLeg(leg, context)),
-        ...legs.offChainLegs.map(async leg => await Promise.resolve(mapOffChainLeg(leg, context))),
+  // any error is thrown by the caller, so there is nothing to build
+  if (!checkAllErrorsAreEmpty(errIndexes)) {
+    return { errIndexes, addAndAffirmInstructionParams, addInstructionParams, affirmingSenders };
+  }
+
+  const rawLegsPerInstruction = await allInOrder(
+    validations.map(async ({ legs }) => {
+      const rawOnChainLegs = await Promise.all([
+        ...legs.fungibleLegs.map(leg => mapFungibleLeg(leg, context)),
+        ...legs.nftLegs.map(leg => mapNftLeg(leg, context)),
       ]);
 
-      const rawLegs: PolymeshPrimitivesSettlementLeg[] = rawLegValues.flat();
+      return [...rawOnChainLegs, ...legs.offChainLegs.map(leg => mapOffChainLeg(leg, context))];
+    })
+  );
 
-      if (assetHoldersToAffirm[i]!.length) {
-        affirmingSenders.push(
-          ...getAffirmingSenders([...legs.fungibleLegs, ...legs.nftLegs], assetHoldersToAffirm[i]!)
-        );
+  instructions.forEach((instruction, i) => {
+    const { legs } = validations[i]!;
+    const rawLegs: PolymeshPrimitivesSettlementLeg[] = rawLegsPerInstruction[i]!;
+    const baseParams = buildInstructionParams(instruction, endConditions[i]!, venueId, context);
 
-        const rawAssetHolders = assetHoldersToAffirm[i]!.map(portfolio =>
-          assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(portfolio), context)
-        );
-        addAndAffirmInstructionParams.push([
-          baseParams.rawVenueId,
-          baseParams.rawSettlementType,
-          baseParams.rawTradeDate,
-          baseParams.rawValueDate,
-          rawLegs,
-          assetHolderIdsToBtreeSet(rawAssetHolders, context),
-          baseParams.rawInstructionMemo,
-          baseParams.rawMediators,
-        ]);
-      } else {
-        addInstructionParams.push([
-          baseParams.rawVenueId,
-          baseParams.rawSettlementType,
-          baseParams.rawTradeDate,
-          baseParams.rawValueDate,
-          rawLegs,
-          baseParams.rawInstructionMemo,
-          baseParams.rawMediators,
-        ]);
-      }
+    if (assetHoldersToAffirm[i]!.length) {
+      affirmingSenders.push(
+        ...getAffirmingSenders([...legs.fungibleLegs, ...legs.nftLegs], assetHoldersToAffirm[i]!)
+      );
+
+      const rawAssetHolders = assetHoldersToAffirm[i]!.map(portfolio =>
+        assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(portfolio), context)
+      );
+      addAndAffirmInstructionParams.push([
+        baseParams.rawVenueId,
+        baseParams.rawSettlementType,
+        baseParams.rawTradeDate,
+        baseParams.rawValueDate,
+        rawLegs,
+        assetHolderIdsToBtreeSet(rawAssetHolders, context),
+        baseParams.rawInstructionMemo,
+        baseParams.rawMediators,
+      ]);
+    } else {
+      addInstructionParams.push([
+        baseParams.rawVenueId,
+        baseParams.rawSettlementType,
+        baseParams.rawTradeDate,
+        baseParams.rawValueDate,
+        rawLegs,
+        baseParams.rawInstructionMemo,
+        baseParams.rawMediators,
+      ]);
     }
-  }
+  });
 
   return {
     errIndexes,
