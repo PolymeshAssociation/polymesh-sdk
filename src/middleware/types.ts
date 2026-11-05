@@ -101,14 +101,14 @@ export type Account = Node & {
   accountsByNftApprovalSpenderIdAndOwnerId: Connection<Account>;
   accountsByNftOperatorApprovalOperatorIdAndOwnerId: Connection<Account>;
   accountsByNftOperatorApprovalOwnerIdAndOperatorId: Connection<Account>;
+  accountsBySlashAccountIdAndValidatorId: Connection<Account>;
+  accountsBySlashValidatorIdAndAccountId: Connection<Account>;
   accountsByStakingEventRewardDestinationAccountIdAndStashId: Connection<Account>;
+  accountsByStakingEventRewardDestinationAccountIdAndValidatorId: Connection<Account>;
   accountsByStakingEventStashIdAndRewardDestinationAccountId: Connection<Account>;
-  accountsByStakingPositionControllerIdAndRewardDestinationAccountId: Connection<Account>;
-  accountsByStakingPositionControllerIdAndStashId: Connection<Account>;
-  accountsByStakingPositionRewardDestinationAccountIdAndControllerId: Connection<Account>;
-  accountsByStakingPositionRewardDestinationAccountIdAndStashId: Connection<Account>;
-  accountsByStakingPositionStashIdAndControllerId: Connection<Account>;
-  accountsByStakingPositionStashIdAndRewardDestinationAccountId: Connection<Account>;
+  accountsByStakingEventStashIdAndValidatorId: Connection<Account>;
+  accountsByStakingEventValidatorIdAndRewardDestinationAccountId: Connection<Account>;
+  accountsByStakingEventValidatorIdAndStashId: Connection<Account>;
   accountsBySubsidyBeneficiaryAccountIdAndPayingAccountId: Connection<Account>;
   accountsBySubsidyPayingAccountIdAndBeneficiaryAccountId: Connection<Account>;
   address: Scalars['String']['output'];
@@ -127,14 +127,13 @@ export type Account = Node & {
   assetsByNftOperatorApprovalOperatorIdAndAssetId: Connection<Asset>;
   assetsByNftOperatorApprovalOwnerIdAndAssetId: Connection<Asset>;
   authorizationsReceived: Connection<Authorization>;
-  blocksByEvmAccountMappingAccountIdAndCreatedBlockId: Connection<Block>;
-  blocksByEvmAccountMappingAccountIdAndUpdatedBlockId: Connection<Block>;
   blocksByEvmTransactionFromAccountIdAndBlockId: Connection<Block>;
   blocksByIdentityKeyAccountIdAndValidFromBlockId: Connection<Block>;
   blocksByIdentityKeyAccountIdAndValidToBlockId: Connection<Block>;
   bridgeEventsByRecipientId: Connection<BridgeEvent>;
   createdEvent?: Maybe<Event>;
   createdEventId: Scalars['String']['output'];
+  erasByValidatorEraValidatorIdAndEraId: Connection<Era>;
   eventsByAccountBalanceAccountIdAndUpdatedEventId: Connection<Event>;
   eventsByAssetAllowanceOwnerIdAndCreatedEventId: Connection<Event>;
   eventsByAssetAllowanceOwnerIdAndUpdatedEventId: Connection<Event>;
@@ -183,21 +182,16 @@ export type Account = Node & {
   eventsByProposalVoteAccountIdAndCreatedEventId: Connection<Event>;
   eventsByProposalVoteAccountIdAndUpdatedEventId: Connection<Event>;
   eventsBySlashAccountIdAndCreatedEventId: Connection<Event>;
+  eventsBySlashValidatorIdAndCreatedEventId: Connection<Event>;
   eventsByStakingEventRewardDestinationAccountIdAndCreatedEventId: Connection<Event>;
   eventsByStakingEventStashIdAndCreatedEventId: Connection<Event>;
-  eventsByStakingPositionControllerIdAndCreatedEventId: Connection<Event>;
-  eventsByStakingPositionControllerIdAndUpdatedEventId: Connection<Event>;
-  eventsByStakingPositionRewardDestinationAccountIdAndCreatedEventId: Connection<Event>;
-  eventsByStakingPositionRewardDestinationAccountIdAndUpdatedEventId: Connection<Event>;
-  eventsByStakingPositionStashIdAndCreatedEventId: Connection<Event>;
-  eventsByStakingPositionStashIdAndUpdatedEventId: Connection<Event>;
+  eventsByStakingEventValidatorIdAndCreatedEventId: Connection<Event>;
   eventsBySubsidyBeneficiaryAccountIdAndCreatedEventId: Connection<Event>;
   eventsBySubsidyBeneficiaryAccountIdAndUpdatedEventId: Connection<Event>;
   eventsBySubsidyPayingAccountIdAndCreatedEventId: Connection<Event>;
   eventsBySubsidyPayingAccountIdAndUpdatedEventId: Connection<Event>;
-  eventsByValidatorAccountIdAndCreatedEventId: Connection<Event>;
-  eventsByValidatorAccountIdAndUpdatedEventId: Connection<Event>;
-  evmAccountMappings: Connection<EvmAccountMapping>;
+  eventsByValidatorEraValidatorIdAndCreatedEventId: Connection<Event>;
+  eventsByValidatorEraValidatorIdAndUpdatedEventId: Connection<Event>;
   evmAddress?: Maybe<Scalars['String']['output']>;
   evmTransactionsByFromAccountId: Connection<EvmTransaction>;
   extrinsicsByEvmTransactionFromAccountIdAndExtrinsicId: Connection<Extrinsic>;
@@ -234,10 +228,8 @@ export type Account = Node & {
   identitiesByPrimaryAccountId: Connection<Identity>;
   identitiesByStakingEventRewardDestinationAccountIdAndIdentityId: Connection<Identity>;
   identitiesByStakingEventStashIdAndIdentityId: Connection<Identity>;
-  identitiesByStakingPositionControllerIdAndIdentityId: Connection<Identity>;
-  identitiesByStakingPositionRewardDestinationAccountIdAndIdentityId: Connection<Identity>;
-  identitiesByStakingPositionStashIdAndIdentityId: Connection<Identity>;
-  identitiesByValidatorAccountIdAndIdentityId: Connection<Identity>;
+  identitiesByStakingEventValidatorIdAndIdentityId: Connection<Identity>;
+  identitiesByValidatorEraValidatorIdAndIdentityId: Connection<Identity>;
   identity?: Maybe<Identity>;
   identityId?: Maybe<Scalars['String']['output']>;
   instructionAffirmations: Connection<InstructionAffirmation>;
@@ -298,21 +290,15 @@ export type Account = Node & {
   slashes: Connection<Slash>;
   stakingEvents: Connection<StakingEvent>;
   stakingEventsByRewardDestinationAccountId: Connection<StakingEvent>;
-  stakingPositionsByControllerId: Connection<StakingPosition>;
-  stakingPositionsByRewardDestinationAccountId: Connection<StakingPosition>;
-  stakingPositionsByStakingEventRewardDestinationAccountIdAndPositionId: Connection<StakingPosition>;
-  stakingPositionsByStakingEventStashIdAndPositionId: Connection<StakingPosition>;
-  stakingPositionsByStashId: Connection<StakingPosition>;
+  stakingEventsByValidatorId: Connection<StakingEvent>;
   subsidiesPaid: Connection<Subsidy>;
   subsidiesReceived: Connection<Subsidy>;
   transfersIn: Connection<AssetTransaction>;
   transfersOut: Connection<AssetTransaction>;
   updatedEvent?: Maybe<Event>;
   updatedEventId: Scalars['String']['output'];
-  validators: Connection<Validator>;
-  validatorsBySlashAccountIdAndValidatorId: Connection<Validator>;
-  validatorsByStakingEventRewardDestinationAccountIdAndValidatorId: Connection<Validator>;
-  validatorsByStakingEventStashIdAndValidatorId: Connection<Validator>;
+  validatorEras: Connection<ValidatorEra>;
+  validatorSlashes: Connection<Slash>;
   venuesByInstructionRejectedBySignerIdAndVenueId: Connection<Venue>;
 };
 export type AccountBalance = Node & {
@@ -423,7 +409,6 @@ export type AccountFilter = {
   bridgeEventsByRecipientId?: InputMaybe<OneToManyFilter<BridgeEventFilter>>;
   createdEvent?: InputMaybe<EventFilter>;
   createdEventId?: InputMaybe<StringFilter>;
-  evmAccountMappings?: InputMaybe<OneToManyFilter<EvmAccountMappingFilter>>;
   evmAddress?: InputMaybe<StringFilter>;
   evmTransactionsByFromAccountId?: InputMaybe<OneToManyFilter<EvmTransactionFilter>>;
   holdings?: InputMaybe<OneToManyFilter<HoldingFilter>>;
@@ -458,16 +443,15 @@ export type AccountFilter = {
   slashes?: InputMaybe<OneToManyFilter<SlashFilter>>;
   stakingEvents?: InputMaybe<OneToManyFilter<StakingEventFilter>>;
   stakingEventsByRewardDestinationAccountId?: InputMaybe<OneToManyFilter<StakingEventFilter>>;
-  stakingPositionsByControllerId?: InputMaybe<OneToManyFilter<StakingPositionFilter>>;
-  stakingPositionsByRewardDestinationAccountId?: InputMaybe<OneToManyFilter<StakingPositionFilter>>;
-  stakingPositionsByStashId?: InputMaybe<OneToManyFilter<StakingPositionFilter>>;
+  stakingEventsByValidatorId?: InputMaybe<OneToManyFilter<StakingEventFilter>>;
   subsidiesPaid?: InputMaybe<OneToManyFilter<SubsidyFilter>>;
   subsidiesReceived?: InputMaybe<OneToManyFilter<SubsidyFilter>>;
   transfersIn?: InputMaybe<OneToManyFilter<AssetTransactionFilter>>;
   transfersOut?: InputMaybe<OneToManyFilter<AssetTransactionFilter>>;
   updatedEvent?: InputMaybe<EventFilter>;
   updatedEventId?: InputMaybe<StringFilter>;
-  validators?: InputMaybe<OneToManyFilter<ValidatorFilter>>;
+  validatorEras?: InputMaybe<OneToManyFilter<ValidatorEraFilter>>;
+  validatorSlashes?: InputMaybe<OneToManyFilter<SlashFilter>>;
 };
 export enum AccountKeyRole {
   MultiSigSigner = 'MultiSigSigner',
@@ -704,11 +688,9 @@ export type Asset = Node & {
   assetsByStoRaisingAssetIdAndOfferingAssetId: Connection<Asset>;
   ballots: Connection<CorporateBallot>;
   checkpointSchedules: Connection<CheckpointSchedule>;
-  checkpointSchedulesByCheckpointAssetIdAndScheduleId: Connection<CheckpointSchedule>;
   checkpoints: Connection<Checkpoint>;
   checkpointsByCorporateActionAssetIdAndCheckpointId: Connection<Checkpoint>;
   compliance: Connection<Compliance>;
-  corporateActionDefaultConfigs: Connection<CorporateActionDefaultConfig>;
   corporateActions: Connection<CorporateAction>;
   corporateActionsByCorporateBallotAssetIdAndCorporateActionId: Connection<CorporateAction>;
   corporateActionsByDistributionAssetIdAndCorporateActionId: Connection<CorporateAction>;
@@ -736,19 +718,14 @@ export type Asset = Node & {
   eventsByAssetMandatoryMediatorAssetIdAndUpdatedEventId: Connection<Event>;
   eventsByAssetMetadatumAssetIdAndCreatedEventId: Connection<Event>;
   eventsByAssetMetadatumAssetIdAndUpdatedEventId: Connection<Event>;
-  eventsByAssetPreApprovalAssetIdAndCreatedEventId: Connection<Event>;
-  eventsByAssetPreApprovalAssetIdAndUpdatedEventId: Connection<Event>;
   eventsByAssetTransactionAssetIdAndCreatedEventId: Connection<Event>;
   eventsByCheckpointAssetIdAndCreatedEventId: Connection<Event>;
-  eventsByCheckpointScheduleAssetIdAndCompletedEventId: Connection<Event>;
   eventsByCheckpointScheduleAssetIdAndCreatedEventId: Connection<Event>;
   eventsByCheckpointScheduleAssetIdAndRemovedEventId: Connection<Event>;
   eventsByComplianceAssetIdAndCreatedEventId: Connection<Event>;
   eventsByComplianceAssetIdAndUpdatedEventId: Connection<Event>;
   eventsByCorporateActionAssetIdAndCreatedEventId: Connection<Event>;
   eventsByCorporateActionAssetIdAndUpdatedEventId: Connection<Event>;
-  eventsByCorporateActionDefaultConfigAssetIdAndCreatedEventId: Connection<Event>;
-  eventsByCorporateActionDefaultConfigAssetIdAndUpdatedEventId: Connection<Event>;
   eventsByCorporateBallotAssetIdAndCreatedEventId: Connection<Event>;
   eventsByCorporateBallotAssetIdAndUpdatedEventId: Connection<Event>;
   eventsByDistributionAssetIdAndCreatedEventId: Connection<Event>;
@@ -798,7 +775,6 @@ export type Asset = Node & {
   identitiesByAssetHolderAssetIdAndIdentityId: Connection<Identity>;
   identitiesByAssetMandatoryMediatorAssetIdAndAddedById: Connection<Identity>;
   identitiesByAssetMandatoryMediatorAssetIdAndIdentityId: Connection<Identity>;
-  identitiesByAssetPreApprovalAssetIdAndIdentityId: Connection<Identity>;
   identitiesByAssetTransactionAssetIdAndFromIdentityId: Connection<Identity>;
   identitiesByAssetTransactionAssetIdAndToIdentityId: Connection<Identity>;
   identitiesByDistributionAssetIdAndIdentityId: Connection<Identity>;
@@ -846,7 +822,6 @@ export type Asset = Node & {
   portfoliosByStoOfferingAssetIdAndRaisingPortfolioId: Connection<Portfolio>;
   portfoliosByStoRaisingAssetIdAndOfferingPortfolioId: Connection<Portfolio>;
   portfoliosByStoRaisingAssetIdAndRaisingPortfolioId: Connection<Portfolio>;
-  preApprovals: Connection<AssetPreApproval>;
   statTypes: Connection<StatType>;
   statTypesByTransferComplianceAssetIdAndStatTypeId: Connection<StatType>;
   stosByInvestmentOfferingAssetIdAndStoId: Connection<Sto>;
@@ -1136,7 +1111,6 @@ export type AssetFilter = {
   checkpointSchedules?: InputMaybe<OneToManyFilter<CheckpointScheduleFilter>>;
   checkpoints?: InputMaybe<OneToManyFilter<CheckpointFilter>>;
   compliance?: InputMaybe<OneToManyFilter<ComplianceFilter>>;
-  corporateActionDefaultConfigs?: InputMaybe<OneToManyFilter<CorporateActionDefaultConfigFilter>>;
   corporateActions?: InputMaybe<OneToManyFilter<CorporateActionFilter>>;
   createdEvent?: InputMaybe<EventFilter>;
   createdEventId?: InputMaybe<StringFilter>;
@@ -1168,7 +1142,6 @@ export type AssetFilter = {
   or?: InputMaybe<Array<AssetFilter>>;
   owner?: InputMaybe<IdentityFilter>;
   ownerId?: InputMaybe<StringFilter>;
-  preApprovals?: InputMaybe<OneToManyFilter<AssetPreApprovalFilter>>;
   statTypes?: InputMaybe<OneToManyFilter<StatTypeFilter>>;
   stosByRaisingAssetId?: InputMaybe<OneToManyFilter<StoFilter>>;
   ticker?: InputMaybe<StringFilter>;
@@ -1354,49 +1327,6 @@ export type AssetMetadatumFilter = {
   updatedEventId?: InputMaybe<StringFilter>;
   value?: InputMaybe<StringFilter>;
 };
-export type AssetPreApproval = Node & {
-  asset?: Maybe<Asset>;
-  assetId: Scalars['String']['output'];
-  createdEvent?: Maybe<Event>;
-  createdEventId: Scalars['String']['output'];
-  id: Scalars['String']['output'];
-  identity?: Maybe<Identity>;
-  identityId: Scalars['String']['output'];
-  nodeId: Scalars['ID']['output'];
-  updatedEvent?: Maybe<Event>;
-  updatedEventId: Scalars['String']['output'];
-};
-export type AssetPreApprovalFilter = {
-  and?: InputMaybe<Array<AssetPreApprovalFilter>>;
-  asset?: InputMaybe<AssetFilter>;
-  assetId?: InputMaybe<StringFilter>;
-  createdEvent?: InputMaybe<EventFilter>;
-  createdEventId?: InputMaybe<StringFilter>;
-  id?: InputMaybe<StringFilter>;
-  identity?: InputMaybe<IdentityFilter>;
-  identityId?: InputMaybe<StringFilter>;
-  not?: InputMaybe<AssetPreApprovalFilter>;
-  or?: InputMaybe<Array<AssetPreApprovalFilter>>;
-  updatedEvent?: InputMaybe<EventFilter>;
-  updatedEventId?: InputMaybe<StringFilter>;
-};
-export enum AssetPreApprovalsOrderBy {
-  AssetIdAsc = 'ASSET_ID_ASC',
-  AssetIdDesc = 'ASSET_ID_DESC',
-  CreatedEventIdAsc = 'CREATED_EVENT_ID_ASC',
-  CreatedEventIdDesc = 'CREATED_EVENT_ID_DESC',
-  IdentityIdAsc = 'IDENTITY_ID_ASC',
-  IdentityIdDesc = 'IDENTITY_ID_DESC',
-  IdAsc = 'ID_ASC',
-  IdDesc = 'ID_DESC',
-  Natural = 'NATURAL',
-  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
-  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-  UpdatedEventIdAsc = 'UPDATED_EVENT_ID_ASC',
-  UpdatedEventIdDesc = 'UPDATED_EVENT_ID_DESC',
-  CreatedAtAsc = 'CREATED_AT_ASC',
-  CreatedAtDesc = 'CREATED_AT_DESC',
-}
 export type AssetTransaction = Node & {
   address?: Maybe<Scalars['String']['output']>;
   amount?: Maybe<Scalars['BigFloat']['output']>;
@@ -1690,14 +1620,10 @@ export type BigIntFilter = {
   notIn?: InputMaybe<Array<Scalars['BigInt']['input']>>;
 };
 export type Block = Node & {
-  accountsByEvmAccountMappingCreatedBlockIdAndAccountId: Connection<Account>;
-  accountsByEvmAccountMappingUpdatedBlockIdAndAccountId: Connection<Account>;
   accountsByEvmTransactionBlockIdAndFromAccountId: Connection<Account>;
   accountsByIdentityKeyValidFromBlockIdAndAccountId: Connection<Account>;
   accountsByIdentityKeyValidToBlockIdAndAccountId: Connection<Account>;
   blockId: Scalars['Int']['output'];
-  blocksByEvmAccountMappingCreatedBlockIdAndUpdatedBlockId: Connection<Block>;
-  blocksByEvmAccountMappingUpdatedBlockIdAndCreatedBlockId: Connection<Block>;
   blocksByIdentityKeyValidFromBlockIdAndValidToBlockId: Connection<Block>;
   blocksByIdentityKeyValidToBlockIdAndValidFromBlockId: Connection<Block>;
   chainUpgradesByFirstBlockId: Connection<ChainUpgrade>;
@@ -1713,8 +1639,6 @@ export type Block = Node & {
   eventsByIdentityKeyValidFromBlockIdAndUpdatedEventId: Connection<Event>;
   eventsByIdentityKeyValidToBlockIdAndCreatedEventId: Connection<Event>;
   eventsByIdentityKeyValidToBlockIdAndUpdatedEventId: Connection<Event>;
-  evmAccountMappingsByCreatedBlockId: Connection<EvmAccountMapping>;
-  evmAccountMappingsByUpdatedBlockId: Connection<EvmAccountMapping>;
   evmTransactions: Connection<EvmTransaction>;
   extrinsics: Connection<Extrinsic>;
   extrinsicsByEventBlockIdAndExtrinsicId: Connection<Extrinsic>;
@@ -1745,8 +1669,6 @@ export type BlockFilter = {
   countExtrinsicsUnsigned?: InputMaybe<IntFilter>;
   datetime?: InputMaybe<DatetimeFilter>;
   events?: InputMaybe<OneToManyFilter<EventFilter>>;
-  evmAccountMappingsByCreatedBlockId?: InputMaybe<OneToManyFilter<EvmAccountMappingFilter>>;
-  evmAccountMappingsByUpdatedBlockId?: InputMaybe<OneToManyFilter<EvmAccountMappingFilter>>;
   evmTransactions?: InputMaybe<OneToManyFilter<EvmTransactionFilter>>;
   extrinsics?: InputMaybe<OneToManyFilter<ExtrinsicFilter>>;
   extrinsicsRoot?: InputMaybe<StringFilter>;
@@ -2502,8 +2424,6 @@ export type Checkpoint = Node & {
   eventsByCorporateActionCheckpointIdAndUpdatedEventId: Connection<Event>;
   id: Scalars['String']['output'];
   nodeId: Scalars['ID']['output'];
-  schedule?: Maybe<CheckpointSchedule>;
-  scheduleId?: Maybe<Scalars['String']['output']>;
   totalSupply: Scalars['BigFloat']['output'];
 };
 export type CheckpointFilter = {
@@ -2518,26 +2438,16 @@ export type CheckpointFilter = {
   id?: InputMaybe<StringFilter>;
   not?: InputMaybe<CheckpointFilter>;
   or?: InputMaybe<Array<CheckpointFilter>>;
-  schedule?: InputMaybe<CheckpointScheduleFilter>;
-  scheduleExists?: InputMaybe<Scalars['Boolean']['input']>;
-  scheduleId?: InputMaybe<StringFilter>;
   totalSupply?: InputMaybe<BigFloatFilter>;
 };
 export type CheckpointSchedule = Node & {
   asset?: Maybe<Asset>;
   assetId: Scalars['String']['output'];
-  assetsByCheckpointScheduleIdAndAssetId: Connection<Asset>;
-  checkpoints: Connection<Checkpoint>;
-  completedEvent?: Maybe<Event>;
-  completedEventId?: Maybe<Scalars['String']['output']>;
   createdEvent?: Maybe<Event>;
   createdEventId: Scalars['String']['output'];
-  eventsByCheckpointScheduleIdAndCreatedEventId: Connection<Event>;
   id: Scalars['String']['output'];
-  nextCheckpointAt?: Maybe<Scalars['Datetime']['output']>;
   nodeId: Scalars['ID']['output'];
   period?: Maybe<Scalars['String']['output']>;
-  remaining?: Maybe<Scalars['Int']['output']>;
   removedEvent?: Maybe<Event>;
   removedEventId?: Maybe<Scalars['String']['output']>;
   scheduleId: Scalars['Int']['output'];
@@ -2548,18 +2458,12 @@ export type CheckpointScheduleFilter = {
   and?: InputMaybe<Array<CheckpointScheduleFilter>>;
   asset?: InputMaybe<AssetFilter>;
   assetId?: InputMaybe<StringFilter>;
-  checkpoints?: InputMaybe<OneToManyFilter<CheckpointFilter>>;
-  completedEvent?: InputMaybe<EventFilter>;
-  completedEventExists?: InputMaybe<Scalars['Boolean']['input']>;
-  completedEventId?: InputMaybe<StringFilter>;
   createdEvent?: InputMaybe<EventFilter>;
   createdEventId?: InputMaybe<StringFilter>;
   id?: InputMaybe<StringFilter>;
-  nextCheckpointAt?: InputMaybe<DatetimeFilter>;
   not?: InputMaybe<CheckpointScheduleFilter>;
   or?: InputMaybe<Array<CheckpointScheduleFilter>>;
   period?: InputMaybe<StringFilter>;
-  remaining?: InputMaybe<IntFilter>;
   removedEvent?: InputMaybe<EventFilter>;
   removedEventExists?: InputMaybe<Scalars['Boolean']['input']>;
   removedEventId?: InputMaybe<StringFilter>;
@@ -2570,21 +2474,15 @@ export type CheckpointScheduleFilter = {
 export enum CheckpointSchedulesOrderBy {
   AssetIdAsc = 'ASSET_ID_ASC',
   AssetIdDesc = 'ASSET_ID_DESC',
-  CompletedEventIdAsc = 'COMPLETED_EVENT_ID_ASC',
-  CompletedEventIdDesc = 'COMPLETED_EVENT_ID_DESC',
   CreatedEventIdAsc = 'CREATED_EVENT_ID_ASC',
   CreatedEventIdDesc = 'CREATED_EVENT_ID_DESC',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
   Natural = 'NATURAL',
-  NextCheckpointAtAsc = 'NEXT_CHECKPOINT_AT_ASC',
-  NextCheckpointAtDesc = 'NEXT_CHECKPOINT_AT_DESC',
   PeriodAsc = 'PERIOD_ASC',
   PeriodDesc = 'PERIOD_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-  RemainingAsc = 'REMAINING_ASC',
-  RemainingDesc = 'REMAINING_DESC',
   RemovedEventIdAsc = 'REMOVED_EVENT_ID_ASC',
   RemovedEventIdDesc = 'REMOVED_EVENT_ID_DESC',
   ScheduledCheckpointsAsc = 'SCHEDULED_CHECKPOINTS_ASC',
@@ -2610,8 +2508,6 @@ export enum CheckpointsOrderBy {
   Natural = 'NATURAL',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-  ScheduleIdAsc = 'SCHEDULE_ID_ASC',
-  ScheduleIdDesc = 'SCHEDULE_ID_DESC',
   TotalSupplyAsc = 'TOTAL_SUPPLY_ASC',
   TotalSupplyDesc = 'TOTAL_SUPPLY_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
@@ -3448,59 +3344,6 @@ export type CorporateAction = Node & {
   updatedEvent?: Maybe<Event>;
   updatedEventId: Scalars['String']['output'];
 };
-export type CorporateActionDefaultConfig = Node & {
-  asset?: Maybe<Asset>;
-  assetId: Scalars['String']['output'];
-  createdEvent?: Maybe<Event>;
-  createdEventId: Scalars['String']['output'];
-  defaultWithholdingTax?: Maybe<Scalars['BigFloat']['output']>;
-  didWithholdingTax?: Maybe<Scalars['JSON']['output']>;
-  id: Scalars['String']['output'];
-  nodeId: Scalars['ID']['output'];
-  targetIdentities?: Maybe<Scalars['JSON']['output']>;
-  targetTreatment?: Maybe<TargetTreatment>;
-  updatedEvent?: Maybe<Event>;
-  updatedEventId: Scalars['String']['output'];
-};
-export type CorporateActionDefaultConfigFilter = {
-  and?: InputMaybe<Array<CorporateActionDefaultConfigFilter>>;
-  asset?: InputMaybe<AssetFilter>;
-  assetId?: InputMaybe<StringFilter>;
-  createdEvent?: InputMaybe<EventFilter>;
-  createdEventId?: InputMaybe<StringFilter>;
-  defaultWithholdingTax?: InputMaybe<BigFloatFilter>;
-  didWithholdingTax?: InputMaybe<JsonFilter>;
-  id?: InputMaybe<StringFilter>;
-  not?: InputMaybe<CorporateActionDefaultConfigFilter>;
-  or?: InputMaybe<Array<CorporateActionDefaultConfigFilter>>;
-  targetIdentities?: InputMaybe<JsonFilter>;
-  targetTreatment?: InputMaybe<TargetTreatmentFilter>;
-  updatedEvent?: InputMaybe<EventFilter>;
-  updatedEventId?: InputMaybe<StringFilter>;
-};
-export enum CorporateActionDefaultConfigsOrderBy {
-  AssetIdAsc = 'ASSET_ID_ASC',
-  AssetIdDesc = 'ASSET_ID_DESC',
-  CreatedEventIdAsc = 'CREATED_EVENT_ID_ASC',
-  CreatedEventIdDesc = 'CREATED_EVENT_ID_DESC',
-  DefaultWithholdingTaxAsc = 'DEFAULT_WITHHOLDING_TAX_ASC',
-  DefaultWithholdingTaxDesc = 'DEFAULT_WITHHOLDING_TAX_DESC',
-  DidWithholdingTaxAsc = 'DID_WITHHOLDING_TAX_ASC',
-  DidWithholdingTaxDesc = 'DID_WITHHOLDING_TAX_DESC',
-  IdAsc = 'ID_ASC',
-  IdDesc = 'ID_DESC',
-  Natural = 'NATURAL',
-  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
-  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-  TargetIdentitiesAsc = 'TARGET_IDENTITIES_ASC',
-  TargetIdentitiesDesc = 'TARGET_IDENTITIES_DESC',
-  TargetTreatmentAsc = 'TARGET_TREATMENT_ASC',
-  TargetTreatmentDesc = 'TARGET_TREATMENT_DESC',
-  UpdatedEventIdAsc = 'UPDATED_EVENT_ID_ASC',
-  UpdatedEventIdDesc = 'UPDATED_EVENT_ID_DESC',
-  CreatedAtAsc = 'CREATED_AT_ASC',
-  CreatedAtDesc = 'CREATED_AT_DESC',
-}
 export type CorporateActionFilter = {
   and?: InputMaybe<Array<CorporateActionFilter>>;
   asset?: InputMaybe<AssetFilter>;
@@ -3971,6 +3814,7 @@ export type EntryDirectionFilter = {
   notIn?: InputMaybe<Array<EntryDirection>>;
 };
 export type Era = Node & {
+  accountsByValidatorEraEraIdAndValidatorId: Connection<Account>;
   endEvent?: Maybe<Event>;
   endEventId?: Maybe<Scalars['String']['output']>;
   eraIndex: Scalars['Int']['output'];
@@ -3987,7 +3831,6 @@ export type Era = Node & {
   validatorCount?: Maybe<Scalars['Int']['output']>;
   validatorPayout?: Maybe<Scalars['BigFloat']['output']>;
   validators: Connection<ValidatorEra>;
-  validatorsByValidatorEraEraIdAndValidatorId: Connection<Validator>;
 };
 export type EraFilter = {
   and?: InputMaybe<Array<EraFilter>>;
@@ -4081,21 +3924,17 @@ export type Event = Node & {
   accountsByProposalVoteCreatedEventIdAndAccountId: Connection<Account>;
   accountsByProposalVoteUpdatedEventIdAndAccountId: Connection<Account>;
   accountsBySlashCreatedEventIdAndAccountId: Connection<Account>;
+  accountsBySlashCreatedEventIdAndValidatorId: Connection<Account>;
   accountsByStakingEventCreatedEventIdAndRewardDestinationAccountId: Connection<Account>;
   accountsByStakingEventCreatedEventIdAndStashId: Connection<Account>;
-  accountsByStakingPositionCreatedEventIdAndControllerId: Connection<Account>;
-  accountsByStakingPositionCreatedEventIdAndRewardDestinationAccountId: Connection<Account>;
-  accountsByStakingPositionCreatedEventIdAndStashId: Connection<Account>;
-  accountsByStakingPositionUpdatedEventIdAndControllerId: Connection<Account>;
-  accountsByStakingPositionUpdatedEventIdAndRewardDestinationAccountId: Connection<Account>;
-  accountsByStakingPositionUpdatedEventIdAndStashId: Connection<Account>;
+  accountsByStakingEventCreatedEventIdAndValidatorId: Connection<Account>;
   accountsBySubsidyCreatedEventIdAndBeneficiaryAccountId: Connection<Account>;
   accountsBySubsidyCreatedEventIdAndPayingAccountId: Connection<Account>;
   accountsBySubsidyUpdatedEventIdAndBeneficiaryAccountId: Connection<Account>;
   accountsBySubsidyUpdatedEventIdAndPayingAccountId: Connection<Account>;
   accountsByUpdatedEventId: Connection<Account>;
-  accountsByValidatorCreatedEventIdAndAccountId: Connection<Account>;
-  accountsByValidatorUpdatedEventIdAndAccountId: Connection<Account>;
+  accountsByValidatorEraCreatedEventIdAndValidatorId: Connection<Account>;
+  accountsByValidatorEraUpdatedEventIdAndValidatorId: Connection<Account>;
   agentGroupMembershipsByCreatedEventId: Connection<AgentGroupMembership>;
   agentGroupMembershipsByUpdatedEventId: Connection<AgentGroupMembership>;
   agentGroupsByAgentGroupMembershipCreatedEventIdAndGroupId: Connection<AgentGroup>;
@@ -4120,8 +3959,6 @@ export type Event = Node & {
   assetMandatoryMediatorsByUpdatedEventId: Connection<AssetMandatoryMediator>;
   assetMetadataByCreatedEventId: Connection<AssetMetadatum>;
   assetMetadataByUpdatedEventId: Connection<AssetMetadatum>;
-  assetPreApprovalsByCreatedEventId: Connection<AssetPreApproval>;
-  assetPreApprovalsByUpdatedEventId: Connection<AssetPreApproval>;
   assetTransactionsByCreatedEventId: Connection<AssetTransaction>;
   assetsByAgentGroupCreatedEventIdAndAssetId: Connection<Asset>;
   assetsByAgentGroupUpdatedEventIdAndAssetId: Connection<Asset>;
@@ -4140,18 +3977,13 @@ export type Event = Node & {
   assetsByAssetMandatoryMediatorUpdatedEventIdAndAssetId: Connection<Asset>;
   assetsByAssetMetadatumCreatedEventIdAndAssetId: Connection<Asset>;
   assetsByAssetMetadatumUpdatedEventIdAndAssetId: Connection<Asset>;
-  assetsByAssetPreApprovalCreatedEventIdAndAssetId: Connection<Asset>;
-  assetsByAssetPreApprovalUpdatedEventIdAndAssetId: Connection<Asset>;
   assetsByAssetTransactionCreatedEventIdAndAssetId: Connection<Asset>;
   assetsByCheckpointCreatedEventIdAndAssetId: Connection<Asset>;
-  assetsByCheckpointScheduleCompletedEventIdAndAssetId: Connection<Asset>;
   assetsByCheckpointScheduleCreatedEventIdAndAssetId: Connection<Asset>;
   assetsByCheckpointScheduleRemovedEventIdAndAssetId: Connection<Asset>;
   assetsByComplianceCreatedEventIdAndAssetId: Connection<Asset>;
   assetsByComplianceUpdatedEventIdAndAssetId: Connection<Asset>;
   assetsByCorporateActionCreatedEventIdAndAssetId: Connection<Asset>;
-  assetsByCorporateActionDefaultConfigCreatedEventIdAndAssetId: Connection<Asset>;
-  assetsByCorporateActionDefaultConfigUpdatedEventIdAndAssetId: Connection<Asset>;
   assetsByCorporateActionUpdatedEventIdAndAssetId: Connection<Asset>;
   assetsByCorporateBallotCreatedEventIdAndAssetId: Connection<Asset>;
   assetsByCorporateBallotUpdatedEventIdAndAssetId: Connection<Asset>;
@@ -4199,8 +4031,6 @@ export type Event = Node & {
   blocksByIdentityKeyUpdatedEventIdAndValidFromBlockId: Connection<Block>;
   blocksByIdentityKeyUpdatedEventIdAndValidToBlockId: Connection<Block>;
   bridgeEventsByCreatedEventId: Connection<BridgeEvent>;
-  checkpointSchedulesByCheckpointCreatedEventIdAndScheduleId: Connection<CheckpointSchedule>;
-  checkpointSchedulesByCompletedEventId: Connection<CheckpointSchedule>;
   checkpointSchedulesByCreatedEventId: Connection<CheckpointSchedule>;
   checkpointSchedulesByRemovedEventId: Connection<CheckpointSchedule>;
   checkpointsByCorporateActionCreatedEventIdAndCheckpointId: Connection<Checkpoint>;
@@ -4242,8 +4072,6 @@ export type Event = Node & {
   confidentialSettlementsByConfidentialLegUpdatedEventIdAndSettlementId: Connection<ConfidentialSettlement>;
   confidentialSettlementsByCreatedEventId: Connection<ConfidentialSettlement>;
   confidentialSettlementsByUpdatedEventId: Connection<ConfidentialSettlement>;
-  corporateActionDefaultConfigsByCreatedEventId: Connection<CorporateActionDefaultConfig>;
-  corporateActionDefaultConfigsByUpdatedEventId: Connection<CorporateActionDefaultConfig>;
   corporateActionsByCorporateBallotCreatedEventIdAndCorporateActionId: Connection<CorporateAction>;
   corporateActionsByCorporateBallotUpdatedEventIdAndCorporateActionId: Connection<CorporateAction>;
   corporateActionsByCreatedEventId: Connection<CorporateAction>;
@@ -4296,16 +4124,10 @@ export type Event = Node & {
   eventsByAssetMandatoryMediatorUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByAssetMetadatumCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByAssetMetadatumUpdatedEventIdAndCreatedEventId: Connection<Event>;
-  eventsByAssetPreApprovalCreatedEventIdAndUpdatedEventId: Connection<Event>;
-  eventsByAssetPreApprovalUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByAssetUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByAuthorizationCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByAuthorizationUpdatedEventIdAndCreatedEventId: Connection<Event>;
-  eventsByCheckpointScheduleCompletedEventIdAndCreatedEventId: Connection<Event>;
-  eventsByCheckpointScheduleCompletedEventIdAndRemovedEventId: Connection<Event>;
-  eventsByCheckpointScheduleCreatedEventIdAndCompletedEventId: Connection<Event>;
   eventsByCheckpointScheduleCreatedEventIdAndRemovedEventId: Connection<Event>;
-  eventsByCheckpointScheduleRemovedEventIdAndCompletedEventId: Connection<Event>;
   eventsByCheckpointScheduleRemovedEventIdAndCreatedEventId: Connection<Event>;
   eventsByClaimCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByClaimUpdatedEventIdAndCreatedEventId: Connection<Event>;
@@ -4328,8 +4150,6 @@ export type Event = Node & {
   eventsByConfidentialSettlementCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByConfidentialSettlementUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByCorporateActionCreatedEventIdAndUpdatedEventId: Connection<Event>;
-  eventsByCorporateActionDefaultConfigCreatedEventIdAndUpdatedEventId: Connection<Event>;
-  eventsByCorporateActionDefaultConfigUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByCorporateActionUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByCorporateBallotCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByCorporateBallotUpdatedEventIdAndCreatedEventId: Connection<Event>;
@@ -4391,8 +4211,6 @@ export type Event = Node & {
   eventsByProposalUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByProposalVoteCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByProposalVoteUpdatedEventIdAndCreatedEventId: Connection<Event>;
-  eventsByStakingPositionCreatedEventIdAndUpdatedEventId: Connection<Event>;
-  eventsByStakingPositionUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByStatTypeCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByStatTypeUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByStoCreatedEventIdAndUpdatedEventId: Connection<Event>;
@@ -4407,10 +4225,8 @@ export type Event = Node & {
   eventsByTransferComplianceUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByTrustedClaimIssuerCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByTrustedClaimIssuerUpdatedEventIdAndCreatedEventId: Connection<Event>;
-  eventsByValidatorCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByValidatorEraCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByValidatorEraUpdatedEventIdAndCreatedEventId: Connection<Event>;
-  eventsByValidatorUpdatedEventIdAndCreatedEventId: Connection<Event>;
   eventsByVenueCreatedEventIdAndUpdatedEventId: Connection<Event>;
   eventsByVenueUpdatedEventIdAndCreatedEventId: Connection<Event>;
   extrinsic?: Maybe<Extrinsic>;
@@ -4445,8 +4261,6 @@ export type Event = Node & {
   identitiesByAssetMandatoryMediatorCreatedEventIdAndIdentityId: Connection<Identity>;
   identitiesByAssetMandatoryMediatorUpdatedEventIdAndAddedById: Connection<Identity>;
   identitiesByAssetMandatoryMediatorUpdatedEventIdAndIdentityId: Connection<Identity>;
-  identitiesByAssetPreApprovalCreatedEventIdAndIdentityId: Connection<Identity>;
-  identitiesByAssetPreApprovalUpdatedEventIdAndIdentityId: Connection<Identity>;
   identitiesByAssetTransactionCreatedEventIdAndFromIdentityId: Connection<Identity>;
   identitiesByAssetTransactionCreatedEventIdAndToIdentityId: Connection<Identity>;
   identitiesByAssetUpdatedEventIdAndOwnerId: Connection<Identity>;
@@ -4508,8 +4322,6 @@ export type Event = Node & {
   identitiesByProposalCreatedEventIdAndOwnerId: Connection<Identity>;
   identitiesByProposalUpdatedEventIdAndOwnerId: Connection<Identity>;
   identitiesByStakingEventCreatedEventIdAndIdentityId: Connection<Identity>;
-  identitiesByStakingPositionCreatedEventIdAndIdentityId: Connection<Identity>;
-  identitiesByStakingPositionUpdatedEventIdAndIdentityId: Connection<Identity>;
   identitiesByStatTypeCreatedEventIdAndClaimIssuerId: Connection<Identity>;
   identitiesByStatTypeUpdatedEventIdAndClaimIssuerId: Connection<Identity>;
   identitiesByStoCreatedEventIdAndCreatorId: Connection<Identity>;
@@ -4523,10 +4335,8 @@ export type Event = Node & {
   identitiesByTrustedClaimIssuerCreatedEventIdAndIssuerId: Connection<Identity>;
   identitiesByTrustedClaimIssuerUpdatedEventIdAndIssuerId: Connection<Identity>;
   identitiesByUpdatedEventId: Connection<Identity>;
-  identitiesByValidatorCreatedEventIdAndIdentityId: Connection<Identity>;
   identitiesByValidatorEraCreatedEventIdAndIdentityId: Connection<Identity>;
   identitiesByValidatorEraUpdatedEventIdAndIdentityId: Connection<Identity>;
-  identitiesByValidatorUpdatedEventIdAndIdentityId: Connection<Identity>;
   identitiesByVenueCreatedEventIdAndOwnerId: Connection<Identity>;
   identitiesByVenueUpdatedEventIdAndOwnerId: Connection<Identity>;
   identityKeysByCreatedEventId: Connection<IdentityKey>;
@@ -4621,9 +4431,6 @@ export type Event = Node & {
   slashesByCreatedEventId: Connection<Slash>;
   specVersionId: Scalars['Int']['output'];
   stakingEventsByCreatedEventId: Connection<StakingEvent>;
-  stakingPositionsByCreatedEventId: Connection<StakingPosition>;
-  stakingPositionsByStakingEventCreatedEventIdAndPositionId: Connection<StakingPosition>;
-  stakingPositionsByUpdatedEventId: Connection<StakingPosition>;
   statTypesByCreatedEventId: Connection<StatType>;
   statTypesByTransferComplianceCreatedEventIdAndStatTypeId: Connection<StatType>;
   statTypesByTransferComplianceUpdatedEventIdAndStatTypeId: Connection<StatType>;
@@ -4644,12 +4451,6 @@ export type Event = Node & {
   trustedClaimIssuersByUpdatedEventId: Connection<TrustedClaimIssuer>;
   validatorErasByCreatedEventId: Connection<ValidatorEra>;
   validatorErasByUpdatedEventId: Connection<ValidatorEra>;
-  validatorsByCreatedEventId: Connection<Validator>;
-  validatorsBySlashCreatedEventIdAndValidatorId: Connection<Validator>;
-  validatorsByStakingEventCreatedEventIdAndValidatorId: Connection<Validator>;
-  validatorsByUpdatedEventId: Connection<Validator>;
-  validatorsByValidatorEraCreatedEventIdAndValidatorId: Connection<Validator>;
-  validatorsByValidatorEraUpdatedEventIdAndValidatorId: Connection<Validator>;
   venuesByCreatedEventId: Connection<Venue>;
   venuesByInstructionCreatedEventIdAndVenueId: Connection<Venue>;
   venuesByInstructionUpdatedEventIdAndVenueId: Connection<Venue>;
@@ -4686,8 +4487,6 @@ export type EventFilter = {
   >;
   assetMetadataByCreatedEventId?: InputMaybe<OneToManyFilter<AssetMetadatumFilter>>;
   assetMetadataByUpdatedEventId?: InputMaybe<OneToManyFilter<AssetMetadatumFilter>>;
-  assetPreApprovalsByCreatedEventId?: InputMaybe<OneToManyFilter<AssetPreApprovalFilter>>;
-  assetPreApprovalsByUpdatedEventId?: InputMaybe<OneToManyFilter<AssetPreApprovalFilter>>;
   assetTransactionsByCreatedEventId?: InputMaybe<OneToManyFilter<AssetTransactionFilter>>;
   assetsByCreatedEventId?: InputMaybe<OneToManyFilter<AssetFilter>>;
   assetsByUpdatedEventId?: InputMaybe<OneToManyFilter<AssetFilter>>;
@@ -4696,7 +4495,6 @@ export type EventFilter = {
   block?: InputMaybe<BlockFilter>;
   blockId?: InputMaybe<StringFilter>;
   bridgeEventsByCreatedEventId?: InputMaybe<OneToManyFilter<BridgeEventFilter>>;
-  checkpointSchedulesByCompletedEventId?: InputMaybe<OneToManyFilter<CheckpointScheduleFilter>>;
   checkpointSchedulesByCreatedEventId?: InputMaybe<OneToManyFilter<CheckpointScheduleFilter>>;
   checkpointSchedulesByRemovedEventId?: InputMaybe<OneToManyFilter<CheckpointScheduleFilter>>;
   checkpointsByCreatedEventId?: InputMaybe<OneToManyFilter<CheckpointFilter>>;
@@ -4740,12 +4538,6 @@ export type EventFilter = {
   >;
   confidentialSettlementsByUpdatedEventId?: InputMaybe<
     OneToManyFilter<ConfidentialSettlementFilter>
-  >;
-  corporateActionDefaultConfigsByCreatedEventId?: InputMaybe<
-    OneToManyFilter<CorporateActionDefaultConfigFilter>
-  >;
-  corporateActionDefaultConfigsByUpdatedEventId?: InputMaybe<
-    OneToManyFilter<CorporateActionDefaultConfigFilter>
   >;
   corporateActionsByCreatedEventId?: InputMaybe<OneToManyFilter<CorporateActionFilter>>;
   corporateActionsByUpdatedEventId?: InputMaybe<OneToManyFilter<CorporateActionFilter>>;
@@ -4828,8 +4620,6 @@ export type EventFilter = {
   slashesByCreatedEventId?: InputMaybe<OneToManyFilter<SlashFilter>>;
   specVersionId?: InputMaybe<IntFilter>;
   stakingEventsByCreatedEventId?: InputMaybe<OneToManyFilter<StakingEventFilter>>;
-  stakingPositionsByCreatedEventId?: InputMaybe<OneToManyFilter<StakingPositionFilter>>;
-  stakingPositionsByUpdatedEventId?: InputMaybe<OneToManyFilter<StakingPositionFilter>>;
   statTypesByCreatedEventId?: InputMaybe<OneToManyFilter<StatTypeFilter>>;
   statTypesByUpdatedEventId?: InputMaybe<OneToManyFilter<StatTypeFilter>>;
   stosByCreatedEventId?: InputMaybe<OneToManyFilter<StoFilter>>;
@@ -4850,8 +4640,6 @@ export type EventFilter = {
   trustedClaimIssuersByUpdatedEventId?: InputMaybe<OneToManyFilter<TrustedClaimIssuerFilter>>;
   validatorErasByCreatedEventId?: InputMaybe<OneToManyFilter<ValidatorEraFilter>>;
   validatorErasByUpdatedEventId?: InputMaybe<OneToManyFilter<ValidatorEraFilter>>;
-  validatorsByCreatedEventId?: InputMaybe<OneToManyFilter<ValidatorFilter>>;
-  validatorsByUpdatedEventId?: InputMaybe<OneToManyFilter<ValidatorFilter>>;
   venuesByCreatedEventId?: InputMaybe<OneToManyFilter<VenueFilter>>;
   venuesByUpdatedEventId?: InputMaybe<OneToManyFilter<VenueFilter>>;
 };
@@ -5416,60 +5204,6 @@ export enum EventsOrderBy {
   CreatedAtAsc = 'CREATED_AT_ASC',
   CreatedAtDesc = 'CREATED_AT_DESC',
 }
-export type EvmAccountMapping = Node & {
-  account?: Maybe<Account>;
-  accountId?: Maybe<Scalars['String']['output']>;
-  address: Scalars['String']['output'];
-  createdBlock?: Maybe<Block>;
-  createdBlockId: Scalars['String']['output'];
-  datetime: Scalars['Datetime']['output'];
-  evmAddress: Scalars['String']['output'];
-  id: Scalars['String']['output'];
-  mapped: Scalars['Boolean']['output'];
-  nodeId: Scalars['ID']['output'];
-  updatedBlock?: Maybe<Block>;
-  updatedBlockId: Scalars['String']['output'];
-};
-export type EvmAccountMappingFilter = {
-  account?: InputMaybe<AccountFilter>;
-  accountExists?: InputMaybe<Scalars['Boolean']['input']>;
-  accountId?: InputMaybe<StringFilter>;
-  address?: InputMaybe<StringFilter>;
-  and?: InputMaybe<Array<EvmAccountMappingFilter>>;
-  createdBlock?: InputMaybe<BlockFilter>;
-  createdBlockId?: InputMaybe<StringFilter>;
-  datetime?: InputMaybe<DatetimeFilter>;
-  evmAddress?: InputMaybe<StringFilter>;
-  id?: InputMaybe<StringFilter>;
-  mapped?: InputMaybe<BooleanFilter>;
-  not?: InputMaybe<EvmAccountMappingFilter>;
-  or?: InputMaybe<Array<EvmAccountMappingFilter>>;
-  updatedBlock?: InputMaybe<BlockFilter>;
-  updatedBlockId?: InputMaybe<StringFilter>;
-};
-export enum EvmAccountMappingsOrderBy {
-  AccountIdAsc = 'ACCOUNT_ID_ASC',
-  AccountIdDesc = 'ACCOUNT_ID_DESC',
-  AddressAsc = 'ADDRESS_ASC',
-  AddressDesc = 'ADDRESS_DESC',
-  CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
-  CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
-  DatetimeAsc = 'DATETIME_ASC',
-  DatetimeDesc = 'DATETIME_DESC',
-  EvmAddressAsc = 'EVM_ADDRESS_ASC',
-  EvmAddressDesc = 'EVM_ADDRESS_DESC',
-  IdAsc = 'ID_ASC',
-  IdDesc = 'ID_DESC',
-  MappedAsc = 'MAPPED_ASC',
-  MappedDesc = 'MAPPED_DESC',
-  Natural = 'NATURAL',
-  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
-  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-  UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
-  UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
-  CreatedAtAsc = 'CREATED_AT_ASC',
-  CreatedAtDesc = 'CREATED_AT_DESC',
-}
 export enum EvmCallKindEnum {
   Call = 'call',
   Instantiate = 'instantiate',
@@ -5984,11 +5718,9 @@ export type Identity = Node & {
   accountsByPolyxEntryIdentityIdAndAccountId: Connection<Account>;
   accountsByStakingEventIdentityIdAndRewardDestinationAccountId: Connection<Account>;
   accountsByStakingEventIdentityIdAndStashId: Connection<Account>;
-  accountsByStakingPositionIdentityIdAndControllerId: Connection<Account>;
-  accountsByStakingPositionIdentityIdAndRewardDestinationAccountId: Connection<Account>;
-  accountsByStakingPositionIdentityIdAndStashId: Connection<Account>;
-  accountsByValidatorIdentityIdAndAccountId: Connection<Account>;
-  agentGroupMembershipsByMemberId: Connection<AgentGroupMembership>;
+  accountsByStakingEventIdentityIdAndValidatorId: Connection<Account>;
+  accountsByValidatorEraIdentityIdAndValidatorId: Connection<Account>;
+  agentGroups: Connection<AgentGroupMembership>;
   agentGroupsByAgentGroupMembershipMemberIdAndGroupId: Connection<AgentGroup>;
   agentOf: Connection<AssetAgent>;
   assetAgentActionsByCallerId: Connection<AssetAgentAction>;
@@ -5996,14 +5728,12 @@ export type Identity = Node & {
   assetHoldersByHoldingIdentityIdAndAssetHolderId: Connection<AssetHolder>;
   assetMandatoryMediators: Connection<AssetMandatoryMediator>;
   assetMandatoryMediatorsByAddedById: Connection<AssetMandatoryMediator>;
-  assetPreApprovals: Connection<AssetPreApproval>;
   assetsByAssetAgentActionCallerIdAndAssetId: Connection<Asset>;
   assetsByAssetAgentHistoryIdentityIdAndAssetId: Connection<Asset>;
   assetsByAssetAgentIdentityIdAndAssetId: Connection<Asset>;
   assetsByAssetHolderIdentityIdAndAssetId: Connection<Asset>;
   assetsByAssetMandatoryMediatorAddedByIdAndAssetId: Connection<Asset>;
   assetsByAssetMandatoryMediatorIdentityIdAndAssetId: Connection<Asset>;
-  assetsByAssetPreApprovalIdentityIdAndAssetId: Connection<Asset>;
   assetsByAssetTransactionFromIdentityIdAndAssetId: Connection<Asset>;
   assetsByAssetTransactionToIdentityIdAndAssetId: Connection<Asset>;
   assetsByDistributionIdentityIdAndAssetId: Connection<Asset>;
@@ -6065,8 +5795,6 @@ export type Identity = Node & {
   eventsByAssetMandatoryMediatorIdentityIdAndUpdatedEventId: Connection<Event>;
   eventsByAssetOwnerIdAndCreatedEventId: Connection<Event>;
   eventsByAssetOwnerIdAndUpdatedEventId: Connection<Event>;
-  eventsByAssetPreApprovalIdentityIdAndCreatedEventId: Connection<Event>;
-  eventsByAssetPreApprovalIdentityIdAndUpdatedEventId: Connection<Event>;
   eventsByAssetTransactionFromIdentityIdAndCreatedEventId: Connection<Event>;
   eventsByAssetTransactionToIdentityIdAndCreatedEventId: Connection<Event>;
   eventsByAuthorizationFromIdAndCreatedEventId: Connection<Event>;
@@ -6126,8 +5854,6 @@ export type Identity = Node & {
   eventsByProposalOwnerIdAndCreatedEventId: Connection<Event>;
   eventsByProposalOwnerIdAndUpdatedEventId: Connection<Event>;
   eventsByStakingEventIdentityIdAndCreatedEventId: Connection<Event>;
-  eventsByStakingPositionIdentityIdAndCreatedEventId: Connection<Event>;
-  eventsByStakingPositionIdentityIdAndUpdatedEventId: Connection<Event>;
   eventsByStatTypeClaimIssuerIdAndCreatedEventId: Connection<Event>;
   eventsByStatTypeClaimIssuerIdAndUpdatedEventId: Connection<Event>;
   eventsByStoCreatorIdAndCreatedEventId: Connection<Event>;
@@ -6142,8 +5868,6 @@ export type Identity = Node & {
   eventsByTrustedClaimIssuerIssuerIdAndUpdatedEventId: Connection<Event>;
   eventsByValidatorEraIdentityIdAndCreatedEventId: Connection<Event>;
   eventsByValidatorEraIdentityIdAndUpdatedEventId: Connection<Event>;
-  eventsByValidatorIdentityIdAndCreatedEventId: Connection<Event>;
-  eventsByValidatorIdentityIdAndUpdatedEventId: Connection<Event>;
   eventsByVenueOwnerIdAndCreatedEventId: Connection<Event>;
   eventsByVenueOwnerIdAndUpdatedEventId: Connection<Event>;
   extrinsicsByMultiSigProposalCreatorIdAndExtrinsicId: Connection<Extrinsic>;
@@ -6220,8 +5944,6 @@ export type Identity = Node & {
   proposalsByOwnerId: Connection<Proposal>;
   secondaryKeysFrozen: Scalars['Boolean']['output'];
   stakingEvents: Connection<StakingEvent>;
-  stakingPositions: Connection<StakingPosition>;
-  stakingPositionsByStakingEventIdentityIdAndPositionId: Connection<StakingPosition>;
   statTypesByClaimIssuerId: Connection<StatType>;
   statTypesByTransferComplianceClaimIssuerIdAndStatTypeId: Connection<StatType>;
   stosByInvestmentInvestorIdAndStoId: Connection<Sto>;
@@ -6234,9 +5956,6 @@ export type Identity = Node & {
   updatedEvent?: Maybe<Event>;
   updatedEventId: Scalars['String']['output'];
   validatorEras: Connection<ValidatorEra>;
-  validators: Connection<Validator>;
-  validatorsByStakingEventIdentityIdAndValidatorId: Connection<Validator>;
-  validatorsByValidatorEraIdentityIdAndValidatorId: Connection<Validator>;
   venues: Connection<Venue>;
   venuesByInstructionRejectedByIdAndVenueId: Connection<Venue>;
   venuesByStoCreatorIdAndVenueId: Connection<Venue>;
@@ -6244,14 +5963,13 @@ export type Identity = Node & {
 export type IdentityFilter = {
   accountBalances?: InputMaybe<OneToManyFilter<AccountBalanceFilter>>;
   accounts?: InputMaybe<OneToManyFilter<AccountFilter>>;
-  agentGroupMembershipsByMemberId?: InputMaybe<OneToManyFilter<AgentGroupMembershipFilter>>;
+  agentGroups?: InputMaybe<OneToManyFilter<AgentGroupMembershipFilter>>;
   agentOf?: InputMaybe<OneToManyFilter<AssetAgentFilter>>;
   and?: InputMaybe<Array<IdentityFilter>>;
   assetAgentActionsByCallerId?: InputMaybe<OneToManyFilter<AssetAgentActionFilter>>;
   assetAgentHistories?: InputMaybe<OneToManyFilter<AssetAgentHistoryFilter>>;
   assetMandatoryMediators?: InputMaybe<OneToManyFilter<AssetMandatoryMediatorFilter>>;
   assetMandatoryMediatorsByAddedById?: InputMaybe<OneToManyFilter<AssetMandatoryMediatorFilter>>;
-  assetPreApprovals?: InputMaybe<OneToManyFilter<AssetPreApprovalFilter>>;
   assetsOwned?: InputMaybe<OneToManyFilter<AssetFilter>>;
   authorizationsByFromId?: InputMaybe<OneToManyFilter<AuthorizationFilter>>;
   authorizationsReceived?: InputMaybe<OneToManyFilter<AuthorizationFilter>>;
@@ -6298,7 +6016,6 @@ export type IdentityFilter = {
   proposalsByOwnerId?: InputMaybe<OneToManyFilter<ProposalFilter>>;
   secondaryKeysFrozen?: InputMaybe<BooleanFilter>;
   stakingEvents?: InputMaybe<OneToManyFilter<StakingEventFilter>>;
-  stakingPositions?: InputMaybe<OneToManyFilter<StakingPositionFilter>>;
   statTypesByClaimIssuerId?: InputMaybe<OneToManyFilter<StatTypeFilter>>;
   tickerReservations?: InputMaybe<OneToManyFilter<TickerReservationFilter>>;
   transferComplianceExemptionsByExemptedEntityId?: InputMaybe<
@@ -6311,7 +6028,6 @@ export type IdentityFilter = {
   updatedEvent?: InputMaybe<EventFilter>;
   updatedEventId?: InputMaybe<StringFilter>;
   validatorEras?: InputMaybe<OneToManyFilter<ValidatorEraFilter>>;
-  validators?: InputMaybe<OneToManyFilter<ValidatorFilter>>;
   venues?: InputMaybe<OneToManyFilter<VenueFilter>>;
 };
 export type IdentityKey = Node & {
@@ -8239,7 +7955,6 @@ export enum PortfoliosOrderBy {
 }
 export type Proposal = Node & {
   accountsByProposalVoteProposalIdAndAccountId: Connection<Account>;
-  balance: Scalars['BigFloat']['output'];
   closedEvent?: Maybe<Event>;
   closedEventId?: Maybe<Scalars['String']['output']>;
   createdEvent?: Maybe<Event>;
@@ -8267,7 +7982,6 @@ export type Proposal = Node & {
 };
 export type ProposalFilter = {
   and?: InputMaybe<Array<ProposalFilter>>;
-  balance?: InputMaybe<BigFloatFilter>;
   closedEvent?: InputMaybe<EventFilter>;
   closedEventExists?: InputMaybe<Scalars['Boolean']['input']>;
   closedEventId?: InputMaybe<StringFilter>;
@@ -8368,8 +8082,6 @@ export enum ProposalVotesOrderBy {
   CreatedAtDesc = 'CREATED_AT_DESC',
 }
 export enum ProposalsOrderBy {
-  BalanceAsc = 'BALANCE_ASC',
-  BalanceDesc = 'BALANCE_DESC',
   ClosedEventIdAsc = 'CLOSED_EVENT_ID_ASC',
   ClosedEventIdDesc = 'CLOSED_EVENT_ID_DESC',
   CreatedEventIdAsc = 'CREATED_EVENT_ID_ASC',
@@ -8447,9 +8159,6 @@ export type Query = Node & {
   assetMetadata?: Maybe<Connection<AssetMetadatum>>;
   assetMetadatum?: Maybe<AssetMetadatum>;
   assetMetadatumByNodeId?: Maybe<AssetMetadatum>;
-  assetPreApproval?: Maybe<AssetPreApproval>;
-  assetPreApprovalByNodeId?: Maybe<AssetPreApproval>;
-  assetPreApprovals?: Maybe<Connection<AssetPreApproval>>;
   assetTransaction?: Maybe<AssetTransaction>;
   assetTransactionByNodeId?: Maybe<AssetTransaction>;
   assetTransactions?: Maybe<Connection<AssetTransaction>>;
@@ -8507,9 +8216,6 @@ export type Query = Node & {
   confidentialSettlements?: Maybe<Connection<ConfidentialSettlement>>;
   corporateAction?: Maybe<CorporateAction>;
   corporateActionByNodeId?: Maybe<CorporateAction>;
-  corporateActionDefaultConfig?: Maybe<CorporateActionDefaultConfig>;
-  corporateActionDefaultConfigByNodeId?: Maybe<CorporateActionDefaultConfig>;
-  corporateActionDefaultConfigs?: Maybe<Connection<CorporateActionDefaultConfig>>;
   corporateActions?: Maybe<Connection<CorporateAction>>;
   corporateBallot?: Maybe<CorporateBallot>;
   corporateBallotByNodeId?: Maybe<CorporateBallot>;
@@ -8535,9 +8241,6 @@ export type Query = Node & {
   event?: Maybe<Event>;
   eventByNodeId?: Maybe<Event>;
   events?: Maybe<Connection<Event>>;
-  evmAccountMapping?: Maybe<EvmAccountMapping>;
-  evmAccountMappingByNodeId?: Maybe<EvmAccountMapping>;
-  evmAccountMappings?: Maybe<Connection<EvmAccountMapping>>;
   evmTransaction?: Maybe<EvmTransaction>;
   evmTransactionByNodeId?: Maybe<EvmTransaction>;
   evmTransactions?: Maybe<Connection<EvmTransaction>>;
@@ -8624,7 +8327,6 @@ export type Query = Node & {
     | AssetHolder
     | AssetMandatoryMediator
     | AssetMetadatum
-    | AssetPreApproval
     | AssetTransaction
     | Authorization
     | Block
@@ -8644,7 +8346,6 @@ export type Query = Node & {
     | ConfidentialLegAffirmation
     | ConfidentialSettlement
     | CorporateAction
-    | CorporateActionDefaultConfig
     | CorporateBallot
     | CorporateBallotVote
     | CustomAssetType
@@ -8653,7 +8354,6 @@ export type Query = Node & {
     | DistributionPayment
     | Era
     | Event
-    | EvmAccountMapping
     | EvmTransaction
     | Extrinsic
     | Funding
@@ -8686,7 +8386,6 @@ export type Query = Node & {
     | Query
     | Slash
     | StakingEvent
-    | StakingPosition
     | StatType
     | Sto
     | SubqueryVersion
@@ -8695,7 +8394,6 @@ export type Query = Node & {
     | TransferCompliance
     | TransferComplianceExemption
     | TrustedClaimIssuer
-    | Validator
     | ValidatorEra
     | Venue
   >;
@@ -8722,9 +8420,6 @@ export type Query = Node & {
   stakingEvent?: Maybe<StakingEvent>;
   stakingEventByNodeId?: Maybe<StakingEvent>;
   stakingEvents?: Maybe<Connection<StakingEvent>>;
-  stakingPosition?: Maybe<StakingPosition>;
-  stakingPositionByNodeId?: Maybe<StakingPosition>;
-  stakingPositions?: Maybe<Connection<StakingPosition>>;
   statType?: Maybe<StatType>;
   statTypeByNodeId?: Maybe<StatType>;
   statTypes?: Maybe<Connection<StatType>>;
@@ -8749,12 +8444,9 @@ export type Query = Node & {
   trustedClaimIssuer?: Maybe<TrustedClaimIssuer>;
   trustedClaimIssuerByNodeId?: Maybe<TrustedClaimIssuer>;
   trustedClaimIssuers?: Maybe<Connection<TrustedClaimIssuer>>;
-  validator?: Maybe<Validator>;
-  validatorByNodeId?: Maybe<Validator>;
   validatorEra?: Maybe<ValidatorEra>;
   validatorEraByNodeId?: Maybe<ValidatorEra>;
   validatorEras?: Maybe<Connection<ValidatorEra>>;
-  validators?: Maybe<Connection<Validator>>;
   venue?: Maybe<Venue>;
   venueByNodeId?: Maybe<Venue>;
   venues?: Maybe<Connection<Venue>>;
@@ -8803,7 +8495,7 @@ export type Slash = Node & {
   id: Scalars['String']['output'];
   nodeId: Scalars['ID']['output'];
   offenceEraIndex?: Maybe<Scalars['Int']['output']>;
-  validator?: Maybe<Validator>;
+  validator?: Maybe<Account>;
   validatorId?: Maybe<Scalars['String']['output']>;
 };
 export type SlashFilter = {
@@ -8818,7 +8510,7 @@ export type SlashFilter = {
   not?: InputMaybe<SlashFilter>;
   offenceEraIndex?: InputMaybe<IntFilter>;
   or?: InputMaybe<Array<SlashFilter>>;
-  validator?: InputMaybe<ValidatorFilter>;
+  validator?: InputMaybe<AccountFilter>;
   validatorExists?: InputMaybe<Scalars['Boolean']['input']>;
   validatorId?: InputMaybe<StringFilter>;
 };
@@ -8854,15 +8546,13 @@ export type StakingEvent = Node & {
   identityId?: Maybe<Scalars['String']['output']>;
   nodeId: Scalars['ID']['output'];
   nominatedValidators?: Maybe<Scalars['JSON']['output']>;
-  position?: Maybe<StakingPosition>;
-  positionId?: Maybe<Scalars['String']['output']>;
   rewardDestination?: Maybe<Scalars['String']['output']>;
   rewardDestinationAccount?: Maybe<Account>;
   rewardDestinationAccountId?: Maybe<Scalars['String']['output']>;
   stash?: Maybe<Account>;
   stashId?: Maybe<Scalars['String']['output']>;
   transactionId?: Maybe<Scalars['String']['output']>;
-  validator?: Maybe<Validator>;
+  validator?: Maybe<Account>;
   validatorId?: Maybe<Scalars['String']['output']>;
 };
 export type StakingEventFilter = {
@@ -8879,9 +8569,6 @@ export type StakingEventFilter = {
   nominatedValidators?: InputMaybe<JsonFilter>;
   not?: InputMaybe<StakingEventFilter>;
   or?: InputMaybe<Array<StakingEventFilter>>;
-  position?: InputMaybe<StakingPositionFilter>;
-  positionExists?: InputMaybe<Scalars['Boolean']['input']>;
-  positionId?: InputMaybe<StringFilter>;
   rewardDestination?: InputMaybe<StringFilter>;
   rewardDestinationAccount?: InputMaybe<AccountFilter>;
   rewardDestinationAccountExists?: InputMaybe<Scalars['Boolean']['input']>;
@@ -8890,7 +8577,7 @@ export type StakingEventFilter = {
   stashExists?: InputMaybe<Scalars['Boolean']['input']>;
   stashId?: InputMaybe<StringFilter>;
   transactionId?: InputMaybe<StringFilter>;
-  validator?: InputMaybe<ValidatorFilter>;
+  validator?: InputMaybe<AccountFilter>;
   validatorExists?: InputMaybe<Scalars['Boolean']['input']>;
   validatorId?: InputMaybe<StringFilter>;
 };
@@ -8910,8 +8597,6 @@ export enum StakingEventsOrderBy {
   Natural = 'NATURAL',
   NominatedValidatorsAsc = 'NOMINATED_VALIDATORS_ASC',
   NominatedValidatorsDesc = 'NOMINATED_VALIDATORS_DESC',
-  PositionIdAsc = 'POSITION_ID_ASC',
-  PositionIdDesc = 'POSITION_ID_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
   RewardDestinationAccountIdAsc = 'REWARD_DESTINATION_ACCOUNT_ID_ASC',
@@ -8924,95 +8609,6 @@ export enum StakingEventsOrderBy {
   TransactionIdDesc = 'TRANSACTION_ID_DESC',
   ValidatorIdAsc = 'VALIDATOR_ID_ASC',
   ValidatorIdDesc = 'VALIDATOR_ID_DESC',
-  CreatedAtAsc = 'CREATED_AT_ASC',
-  CreatedAtDesc = 'CREATED_AT_DESC',
-}
-export type StakingPosition = Node & {
-  accountsByStakingEventPositionIdAndRewardDestinationAccountId: Connection<Account>;
-  accountsByStakingEventPositionIdAndStashId: Connection<Account>;
-  bonded: Scalars['BigFloat']['output'];
-  controller?: Maybe<Account>;
-  controllerId?: Maybe<Scalars['String']['output']>;
-  createdEvent?: Maybe<Event>;
-  createdEventId: Scalars['String']['output'];
-  eventsByStakingEventPositionIdAndCreatedEventId: Connection<Event>;
-  id: Scalars['String']['output'];
-  identitiesByStakingEventPositionIdAndIdentityId: Connection<Identity>;
-  identity?: Maybe<Identity>;
-  identityId?: Maybe<Scalars['String']['output']>;
-  nodeId: Scalars['ID']['output'];
-  rewardDestination?: Maybe<Scalars['String']['output']>;
-  rewardDestinationAccount?: Maybe<Account>;
-  rewardDestinationAccountId?: Maybe<Scalars['String']['output']>;
-  stakingEventsByPositionId: Connection<StakingEvent>;
-  stash?: Maybe<Account>;
-  stashId: Scalars['String']['output'];
-  totalRewarded: Scalars['BigFloat']['output'];
-  totalSlashed: Scalars['BigFloat']['output'];
-  unbonding: Scalars['BigFloat']['output'];
-  unlocking?: Maybe<Scalars['JSON']['output']>;
-  updatedEvent?: Maybe<Event>;
-  updatedEventId: Scalars['String']['output'];
-  validatorsByStakingEventPositionIdAndValidatorId: Connection<Validator>;
-};
-export type StakingPositionFilter = {
-  and?: InputMaybe<Array<StakingPositionFilter>>;
-  bonded?: InputMaybe<BigFloatFilter>;
-  controller?: InputMaybe<AccountFilter>;
-  controllerExists?: InputMaybe<Scalars['Boolean']['input']>;
-  controllerId?: InputMaybe<StringFilter>;
-  createdEvent?: InputMaybe<EventFilter>;
-  createdEventId?: InputMaybe<StringFilter>;
-  id?: InputMaybe<StringFilter>;
-  identity?: InputMaybe<IdentityFilter>;
-  identityExists?: InputMaybe<Scalars['Boolean']['input']>;
-  identityId?: InputMaybe<StringFilter>;
-  not?: InputMaybe<StakingPositionFilter>;
-  or?: InputMaybe<Array<StakingPositionFilter>>;
-  rewardDestination?: InputMaybe<StringFilter>;
-  rewardDestinationAccount?: InputMaybe<AccountFilter>;
-  rewardDestinationAccountExists?: InputMaybe<Scalars['Boolean']['input']>;
-  rewardDestinationAccountId?: InputMaybe<StringFilter>;
-  stakingEventsByPositionId?: InputMaybe<OneToManyFilter<StakingEventFilter>>;
-  stash?: InputMaybe<AccountFilter>;
-  stashId?: InputMaybe<StringFilter>;
-  totalRewarded?: InputMaybe<BigFloatFilter>;
-  totalSlashed?: InputMaybe<BigFloatFilter>;
-  unbonding?: InputMaybe<BigFloatFilter>;
-  unlocking?: InputMaybe<JsonFilter>;
-  updatedEvent?: InputMaybe<EventFilter>;
-  updatedEventId?: InputMaybe<StringFilter>;
-};
-export enum StakingPositionsOrderBy {
-  BondedAsc = 'BONDED_ASC',
-  BondedDesc = 'BONDED_DESC',
-  ControllerIdAsc = 'CONTROLLER_ID_ASC',
-  ControllerIdDesc = 'CONTROLLER_ID_DESC',
-  CreatedEventIdAsc = 'CREATED_EVENT_ID_ASC',
-  CreatedEventIdDesc = 'CREATED_EVENT_ID_DESC',
-  IdentityIdAsc = 'IDENTITY_ID_ASC',
-  IdentityIdDesc = 'IDENTITY_ID_DESC',
-  IdAsc = 'ID_ASC',
-  IdDesc = 'ID_DESC',
-  Natural = 'NATURAL',
-  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
-  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-  RewardDestinationAccountIdAsc = 'REWARD_DESTINATION_ACCOUNT_ID_ASC',
-  RewardDestinationAccountIdDesc = 'REWARD_DESTINATION_ACCOUNT_ID_DESC',
-  RewardDestinationAsc = 'REWARD_DESTINATION_ASC',
-  RewardDestinationDesc = 'REWARD_DESTINATION_DESC',
-  StashIdAsc = 'STASH_ID_ASC',
-  StashIdDesc = 'STASH_ID_DESC',
-  TotalRewardedAsc = 'TOTAL_REWARDED_ASC',
-  TotalRewardedDesc = 'TOTAL_REWARDED_DESC',
-  TotalSlashedAsc = 'TOTAL_SLASHED_ASC',
-  TotalSlashedDesc = 'TOTAL_SLASHED_DESC',
-  UnbondingAsc = 'UNBONDING_ASC',
-  UnbondingDesc = 'UNBONDING_DESC',
-  UnlockingAsc = 'UNLOCKING_ASC',
-  UnlockingDesc = 'UNLOCKING_DESC',
-  UpdatedEventIdAsc = 'UPDATED_EVENT_ID_ASC',
-  UpdatedEventIdDesc = 'UPDATED_EVENT_ID_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
   CreatedAtDesc = 'CREATED_AT_DESC',
 }
@@ -9613,36 +9209,6 @@ export enum TrustedClaimIssuersOrderBy {
   CreatedAtAsc = 'CREATED_AT_ASC',
   CreatedAtDesc = 'CREATED_AT_DESC',
 }
-export type Validator = Node & {
-  account?: Maybe<Account>;
-  accountId: Scalars['String']['output'];
-  accountsBySlashValidatorIdAndAccountId: Connection<Account>;
-  accountsByStakingEventValidatorIdAndRewardDestinationAccountId: Connection<Account>;
-  accountsByStakingEventValidatorIdAndStashId: Connection<Account>;
-  blocked: Scalars['Boolean']['output'];
-  commission?: Maybe<Scalars['BigFloat']['output']>;
-  createdEvent?: Maybe<Event>;
-  createdEventId: Scalars['String']['output'];
-  eras: Connection<ValidatorEra>;
-  erasByValidatorEraValidatorIdAndEraId: Connection<Era>;
-  eventsBySlashValidatorIdAndCreatedEventId: Connection<Event>;
-  eventsByStakingEventValidatorIdAndCreatedEventId: Connection<Event>;
-  eventsByValidatorEraValidatorIdAndCreatedEventId: Connection<Event>;
-  eventsByValidatorEraValidatorIdAndUpdatedEventId: Connection<Event>;
-  id: Scalars['String']['output'];
-  identitiesByStakingEventValidatorIdAndIdentityId: Connection<Identity>;
-  identitiesByValidatorEraValidatorIdAndIdentityId: Connection<Identity>;
-  identity?: Maybe<Identity>;
-  identityId?: Maybe<Scalars['String']['output']>;
-  isActive: Scalars['Boolean']['output'];
-  isPermissioned: Scalars['Boolean']['output'];
-  nodeId: Scalars['ID']['output'];
-  slashes: Connection<Slash>;
-  stakingEvents: Connection<StakingEvent>;
-  stakingPositionsByStakingEventValidatorIdAndPositionId: Connection<StakingPosition>;
-  updatedEvent?: Maybe<Event>;
-  updatedEventId: Scalars['String']['output'];
-};
 export type ValidatorEra = Node & {
   blocked?: Maybe<Scalars['Boolean']['output']>;
   commission?: Maybe<Scalars['BigFloat']['output']>;
@@ -9661,7 +9227,7 @@ export type ValidatorEra = Node & {
   totalStake: Scalars['BigFloat']['output'];
   updatedEvent?: Maybe<Event>;
   updatedEventId: Scalars['String']['output'];
-  validator?: Maybe<Validator>;
+  validator?: Maybe<Account>;
   validatorId: Scalars['String']['output'];
 };
 export type ValidatorEraFilter = {
@@ -9685,7 +9251,7 @@ export type ValidatorEraFilter = {
   totalStake?: InputMaybe<BigFloatFilter>;
   updatedEvent?: InputMaybe<EventFilter>;
   updatedEventId?: InputMaybe<StringFilter>;
-  validator?: InputMaybe<ValidatorFilter>;
+  validator?: InputMaybe<AccountFilter>;
   validatorId?: InputMaybe<StringFilter>;
 };
 export enum ValidatorErasOrderBy {
@@ -9716,53 +9282,6 @@ export enum ValidatorErasOrderBy {
   UpdatedEventIdDesc = 'UPDATED_EVENT_ID_DESC',
   ValidatorIdAsc = 'VALIDATOR_ID_ASC',
   ValidatorIdDesc = 'VALIDATOR_ID_DESC',
-  CreatedAtAsc = 'CREATED_AT_ASC',
-  CreatedAtDesc = 'CREATED_AT_DESC',
-}
-export type ValidatorFilter = {
-  account?: InputMaybe<AccountFilter>;
-  accountId?: InputMaybe<StringFilter>;
-  and?: InputMaybe<Array<ValidatorFilter>>;
-  blocked?: InputMaybe<BooleanFilter>;
-  commission?: InputMaybe<BigFloatFilter>;
-  createdEvent?: InputMaybe<EventFilter>;
-  createdEventId?: InputMaybe<StringFilter>;
-  eras?: InputMaybe<OneToManyFilter<ValidatorEraFilter>>;
-  id?: InputMaybe<StringFilter>;
-  identity?: InputMaybe<IdentityFilter>;
-  identityExists?: InputMaybe<Scalars['Boolean']['input']>;
-  identityId?: InputMaybe<StringFilter>;
-  isActive?: InputMaybe<BooleanFilter>;
-  isPermissioned?: InputMaybe<BooleanFilter>;
-  not?: InputMaybe<ValidatorFilter>;
-  or?: InputMaybe<Array<ValidatorFilter>>;
-  slashes?: InputMaybe<OneToManyFilter<SlashFilter>>;
-  stakingEvents?: InputMaybe<OneToManyFilter<StakingEventFilter>>;
-  updatedEvent?: InputMaybe<EventFilter>;
-  updatedEventId?: InputMaybe<StringFilter>;
-};
-export enum ValidatorsOrderBy {
-  AccountIdAsc = 'ACCOUNT_ID_ASC',
-  AccountIdDesc = 'ACCOUNT_ID_DESC',
-  BlockedAsc = 'BLOCKED_ASC',
-  BlockedDesc = 'BLOCKED_DESC',
-  CommissionAsc = 'COMMISSION_ASC',
-  CommissionDesc = 'COMMISSION_DESC',
-  CreatedEventIdAsc = 'CREATED_EVENT_ID_ASC',
-  CreatedEventIdDesc = 'CREATED_EVENT_ID_DESC',
-  IdentityIdAsc = 'IDENTITY_ID_ASC',
-  IdentityIdDesc = 'IDENTITY_ID_DESC',
-  IdAsc = 'ID_ASC',
-  IdDesc = 'ID_DESC',
-  IsActiveAsc = 'IS_ACTIVE_ASC',
-  IsActiveDesc = 'IS_ACTIVE_DESC',
-  IsPermissionedAsc = 'IS_PERMISSIONED_ASC',
-  IsPermissionedDesc = 'IS_PERMISSIONED_DESC',
-  Natural = 'NATURAL',
-  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
-  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-  UpdatedEventIdAsc = 'UPDATED_EVENT_ID_ASC',
-  UpdatedEventIdDesc = 'UPDATED_EVENT_ID_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
   CreatedAtDesc = 'CREATED_AT_DESC',
 }
