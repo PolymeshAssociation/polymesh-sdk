@@ -214,6 +214,10 @@ export interface EventIdentifier {
   blockNumber: BigNumber;
   blockHash: string;
   blockDate: Date;
+  /**
+   * @note -1 for something the middleware seeded from genesis or chain storage rather than from a
+   *   chain event. No chain event has that index
+   */
   eventIndex: BigNumber;
 }
 

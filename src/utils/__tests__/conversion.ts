@@ -5275,6 +5275,18 @@ describe('middlewareEventToEventIdentifier', () => {
       eventIndex: new BigNumber(3),
     });
   });
+
+  it("should keep the seed event's index of -1", () => {
+    const block = {
+      blockId: 0,
+      hash: 'genesisHash',
+      datetime: new Date('10/14/1987').toISOString(),
+    } as Block;
+
+    expect(middlewareEventToEventIdentifier({ block, eventIdx: -1 }).eventIndex).toEqual(
+      new BigNumber(-1)
+    );
+  });
 });
 
 describe('middlewareClaimToClaimData', () => {

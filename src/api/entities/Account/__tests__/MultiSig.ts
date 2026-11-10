@@ -298,6 +298,39 @@ describe('MultiSig class', () => {
       });
     });
 
+    it.each([
+      ['a bridge proposal', { isBatch: true, isBridge: true, proposals: null, bridge: [] }],
+      ['an unidentified proposing call', { isBatch: false, isBridge: false }],
+      ['no proposed calls', { isBatch: false, isBridge: false, proposals: [] }],
+    ])('should report no call for %s, and keep the rest of the page', async (_, params) => {
+      dsMockUtils.createApolloQueryMock(
+        multiSigProposalsQuery({ multisigId: address }, new BigNumber(1), new BigNumber(0)),
+        {
+          multiSigProposals: {
+            totalCount: 1,
+            nodes: [
+              {
+                proposalId: 1,
+                status: 'Pending',
+                approvalCount: 1,
+                rejectionCount: 0,
+                params: { expiry: null, autoClose: false, ...params },
+              },
+            ],
+          },
+        }
+      );
+
+      const { data } = await multiSig.getHistoricalProposals({
+        size: new BigNumber(1),
+        start: new BigNumber(0),
+      });
+
+      expect(data).toHaveLength(1);
+      expect(data[0]!.txTag).toBeNull();
+      expect(data[0]!.args).toBeNull();
+    });
+
     it('should get historical proposals without pagination params', async () => {
       const expiry = new Date('2050/01/01');
       const mockHistoricalMultisig = {
