@@ -235,10 +235,14 @@ export class MultiSig extends Account {
     const data = nodes.map(({ proposalId, status, approvalCount, rejectionCount, params }) => {
       const { expiry, proposals, isBatch } = params;
 
-      let txTag: TxTag;
-      let args: AnyJson;
+      let txTag: TxTag | null;
+      let args: AnyJson | null;
 
-      if (isBatch) {
+      // a bridge proposal has none, nor does one whose proposing call can't be told apart
+      if (!proposals?.length) {
+        txTag = null;
+        args = null;
+      } else if (isBatch) {
         txTag = UtilityTx.Batch;
         args = proposals.map(getTxTagAndArgs);
       } else {
