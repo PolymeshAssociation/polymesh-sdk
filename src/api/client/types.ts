@@ -28,7 +28,11 @@ export interface ExtrinsicData {
    */
   nonce: BigNumber | null;
   txTag: TxTag;
-  params: Record<string, unknown>[];
+  /**
+   * the call's arguments, keyed by argument name. Integers are decimal strings, Accounts are SS58
+   *   addresses and Identities are DIDs. Null when the middleware could not decode them
+   */
+  params: Record<string, unknown> | null;
   success: boolean;
   specVersionId: BigNumber;
   extrinsicHash: string;
@@ -210,6 +214,10 @@ export interface EventIdentifier {
   blockNumber: BigNumber;
   blockHash: string;
   blockDate: Date;
+  /**
+   * @note -1 for something the middleware seeded from genesis or chain storage rather than from a
+   *   chain event. No chain event has that index
+   */
   eventIndex: BigNumber;
 }
 

@@ -262,7 +262,7 @@ export class Portfolios extends Namespace<Identity> {
       })
     );
 
-    const portfolioMovementsPromise = context.queryMiddleware<Ensured<Query, 'portfolioMovements'>>(
+    const portfolioMovementsPromise = context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       portfoliosMovementsQuery({
         identityId,
         address: account,
@@ -278,7 +278,7 @@ export class Portfolios extends Namespace<Identity> {
       },
       {
         data: {
-          portfolioMovements: { nodes: portfolioMovements },
+          assetTransactions: { nodes: portfolioMovements },
         },
       },
     ] = await Promise.all([settlementsPromise, portfolioMovementsPromise]);

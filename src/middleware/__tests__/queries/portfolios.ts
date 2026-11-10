@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { print } from 'graphql';
 
 import { portfolioMovementsQuery, portfolioQuery } from '~/middleware/queries/portfolios';
 
@@ -31,8 +32,16 @@ describe('portfolioMovementsQuery', () => {
     expect(result.variables).toEqual({
       address: 'someAddress',
       assetId: '0x12341234123412341234123412341234',
-      fromId: 'someDid/1',
-      toId: 'someDid/1',
+      from: 'someDid/1',
+      to: 'someDid/1',
     });
+  });
+
+  it('should read internal transfers that no instruction made', () => {
+    const { query } = portfolioMovementsQuery({ identityId: 'someDid' });
+
+    expect(print(query)).toContain('isInternalTransfer: {equalTo: true}');
+    expect(print(query)).toContain('instructionId: {isNull: true}');
+    expect(print(query)).toContain('fromPortfolioId: {equalTo: $from}');
   });
 });

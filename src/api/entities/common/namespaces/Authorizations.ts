@@ -22,14 +22,13 @@ import {
 } from '~/types';
 import { Ensured, QueryArgs } from '~/types/utils';
 import {
-  addressToKey,
   authorizationDataToAuthorization,
   authorizationTypeToMeshAuthorizationType,
   bigNumberToU64,
   booleanToBool,
   identityIdToString,
-  keyToAddress,
   middlewareAuthorizationDataToAuthorization,
+  middlewareDateToDate,
   momentToDate,
   signerToSignerValue,
   signerValueToSignatory,
@@ -188,7 +187,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
     if (signerValue.type === SignerType.Identity) {
       filters.toId = signerValue.value;
     } else {
-      filters.toKey = addressToKey(signerValue.value, context);
+      filters.toAccountId = signerValue.value;
     }
 
     const {
@@ -205,20 +204,19 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
         type: authType,
         data: authData,
         fromId,
-        toId,
-        toKey,
+        toAccountId,
         expiry,
       } = middlewareAuthorization;
 
       return new AuthorizationRequest(
         {
           authId: new BigNumber(id),
-          expiry: expiry ? new Date(expiry) : null,
+          expiry: expiry ? middlewareDateToDate(expiry) : null,
           data: middlewareAuthorizationDataToAuthorization(context, authType, authData),
-          target: toId
-            ? new Identity({ did: toId }, context)
+          target: toAccountId
+            ? new Account({ address: toAccountId }, context)
             : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              new Account({ address: keyToAddress(toKey!, context) }, context),
+              new Identity({ did: middlewareAuthorization.toId! }, context),
           issuer: new Identity({ did: fromId }, context),
         },
         context

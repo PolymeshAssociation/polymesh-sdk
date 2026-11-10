@@ -314,16 +314,23 @@ const handleEnumDeclaration = (node: ts.EnumDeclaration): ts.Node => {
     return true;
   });
 
-  filteredMembers.push(
-    ts.factory.createEnumMember(
-      ts.factory.createIdentifier('CreatedAtAsc'),
-      ts.factory.createStringLiteral('CREATED_AT_ASC')
-    ),
-    ts.factory.createEnumMember(
-      ts.factory.createIdentifier('CreatedAtDesc'),
-      ts.factory.createStringLiteral('CREATED_AT_DESC')
-    )
+  // an entity with a real `createdAt` column already has these members
+  const hasCreatedAt = filteredMembers.some(
+    member => ts.isIdentifier(member.name) && member.name.text === 'CreatedAtAsc'
   );
+
+  if (!hasCreatedAt) {
+    filteredMembers.push(
+      ts.factory.createEnumMember(
+        ts.factory.createIdentifier('CreatedAtAsc'),
+        ts.factory.createStringLiteral('CREATED_AT_ASC')
+      ),
+      ts.factory.createEnumMember(
+        ts.factory.createIdentifier('CreatedAtDesc'),
+        ts.factory.createStringLiteral('CREATED_AT_DESC')
+      )
+    );
+  }
 
   return ts.factory.updateEnumDeclaration(node, node.modifiers, node.name, filteredMembers);
 };

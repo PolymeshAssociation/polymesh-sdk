@@ -196,7 +196,14 @@ import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { BallotMotion } from '~/api/entities/CorporateBallot/types';
 import { EthSigner } from '~/base/types';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
-import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum,
+  EntryDirection,
+  EventIdEnum,
+  ModuleIdEnum,
+  MovementKind,
+  PolyxPool,
+} from '~/middleware/types';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -792,12 +799,14 @@ const defaultContextOptions: ContextOptions = {
         blockNumber: new BigNumber(123),
         blockHash: 'someHash',
         blockDate: new Date('2023/01/01'),
-        type: BalanceTypeEnum.Free,
+        pool: PolyxPool.Free,
+        kind: MovementKind.Fee,
+        direction: EntryDirection.Debit,
         amount: new BigNumber(3000).shiftedBy(-6),
-        fromIdentity: 'fromDid' as unknown as Identity,
-        fromAccount: 'fromAddress' as unknown as Account,
-        toIdentity: undefined,
-        toAccount: undefined,
+        identity: 'fromDid' as unknown as Identity,
+        account: 'fromAddress' as unknown as Account,
+        counterpartyIdentity: undefined,
+        counterpartyAccount: undefined,
         memo: undefined,
       },
     ],

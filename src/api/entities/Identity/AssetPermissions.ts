@@ -12,16 +12,8 @@ import {
   setPermissionGroup,
   waivePermissions,
 } from '~/internal';
-import {
-  tickerExternalAgentActionsQuery,
-  tickerExternalAgentsQuery,
-} from '~/middleware/queries/externalAgents';
-import {
-  EventIdEnum,
-  ModuleIdEnum,
-  Query,
-  TickerExternalAgentActionsOrderBy,
-} from '~/middleware/types';
+import { assetAgentActionsQuery, assetAgentQuery } from '~/middleware/queries/externalAgents';
+import { AssetAgentActionsOrderBy, EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   Asset,
   AssetWithGroup,
@@ -45,7 +37,7 @@ import {
   assetIdToString,
   assetToMeshAssetId,
   extrinsicPermissionsToTransactionPermissions,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareEventToEventIdentifier,
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
@@ -336,17 +328,18 @@ export class AssetPermissions extends Namespace<Identity> {
 
     const {
       data: {
-        tickerExternalAgents: {
+        assetAgents: {
           nodes: [node],
         },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgents'>>(
-      tickerExternalAgentsQuery({
+    } = await context.queryMiddleware<Ensured<Query, 'assetAgents'>>(
+      assetAgentQuery({
         assetId: middlewareAssetId,
+        identityId: this.parent.did,
       })
     );
 
-    return optionize(middlewareEventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
+    return optionize(middlewareEventToEventIdentifier)(node?.createdEvent);
   }
 
   /**
@@ -381,7 +374,7 @@ export class AssetPermissions extends Namespace<Identity> {
       asset: string | FungibleAsset;
       moduleId?: ModuleIdEnum;
       eventId?: EventIdEnum;
-      orderBy?: TickerExternalAgentActionsOrderBy | TickerExternalAgentActionsOrderBy[];
+      orderBy?: AssetAgentActionsOrderBy | AssetAgentActionsOrderBy[];
     }
   ): Promise<ResultSet<EventIdentifier>> {
     const {
@@ -395,10 +388,10 @@ export class AssetPermissions extends Namespace<Identity> {
 
     const {
       data: {
-        tickerExternalAgentActions: { nodes, totalCount },
+        assetAgentActions: { nodes, totalCount },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
-      tickerExternalAgentActionsQuery(
+    } = await context.queryMiddleware<Ensured<Query, 'assetAgentActions'>>(
+      assetAgentActionsQuery(
         {
           assetId: middlewareAssetId,
           callerId: did,
@@ -411,9 +404,9 @@ export class AssetPermissions extends Namespace<Identity> {
       )
     );
 
-    const data = nodes.map(({ createdBlock, eventIdx }) =>
+    const data = nodes.map(({ createdEvent }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx)
+      middlewareEventToEventIdentifier(createdEvent!)
     );
 
     const count = new BigNumber(totalCount);

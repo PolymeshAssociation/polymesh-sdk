@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { print } from 'graphql';
 
 import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
-import { PolyxTransactionsOrderBy } from '~/middleware/types';
+import { PolyxEntriesOrderBy } from '~/middleware/types';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 describe('polyxTransactionsQuery', () => {
@@ -18,6 +18,9 @@ describe('polyxTransactionsQuery', () => {
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
+    expect(print(result.query)).toContain(
+      'filter: {or: [{identityId: {equalTo: $identityId}}, {accountId: {in: $addresses}}]}'
+    );
 
     result = polyxTransactionsQuery({}, new BigNumber(10), new BigNumber(2));
 
@@ -26,6 +29,15 @@ describe('polyxTransactionsQuery', () => {
       size: 10,
       start: 2,
     });
+  });
+
+  it('should filter on one side alone, since each entry is one side of a movement', () => {
+    expect(print(polyxTransactionsQuery({ identityId: 'someDid' }).query)).toContain(
+      'filter: {identityId: {equalTo: $identityId}}'
+    );
+    expect(print(polyxTransactionsQuery({ addresses: ['someAddress'] }).query)).toContain(
+      'filter: {accountId: {in: $addresses}}'
+    );
   });
 
   it('should default to newest first, ordered by the id that encodes block and event index', () => {
@@ -39,10 +51,10 @@ describe('polyxTransactionsQuery', () => {
       {},
       undefined,
       undefined,
-      PolyxTransactionsOrderBy.CreatedBlockIdAsc
+      PolyxEntriesOrderBy.CreatedEventIdAsc
     );
 
-    expect(print(query)).toContain('orderBy: [CREATED_BLOCK_ID_ASC, ID_DESC]');
+    expect(print(query)).toContain('orderBy: [CREATED_EVENT_ID_ASC, ID_DESC]');
   });
 
   it('should request totalCount, which the ResultSet count is built from', () => {

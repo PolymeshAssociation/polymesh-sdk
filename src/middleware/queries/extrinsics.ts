@@ -29,7 +29,7 @@ export function extrinsicByHash(
           nonce
           moduleId
           callId
-          paramsTxt
+          args
           success
           specVersionId
           extrinsicHash
@@ -101,7 +101,7 @@ export function extrinsicsByArgs(
           nonce
           moduleId
           callId
-          paramsTxt
+          args
           success
           specVersionId
           extrinsicHash

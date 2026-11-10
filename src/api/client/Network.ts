@@ -41,7 +41,8 @@ import {
   balanceToBigNumber,
   extrinsicIdentifierToTxTag,
   hashToString,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareDateToDate,
+  middlewareEventToEventIdentifier,
   moduleAddressToString,
   stringToBlockHash,
   textToString,
@@ -222,26 +223,28 @@ export class Network {
   public transferPolyx: ProcedureMethod<TransferPolyxParams, void>;
 
   /**
-   * Retrieve a single event by any of its indexed arguments. Can be filtered using parameters
+   * Retrieve the first event of a type that involves the given Identities, Accounts, Assets or
+   *   Portfolios, and has the given argument values
    *
    * @param opts.moduleId - type of the module to fetch
    * @param opts.eventId - type of the event to fetch
-   * @param opts.eventArg0 - event parameter value to filter by in position 0
-   * @param opts.eventArg1 - event parameter value to filter by in position 1
-   * @param opts.eventArg2 - event parameter value to filter by in position 2
+   * @param opts.refs - what the event must involve, in any of its arguments: each one of
+   *   `identity:<did>`, `account:<SS58 address>`, `asset:<asset id>`, `ticker:<ticker>` or
+   *   `portfolio:<did>/<number>`. An event matches when it involves every one given
+   * @param opts.args - argument values the event must have, keyed by field name, such as
+   *   `{ assetId: '0x…' }`. Integers are decimal strings and Accounts SS58 addresses
    *
    * @note uses the middlewareV2
    */
   public async getEventByIndexedArgs(opts: {
     moduleId: ModuleIdEnum;
     eventId: EventIdEnum;
-    eventArg0?: string;
-    eventArg1?: string;
-    eventArg2?: string;
+    refs?: string[];
+    args?: Record<string, unknown>;
   }): Promise<EventIdentifier | null> {
     const { context } = this;
 
-    const { moduleId, eventId, eventArg0, eventArg1, eventArg2 } = opts;
+    const { moduleId, eventId, refs, args } = opts;
 
     const {
       data: {
@@ -254,15 +257,14 @@ export class Network {
         {
           moduleId,
           eventId,
-          eventArg0,
-          eventArg1,
-          eventArg2,
+          refs,
+          args,
         },
         new BigNumber(1)
       )
     );
 
-    return optionize(middlewareEventDetailsToEventIdentifier)(event?.block, event?.eventIdx);
+    return optionize(middlewareEventToEventIdentifier)(event);
   }
 
   /**
@@ -584,9 +586,11 @@ export class Network {
    * @deprecated
    * @param opts.moduleId - type of the module to fetch
    * @param opts.eventId - type of the event to fetch
-   * @param opts.eventArg0 - event parameter value to filter by in position 0
-   * @param opts.eventArg1 - event parameter value to filter by in position 1
-   * @param opts.eventArg2 - event parameter value to filter by in position 2
+   * @param opts.refs - what the event must involve, in any of its arguments: each one of
+   *   `identity:<did>`, `account:<SS58 address>`, `asset:<asset id>`, `ticker:<ticker>` or
+   *   `portfolio:<did>/<number>`. An event matches when it involves every one given
+   * @param opts.args - argument values the event must have, keyed by field name, such as
+   *   `{ assetId: '0x…' }`. Integers are decimal strings and Accounts SS58 addresses
    * @param opts.size - page size
    * @param opts.start - page offset
    * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
@@ -599,15 +603,14 @@ export class Network {
     opts: MiddlewarePaginationOptions & {
       moduleId: ModuleIdEnum;
       eventId: EventIdEnum;
-      eventArg0?: string;
-      eventArg1?: string;
-      eventArg2?: string;
+      refs?: string[];
+      args?: Record<string, unknown>;
       orderBy?: EventsOrderBy | EventsOrderBy[];
     }
   ): Promise<EventIdentifier[] | null> {
     const { context } = this;
 
-    const { moduleId, eventId, eventArg0, eventArg1, eventArg2, size, start, orderBy } = opts;
+    const { moduleId, eventId, refs, args, size, start, orderBy } = opts;
 
     const {
       data: {
@@ -618,9 +621,8 @@ export class Network {
         {
           moduleId,
           eventId,
-          eventArg0,
-          eventArg1,
-          eventArg2,
+          refs,
+          args,
         },
         size,
         start,
@@ -629,10 +631,7 @@ export class Network {
     );
 
     if (events.length) {
-      return events.map(({ block, eventIdx }) =>
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        middlewareEventDetailsToEventIdentifier(block!, eventIdx)
-      );
+      return events.map(event => middlewareEventToEventIdentifier(event));
     }
 
     return null;
@@ -679,7 +678,7 @@ export class Network {
         nonce,
         moduleId,
         callId,
-        paramsTxt,
+        args: extrinsicArgs,
         success: txSuccess,
         specVersionId,
         extrinsicHash,
@@ -713,12 +712,12 @@ export class Network {
       return {
         blockNumber: new BigNumber(blockNumber),
         blockHash,
-        blockDate: new Date(`${datetime}Z`),
+        blockDate: middlewareDateToDate(datetime),
         extrinsicIdx: new BigNumber(extrinsicIdx),
         address: rawAddress ?? null,
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag,
-        params: JSON.parse(paramsTxt),
+        params: extrinsicArgs ?? null,
         success: !!txSuccess,
         specVersionId: new BigNumber(specVersionId),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

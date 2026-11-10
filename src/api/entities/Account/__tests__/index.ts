@@ -247,7 +247,7 @@ describe('Account class', () => {
             callId: CallIdEnum.RegisterTicker,
             extrinsicIdx: 2,
             specVersionId: 2006,
-            paramsTxt: '[]',
+            args: { ticker: 'TICKER' },
             blockId: blockNumber1.toNumber(),
             address,
             nonce: 1,
@@ -263,7 +263,7 @@ describe('Account class', () => {
             callId: CallIdEnum.RegisterTicker,
             extrinsicIdx: 2,
             specVersionId: 2006,
-            paramsTxt: '[]',
+            args: null,
             blockId: blockNumber2.toNumber(),
             success: 1,
             signedbyAddress: 1,
@@ -322,6 +322,8 @@ describe('Account class', () => {
       expect(result.data[1]!.blockHash).toEqual(blockHash2);
       expect(result.data[0]!.blockDate).toEqual(blockDate1);
       expect(result.data[1]!.blockDate).toEqual(blockDate2);
+      expect(result.data[0]!.params).toEqual({ ticker: 'TICKER' });
+      expect(result.data[1]!.params).toBeNull();
       expect(result.data[0]!.address).toEqual(address);
       expect(result.data[1]!.address).toBeUndefined();
       expect(result.data[0]!.nonce).toEqual(new BigNumber(1));

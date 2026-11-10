@@ -45,6 +45,11 @@ export const MAX_CONCURRENT_REQUESTS = 200;
 export const TREASURY_MODULE_ADDRESS = 'modlpm/trsry';
 export const DEFAULT_GQL_PAGE_SIZE = 25;
 /**
+ * Largest page the middleware returns. It returns no more than this many rows for a larger
+ *   `first`, without an error
+ */
+export const MAX_GQL_PAGE_SIZE = 100;
+/**
  * Limit to the page size used when fetching large amounts of data from the chain (same goes for `.multi` calls)
  */
 export const MAX_PAGE_SIZE = new BigNumber(1000);

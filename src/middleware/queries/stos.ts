@@ -12,12 +12,13 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * Get all investments for a given offering
  */
 export function investmentsQuery(
-  filters: QueryArgs<Investment, 'stoId' | 'offeringAssetId'>,
+  filters: QueryArgs<Investment, 'stoId'>,
   size?: BigNumber,
   start?: BigNumber,
   orderBy?: InvestmentsOrderBy | InvestmentsOrderBy[]
-): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringAssetId'>>> {
-  const { args, filter } = createArgsAndFilters(filters, { stoId: 'Int' });
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId'>>> {
+  // `stoId` is the offering's own id, `<offering asset id>/<offering number>`
+  const { args, filter } = createArgsAndFilters(filters, {});
 
   // `id` is `<block>/<event index>`, zero padded: block order, and unique
   const ordering = orderByClause(orderBy, [InvestmentsOrderBy.IdAsc]);

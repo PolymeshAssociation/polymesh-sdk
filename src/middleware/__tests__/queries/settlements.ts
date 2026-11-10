@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { print } from 'graphql';
 
 import { Context } from '~/internal';
 import {
@@ -64,7 +65,7 @@ describe('buildHistoricalInstructionsQueryFilter', () => {
 
     expect(result.args).toBe('($start: Int,$size: Int,$identity: String!)');
     expect(result.filter).toBe(
-      'filter: { parties: { some: { identity: { equalTo: $identity } } } }'
+      'filter: { parties: { some: { identityId: { equalTo: $identity } } } }'
     );
   });
 
@@ -78,7 +79,7 @@ describe('buildHistoricalInstructionsQueryFilter', () => {
 
     expect(result.args).toBe('($start: Int,$size: Int,$identity: String!)');
     expect(result.filter).toBe(
-      'filter: { parties: { some: { identity: { equalTo: $identity } } } }'
+      'filter: { parties: { some: { identityId: { equalTo: $identity } } } }'
     );
     expect(result.variables.identity).toBe(did);
   });
@@ -107,7 +108,9 @@ describe('buildHistoricalInstructionsQueryFilter', () => {
     const result = await buildHistoricalInstructionsQueryFilter({ party: 'someParty' }, context);
 
     expect(result.args).toBe('($start: Int,$size: Int,$party: String!)');
-    expect(result.filter).toBe('filter: { parties: { some: { identity: { equalTo: $party } } } }');
+    expect(result.filter).toBe(
+      'filter: { parties: { some: { identityId: { equalTo: $party } } } }'
+    );
   });
 
   it('should create the correct graphql filter with assetId', async () => {
@@ -131,7 +134,7 @@ describe('buildHistoricalInstructionsQueryFilter', () => {
     const result = await buildHistoricalInstructionsQueryFilter({ sender: 'someSender' }, context);
 
     expect(result.args).toBe('($start: Int,$size: Int,$sender: String!)');
-    expect(result.filter).toBe('filter: { legs: { some: { from: { equalTo: $sender } } } }');
+    expect(result.filter).toBe('filter: { legs: { some: { fromId: { equalTo: $sender } } } }');
   });
 
   it('should create the correct graphql filter with receiver', async () => {
@@ -141,7 +144,7 @@ describe('buildHistoricalInstructionsQueryFilter', () => {
     );
 
     expect(result.args).toBe('($start: Int,$size: Int,$receiver: String!)');
-    expect(result.filter).toBe('filter: { legs: { some: { to: { equalTo: $receiver } } } }');
+    expect(result.filter).toBe('filter: { legs: { some: { toId: { equalTo: $receiver } } } }');
   });
 
   it('should create the correct graphql filter with multiple parameters', async () => {
@@ -159,7 +162,7 @@ describe('buildHistoricalInstructionsQueryFilter', () => {
       '($start: Int,$size: Int,$identity: String!,$status: InstructionStatusEnum!,$asset: String!,$sender: String!)'
     );
     expect(result.filter).toBe(
-      'filter: { status: { equalTo: $status }, legs: { some: { assetId: { equalTo: $asset }, from: { equalTo: $sender } } }, parties: { some: { identity: { equalTo: $identity } } } }'
+      'filter: { status: { equalTo: $status }, legs: { some: { assetId: { equalTo: $asset }, fromId: { equalTo: $sender } } }, parties: { some: { identityId: { equalTo: $identity } } } }'
     );
   });
 
@@ -242,11 +245,11 @@ describe('settlementsQuery', () => {
     expect(result.variables).toEqual({
       addresses: ['someAddress'],
       assetId: '0x12341234123412341234123412341234',
-      from: 'someDid',
-      fromPortfolio: 1,
-      to: 'someDid',
-      toPortfolio: 1,
+      fromPortfolio: 'someDid/1',
+      toPortfolio: 'someDid/1',
     });
+    expect(print(result.query)).toContain('addresses: {contains: $addresses}');
+    expect(print(result.query)).toContain('fromPortfolioId: {equalTo: $fromPortfolio}');
   });
 });
 

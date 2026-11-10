@@ -162,12 +162,13 @@ import {
 } from '~/internal';
 import {
   AffirmStatusEnum,
+  AssetTransaction as MiddlewareAssetTransaction,
   AuthTypeEnum,
-  Block,
   CallIdEnum,
   Claim as MiddlewareClaim,
   ClaimTypeEnum,
   CustomClaimType as MiddlewareCustomClaimType,
+  Event as MiddlewareEvent,
   Instruction as MiddlewareInstruction,
   InstructionStatusEnum,
   InstructionTypeEnum,
@@ -175,7 +176,6 @@ import {
   LegTypeEnum,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
-  PortfolioMovement as MiddlewarePortfolioMovement,
 } from '~/middleware/types';
 import {
   ClaimScopeTypeEnum,
@@ -279,6 +279,7 @@ import {
   SectionPermissions,
   SecurityIdentifier,
   SecurityIdentifierType,
+  SettlementLeg,
   Signer,
   SignerKeyRingType,
   SignerType,
@@ -2439,17 +2440,44 @@ export async function scopeToMiddlewareScope(
 
 /**
  * @hidden
+ *
+ * Convert a chain sequence number (an Instruction, Venue or Authorization id) into the id the
+ *   middleware stores it under: zero padded to 10 digits, so that ordering by id is numeric
  */
-export function middlewareEventDetailsToEventIdentifier(
-  block: Block,
-  eventIdx = 0
+export function bigNumberToMiddlewareSequenceId(id: BigNumber): string {
+  return id.toString().padStart(10, '0');
+}
+
+/**
+ * @hidden
+ *
+ * Convert a middleware date into a Date. The middleware stores UTC and serialises it with no zone
+ *   marker, which `new Date` would read as local time
+ */
+export function middlewareDateToDate(value: string): Date {
+  // a date with no time is already read as UTC
+  const isLocalDateTime = value.includes('T') && !/(Z|[+-]\d{2}:?\d{2})$/.test(value);
+
+  return new Date(isLocalDateTime ? `${value}Z` : value);
+}
+
+/**
+ * @hidden
+ *
+ * Convert a middleware event (usually an entity's `createdEvent` or `updatedEvent`) selected with
+ * `eventIdentifierFields` into an EventIdentifier
+ */
+export function middlewareEventToEventIdentifier(
+  event: Pick<MiddlewareEvent, 'eventIdx' | 'block'>
 ): EventIdentifier {
-  const { blockId, datetime, hash } = block;
+  const { eventIdx } = event;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const { blockId, datetime, hash } = event.block!;
 
   return {
     blockNumber: new BigNumber(blockId),
     blockHash: hash,
-    blockDate: new Date(`${datetime}`),
+    blockDate: middlewareDateToDate(datetime),
     eventIndex: new BigNumber(eventIdx),
   };
 }
@@ -4761,46 +4789,44 @@ export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
 export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
   const {
     legType,
-    from,
-    fromPortfolio,
-    fromAccount,
-    to,
-    toPortfolio,
-    toAccount,
+    fromId,
+    fromPortfolioId,
+    fromAccountId,
+    toId,
+    toPortfolioId,
+    toAccountId,
     assetId,
     ticker,
     nftIds,
     amount,
   } = leg;
 
+  // a holder is an Account when the leg names one, and otherwise a portfolio (`<did>/<number>`)
+  const toHolder = (
+    portfolioId: string | null | undefined,
+    account: string | null | undefined
+  ): AssetHolder =>
+    middlewareAssetHolderToAssetHolder(
+      account ? { account } : portfolioIdStringToPortfolio(portfolioId!),
+      context
+    );
+
   if (legType === LegTypeEnum.Fungible) {
     return {
       asset: new FungibleAsset({ assetId: getAssetIdFromMiddleware(assetId) }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
-      from: middlewareAssetHolderToAssetHolder(
-        { identityId: from, account: fromAccount, number: fromPortfolio },
-        context
-      ),
-      to: middlewareAssetHolderToAssetHolder(
-        { identityId: to, account: toAccount, number: toPortfolio },
-        context
-      ),
+      from: toHolder(fromPortfolioId, fromAccountId),
+      to: toHolder(toPortfolioId, toAccountId),
     };
   }
 
   if (legType === LegTypeEnum.NonFungible) {
     const id = getAssetIdFromMiddleware(assetId);
     return {
-      from: middlewareAssetHolderToAssetHolder(
-        { identityId: from, account: fromAccount, number: fromPortfolio },
-        context
-      ),
-      to: middlewareAssetHolderToAssetHolder(
-        { identityId: to, account: toAccount, number: toPortfolio },
-        context
-      ),
-      nfts: nftIds.map(
-        (nftId: number) => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
+      from: toHolder(fromPortfolioId, fromAccountId),
+      to: toHolder(toPortfolioId, toAccountId),
+      nfts: (nftIds as string[]).map(
+        nftId => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
       ),
       asset: new NftCollection({ assetId: id }, context),
     };
@@ -4808,8 +4834,8 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
 
   // presume off chain
   return {
-    from: new Identity({ did: from }, context),
-    to: new Identity({ did: to! }, context),
+    from: new Identity({ did: fromId! }, context),
+    to: new Identity({ did: toId! }, context),
     asset: ticker!,
     offChainAmount: new BigNumber(amount).shiftedBy(-6),
   };
@@ -4823,7 +4849,7 @@ export function middlewareAffirmStatusToAffirmationStatus(
 ): AffirmationStatus {
   const affirmStatusMap = {
     [AffirmStatusEnum.Affirmed]: AffirmationStatus.Affirmed,
-    [AffirmStatusEnum.Rejected]: AffirmationStatus.Rejected,
+    [AffirmStatusEnum.Pending]: AffirmationStatus.Pending,
   };
   return affirmStatusMap[status];
 }
@@ -4893,10 +4919,10 @@ export function middlewareInstructionToHistoricInstruction(
     valueDate,
     legs: { nodes: legs },
     memo,
-    createdBlock,
+    createdEvent,
     venueId,
   } = instruction;
-  const { blockId, hash, datetime } = createdBlock!;
+  const { blockId, hash, datetime } = createdEvent!.block!;
 
   return {
     id: new BigNumber(instructionId),
@@ -4908,7 +4934,7 @@ export function middlewareInstructionToHistoricInstruction(
     ...middlewareInstructionToInstructionEndCondition(instruction),
     memo: memo ?? null,
     venueId: venueId ? new BigNumber(venueId) : undefined,
-    createdAt: new Date(datetime),
+    createdAt: middlewareDateToDate(datetime),
     legs: legs.map(leg => middlewareLegToLeg(leg, context)),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
@@ -5046,11 +5072,17 @@ function middlewareExtrinsicPermissionsDataToTransactionPermissions(
   if (!isLegacy) {
     pallets = [];
 
+    // the 7.0 form, which the middleware uses for every row, keys each pallet by name, with the
+    // pallet's extrinsics as `these`, `except` or `whole`
     for (const [key, rawBody] of Object.entries(rawPallets)) {
-      const body = rawBody as unknown as { extrinsics: ExtrinsicGroup };
+      const { extrinsics } = rawBody as unknown as { extrinsics: ExtrinsicGroup };
 
-      if ('these' in body.extrinsics && body.extrinsics.these) {
-        pallets.push({ palletName: key, dispatchableNames: { these: body.extrinsics.these } });
+      if ('these' in extrinsics && extrinsics.these) {
+        pallets.push({ palletName: key, dispatchableNames: { these: extrinsics.these } });
+      } else if ('except' in extrinsics && extrinsics.except) {
+        pallets.push({ palletName: key, dispatchableNames: { except: extrinsics.except } });
+      } else {
+        pallets.push({ palletName: key, dispatchableNames: {} });
       }
     }
   }
@@ -5358,28 +5390,47 @@ export function toCustomClaimTypeWithIdentity(
  * @hidden
  */
 function portfolioMovementsToHistoricSettlements(
-  portfolioMovements: MiddlewarePortfolioMovement[],
-  context: Context,
-  handleMiddlewareAddress: (address: string, context: Context) => Account
+  portfolioMovements: MiddlewareAssetTransaction[],
+  context: Context
 ): HistoricSettlement[] {
   return portfolioMovements
-    .filter(({ fromId, toId }) => fromId !== undefined && toId !== undefined)
-    .map(({ createdBlock, fromId, toId, asset, amount, address: accountAddress }) => {
-      const { blockId, hash } = createdBlock!;
+    .filter(({ fromPortfolioId, toPortfolioId }) => fromPortfolioId && toPortfolioId)
+    .map(({ createdEvent, fromPortfolioId, toPortfolioId, assetId, amount, nftIds, address }) => {
+      const { blockId, hash } = createdEvent!.block!;
+      const from = middlewarePortfolioToPortfolio(
+        portfolioIdStringToPortfolio(fromPortfolioId!),
+        context
+      );
+      const to = middlewarePortfolioToPortfolio(
+        portfolioIdStringToPortfolio(toPortfolioId!),
+        context
+      );
+      const id = getAssetIdFromMiddleware(assetId);
+
+      const leg: SettlementLeg = nftIds
+        ? {
+            asset: new NftCollection({ assetId: id }, context),
+            nfts: (nftIds as string[]).map(
+              nftId => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
+            ),
+            direction: SettlementDirectionEnum.None,
+            from,
+            to,
+          }
+        : {
+            asset: new FungibleAsset({ assetId: id }, context),
+            amount: new BigNumber(amount).shiftedBy(-6),
+            direction: SettlementDirectionEnum.None,
+            from,
+            to,
+          };
+
       return {
         blockNumber: new BigNumber(blockId),
         blockHash: hash,
         status: InstructionStatusEnum.Executed,
-        accounts: [handleMiddlewareAddress(accountAddress, context)],
-        legs: [
-          {
-            asset: new FungibleAsset({ assetId: getAssetIdFromMiddleware(asset!.id) }, context),
-            amount: new BigNumber(amount).shiftedBy(-6),
-            direction: SettlementDirectionEnum.None,
-            from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId!), context),
-            to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId!), context),
-          },
-        ],
+        accounts: address ? [new Account({ address }, context)] : [],
+        legs: [leg],
       };
     });
 }
@@ -5389,7 +5440,7 @@ function portfolioMovementsToHistoricSettlements(
  */
 export function toHistoricalSettlements(
   settlementsResult: MiddlewareLeg[],
-  portfolioMovements: MiddlewarePortfolioMovement[],
+  portfolioMovements: MiddlewareAssetTransaction[],
   filter: {
     identityId: string;
     portfolio?: number;
@@ -5399,19 +5450,20 @@ export function toHistoricalSettlements(
   let data: HistoricSettlement[] = [];
 
   const getDirection = (leg: MiddlewareLeg): SettlementDirectionEnum => {
-    const { from, fromPortfolio, to, toPortfolio } = leg;
+    const { fromId, fromPortfolioId, toId, toPortfolioId } = leg;
     const { identityId, portfolio } = filter;
+    const portfolioId = `${identityId}/${portfolio}`;
 
     let result = SettlementDirectionEnum.None;
 
-    if (from === to) {
+    if (fromId === toId) {
       result = SettlementDirectionEnum.None;
-    } else if (from === identityId) {
-      if (!portfolio || fromPortfolio === portfolio) {
+    } else if (fromId === identityId) {
+      if (!portfolio || fromPortfolioId === portfolioId) {
         result = SettlementDirectionEnum.Incoming;
       }
-    } else if (to === identityId) {
-      if (!portfolio || toPortfolio === portfolio) {
+    } else if (toId === identityId) {
+      if (!portfolio || toPortfolioId === portfolioId) {
         result = SettlementDirectionEnum.Outgoing;
       }
     }
@@ -5422,12 +5474,12 @@ export function toHistoricalSettlements(
   settlementsResult.forEach(({ instruction }) => {
     const {
       id,
-      createdBlock,
+      createdEvent,
       status,
       legs: { nodes: legs },
     } = instruction!;
 
-    const { blockId, hash } = createdBlock!;
+    const { blockId, hash } = createdEvent!.block!;
 
     data.push({
       blockNumber: new BigNumber(blockId),
@@ -5442,14 +5494,7 @@ export function toHistoricalSettlements(
     });
   });
 
-  data = [
-    ...data,
-    ...portfolioMovementsToHistoricSettlements(
-      portfolioMovements,
-      context,
-      (accountAddress: string) => new Account({ address: accountAddress }, context)
-    ),
-  ];
+  data = [...data, ...portfolioMovementsToHistoricSettlements(portfolioMovements, context)];
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
   return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());

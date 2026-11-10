@@ -23,6 +23,7 @@ import {
   PolymeshError,
   Procedure,
 } from '~/internal';
+import { nftCollectionHoldersNftsQuery } from '~/middleware/queries/assets';
 import { latestSqVersionQuery } from '~/middleware/queries/common';
 import { Claim as MiddlewareClaim, ClaimTypeEnum } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
@@ -113,6 +114,7 @@ import {
   extractProtocol,
   filterEventRecords,
   getAccount,
+  getAllMiddlewareNfts,
   getAllowedMajors,
   getApiAtBlock,
   getAssetIdAndTicker,
@@ -3726,7 +3728,7 @@ describe('areSameClaims deprecated middleware types', () => {
   it('should return false for deprecated middleware claim type enums', () => {
     const claim = { type: ClaimType.Accredited, accredited: true } as unknown as Claim;
     const middlewareClaim: MiddlewareClaim = {
-      type: ClaimTypeEnum.NoData,
+      type: ClaimTypeEnum.NoType,
       scope: null,
     } as MiddlewareClaim;
 
@@ -4188,5 +4190,55 @@ describe('getSlotAtBlock', () => {
     return expect(getSlotAtBlock(mockContext, new BigNumber(13000))).rejects.toThrow(
       'The block was not authored by BABE, so it names no slot'
     );
+  });
+});
+
+describe('getAllMiddlewareNfts', () => {
+  const filters = { assetId: '0x01', identityIds: ['someDid'] };
+  const build = (
+    size: BigNumber,
+    start: BigNumber
+  ): ReturnType<typeof nftCollectionHoldersNftsQuery> =>
+    nftCollectionHoldersNftsQuery(filters, size, start);
+  const page = (from: number, length: number): { nftId: string }[] =>
+    Array.from({ length }, (_, i) => ({ nftId: `${from + i}` }));
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should read pages of 100 until it has every NFT', async () => {
+    dsMockUtils.createApolloQueryMock(build(new BigNumber(100), new BigNumber(0)), {
+      nfts: { nodes: page(1, 100), totalCount: 150 },
+    });
+    dsMockUtils.createApolloQueryMock(build(new BigNumber(100), new BigNumber(100)), {
+      nfts: { nodes: page(101, 50), totalCount: 150 },
+    });
+
+    const result = await getAllMiddlewareNfts(dsMockUtils.getContextInstance(), build);
+
+    expect(result).toHaveLength(150);
+    expect(result[149]).toEqual({ nftId: '150' });
+  });
+
+  it('should stop at an empty page, when the set shrank while it was read', async () => {
+    dsMockUtils.createApolloQueryMock(build(new BigNumber(100), new BigNumber(0)), {
+      nfts: { nodes: page(1, 100), totalCount: 150 },
+    });
+    dsMockUtils.createApolloQueryMock(build(new BigNumber(100), new BigNumber(100)), {
+      nfts: { nodes: [], totalCount: 100 },
+    });
+
+    const result = await getAllMiddlewareNfts(dsMockUtils.getContextInstance(), build);
+
+    expect(result).toHaveLength(100);
   });
 });
