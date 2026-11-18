@@ -1,6 +1,7 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { isNil } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
@@ -538,10 +539,11 @@ export class NftCollection extends BaseAsset {
         instructionId: instructionId ? new BigNumber(instructionId) : undefined,
         instructionMemo,
         // an event emitted outside any extrinsic, such as at the start of a block, has none
-        extrinsicIndex:
-          createdEvent?.extrinsicIdx === null || createdEvent?.extrinsicIdx === undefined
-            ? null
-            : new BigNumber(createdEvent.extrinsicIdx),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extrinsicIndex: isNil(createdEvent!.extrinsicIdx)
+          ? null
+          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            new BigNumber(createdEvent!.extrinsicIdx),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ...middlewareEventToEventIdentifier(createdEvent!),
       });

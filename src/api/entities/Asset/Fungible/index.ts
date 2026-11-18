@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { groupBy, map } from 'lodash';
+import { groupBy, isNil, map } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { FungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
@@ -347,10 +347,11 @@ export class FungibleAsset extends BaseAsset {
         instructionId: instructionId ? new BigNumber(instructionId) : undefined,
         instructionMemo,
         // an event emitted outside any extrinsic, such as at the start of a block, has none
-        extrinsicIndex:
-          createdEvent?.extrinsicIdx === null || createdEvent?.extrinsicIdx === undefined
-            ? null
-            : new BigNumber(createdEvent.extrinsicIdx),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extrinsicIndex: isNil(createdEvent!.extrinsicIdx)
+          ? null
+          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            new BigNumber(createdEvent!.extrinsicIdx),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ...middlewareEventToEventIdentifier(createdEvent!),
       });
