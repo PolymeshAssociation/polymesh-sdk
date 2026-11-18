@@ -68,5 +68,9 @@ export enum MultiSigProposalAction {
 
 export type MultiSigProposalVote = EventIdentifier & {
   signer: Signer;
-  action: MultiSigProposalVoteActionEnum;
+  /**
+   * @note null for a vote the middleware seeded from chain storage: from 7.0 the chain keeps that
+   *   a signer voted, not which way
+   */
+  action: MultiSigProposalVoteActionEnum | null;
 };

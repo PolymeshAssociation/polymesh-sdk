@@ -262,6 +262,40 @@ describe('MultiSigProposal class', () => {
     });
   });
 
+  describe('method: votes, for a seeded vote', () => {
+    it('should report no action for a vote the middleware seeded from chain storage', async () => {
+      dsMockUtils.createApolloQueryMock(
+        multiSigProposalVotesQuery({ proposalId: `${address}/${id.toString()}` }),
+        {
+          multiSigProposalVotes: {
+            nodes: [
+              {
+                signer: { signerType: SignerTypeEnum.Account, signerValue: 'someAddress' },
+                action: null,
+                createdEvent: {
+                  eventIdx: -1,
+                  block: {
+                    blockId: 0,
+                    datetime: new Date('4/14/2020').toISOString(),
+                    hash: 'genesisHash',
+                  },
+                },
+              },
+            ],
+          },
+        }
+      );
+      jest
+        .spyOn(utilsConversionModule, 'signerValueToSigner')
+        .mockReturnValue(new Account({ address: 'someAddress' }, context));
+
+      const [vote] = await proposal.votes();
+
+      expect(vote!.action).toBeNull();
+      expect(vote!.eventIndex).toEqual(new BigNumber(-1));
+    });
+  });
+
   describe('method: createdAt and method: creator', () => {
     const blockNumber = new BigNumber(1234);
     const blockDate = new Date('4/14/2020');

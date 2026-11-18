@@ -230,7 +230,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
           { type: signerType as unknown as SignerType, value: signerValue },
           context
         ),
-        action: action!,
+        action: action ?? null,
         ...middlewareEventToEventIdentifier(createdEvent!),
       };
     });
