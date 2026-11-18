@@ -73,16 +73,19 @@ export function assetHoldersQuery(
 
   // a holding is kept once created, so excluding zero balances has to happen in the query —
   // filtering client side would leave `totalCount` and the cursor describing the unfiltered set
-  const { args, filter } = createArgsAndFilters(filters, {
-    amount: { type: 'BigFloat', operator: 'greaterThan' },
-  });
+  const hasAmount = filters.amount !== undefined;
+  const amountArg = hasAmount ? ', $amount: BigFloat!' : '';
+  const amountFilter = hasAmount ? ', amount: { greaterThan: $amount }' : '';
 
+  // the middleware keeps one holding row per Asset and Identity for fungible Assets and NFT
+  // collections alike, so the collections have to be left out here
   const query = gql`
-    query AssetHoldersQuery
-      ${args}
-     {
+    query AssetHoldersQuery($start: Int, $size: Int, $identityId: String!${amountArg}) {
       assetHolders(
-        ${filter}
+        filter: {
+          identityId: { equalTo: $identityId }
+          asset: { isNftCollection: { equalTo: false } }${amountFilter}
+        }
         first: $size
         offset: $start
         orderBy: [${ordering}]

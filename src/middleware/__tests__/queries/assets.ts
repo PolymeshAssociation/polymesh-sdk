@@ -163,6 +163,15 @@ describe('holder queries', () => {
     expect(variables).toMatchObject({ amount: '0' });
   });
 
+  it('should leave out NFT collections, which share the holding table', () => {
+    expect(print(assetHoldersQuery({ identityId }).query)).toContain(
+      'asset: {isNftCollection: {equalTo: false}}'
+    );
+    expect(print(assetHoldersQuery({ identityId, amount: '0' }).query)).toContain(
+      'asset: {isNftCollection: {equalTo: false}}'
+    );
+  });
+
   it('should omit the amount filter when it is not asked for', () => {
     expect(print(assetHoldersQuery({ identityId }).query)).not.toContain('greaterThan');
   });
