@@ -56,7 +56,6 @@ import { tuple } from '~/types/utils';
 import { hexToUuid } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
-import { bigNumberToMiddlewareSequenceId } from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
@@ -579,7 +578,7 @@ describe('Instruction class', () => {
         };
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: bigNumberToMiddlewareSequenceId(id),
+            id,
           }),
           {
             instructions: {
@@ -605,7 +604,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: bigNumberToMiddlewareSequenceId(id),
+            id,
           }),
           {
             instructions: {
@@ -629,7 +628,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: bigNumberToMiddlewareSequenceId(id),
+            id,
           }),
           {
             instructions: {
@@ -655,7 +654,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: bigNumberToMiddlewareSequenceId(id),
+            id,
           }),
           {
             instructions: {
@@ -682,7 +681,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: bigNumberToMiddlewareSequenceId(id),
+            id,
           }),
           {
             instructions: {
@@ -707,7 +706,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: bigNumberToMiddlewareSequenceId(id),
+            id,
           }),
           {
             instructions: {
@@ -728,7 +727,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: bigNumberToMiddlewareSequenceId(id),
+            id,
           }),
           {
             instructions: {
@@ -749,12 +748,9 @@ describe('Instruction class', () => {
       });
 
       it('should throw an error if an Instruction is not yet processed by middleware', () => {
-        dsMockUtils.createApolloQueryMock(
-          instructionsQuery({ id: bigNumberToMiddlewareSequenceId(id) }),
-          {
-            instructions: { nodes: [] },
-          }
-        );
+        dsMockUtils.createApolloQueryMock(instructionsQuery({ id }), {
+          instructions: { nodes: [] },
+        });
 
         return expect(instruction.details()).rejects.toThrow(
           'Instruction is not yet processed by the middleware'
@@ -1118,11 +1114,7 @@ describe('Instruction class', () => {
         const start = new BigNumber(0);
         const size = new BigNumber(1);
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery(
-            { instructionId: bigNumberToMiddlewareSequenceId(id), isMediator: false },
-            size,
-            start
-          ),
+          instructionAffirmationsQuery({ instructionId: id, isMediator: false }, size, start),
           {
             instructionAffirmations: {
               nodes: [
@@ -1159,7 +1151,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionAffirmationsQuery({
-            instructionId: bigNumberToMiddlewareSequenceId(id),
+            instructionId: id,
             isMediator: false,
           }),
           {
@@ -1182,11 +1174,7 @@ describe('Instruction class', () => {
         const size = new BigNumber(1);
         const accountAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery(
-            { instructionId: bigNumberToMiddlewareSequenceId(id), isMediator: false },
-            size,
-            start
-          ),
+          instructionAffirmationsQuery({ instructionId: id, isMediator: false }, size, start),
           {
             instructionAffirmations: {
               nodes: [
@@ -1215,11 +1203,7 @@ describe('Instruction class', () => {
         const start = new BigNumber(0);
         const size = new BigNumber(1);
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery(
-            { instructionId: bigNumberToMiddlewareSequenceId(id), isMediator: false },
-            size,
-            start
-          ),
+          instructionAffirmationsQuery({ instructionId: id, isMediator: false }, size, start),
           {
             instructionAffirmations: {
               nodes: [
@@ -1288,7 +1272,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           legsQuery({
-            instructionId: bigNumberToMiddlewareSequenceId(id),
+            instructionId: id,
           }),
           {
             legs: {
@@ -1318,7 +1302,7 @@ describe('Instruction class', () => {
         dsMockUtils.createApolloQueryMock(
           legsQuery(
             {
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(2),
             new BigNumber(2)
@@ -1829,7 +1813,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1844,7 +1828,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1859,7 +1843,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1874,7 +1858,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1889,7 +1873,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1948,7 +1932,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1963,7 +1947,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1978,7 +1962,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1993,7 +1977,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2008,7 +1992,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2067,7 +2051,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2082,7 +2066,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2097,7 +2081,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2112,7 +2096,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2127,7 +2111,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2151,7 +2135,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2166,7 +2150,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2181,7 +2165,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2196,7 +2180,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2211,7 +2195,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2270,7 +2254,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2285,7 +2269,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2300,7 +2284,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2315,7 +2299,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2330,7 +2314,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2375,7 +2359,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2390,7 +2374,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2405,7 +2389,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2420,7 +2404,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2435,7 +2419,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: bigNumberToMiddlewareSequenceId(id),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2544,7 +2528,7 @@ describe('Instruction class', () => {
       it('should return the instruction mediators with affirmation info', async () => {
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: bigNumberToMiddlewareSequenceId(id),
+            id,
           }),
           {
             instructions: {
@@ -2559,7 +2543,7 @@ describe('Instruction class', () => {
         const expiry = new Date('2050/01/01');
         dsMockUtils.createApolloQueryMock(
           instructionAffirmationsQuery({
-            instructionId: bigNumberToMiddlewareSequenceId(id),
+            instructionId: id,
             isMediator: true,
           }),
           {
@@ -2627,7 +2611,7 @@ describe('Instruction class', () => {
       it('should return the affirmation status of offchain legs', async () => {
         dsMockUtils.createApolloQueryMock(
           offChainAffirmationsQuery({
-            instructionId: bigNumberToMiddlewareSequenceId(id),
+            instructionId: id,
           }),
           {
             instructionAffirmations: {
@@ -2687,7 +2671,7 @@ describe('Instruction class', () => {
       it('should return the affirmation status of given offchain leg', async () => {
         dsMockUtils.createApolloQueryMock(
           legsQuery({
-            instructionId: bigNumberToMiddlewareSequenceId(id),
+            instructionId: id,
             legIndex: legId.toNumber(),
             legType: LegTypeEnum.OffChain,
           }),
@@ -2714,7 +2698,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           legsQuery({
-            instructionId: bigNumberToMiddlewareSequenceId(id),
+            instructionId: id,
             legIndex: legId.toNumber(),
             legType: LegTypeEnum.OffChain,
           }),
@@ -2738,7 +2722,7 @@ describe('Instruction class', () => {
       it('should throw an error if no leg is found', () => {
         dsMockUtils.createApolloQueryMock(
           legsQuery({
-            instructionId: bigNumberToMiddlewareSequenceId(id),
+            instructionId: id,
             legIndex: legId.toNumber(),
             legType: LegTypeEnum.OffChain,
           }),

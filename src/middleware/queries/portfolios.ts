@@ -5,6 +5,7 @@ import { eventIdentifierFields } from '~/middleware/queries/common';
 import { QuerySettlementFilters } from '~/middleware/queries/settlements';
 import { AssetTransactionsOrderBy, Portfolio } from '~/middleware/types';
 import { QueryArgs } from '~/types/utils';
+import { portfolioToMiddlewarePortfolioId } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -52,15 +53,13 @@ function createPortfolioMovementFilters(
 } {
   const args: string[] = ['$from: String!, $to: String!'];
 
-  // a portfolio's id is `<did>/<number>`, the default portfolio being number 0
   const fromIdFilters = queryAll
     ? ['fromIdentityId: { equalTo: $from }']
     : ['fromPortfolioId: { equalTo: $from }'];
   const toIdFilters = queryAll
     ? ['toIdentityId: { equalTo: $to }']
     : ['toPortfolioId: { equalTo: $to }'];
-  const portfolioNumber = portfolioId?.toString() ?? '0';
-  const id = queryAll ? identityId : `${identityId}/${portfolioNumber}`;
+  const id = queryAll ? identityId : portfolioToMiddlewarePortfolioId(identityId, portfolioId);
   const variables: PortfolioMovementVariables = { from: id, to: id };
 
   if (assetId) {

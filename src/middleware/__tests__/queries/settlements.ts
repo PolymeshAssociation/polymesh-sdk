@@ -5,43 +5,84 @@ import { Context } from '~/internal';
 import {
   buildHistoricalInstructionsQueryFilter,
   historicalInstructionsQuery,
+  instructionAffirmationsQuery,
   instructionEventsQuery,
   instructionsQuery,
+  legsQuery,
+  offChainAffirmationsQuery,
   settlementsForAllPortfoliosQuery,
   settlementsQuery,
 } from '~/middleware/queries/settlements';
-import { InstructionEventEnum, InstructionStatusEnum } from '~/middleware/types';
+import { InstructionEventEnum, InstructionStatusEnum, LegTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('instructionsQuery', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
+  it('should pass the variables to the grapqhl query, with ids padded as the middleware stores them', () => {
+    let result = instructionsQuery({
       status: InstructionStatusEnum.Executed,
-      id: '1',
-      size: DEFAULT_GQL_PAGE_SIZE,
-      start: 0,
-    };
-
-    let result = instructionsQuery(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-
-    result = instructionsQuery(
-      {
-        venueId: '2',
-      },
-      new BigNumber(10),
-      new BigNumber(2)
-    );
+      id: new BigNumber(1),
+    });
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
-      venueId: '2',
+      status: InstructionStatusEnum.Executed,
+      id: '0000000001',
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
+    });
+
+    result = instructionsQuery({ venueId: new BigNumber(12) }, new BigNumber(10), new BigNumber(2));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      venueId: '0000000012',
       size: 10,
       start: 2,
+    });
+  });
+});
+
+describe('instructionAffirmationsQuery', () => {
+  it('should pad the instruction id, and keep the other filters', () => {
+    const result = instructionAffirmationsQuery(
+      { instructionId: new BigNumber(1590), isMediator: false },
+      new BigNumber(5),
+      new BigNumber(1)
+    );
+
+    expect(result.variables).toEqual({
+      instructionId: '0000001590',
+      isMediator: false,
+      size: 5,
+      start: 1,
+    });
+    expect(print(result.query)).toContain('orderBy: [CREATED_EVENT_ID_DESC, ID_DESC]');
+  });
+});
+
+describe('offChainAffirmationsQuery', () => {
+  it('should pad the instruction id', () => {
+    const result = offChainAffirmationsQuery({ instructionId: new BigNumber(7) });
+
+    expect(result.variables).toEqual({ instructionId: '0000000007' });
+    expect(print(result.query)).toContain('offChainReceiptExists: true');
+  });
+});
+
+describe('legsQuery', () => {
+  it('should pad the instruction id, and keep the leg filters as they are', () => {
+    const result = legsQuery({
+      instructionId: new BigNumber(3),
+      legType: LegTypeEnum.OffChain,
+      legIndex: 2,
+    });
+
+    expect(result.variables).toEqual({
+      instructionId: '0000000003',
+      legType: LegTypeEnum.OffChain,
+      legIndex: 2,
     });
   });
 });
@@ -202,20 +243,23 @@ describe('historicalInstructionsQuery', () => {
 });
 
 describe('instructionEventsQuery', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
+  it('should pass the variables to the grapqhl query, with the instruction id padded', () => {
+    let result = instructionEventsQuery({
       event: InstructionEventEnum.InstructionExecuted,
-      instructionId: '1',
+      instructionId: new BigNumber(1),
+    });
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      event: InstructionEventEnum.InstructionExecuted,
+      instructionId: '0000000001',
       size: DEFAULT_GQL_PAGE_SIZE,
       start: 0,
-    };
-    let result = instructionEventsQuery(variables);
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    });
 
     result = instructionEventsQuery(
       {
         event: InstructionEventEnum.InstructionFailed,
+        instructionId: new BigNumber(10),
       },
       new BigNumber(10),
       new BigNumber(2)
@@ -224,6 +268,7 @@ describe('instructionEventsQuery', () => {
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
       event: InstructionEventEnum.InstructionFailed,
+      instructionId: '0000000010',
       size: 10,
       start: 2,
     });

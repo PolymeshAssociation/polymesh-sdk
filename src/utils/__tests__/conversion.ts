@@ -367,6 +367,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
+  portfolioToMiddlewarePortfolioId,
   posRatioToBigNumber,
   rawNominationToStakingNomination,
   rawStakingLedgerToStakingLedgerEntry,
@@ -5226,6 +5227,21 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(resultLeg.offChainAmount).toEqual(amount3);
     expect(resultLeg.from.did).toBe(portfolioDid2);
     expect(resultLeg.to.did).toBe(portfolioDid1);
+  });
+});
+
+describe('portfolioToMiddlewarePortfolioId', () => {
+  it('should build the id the middleware stores a portfolio under', () => {
+    expect(portfolioToMiddlewarePortfolioId('someDid', new BigNumber(2))).toBe('someDid/2');
+    expect(portfolioToMiddlewarePortfolioId('someDid', 3)).toBe('someDid/3');
+    expect(portfolioToMiddlewarePortfolioId('someDid')).toBe('someDid/0');
+  });
+
+  it('should be the reverse of portfolioIdStringToPortfolio', () => {
+    expect(portfolioIdStringToPortfolio(portfolioToMiddlewarePortfolioId('someDid', 5))).toEqual({
+      identityId: 'someDid',
+      number: 5,
+    });
   });
 });
 

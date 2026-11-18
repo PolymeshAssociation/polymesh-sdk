@@ -30,7 +30,6 @@ import {
 import { Ensured } from '~/types/utils';
 import {
   accountIdToString,
-  bigNumberToMiddlewareSequenceId,
   bigNumberToU64,
   bytesToString,
   identityIdToString,
@@ -271,7 +270,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery(
         {
-          venueId: bigNumberToMiddlewareSequenceId(id),
+          venueId: id,
         },
         size,
         start

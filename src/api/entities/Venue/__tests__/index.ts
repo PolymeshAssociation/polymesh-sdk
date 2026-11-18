@@ -176,7 +176,7 @@ describe('Venue class', () => {
       dsMockUtils.createApolloQueryMock(
         instructionsQuery(
           {
-            venueId: utilsConversionModule.bigNumberToMiddlewareSequenceId(venueId),
+            venueId,
           },
           new BigNumber(2),
           new BigNumber(0)
@@ -203,7 +203,7 @@ describe('Venue class', () => {
 
       dsMockUtils.createApolloQueryMock(
         instructionsQuery({
-          venueId: utilsConversionModule.bigNumberToMiddlewareSequenceId(venueId),
+          venueId,
         }),
         {
           instructions: instructionsResponse,

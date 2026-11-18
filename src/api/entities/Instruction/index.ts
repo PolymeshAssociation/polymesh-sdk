@@ -74,7 +74,6 @@ import { isOffChainLeg } from '~/utils';
 import {
   assetIdToString,
   balanceToBigNumber,
-  bigNumberToMiddlewareSequenceId,
   bigNumberToU64,
   dateToMoment,
   identityIdToString,
@@ -487,7 +486,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery({
-        id: bigNumberToMiddlewareSequenceId(id),
+        id,
       })
     );
 
@@ -652,7 +651,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       } = await context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
         instructionAffirmationsQuery(
           {
-            instructionId: bigNumberToMiddlewareSequenceId(id),
+            instructionId: id,
             isMediator: false,
           },
           paginationOpts?.size,
@@ -860,7 +859,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       } = await context.queryMiddleware<Ensured<Query, 'legs'>>(
         legsQuery(
           {
-            instructionId: bigNumberToMiddlewareSequenceId(id),
+            instructionId: id,
           },
           paginationOpts?.size,
           start
@@ -1032,7 +1031,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       instructionEventsQuery(
         {
           event,
-          instructionId: bigNumberToMiddlewareSequenceId(id),
+          instructionId: id,
         },
         new BigNumber(1),
         new BigNumber(0)
@@ -1129,7 +1128,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         this.getInstructionFromMiddleware(),
         context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
           instructionAffirmationsQuery({
-            instructionId: bigNumberToMiddlewareSequenceId(id),
+            instructionId: id,
             isMediator: true,
           })
         ),
@@ -1206,7 +1205,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       } = await context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
         offChainAffirmationsQuery({
-          instructionId: bigNumberToMiddlewareSequenceId(id),
+          instructionId: id,
         })
       );
 
@@ -1277,7 +1276,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       } = await context.queryMiddleware<Ensured<Query, 'legs'>>(
         legsQuery({
-          instructionId: bigNumberToMiddlewareSequenceId(id),
+          instructionId: id,
           legIndex: legId.toNumber(),
           legType: LegTypeEnum.OffChain,
         })

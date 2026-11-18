@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { print } from 'graphql';
 
 import { assetTransactionQuery } from '~/middleware/queries/assets';
@@ -46,7 +47,7 @@ describe('paginated query ordering', () => {
     ['extrinsicsByArgs', print(extrinsicsByArgs({}).query)],
     [PROPOSALS, print(multiSigProposalsQuery({ multisigId }).query)],
     ['polyxTransactionsQuery', print(polyxTransactionsQuery({}).query)],
-    [AFFIRMATIONS, print(instructionAffirmationsQuery({ instructionId: '1' }).query)],
+    [AFFIRMATIONS, print(instructionAffirmationsQuery({ instructionId: new BigNumber(1) }).query)],
     ['investmentsQuery', print(investmentsQuery({ stoId }).query)],
   ];
 

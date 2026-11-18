@@ -2,7 +2,12 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
+import {
+  createArgsAndFilters,
+  eventIdentifierFields,
+  getSizeAndOffset,
+  orderByClause,
+} from '~/middleware/queries/common';
 import { EventIdEnum, EventsOrderBy, ModuleIdEnum } from '~/middleware/types';
 import { PaginatedQueryArgs } from '~/types/utils';
 
@@ -52,12 +57,7 @@ export function eventsByArgs(
         offset: $start
       ) {
         nodes {
-          eventIdx
-          block {
-            blockId
-            hash
-            datetime
-          }
+          ${eventIdentifierFields}
         }
       }
     }

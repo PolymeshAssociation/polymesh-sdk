@@ -4783,6 +4783,19 @@ export function instructionMemoToString(value: U8aFixed): string {
 
 /**
  * @hidden
+ *
+ * The id the middleware stores a portfolio under: `<did>/<number>`, the default portfolio being
+ *   number 0. The reverse of `portfolioIdStringToPortfolio`
+ */
+export function portfolioToMiddlewarePortfolioId(
+  identityId: string,
+  portfolioNumber?: BigNumber | number
+): string {
+  return `${identityId}/${portfolioNumber?.toString() ?? '0'}`;
+}
+
+/**
+ * @hidden
  */
 export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
   const [identityId, number] = id.split('/');
@@ -5459,7 +5472,7 @@ export function toHistoricalSettlements(
   const getDirection = (leg: MiddlewareLeg): SettlementDirectionEnum => {
     const { fromId, fromPortfolioId, toId, toPortfolioId } = leg;
     const { identityId, portfolio } = filter;
-    const portfolioId = `${identityId}/${portfolio}`;
+    const portfolioId = portfolioToMiddlewarePortfolioId(identityId, portfolio);
 
     let result = SettlementDirectionEnum.None;
 
