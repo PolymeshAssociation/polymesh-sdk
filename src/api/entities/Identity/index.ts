@@ -5,7 +5,7 @@ import {
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { chunk, differenceWith, groupBy, intersectionWith, uniqBy } from 'lodash';
+import { chunk, differenceWith, intersectionWith, uniqBy } from 'lodash';
 
 import { AssetPermissions } from '~/api/entities/Identity/AssetPermissions';
 import { IdentityAuthorizations } from '~/api/entities/Identity/IdentityAuthorizations';
@@ -87,7 +87,7 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAccount,
-  getAllMiddlewareNfts,
+  getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   getSecondaryAccountPermissions,
   requestPaginated,
@@ -528,7 +528,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @param opts.heldNow - exclude collections the Identity no longer holds any NFT of. The
    *   indexer keeps a holding once it has existed, so by default a collection held at any point
-   *   is returned, with an empty `nfts` list
+   *   is returned, with an `nftCount` of 0
    * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
    *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
    *   that paging cannot repeat or skip a row
@@ -536,8 +536,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *   Passing both throws, since neither can be said to have been meant
    *
    * @note uses the middlewareV2
-   * @note supports pagination. A page is a page of collections, each with every NFT the Identity
-   *   holds in it, so a collection with many NFTs takes several middleware requests
+   * @note supports pagination
+   * @note `getHeldNftsOfCollection` lists the NFTs held in a collection
    */
   public async getHeldNfts(
     opts: MiddlewarePaginationOptions & {
@@ -565,30 +565,48 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    // the holdings are one page of collections; their NFTs are read in full for that page
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const heldIds = nodes.filter(({ nftCount }) => nftCount > 0).map(({ asset }) => asset!.id);
-    const nfts = heldIds.length
-      ? await getAllMiddlewareNfts(context, (pageSize, offset) =>
-          heldNftsQuery({ identityId: did, assetIds: heldIds }, pageSize, offset)
-        )
-      : [];
-    const nftsByAsset = groupBy(nfts, 'assetId');
-
-    const data = nodes.map(({ asset }) => {
+    const data = nodes.map(({ asset, nftCount }) => ({
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const middlewareAssetId = asset!.id;
-      const assetId = getAssetIdFromMiddleware(middlewareAssetId);
-      const collection = new NftCollection({ assetId }, context);
+      collection: new NftCollection({ assetId: getAssetIdFromMiddleware(asset!.id) }, context),
+      nftCount: new BigNumber(nftCount),
+    }));
 
-      return {
-        collection,
-        nfts: (nftsByAsset[middlewareAssetId] ?? []).map(
-          ({ nftId }) => new Nft({ assetId, id: new BigNumber(nftId) }, context)
-        ),
-      };
-    });
+    const next = calculateNextKey(count, data.length, start);
 
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve the NFTs this Identity holds in a collection, in any of its portfolios or Accounts
+   *
+   * @param opts.collection - the NFT collection, or its Asset ID or ticker
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination
+   */
+  public async getHeldNftsOfCollection(
+    opts: MiddlewarePaginationOptions & { collection: string | NftCollection }
+  ): Promise<ResultSet<Nft>> {
+    const { context, did } = this;
+    const { collection, size, start } = opts;
+
+    const middlewareAssetId = await getAssetIdForMiddleware(collection, context);
+    const assetId = getAssetIdFromMiddleware(middlewareAssetId);
+
+    const {
+      data: {
+        nfts: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'nfts'>>(
+      heldNftsQuery({ identityId: did, assetId: middlewareAssetId }, size, start)
+    );
+
+    const count = new BigNumber(totalCount);
+    const data = nodes.map(({ nftId }) => new Nft({ assetId, id: new BigNumber(nftId) }, context));
     const next = calculateNextKey(count, data.length, start);
 
     return {

@@ -7,7 +7,6 @@ import {
   assetTransactionQuery,
   heldNftsQuery,
   nftCollectionHolders,
-  nftCollectionHoldersNftsQuery,
   nftHoldersQuery,
 } from '~/middleware/queries/assets';
 import { AssetHoldersOrderBy } from '~/middleware/types';
@@ -124,27 +123,16 @@ describe('nftCollectionHoldersQuery', () => {
 });
 
 describe('heldNftsQuery', () => {
-  it('should read the NFTs an Identity holds in the given collections', () => {
-    const filters = { identityId: 'someDid', assetIds: ['0x01', '0x02'] };
+  it('should read the NFTs an Identity holds in one collection', () => {
+    const filters = { identityId: 'someDid', assetId: '0x01' };
 
-    const result = heldNftsQuery(filters, new BigNumber(100), new BigNumber(200));
+    const result = heldNftsQuery(filters, new BigNumber(10), new BigNumber(20));
 
-    expect(print(result.query)).toContain('assetId: {in: $assetIds}');
+    expect(print(result.query)).toContain('assetId: {equalTo: $assetId}');
     expect(print(result.query)).toContain('holding: {identityId: {equalTo: $identityId}}');
-    expect(print(result.query)).toContain('orderBy: [ASSET_ID_ASC, NFT_ID_ASC]');
-    expect(result.variables).toEqual({ ...filters, size: 100, start: 200 });
-  });
-});
-
-describe('nftCollectionHoldersNftsQuery', () => {
-  it('should read the NFTs some Identities hold in a collection', () => {
-    const filters = { assetId: '0x01', identityIds: ['someDid', 'otherDid'] };
-
-    const result = nftCollectionHoldersNftsQuery(filters, new BigNumber(100), new BigNumber(0));
-
-    expect(print(result.query)).toContain('holding: {identityId: {in: $identityIds}}');
     expect(print(result.query)).toContain('orderBy: [NFT_ID_ASC]');
-    expect(result.variables).toEqual({ ...filters, size: 100, start: 0 });
+    expect(print(result.query)).toContain('totalCount');
+    expect(result.variables).toEqual({ ...filters, size: 10, start: 20 });
   });
 });
 

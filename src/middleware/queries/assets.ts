@@ -177,28 +177,27 @@ export function nftHoldersQuery(
 /**
  * @hidden
  *
- * Get the NFTs a DID holds in some collections
+ * Get the NFTs a DID holds in a collection
  */
 export function heldNftsQuery(
-  filters: { identityId: string; assetIds: string[] },
+  filters: { identityId: string; assetId: string },
   size?: BigNumber,
   start?: BigNumber
-): QueryOptions<PaginatedQueryArgs<{ identityId: string; assetIds: string[] }>> {
-  // `nftId` is unique within a collection
+): QueryOptions<PaginatedQueryArgs<{ identityId: string; assetId: string }>> {
+  // `nftId` is unique within the collection this always filters by
   const query = gql`
-    query NftHolderNftsQuery($start: Int, $size: Int, $identityId: String!, $assetIds: [String!]!) {
+    query NftHolderNftsQuery($start: Int, $size: Int, $identityId: String!, $assetId: String!) {
       nfts(
         filter: {
-          assetId: { in: $assetIds }
+          assetId: { equalTo: $assetId }
           holding: { identityId: { equalTo: $identityId } }
         }
         first: $size
         offset: $start
-        orderBy: [${NftsOrderBy.AssetIdAsc}, ${NftsOrderBy.NftIdAsc}]
+        orderBy: [${NftsOrderBy.NftIdAsc}]
       ) {
         totalCount
         nodes {
-          assetId
           nftId
         }
       }
@@ -304,44 +303,5 @@ export function nftCollectionHolders(
   return {
     query,
     variables: { ...getSizeAndOffset(size, start), assetId },
-  };
-}
-
-/**
- * @hidden
- *
- * Get the NFTs some Identities hold in a collection
- */
-export function nftCollectionHoldersNftsQuery(
-  filters: { assetId: string; identityIds: string[] },
-  size?: BigNumber,
-  start?: BigNumber
-): QueryOptions<PaginatedQueryArgs<{ assetId: string; identityIds: string[] }>> {
-  // `nftId` is unique within the collection this always filters by
-  const query = gql`
-    query NftCollectionHoldersNfts($assetId: String!, $identityIds: [String!]!, $size: Int, $start: Int) {
-      nfts(
-        filter: {
-          assetId: { equalTo: $assetId }
-          holding: { identityId: { in: $identityIds } }
-        }
-        first: $size
-        offset: $start
-        orderBy: [${NftsOrderBy.NftIdAsc}]
-      ) {
-        totalCount
-        nodes {
-          nftId
-          holding {
-            identityId
-          }
-        }
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }

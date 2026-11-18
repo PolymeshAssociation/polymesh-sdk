@@ -147,9 +147,16 @@ export interface HolderFreezeStatus extends NftHolderFreezeStatus {
 /**
  * Represents the holdings of an NFT holder
  */
+/**
+ * An Identity holding NFTs of a collection
+ */
 export interface IdentityHeldNfts {
   identity: Identity;
-  nfts: Nft[];
+  /**
+   * how many of the collection's NFTs the Identity holds. `identity.getHeldNftsOfCollection` lists
+   *   them
+   */
+  nftCount: BigNumber;
 }
 
 export interface TransferRestrictionResult {
@@ -391,7 +398,11 @@ export interface HistoricAgentOperation {
  */
 export interface HeldNfts {
   collection: NftCollection;
-  nfts: Nft[];
+  /**
+   * how many of the collection's NFTs the Identity holds. `identity.getHeldNftsOfCollection` lists
+   *   them
+   */
+  nftCount: BigNumber;
 }
 
 /**

@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
-import { groupBy } from 'lodash';
 
-import { Identity, Namespace, Nft } from '~/internal';
-import { nftCollectionHolders, nftCollectionHoldersNftsQuery } from '~/middleware/queries/assets';
+import { Identity, Namespace } from '~/internal';
+import { nftCollectionHolders } from '~/middleware/queries/assets';
 import { Query } from '~/middleware/types';
 import {
   AssetHolderLike,
@@ -13,23 +12,18 @@ import {
   ResultSet,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import {
-  calculateNextKey,
-  getAllMiddlewareNfts,
-  getAssetIdForMiddleware,
-  getHolderFreezeStatus,
-} from '~/utils/internal';
+import { calculateNextKey, getAssetIdForMiddleware, getHolderFreezeStatus } from '~/utils/internal';
 
 /**
  * Handles all NFT Holders related functionality
  */
 export class AssetHolders extends Namespace<NftCollection> {
   /**
-   * Retrieve all the NFT Holders with their holdings
+   * Retrieve the Identities holding NFTs of this collection, with how many each holds
    *
    * @note uses the middlewareV2
-   * @note supports pagination. A page is a page of holders, each with every NFT it holds, so a
-   *   holder with many NFTs takes several middleware requests
+   * @note supports pagination
+   * @note `identity.getHeldNftsOfCollection` lists the NFTs a holder holds
    */
   public async get(opts: MiddlewarePaginationOptions): Promise<ResultSet<IdentityHeldNfts>> {
     const {
@@ -49,25 +43,9 @@ export class AssetHolders extends Namespace<NftCollection> {
       nftCollectionHolders(middlewareAssetId, size, start)
     );
 
-    // the holders are one page; every NFT each of them holds is read for that page
-    const identityIds = nodes.map(({ identityId }) => identityId);
-    const nfts = identityIds.length
-      ? await getAllMiddlewareNfts(context, (pageSize, offset) =>
-          nftCollectionHoldersNftsQuery(
-            { assetId: middlewareAssetId, identityIds },
-            pageSize,
-            offset
-          )
-        )
-      : [];
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const nftsByHolder = groupBy(nfts, nft => nft.holding!.identityId);
-
-    const data = nodes.map(({ identityId }) => ({
+    const data = nodes.map(({ identityId, nftCount }) => ({
       identity: new Identity({ did: identityId }, context),
-      nfts: (nftsByHolder[identityId] ?? []).map(
-        ({ nftId }) => new Nft({ id: new BigNumber(nftId), assetId }, context)
-      ),
+      nftCount: new BigNumber(nftCount),
     }));
 
     const next = calculateNextKey(new BigNumber(totalCount), nodes.length, start);

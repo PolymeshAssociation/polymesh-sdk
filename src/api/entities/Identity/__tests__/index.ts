@@ -100,6 +100,7 @@ describe('Identity class', () => {
   let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
   let getAccountSpy: jest.SpyInstance<Promise<Account>, [{ address: string }, Context]>;
   let getAssetIdFromMiddlewareSpy: jest.SpyInstance;
+  let getAssetIdForMiddlewareSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -110,6 +111,7 @@ describe('Identity class', () => {
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
     getAssetIdFromMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdFromMiddleware');
+    getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
   });
 
   beforeEach(() => {
@@ -669,14 +671,7 @@ describe('Identity class', () => {
     const did = 'someDid';
     const assetIds = ['0x12341234123412341234123412341234', '0x4321'];
 
-    const mockNfts = (heldIds: string[], nodes: { assetId: string; nftId: string }[]): void => {
-      dsMockUtils.createApolloQueryMock(
-        heldNftsQuery({ identityId: did, assetIds: heldIds }, new BigNumber(100), new BigNumber(0)),
-        { nfts: { nodes, totalCount: nodes.length } }
-      );
-    };
-
-    it('should return a list of HeldNfts', async () => {
+    it('should return a list of HeldNfts with how many NFTs each collection holds', async () => {
       const identity = new Identity({ did }, context);
 
       assetIds.forEach(assetId =>
@@ -685,7 +680,7 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {
         assetHolders: {
-          nodes: assetIds.map(assetId => ({ asset: { id: assetId }, nftCount: 0 })),
+          nodes: assetIds.map((assetId, i) => ({ asset: { id: assetId }, nftCount: i * 3 })),
           totalCount: 2,
         },
       });
@@ -693,8 +688,9 @@ describe('Identity class', () => {
       let result = await identity.getHeldNfts();
 
       expect(result.data[0]!.collection.id).toBe(assetIds[0]);
+      expect(result.data[0]!.nftCount).toEqual(new BigNumber(0));
       expect(result.data[1]!.collection.id).toBe(assetIds[1]);
-      expect(result.data[0]!.nfts).toEqual([]);
+      expect(result.data[1]!.nftCount).toEqual(new BigNumber(3));
 
       dsMockUtils.createApolloQueryMock(
         nftHoldersQuery(
@@ -705,16 +701,11 @@ describe('Identity class', () => {
         ),
         {
           assetHolders: {
-            nodes: assetIds.map(assetId => ({ asset: { id: assetId }, nftCount: 2 })),
+            nodes: [{ asset: { id: assetIds[0] }, nftCount: 2 }],
             totalCount: 2,
           },
         }
       );
-      mockNfts(assetIds, [
-        { assetId: assetIds[0]!, nftId: '1' },
-        { assetId: assetIds[0]!, nftId: '3' },
-        { assetId: assetIds[1]!, nftId: '2' },
-      ]);
 
       result = await identity.getHeldNfts({
         start: new BigNumber(0),
@@ -722,13 +713,10 @@ describe('Identity class', () => {
         orderBy: AssetHoldersOrderBy.CreatedEventIdAsc,
       });
 
-      expect(result.data[0]!.collection.id).toBe(assetIds[0]);
-      expect(result.data[1]!.collection.id).toBe(assetIds[1]);
-      expect(result.data[0]!.nfts).toEqual([
-        expect.objectContaining({ id: new BigNumber(1) }),
-        expect.objectContaining({ id: new BigNumber(3) }),
+      expect(result.data).toEqual([
+        { collection: expect.objectContaining({ id: assetIds[0] }), nftCount: new BigNumber(2) },
       ]);
-      expect(result.data[1]!.nfts).toEqual([expect.objectContaining({ id: new BigNumber(2) })]);
+      expect(result.next).toEqual(new BigNumber(1));
     });
 
     it('should ask the indexer to exclude collections held down to nothing', async () => {
@@ -747,7 +735,6 @@ describe('Identity class', () => {
           },
         }
       );
-      mockNfts([assetId], [{ assetId, nftId: '1' }]);
 
       const result = await identity.getHeldNfts({ heldNow: true });
 
@@ -776,7 +763,6 @@ describe('Identity class', () => {
           },
         }
       );
-      mockNfts([assetId], [{ assetId, nftId: '1' }]);
 
       const result = await identity.getHeldNfts({ order: AssetHoldersOrderBy.CreatedEventIdAsc });
 
@@ -792,6 +778,44 @@ describe('Identity class', () => {
           orderBy: AssetHoldersOrderBy.CreatedEventIdDesc,
         })
       ).rejects.toThrow('Pass "orderBy" or the deprecated "order", not both');
+    });
+  });
+
+  describe('method: getHeldNftsOfCollection', () => {
+    const did = 'someDid';
+    const assetId = '0x12341234123412341234123412341234';
+
+    it('should return a page of the NFTs this Identity holds in a collection', async () => {
+      const identity = new Identity({ did }, context);
+
+      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+      when(getAssetIdFromMiddlewareSpy).calledWith(assetId).mockReturnValue(assetId);
+
+      dsMockUtils.createApolloQueryMock(
+        heldNftsQuery({ identityId: did, assetId }, new BigNumber(2), new BigNumber(0)),
+        {
+          nfts: {
+            nodes: [{ nftId: '1' }, { nftId: '3' }],
+            totalCount: 5,
+          },
+        }
+      );
+
+      const result = await identity.getHeldNftsOfCollection({
+        collection: assetId,
+        size: new BigNumber(2),
+        start: new BigNumber(0),
+      });
+
+      expect(result.data).toEqual([
+        expect.objectContaining({
+          id: new BigNumber(1),
+          collection: expect.objectContaining({ id: assetId }),
+        }),
+        expect.objectContaining({ id: new BigNumber(3) }),
+      ]);
+      expect(result.count).toEqual(new BigNumber(5));
+      expect(result.next).toEqual(new BigNumber(2));
     });
   });
 
