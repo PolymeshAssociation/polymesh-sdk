@@ -5271,6 +5271,15 @@ describe('middlewareDateToDate', () => {
     );
   });
 
+  it('should read a space separated date-time with no zone marker as UTC', () => {
+    expect(middlewareDateToDate('2024-01-01 10:00:00')).toEqual(
+      new Date(Date.UTC(2024, 0, 1, 10, 0, 0))
+    );
+    expect(middlewareDateToDate('2024-01-01 10:00:00.5')).toEqual(
+      new Date(Date.UTC(2024, 0, 1, 10, 0, 0, 500))
+    );
+  });
+
   it('should read a date with no time as UTC midnight', () => {
     expect(middlewareDateToDate('2020-10-10')).toEqual(new Date(Date.UTC(2020, 9, 10)));
   });
