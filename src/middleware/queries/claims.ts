@@ -229,6 +229,7 @@ export function trustingAssetsQuery(
           asset {
             id
             ticker
+            isNftCollection
           }
         }
       }

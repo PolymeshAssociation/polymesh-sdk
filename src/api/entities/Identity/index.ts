@@ -641,11 +641,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Get the list of Assets for which this Identity is a trusted claim issuer
+   * Get the list of Assets for which this Identity is a trusted claim issuer: fungible Assets and
+   *   NFT collections
    *
    * @note uses the middlewareV2
    */
-  public async getTrustingAssets(): Promise<FungibleAsset[]> {
+  public async getTrustingAssets(): Promise<(FungibleAsset | NftCollection)[]> {
     const { context, did } = this;
 
     const {
@@ -656,9 +657,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       trustingAssetsQuery({ issuer: did })
     );
 
-    return nodes.map(
-      ({ asset }) => new FungibleAsset({ assetId: getAssetIdFromMiddleware(asset!.id) }, context)
-    );
+    return nodes.map(({ asset }) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const { id, isNftCollection } = asset!;
+      const assetId = getAssetIdFromMiddleware(id);
+
+      return isNftCollection
+        ? new NftCollection({ assetId }, context)
+        : new FungibleAsset({ assetId }, context);
+    });
   }
 
   /**

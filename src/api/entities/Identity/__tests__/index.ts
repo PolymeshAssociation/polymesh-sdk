@@ -17,6 +17,7 @@ import {
   Entity,
   FungibleAsset,
   Identity,
+  NftCollection,
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
@@ -550,7 +551,9 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(trustingAssetsQuery({ issuer: did }), {
         trustedClaimIssuers: {
-          nodes: assetIds.map(assetId => ({ asset: { id: assetId } })),
+          nodes: assetIds.map((assetId, i) => ({
+            asset: { id: assetId, isNftCollection: i === 1 },
+          })),
         },
       });
 
@@ -561,7 +564,9 @@ describe('Identity class', () => {
       const result = await identity.getTrustingAssets();
 
       expect(result[0]!.id).toBe(assetIds[0]);
+      expect(result[0]).toBeInstanceOf(FungibleAsset);
       expect(result[1]!.id).toBe(assetIds[1]);
+      expect(result[1]).toBeInstanceOf(NftCollection);
     });
   });
 
