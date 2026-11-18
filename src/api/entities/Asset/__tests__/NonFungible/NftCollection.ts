@@ -748,9 +748,9 @@ describe('NftCollection class', () => {
             eventId: EventIdEnum.Issued,
             toPortfolioId: 'SOME_DID/0',
             fromPortfolioId: null,
-            extrinsicIdx: 1,
             createdEvent: {
               eventIdx: 1,
+              extrinsicIdx: 1,
               block: {
                 blockId: new BigNumber(123),
                 hash: 'SOME_HASH',
@@ -766,9 +766,9 @@ describe('NftCollection class', () => {
             fromPortfolioId: 'SOME_DID/0',
             instructionId: 1,
             instructionMemo: 'some memo',
-            extrinsicIdx: 1,
             createdEvent: {
               eventIdx: 1,
+              extrinsicIdx: null,
               block: {
                 blockId: new BigNumber(123),
                 hash: 'SOME_HASH',
@@ -813,6 +813,9 @@ describe('NftCollection class', () => {
       expect(result.data[1]!.instructionId).toEqual(new BigNumber(1));
       expect(result.data[1]!.instructionMemo).toEqual('some memo');
 
+      expect(result.data[0]!.extrinsicIndex).toEqual(new BigNumber(1));
+      expect(result.data[1]!.extrinsicIndex).toBeNull();
+      expect(result.data[1]!.eventIndex).toEqual(new BigNumber(1));
       expect(result.count).toEqual(transactionResponse.totalCount);
       expect(result.next).toEqual(new BigNumber(2));
     });

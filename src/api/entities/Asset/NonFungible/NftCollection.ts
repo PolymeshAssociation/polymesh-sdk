@@ -537,8 +537,11 @@ export class NftCollection extends BaseAsset {
         fundingRound,
         instructionId: instructionId ? new BigNumber(instructionId) : undefined,
         instructionMemo,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extrinsicIndex: new BigNumber(createdEvent!.extrinsicIdx!),
+        // an event emitted outside any extrinsic, such as at the start of a block, has none
+        extrinsicIndex:
+          createdEvent?.extrinsicIdx === null || createdEvent?.extrinsicIdx === undefined
+            ? null
+            : new BigNumber(createdEvent.extrinsicIdx),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ...middlewareEventToEventIdentifier(createdEvent!),
       });

@@ -219,8 +219,11 @@ export interface BaseHistoricAssetTransaction extends EventIdentifier {
 
   /**
    * Index value of the extrinsic which led to the Asset transaction within the `blockNumber` block
+   *
+   * @note null when no extrinsic made it, such as a settlement executed by the chain at the start
+   *   of a block
    */
-  extrinsicIndex: BigNumber;
+  extrinsicIndex: BigNumber | null;
 
   /**
    * Name of the funding round (if provided while issuing the Asset). This value is present only when the value of `event` is `Issued`

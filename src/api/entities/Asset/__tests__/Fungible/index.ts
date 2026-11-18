@@ -894,9 +894,9 @@ describe('Fungible class', () => {
             eventId: EventIdEnum.Issued,
             toPortfolioId: 'SOME_DID/0',
             fromPortfolioId: null,
-            eventIdx: 1,
-            extrinsicIdx: 1,
             createdEvent: {
+              eventIdx: 1,
+              extrinsicIdx: 0,
               block: {
                 blockId: new BigNumber(123),
                 hash: 'SOME_HASH',
@@ -910,9 +910,9 @@ describe('Fungible class', () => {
             eventId: EventIdEnum.Redeemed,
             fromPortfolioId: 'SOME_DID/0',
             toPortfolioId: null,
-            eventIdx: 1,
-            extrinsicIdx: 1,
             createdEvent: {
+              eventIdx: 1,
+              extrinsicIdx: 1,
               block: {
                 blockId: new BigNumber(123),
                 hash: 'SOME_HASH',
@@ -928,9 +928,9 @@ describe('Fungible class', () => {
             toPortfolioId: 'SOME_OTHER_DID/1',
             instructionId: '2',
             instructionMemo: 'Some memo',
-            eventIdx: 1,
-            extrinsicIdx: 1,
             createdEvent: {
+              eventIdx: 1,
+              extrinsicIdx: null,
               block: {
                 blockId: new BigNumber(123),
                 hash: 'SOME_HASH',
@@ -976,6 +976,13 @@ describe('Fungible class', () => {
       expect(result.data[2]!.to).toBeInstanceOf(NumberedPortfolio);
       expect(result.data[2]!.instructionId).toEqual(new BigNumber(2));
       expect(result.data[2]!.instructionMemo).toEqual('Some memo');
+
+      // index 0 is a real index, and a transfer made at the start of a block has none
+      expect(result.data[0]!.extrinsicIndex).toEqual(new BigNumber(0));
+      expect(result.data[1]!.extrinsicIndex).toEqual(new BigNumber(1));
+      expect(result.data[2]!.extrinsicIndex).toBeNull();
+      expect(result.data[0]!.eventIndex).toEqual(new BigNumber(1));
+      expect(result.data[0]!.blockNumber).toEqual(new BigNumber(123));
 
       expect(result.count).toEqual(transactionResponse.totalCount);
       expect(result.next).toEqual(new BigNumber(3));
