@@ -129,7 +129,8 @@ export type LegStatus =
  */
 export interface InstructionAffirmation {
   /**
-   * the Account holding the Assets, or the Identity owning `portfolio`
+   * the Account holding the Assets, or the Identity owning `portfolio`. For a claimed off-chain
+   *   receipt, the Identity that claimed it, with no `portfolio`
    */
   party: Identity | Account;
   /**

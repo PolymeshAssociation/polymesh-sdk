@@ -1210,6 +1210,40 @@ describe('Instruction class', () => {
         expect(data[0]!.portfolio).toBeUndefined();
         expect(data[0]!.status).toEqual(status);
       });
+
+      it('should return a claimed off-chain receipt with its Identity as the party', async () => {
+        const start = new BigNumber(0);
+        const size = new BigNumber(1);
+        dsMockUtils.createApolloQueryMock(
+          instructionAffirmationsQuery(
+            { instructionId: bigNumberToMiddlewareSequenceId(id), isMediator: false },
+            size,
+            start
+          ),
+          {
+            instructionAffirmations: {
+              nodes: [
+                {
+                  // the middleware writes a receipt's row with no Account or portfolio
+                  identityId: did,
+                  accountId: null,
+                  portfolioId: null,
+                  offChainReceiptId: 'someSigner/1',
+                  status: AffirmStatusEnum.Affirmed,
+                },
+              ],
+              totalCount: new BigNumber(1),
+            },
+          }
+        );
+
+        const { data } = await instruction.getAffirmations({ start, size });
+
+        expect(data).toHaveLength(1);
+        expect((data[0]!.party as Identity).did).toEqual(did);
+        expect(data[0]!.portfolio).toBeUndefined();
+        expect(data[0]!.status).toEqual(AffirmationStatus.Affirmed);
+      });
     });
   });
 
