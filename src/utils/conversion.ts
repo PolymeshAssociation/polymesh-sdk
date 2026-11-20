@@ -5475,17 +5475,20 @@ export function toHistoricalSettlements(
     const { identityId, portfolio } = filter;
     const portfolioId = portfolioToMiddlewarePortfolioId(identityId, portfolio);
 
+    // with no portfolio, any of the Identity's portfolios counts; 0 is the default portfolio
+    const isAllPortfolios = portfolio === undefined;
+
     let result = SettlementDirectionEnum.None;
 
     if (fromId === toId) {
       result = SettlementDirectionEnum.None;
     } else if (fromId === identityId) {
-      if (!portfolio || fromPortfolioId === portfolioId) {
-        result = SettlementDirectionEnum.Incoming;
+      if (isAllPortfolios || fromPortfolioId === portfolioId) {
+        result = SettlementDirectionEnum.Outgoing;
       }
     } else if (toId === identityId) {
-      if (!portfolio || toPortfolioId === portfolioId) {
-        result = SettlementDirectionEnum.Outgoing;
+      if (isAllPortfolios || toPortfolioId === portfolioId) {
+        result = SettlementDirectionEnum.Incoming;
       }
     }
     return result;

@@ -5057,6 +5057,77 @@ describe('toHistoricalSettlements', () => {
   });
 });
 
+describe('toHistoricalSettlements directions', () => {
+  const context = (): ReturnType<typeof dsMockUtils.getContextInstance> =>
+    dsMockUtils.getContextInstance();
+  const assetId = '0x12341234123412341234123412341234';
+
+  const settlement = (legs: Record<string, unknown>[]): MiddlewareLeg[] =>
+    [
+      {
+        instruction: {
+          id: '0000000001',
+          status: InstructionStatusEnum.Executed,
+          createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+          legs: {
+            nodes: legs.map(leg => ({
+              legType: LegTypeEnum.Fungible,
+              assetId,
+              amount: '1000000',
+              addresses: [],
+              ...leg,
+            })),
+          },
+        },
+      },
+    ] as unknown as MiddlewareLeg[];
+
+  const directions = (
+    legs: Record<string, unknown>[],
+    filter: { identityId: string; portfolio?: number }
+  ): SettlementDirectionEnum[] =>
+    toHistoricalSettlements(settlement(legs), [], filter, context())[0]!.legs.map(
+      ({ direction }) => direction
+    );
+
+  const leg = (from: string, to: string): Record<string, unknown> => ({
+    fromId: from.split('/')[0],
+    fromPortfolioId: from,
+    toId: to.split('/')[0],
+    toPortfolioId: to,
+  });
+
+  it('should report a leg sent by the portfolio as outgoing, and one it receives as incoming', () => {
+    expect(
+      directions([leg('me/0', 'other/0'), leg('other/0', 'me/0')], {
+        identityId: 'me',
+        portfolio: 0,
+      })
+    ).toEqual([SettlementDirectionEnum.Outgoing, SettlementDirectionEnum.Incoming]);
+  });
+
+  it('should not give a direction to a leg of another portfolio of the same Identity', () => {
+    expect(
+      directions([leg('me/2', 'other/0'), leg('other/0', 'me/2')], {
+        identityId: 'me',
+        portfolio: 0,
+      })
+    ).toEqual([SettlementDirectionEnum.None, SettlementDirectionEnum.None]);
+  });
+
+  it("should count any of the Identity's portfolios when no portfolio is given", () => {
+    expect(
+      directions([leg('me/2', 'other/0'), leg('other/0', 'me/0')], { identityId: 'me' })
+    ).toEqual([SettlementDirectionEnum.Outgoing, SettlementDirectionEnum.Incoming]);
+  });
+
+  it("should give no direction to a move between the Identity's own portfolios", () => {
+    expect(directions([leg('me/0', 'me/1')], { identityId: 'me' })).toEqual([
+      SettlementDirectionEnum.None,
+    ]);
+  });
+});
+
 describe('middlewareInstructionToHistoricInstruction', () => {
   it('should convert a middleware Instruction object to a HistoricInstruction', () => {
     const instructionId1 = new BigNumber(1);
