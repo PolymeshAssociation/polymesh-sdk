@@ -96,16 +96,24 @@ const instructionAffirmationAttributes = `
 `;
 
 /**
+ * The filter keys that hold an Instruction or Venue id
+ */
+const sequenceIdKeys = ['id', 'venueId', 'instructionId'];
+
+/**
  * @hidden
  *
  * An Instruction or Venue id is the chain's sequence number. The builders take it as a number and
- *   pad it the way the middleware stores it, so a caller cannot pass a form that matches nothing
+ *   pad it the way the middleware stores it, so a caller cannot pass a form that matches nothing.
+ *   Only the id keys are padded, so another number in the filters is left as it is
  */
 function withMiddlewareIds(filters: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(filters).map(([key, value]) => [
       key,
-      BigNumber.isBigNumber(value) ? bigNumberToMiddlewareSequenceId(value) : value,
+      sequenceIdKeys.includes(key) && BigNumber.isBigNumber(value)
+        ? bigNumberToMiddlewareSequenceId(value)
+        : value,
     ])
   );
 }

@@ -145,9 +145,6 @@ export interface HolderFreezeStatus extends NftHolderFreezeStatus {
 }
 
 /**
- * Represents the holdings of an NFT holder
- */
-/**
  * An Identity holding NFTs of a collection
  */
 export interface IdentityHeldNfts {

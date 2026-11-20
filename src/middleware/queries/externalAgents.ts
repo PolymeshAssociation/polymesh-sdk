@@ -64,9 +64,6 @@ export function assetAgentHistoryQuery(
       ) {
         nodes {
           identityId
-          assetId
-          type
-          permissions
           createdEvent {
             ${eventIdentifierFields}
           }
@@ -111,10 +108,6 @@ export function assetAgentActionsQuery(
       ) {
         totalCount
         nodes {
-          assetId
-          callerId
-          palletName
-          eventId
           createdEvent {
             ${eventIdentifierFields}
           }

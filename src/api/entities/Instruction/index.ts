@@ -670,19 +670,17 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
             status: middlewareAffirmStatusToAffirmationStatus(status),
           };
         }
-        if (!portfolioId) {
-          // a claimed off-chain receipt is affirmed by an Identity, with no Account or portfolio
-          return {
-            party: new Identity({ did: identityId }, context),
-            status: middlewareAffirmStatusToAffirmationStatus(status),
-          };
-        }
+        // a claimed off-chain receipt is affirmed by an Identity, with no Account or portfolio
         return {
           party: new Identity({ did: identityId }, context),
-          portfolio: middlewarePortfolioToPortfolio(
-            portfolioIdStringToPortfolio(portfolioId),
-            context
-          ),
+          ...(portfolioId
+            ? {
+                portfolio: middlewarePortfolioToPortfolio(
+                  portfolioIdStringToPortfolio(portfolioId),
+                  context
+                ),
+              }
+            : {}),
           status: middlewareAffirmStatusToAffirmationStatus(status),
         };
       });

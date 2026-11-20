@@ -72,6 +72,16 @@ describe('offChainAffirmationsQuery', () => {
 });
 
 describe('legsQuery', () => {
+  it('should pad only the id keys, and leave another number in the filters as it is', () => {
+    const legIndex = new BigNumber(2);
+    const result = legsQuery({
+      instructionId: new BigNumber(3),
+      legIndex: legIndex as unknown as number,
+    });
+
+    expect(result.variables).toMatchObject({ instructionId: '0000000003', legIndex });
+  });
+
   it('should pad the instruction id, and keep the leg filters as they are', () => {
     const result = legsQuery({
       instructionId: new BigNumber(3),
