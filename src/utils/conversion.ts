@@ -2457,11 +2457,14 @@ export function bigNumberToMiddlewareSequenceId(id: BigNumber): string {
  *   marker, which `new Date` would read as local time
  */
 export function middlewareDateToDate(value: string): Date {
-  // a date with no time is already read as UTC. A date-time may come `T` or space separated, and
-  // `new Date` is only sure to read the `T` form with a zone marker
-  const isLocalDateTime = /\d[T ]\d{2}:\d{2}/.test(value) && !/(Z|[+-]\d{2}:?\d{2})$/.test(value);
+  // a date with no time is already read as UTC. A date-time may come `T` or space separated, with a
+  // `±HH` zone marker (Postgres' form for a whole hour offset), and `new Date` is only sure to read
+  // the `T` form, with an `±HH:MM` marker if any
+  const dateTime = value.replace(' ', 'T').replace(/(T[\d:.]+[+-]\d{2})$/, '$1:00');
+  const isLocalDateTime =
+    /\dT\d{2}:\d{2}/.test(dateTime) && !/(Z|[+-]\d{2}:?\d{2})$/.test(dateTime);
 
-  return new Date(isLocalDateTime ? `${value.replace(' ', 'T')}Z` : value);
+  return new Date(isLocalDateTime ? `${dateTime}Z` : dateTime);
 }
 
 /**

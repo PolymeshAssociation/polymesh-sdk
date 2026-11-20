@@ -5351,6 +5351,17 @@ describe('middlewareDateToDate', () => {
     );
   });
 
+  it('should read a whole hour zone marker, as Postgres writes it', () => {
+    const utc = new Date(Date.UTC(2024, 4, 1, 10, 0, 0));
+
+    expect(middlewareDateToDate('2024-05-01 10:00:00+00')).toEqual(utc);
+    expect(middlewareDateToDate('2024-05-01T05:00:00-05')).toEqual(utc);
+    expect(middlewareDateToDate('2024-05-01T15:30:00+0530')).toEqual(utc);
+    expect(middlewareDateToDate('2024-05-01T10:00:00.123456')).toEqual(
+      new Date(Date.UTC(2024, 4, 1, 10, 0, 0, 123))
+    );
+  });
+
   it('should read a date with no time as UTC midnight', () => {
     expect(middlewareDateToDate('2020-10-10')).toEqual(new Date(Date.UTC(2020, 9, 10)));
   });
