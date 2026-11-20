@@ -27,8 +27,9 @@ function createPolyxTransactionFilters({ identityId, addresses }: QueryPolyxTran
   const filters = [];
   const variables: QueryPolyxTransactionFilters = {};
 
-  // an entry is one side of a movement, so the entries of an Account or an Identity are exactly
-  // the movements it took part in
+  // an entry is one side of a movement and carries both its Account and that Account's Identity,
+  // so the entries of an Account or an Identity are exactly the movements it took part in. Given
+  // both, an entry has to match both: the Identity's entries on those Accounts
   if (identityId) {
     variables.identityId = identityId;
     args.push('$identityId: String!');
@@ -45,7 +46,7 @@ function createPolyxTransactionFilters({ identityId, addresses }: QueryPolyxTran
   if (filters.length === 1) {
     filter = `filter: ${filters[0]}`;
   } else if (filters.length) {
-    filter = `filter: { or: [ ${filters.join(', ')} ] }`;
+    filter = `filter: { and: [ ${filters.join(', ')} ] }`;
   }
 
   return {
@@ -89,7 +90,7 @@ export function polyxTransactionsQuery(
           counterpartyAddress
           counterpartyIdentityId
           pool
-          amount
+          amountAbs
           kind
           direction
           memo

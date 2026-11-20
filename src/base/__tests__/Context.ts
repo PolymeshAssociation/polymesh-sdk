@@ -2555,8 +2555,7 @@ describe('Context class', () => {
             pool: PolyxPool.Free,
             kind: MovementKind.Fee,
             direction: EntryDirection.Debit,
-            // the middleware signs an entry's amount by its direction
-            amount: '-3000',
+            amountAbs: '3000',
             accountId: 'someAddress',
             identityId: 'someDid',
             counterpartyAddress: null,
@@ -2580,7 +2579,7 @@ describe('Context class', () => {
             pool: PolyxPool.Free,
             kind: MovementKind.Transfer,
             direction: EntryDirection.Credit,
-            amount: '876023429',
+            amountAbs: '876023429',
             accountId: 'someAddress',
             identityId: null,
             counterpartyAddress: 'otherAddress',

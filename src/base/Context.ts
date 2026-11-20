@@ -1492,7 +1492,7 @@ export class Context {
         identityId,
         counterpartyAddress,
         counterpartyIdentityId,
-        amount,
+        amountAbs,
         direction,
         kind,
         pool,
@@ -1513,8 +1513,7 @@ export class Context {
         counterpartyIdentity: counterpartyIdentityId
           ? new Identity({ did: counterpartyIdentityId }, this)
           : undefined,
-        // the middleware signs the amount by direction
-        amount: new BigNumber(amount).abs().shiftedBy(-6),
+        amount: new BigNumber(amountAbs).shiftedBy(-6),
         direction,
         kind,
         pool,

@@ -19,7 +19,8 @@ describe('polyxTransactionsQuery', () => {
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
     expect(print(result.query)).toContain(
-      'filter: {or: [{identityId: {equalTo: $identityId}}, {accountId: {in: $addresses}}]}'
+      // both given narrows to the Identity's entries on those Accounts
+      'filter: {and: [{identityId: {equalTo: $identityId}}, {accountId: {in: $addresses}}]}'
     );
 
     result = polyxTransactionsQuery({}, new BigNumber(10), new BigNumber(2));
@@ -55,6 +56,13 @@ describe('polyxTransactionsQuery', () => {
     );
 
     expect(print(query)).toContain('orderBy: [CREATED_EVENT_ID_ASC, ID_DESC]');
+  });
+
+  it('should select the unsigned amount', () => {
+    const printed = print(polyxTransactionsQuery({}).query);
+
+    expect(printed).toContain('amountAbs');
+    expect(printed).not.toMatch(/\bamount\b/);
   });
 
   it('should request totalCount, which the ResultSet count is built from', () => {
