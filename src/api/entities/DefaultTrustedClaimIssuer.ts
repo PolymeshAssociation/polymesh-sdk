@@ -5,7 +5,7 @@ import { ErrorCode, EventIdentifier, TrustedFor } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   assetToMeshAssetId,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareEventToEventIdentifier,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
 import { getAssetIdForMiddleware, optionize } from '~/utils/internal';
@@ -72,7 +72,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
       })
     );
 
-    return optionize(middlewareEventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
+    return optionize(middlewareEventToEventIdentifier)(node?.createdEvent);
   }
 
   /**

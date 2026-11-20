@@ -105,6 +105,7 @@ import {
   Portfolio,
 } from '~/internal';
 import {
+  AssetTransaction,
   AuthTypeEnum,
   Block,
   CallIdEnum,
@@ -113,11 +114,16 @@ import {
   CustomClaimType as MiddlewareCustomClaimType,
   Instruction,
   InstructionStatusEnum,
+  Leg as MiddlewareLeg,
   LegTypeEnum,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
-import { ClaimScopeTypeEnum, MultiSigProposalStatusEnum } from '~/middleware/typesV1';
+import {
+  ClaimScopeTypeEnum,
+  MultiSigProposalStatusEnum,
+  SettlementDirectionEnum,
+} from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetHolder,
@@ -234,6 +240,7 @@ import {
   balanceToBigNumber,
   ballotVoteToMeshBallotVote,
   bigNumberToBalance,
+  bigNumberToMiddlewareSequenceId,
   bigNumberToU16,
   bigNumberToU32,
   bigNumberToU64,
@@ -332,8 +339,10 @@ import {
   middlewareAssetHolderToAssetHolder,
   middlewareAuthorizationDataToAuthorization,
   middlewareClaimToClaimData,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareDateToDate,
+  middlewareEventToEventIdentifier,
   middlewareInstructionToHistoricInstruction,
+  middlewareLegToLeg,
   middlewarePermissionsDataToPermissions,
   middlewarePortfolioDataToPortfolio,
   middlewarePortfolioToPortfolio,
@@ -358,6 +367,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
+  portfolioToMiddlewarePortfolioId,
   posRatioToBigNumber,
   rawNominationToStakingNomination,
   rawStakingLedgerToStakingLedgerEntry,
@@ -402,6 +412,7 @@ import {
   tickerToDid,
   tickerToString,
   toCustomClaimTypeWithIdentity,
+  toHistoricalSettlements,
   toIdentityWithClaimsArray,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
@@ -4971,6 +4982,152 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   });
 });
 
+describe('middlewareLegToLeg', () => {
+  it('should read an Account holder by its address, and a portfolio holder by its id', () => {
+    const context = dsMockUtils.getContextInstance();
+    const assetId = '0x12341234123412341234123412341234';
+
+    const leg = middlewareLegToLeg(
+      {
+        legType: LegTypeEnum.Fungible,
+        assetId,
+        amount: '1000000',
+        fromId: 'someDid',
+        fromAccountId: 'someAddress',
+        fromPortfolioId: null,
+        toId: 'otherDid',
+        toAccountId: null,
+        toPortfolioId: 'otherDid/2',
+      } as unknown as MiddlewareLeg,
+      context
+    ) as FungibleLeg;
+
+    expect(leg.from).toEqual(expect.objectContaining({ address: 'someAddress' }));
+    expect(leg.to).toEqual(
+      expect.objectContaining({
+        owner: expect.objectContaining({ did: 'otherDid' }),
+        id: new BigNumber(2),
+      })
+    );
+    expect(leg.amount).toEqual(new BigNumber(1));
+  });
+});
+
+describe('toHistoricalSettlements', () => {
+  it('should list an NFT movement between portfolios as an NFT leg', () => {
+    const context = dsMockUtils.getContextInstance();
+    const assetId = '0x12341234123412341234123412341234';
+
+    const [settlement] = toHistoricalSettlements(
+      [],
+      [
+        {
+          createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+          assetId,
+          nftIds: ['1', '3'],
+          fromPortfolioId: 'someDid/0',
+          toPortfolioId: 'someDid/1',
+          address: null,
+        },
+        {
+          // a movement between Accounts has no portfolio on either side
+          createdEvent: { eventIdx: 2, block: { blockId: 11, hash: 'otherHash' } },
+          assetId,
+          amount: '1',
+          fromPortfolioId: null,
+          toPortfolioId: null,
+          address: 'someAddress',
+        },
+      ] as unknown as AssetTransaction[],
+      { identityId: 'someDid' },
+      context
+    );
+
+    expect(settlement!.blockNumber).toEqual(new BigNumber(10));
+    expect(settlement!.accounts).toEqual([]);
+    expect(settlement!.legs).toEqual([
+      expect.objectContaining({
+        nfts: [
+          expect.objectContaining({ id: new BigNumber(1) }),
+          expect.objectContaining({ id: new BigNumber(3) }),
+        ],
+        direction: SettlementDirectionEnum.None,
+      }),
+    ]);
+  });
+});
+
+describe('toHistoricalSettlements directions', () => {
+  const context = (): ReturnType<typeof dsMockUtils.getContextInstance> =>
+    dsMockUtils.getContextInstance();
+  const assetId = '0x12341234123412341234123412341234';
+
+  const settlement = (legs: Record<string, unknown>[]): MiddlewareLeg[] =>
+    [
+      {
+        instruction: {
+          id: '0000000001',
+          status: InstructionStatusEnum.Executed,
+          createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+          legs: {
+            nodes: legs.map(leg => ({
+              legType: LegTypeEnum.Fungible,
+              assetId,
+              amount: '1000000',
+              addresses: [],
+              ...leg,
+            })),
+          },
+        },
+      },
+    ] as unknown as MiddlewareLeg[];
+
+  const directions = (
+    legs: Record<string, unknown>[],
+    filter: { identityId: string; portfolio?: number }
+  ): SettlementDirectionEnum[] =>
+    toHistoricalSettlements(settlement(legs), [], filter, context())[0]!.legs.map(
+      ({ direction }) => direction
+    );
+
+  const leg = (from: string, to: string): Record<string, unknown> => ({
+    fromId: from.split('/')[0],
+    fromPortfolioId: from,
+    toId: to.split('/')[0],
+    toPortfolioId: to,
+  });
+
+  it('should report a leg sent by the portfolio as outgoing, and one it receives as incoming', () => {
+    expect(
+      directions([leg('me/0', 'other/0'), leg('other/0', 'me/0')], {
+        identityId: 'me',
+        portfolio: 0,
+      })
+    ).toEqual([SettlementDirectionEnum.Outgoing, SettlementDirectionEnum.Incoming]);
+  });
+
+  it('should not give a direction to a leg of another portfolio of the same Identity', () => {
+    expect(
+      directions([leg('me/2', 'other/0'), leg('other/0', 'me/2')], {
+        identityId: 'me',
+        portfolio: 0,
+      })
+    ).toEqual([SettlementDirectionEnum.None, SettlementDirectionEnum.None]);
+  });
+
+  it("should count any of the Identity's portfolios when no portfolio is given", () => {
+    expect(
+      directions([leg('me/2', 'other/0'), leg('other/0', 'me/0')], { identityId: 'me' })
+    ).toEqual([SettlementDirectionEnum.Outgoing, SettlementDirectionEnum.Incoming]);
+  });
+
+  it("should give no direction to a move between the Identity's own portfolios", () => {
+    expect(directions([leg('me/0', 'me/1')], { identityId: 'me' })).toEqual([
+      SettlementDirectionEnum.None,
+    ]);
+  });
+});
+
 describe('middlewareInstructionToHistoricInstruction', () => {
   it('should convert a middleware Instruction object to a HistoricInstruction', () => {
     const instructionId1 = new BigNumber(1);
@@ -5004,10 +5161,10 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         assetId,
         ticker,
         amount: amount1.shiftedBy(6).toString(),
-        fromPortfolio: portfolioKind1,
-        from: portfolioDid1,
-        toPortfolio: portfolioKind2,
-        to: portfolioDid2,
+        fromPortfolioId: `${portfolioDid1}/${portfolioKind1}`,
+        fromId: portfolioDid1,
+        toPortfolioId: `${portfolioDid2}/${portfolioKind2}`,
+        toId: portfolioDid2,
       },
     ];
     const legs2 = [
@@ -5016,10 +5173,10 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         assetId,
         ticker,
         nftIds: [nftId.toString()],
-        fromPortfolio: portfolioKind2,
-        from: portfolioDid2,
-        toPortfolio: portfolioKind1,
-        to: portfolioDid1,
+        fromPortfolioId: `${portfolioDid2}/${portfolioKind2}`,
+        fromId: portfolioDid2,
+        toPortfolioId: `${portfolioDid1}/${portfolioKind1}`,
+        toId: portfolioDid1,
       },
     ];
     const legs3 = [
@@ -5028,8 +5185,8 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         assetId,
         ticker,
         amount: amount3.shiftedBy(6).toString(),
-        from: portfolioDid2,
-        to: portfolioDid1,
+        fromId: portfolioDid2,
+        toId: portfolioDid1,
       },
     ];
 
@@ -5037,10 +5194,12 @@ describe('middlewareInstructionToHistoricInstruction', () => {
 
     let instruction = {
       id: instructionId1.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
+      createdEvent: {
+        block: {
+          blockId: blockNumber.toNumber(),
+          hash: blockHash,
+          datetime: createdAt.toISOString(),
+        },
       },
       status,
       memo,
@@ -5071,10 +5230,12 @@ describe('middlewareInstructionToHistoricInstruction', () => {
 
     instruction = {
       id: instructionId2.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
+      createdEvent: {
+        block: {
+          blockId: blockNumber.toNumber(),
+          hash: blockHash,
+          datetime: createdAt.toISOString(),
+        },
       },
       status,
       type: type2,
@@ -5107,10 +5268,12 @@ describe('middlewareInstructionToHistoricInstruction', () => {
 
     instruction = {
       id: instructionId3.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
+      createdEvent: {
+        block: {
+          blockId: blockNumber.toNumber(),
+          hash: blockHash,
+          datetime: createdAt.toISOString(),
+        },
       },
       status,
       type: type3,
@@ -5138,28 +5301,98 @@ describe('middlewareInstructionToHistoricInstruction', () => {
   });
 });
 
-describe('middlewareEventDetailsToEventIdentifier', () => {
-  it('should convert Event details to an EventIdentifier', () => {
-    const eventIdx = 3;
+describe('portfolioToMiddlewarePortfolioId', () => {
+  it('should build the id the middleware stores a portfolio under', () => {
+    expect(portfolioToMiddlewarePortfolioId('someDid', new BigNumber(2))).toBe('someDid/2');
+    expect(portfolioToMiddlewarePortfolioId('someDid', 3)).toBe('someDid/3');
+    expect(portfolioToMiddlewarePortfolioId('someDid')).toBe('someDid/0');
+  });
+
+  it('should be the reverse of portfolioIdStringToPortfolio', () => {
+    expect(portfolioIdStringToPortfolio(portfolioToMiddlewarePortfolioId('someDid', 5))).toEqual({
+      identityId: 'someDid',
+      number: 5,
+    });
+  });
+});
+
+describe('bigNumberToMiddlewareSequenceId', () => {
+  it('should zero pad a sequence number to the 10 digits the middleware stores', () => {
+    expect(bigNumberToMiddlewareSequenceId(new BigNumber(1590))).toBe('0000001590');
+    expect(bigNumberToMiddlewareSequenceId(new BigNumber(0))).toBe('0000000000');
+  });
+});
+
+describe('middlewareDateToDate', () => {
+  it('should read a date-time with no zone marker as UTC', () => {
+    expect(middlewareDateToDate('2021-11-05T13:56:36')).toEqual(
+      new Date(Date.UTC(2021, 10, 5, 13, 56, 36))
+    );
+    expect(middlewareDateToDate('2025-08-17T08:07:44.638')).toEqual(
+      new Date(Date.UTC(2025, 7, 17, 8, 7, 44, 638))
+    );
+  });
+
+  it('should keep a zone marker the value already has', () => {
+    expect(middlewareDateToDate('2021-11-05T13:56:36Z')).toEqual(
+      new Date(Date.UTC(2021, 10, 5, 13, 56, 36))
+    );
+    expect(middlewareDateToDate('2021-11-05T13:56:36+02:00')).toEqual(
+      new Date(Date.UTC(2021, 10, 5, 11, 56, 36))
+    );
+  });
+
+  it('should read a space separated date-time with no zone marker as UTC', () => {
+    expect(middlewareDateToDate('2024-01-01 10:00:00')).toEqual(
+      new Date(Date.UTC(2024, 0, 1, 10, 0, 0))
+    );
+    expect(middlewareDateToDate('2024-01-01 10:00:00.5')).toEqual(
+      new Date(Date.UTC(2024, 0, 1, 10, 0, 0, 500))
+    );
+  });
+
+  it('should read a whole hour zone marker, as Postgres writes it', () => {
+    const utc = new Date(Date.UTC(2024, 4, 1, 10, 0, 0));
+
+    expect(middlewareDateToDate('2024-05-01 10:00:00+00')).toEqual(utc);
+    expect(middlewareDateToDate('2024-05-01T05:00:00-05')).toEqual(utc);
+    expect(middlewareDateToDate('2024-05-01T15:30:00+0530')).toEqual(utc);
+    expect(middlewareDateToDate('2024-05-01T10:00:00.123456')).toEqual(
+      new Date(Date.UTC(2024, 4, 1, 10, 0, 0, 123))
+    );
+  });
+
+  it('should read a date with no time as UTC midnight', () => {
+    expect(middlewareDateToDate('2020-10-10')).toEqual(new Date(Date.UTC(2020, 9, 10)));
+  });
+});
+
+describe('middlewareEventToEventIdentifier', () => {
+  it('should convert a middleware Event to an EventIdentifier', () => {
     const block = {
       blockId: 3000,
       hash: 'someHash',
       datetime: new Date('10/14/1987').toISOString(),
     } as Block;
 
-    const fakeResult = {
+    expect(middlewareEventToEventIdentifier({ block, eventIdx: 3 })).toEqual({
       blockNumber: new BigNumber(3000),
       blockDate: new Date('10/14/1987'),
       blockHash: 'someHash',
       eventIndex: new BigNumber(3),
-    };
-
-    expect(middlewareEventDetailsToEventIdentifier(block)).toEqual({
-      ...fakeResult,
-      eventIndex: new BigNumber(0),
     });
+  });
 
-    expect(middlewareEventDetailsToEventIdentifier(block, eventIdx)).toEqual(fakeResult);
+  it("should keep the seed event's index of -1", () => {
+    const block = {
+      blockId: 0,
+      hash: 'genesisHash',
+      datetime: new Date('10/14/1987').toISOString(),
+    } as Block;
+
+    expect(middlewareEventToEventIdentifier({ block, eventIdx: -1 }).eventIndex).toEqual(
+      new BigNumber(-1)
+    );
   });
 });
 
@@ -10732,6 +10965,36 @@ describe('middlewarePermissionsDataToPermissions', () => {
         values: ['asset.registerCustomAssetType', 'nft.issueNft'],
       },
       transactionGroups: [],
+    });
+  });
+
+  it('should keep pallets given whole, or with exceptions, in the per-pallet form', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    // the middleware writes every row in this form, whatever the chain version that set it
+    const permissions = {
+      asset: { whole: null },
+      extrinsic: {
+        except: {
+          Asset: { extrinsics: { these: ['create_asset', 'register_ticker'] } },
+          Portfolio: { extrinsics: { except: ['create_portfolio', 'delete_portfolio'] } },
+          Authorship: { extrinsics: { whole: null } },
+        },
+      },
+      portfolio: { whole: null },
+    };
+
+    const result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
+
+    expect(result.transactions).toEqual({
+      type: PermissionType.Exclude,
+      values: [
+        TxTags.asset.CreateAsset,
+        TxTags.asset.RegisterTicker,
+        ModuleName.Portfolio,
+        ModuleName.Authorship,
+      ],
+      exceptions: [TxTags.portfolio.CreatePortfolio, TxTags.portfolio.DeletePortfolio],
     });
   });
 });

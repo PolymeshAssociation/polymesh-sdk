@@ -26,10 +26,10 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
-import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets';
+import { assetHoldersQuery, heldNftsQuery, nftHoldersQuery } from '~/middleware/queries/assets';
 import { trustingAssetsQuery } from '~/middleware/queries/claims';
 import { historicalInstructionsQuery } from '~/middleware/queries/settlements';
-import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
+import { AssetHoldersOrderBy, Query } from '~/middleware/types';
 import {
   Asset,
   CheckRolesResult,
@@ -87,6 +87,7 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAccount,
+  getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   getSecondaryAccountPermissions,
   requestPaginated,
@@ -527,7 +528,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @param opts.heldNow - exclude collections the Identity no longer holds any NFT of. The
    *   indexer keeps a holding once it has existed, so by default a collection held at any point
-   *   is returned, with an empty `nfts` list
+   *   is returned, with an `nftCount` of 0
    * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
    *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
    *   that paging cannot repeat or skip a row
@@ -536,6 +537,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note uses the middlewareV2
    * @note supports pagination
+   * @note `getHeldNftsOfCollection` lists the NFTs held in a collection
    */
   public async getHeldNfts(
     opts: MiddlewarePaginationOptions & {
@@ -544,8 +546,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
        * @deprecated in favour of `orderBy`, which every other read is ordered by. Passing both
        *   throws
        */
-      order?: NftHoldersOrderBy;
-      orderBy?: NftHoldersOrderBy | NftHoldersOrderBy[];
+      order?: AssetHoldersOrderBy;
+      orderBy?: AssetHoldersOrderBy | AssetHoldersOrderBy[];
     } = {}
   ): Promise<ResultSet<HeldNfts>> {
     const { context, did } = this;
@@ -555,39 +557,56 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const {
       data: {
-        nftHolders: { nodes, totalCount },
+        assetHolders: { nodes, totalCount },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'nftHolders'>>(
-      nftHoldersQuery(
-        {
-          identityId: did,
-          ...(heldNow && { nftIds: [] }),
-        },
-        size,
-        start,
-        ordering
-      )
+    } = await context.queryMiddleware<Ensured<Query, 'assetHolders'>>(
+      nftHoldersQuery({ identityId: did, heldNow }, size, start, ordering)
     );
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ asset, nftIds }) => {
-      const assetId = getAssetIdFromMiddleware(asset!.id);
-      const collection = new NftCollection({ assetId }, context);
-      const nfts = nftIds.map(
-        (id: number) =>
-          new Nft(
-            {
-              assetId,
-              id: new BigNumber(id),
-            },
-            context
-          )
-      );
+    const data = nodes.map(({ asset, nftCount }) => ({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      collection: new NftCollection({ assetId: getAssetIdFromMiddleware(asset!.id) }, context),
+      nftCount: new BigNumber(nftCount),
+    }));
 
-      return { collection, nfts };
-    });
+    const next = calculateNextKey(count, data.length, start);
 
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve the NFTs this Identity holds in a collection, in any of its portfolios or Accounts
+   *
+   * @param opts.collection - the NFT collection, or its Asset ID or ticker
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination
+   */
+  public async getHeldNftsOfCollection(
+    opts: MiddlewarePaginationOptions & { collection: string | NftCollection }
+  ): Promise<ResultSet<Nft>> {
+    const { context, did } = this;
+    const { collection, size, start } = opts;
+
+    const middlewareAssetId = await getAssetIdForMiddleware(collection, context);
+    const assetId = getAssetIdFromMiddleware(middlewareAssetId);
+
+    const {
+      data: {
+        nfts: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'nfts'>>(
+      heldNftsQuery({ identityId: did, assetId: middlewareAssetId }, size, start)
+    );
+
+    const count = new BigNumber(totalCount);
+    const data = nodes.map(({ nftId }) => new Nft({ assetId, id: new BigNumber(nftId) }, context));
     const next = calculateNextKey(count, data.length, start);
 
     return {
@@ -622,11 +641,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Get the list of Assets for which this Identity is a trusted claim issuer
+   * Get the list of Assets for which this Identity is a trusted claim issuer: fungible Assets and
+   *   NFT collections
    *
    * @note uses the middlewareV2
    */
-  public async getTrustingAssets(): Promise<FungibleAsset[]> {
+  public async getTrustingAssets(): Promise<(FungibleAsset | NftCollection)[]> {
     const { context, did } = this;
 
     const {
@@ -637,9 +657,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       trustingAssetsQuery({ issuer: did })
     );
 
-    return nodes.map(
-      ({ asset }) => new FungibleAsset({ assetId: getAssetIdFromMiddleware(asset!.id) }, context)
-    );
+    return nodes.map(({ asset }) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const { id, isNftCollection } = asset!;
+      const assetId = getAssetIdFromMiddleware(id);
+
+      return isNftCollection
+        ? new NftCollection({ assetId }, context)
+        : new FungibleAsset({ assetId }, context);
+    });
   }
 
   /**

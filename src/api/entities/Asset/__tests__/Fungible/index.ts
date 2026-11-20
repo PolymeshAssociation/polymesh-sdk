@@ -19,7 +19,7 @@ import {
   PolymeshTransaction,
 } from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
-import { tickerExternalAgentHistoryQuery } from '~/middleware/queries/externalAgents';
+import { assetAgentHistoryQuery } from '~/middleware/queries/externalAgents';
 import { EventIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';
@@ -550,12 +550,14 @@ describe('Fungible class', () => {
         assets: {
           nodes: [
             {
-              createdBlock: {
-                blockId: blockNumber.toNumber(),
-                datetime: blockDate,
-                hash: blockHash,
+              createdEvent: {
+                eventIdx: eventIdx.toNumber(),
+                block: {
+                  blockId: blockNumber.toNumber(),
+                  datetime: blockDate.toISOString(),
+                  hash: blockHash,
+                },
               },
-              eventIdx: eventIdx.toNumber(),
             },
           ],
         },
@@ -821,19 +823,21 @@ describe('Fungible class', () => {
       const datetime = '2020-10-10';
 
       dsMockUtils.createApolloQueryMock(
-        tickerExternalAgentHistoryQuery({
+        assetAgentHistoryQuery({
           assetId,
         }),
         {
-          tickerExternalAgentHistories: {
+          assetAgentHistories: {
             nodes: [
               {
                 identityId: did,
-                eventIdx: eventIndex.toNumber(),
-                createdBlock: {
-                  blockId: blockId.toNumber(),
-                  datetime,
-                  hash: blockHash,
+                createdEvent: {
+                  eventIdx: eventIndex.toNumber(),
+                  block: {
+                    blockId: blockId.toNumber(),
+                    datetime,
+                    hash: blockHash,
+                  },
                 },
               },
             ],
@@ -854,11 +858,11 @@ describe('Fungible class', () => {
       });
 
       dsMockUtils.createApolloQueryMock(
-        tickerExternalAgentHistoryQuery({
+        assetAgentHistoryQuery({
           assetId,
         }),
         {
-          tickerExternalAgentHistories: {
+          assetAgentHistories: {
             nodes: [],
           },
         }
@@ -890,12 +894,14 @@ describe('Fungible class', () => {
             eventId: EventIdEnum.Issued,
             toPortfolioId: 'SOME_DID/0',
             fromPortfolioId: null,
-            eventIdx: 1,
-            extrinsicIdx: 1,
-            createdBlock: {
-              blockId: new BigNumber(123),
-              hash: 'SOME_HASH',
-              datetime: new Date('2022/12/31'),
+            createdEvent: {
+              eventIdx: 1,
+              extrinsicIdx: 0,
+              block: {
+                blockId: new BigNumber(123),
+                hash: 'SOME_HASH',
+                datetime: new Date('2022/12/31').toISOString(),
+              },
             },
           },
           {
@@ -904,12 +910,14 @@ describe('Fungible class', () => {
             eventId: EventIdEnum.Redeemed,
             fromPortfolioId: 'SOME_DID/0',
             toPortfolioId: null,
-            eventIdx: 1,
-            extrinsicIdx: 1,
-            createdBlock: {
-              blockId: new BigNumber(123),
-              hash: 'SOME_HASH',
-              datetime: new Date('2022/12/31'),
+            createdEvent: {
+              eventIdx: 1,
+              extrinsicIdx: 1,
+              block: {
+                blockId: new BigNumber(123),
+                hash: 'SOME_HASH',
+                datetime: new Date('2022/12/31').toISOString(),
+              },
             },
           },
           {
@@ -920,12 +928,14 @@ describe('Fungible class', () => {
             toPortfolioId: 'SOME_OTHER_DID/1',
             instructionId: '2',
             instructionMemo: 'Some memo',
-            eventIdx: 1,
-            extrinsicIdx: 1,
-            createdBlock: {
-              blockId: new BigNumber(123),
-              hash: 'SOME_HASH',
-              datetime: new Date('2022/12/31'),
+            createdEvent: {
+              eventIdx: 1,
+              extrinsicIdx: null,
+              block: {
+                blockId: new BigNumber(123),
+                hash: 'SOME_HASH',
+                datetime: new Date('2022/12/31').toISOString(),
+              },
             },
           },
         ],
@@ -966,6 +976,13 @@ describe('Fungible class', () => {
       expect(result.data[2]!.to).toBeInstanceOf(NumberedPortfolio);
       expect(result.data[2]!.instructionId).toEqual(new BigNumber(2));
       expect(result.data[2]!.instructionMemo).toEqual('Some memo');
+
+      // index 0 is a real index, and a transfer made at the start of a block has none
+      expect(result.data[0]!.extrinsicIndex).toEqual(new BigNumber(0));
+      expect(result.data[1]!.extrinsicIndex).toEqual(new BigNumber(1));
+      expect(result.data[2]!.extrinsicIndex).toBeNull();
+      expect(result.data[0]!.eventIndex).toEqual(new BigNumber(1));
+      expect(result.data[0]!.blockNumber).toEqual(new BigNumber(123));
 
       expect(result.count).toEqual(transactionResponse.totalCount);
       expect(result.next).toEqual(new BigNumber(3));
@@ -1104,10 +1121,7 @@ describe('Fungible class', () => {
       const asset = new FungibleAsset({ assetId: thisAssetId }, context);
 
       dsMockUtils.createQueryMock('asset', 'allowances', {
-        entries: [
-          entry(otherRawId, new BigNumber(999)),
-          entry(thisRawId, new BigNumber(150)),
-        ],
+        entries: [entry(otherRawId, new BigNumber(999)), entry(thisRawId, new BigNumber(150))],
       });
 
       const result = await asset.getAllowances({ owner });

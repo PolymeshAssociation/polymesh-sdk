@@ -633,7 +633,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       })
     );
 
-    const portfolioMovementsPromise = context.queryMiddleware<Ensured<Query, 'portfolioMovements'>>(
+    const portfolioMovementsPromise = context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       portfolioMovementsQuery({
         identityId,
         portfolioId,
@@ -650,7 +650,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       },
       {
         data: {
-          portfolioMovements: { nodes: portfolioMovements },
+          assetTransactions: { nodes: portfolioMovements },
         },
       },
       exists,

@@ -2,7 +2,12 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
+import {
+  createArgsAndFilters,
+  eventIdentifierFields,
+  getSizeAndOffset,
+  orderByClause,
+} from '~/middleware/queries/common';
 import { Distribution, DistributionPayment, DistributionPaymentsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
@@ -58,14 +63,11 @@ export function distributionPaymentsQuery(
       ) {
         totalCount
         nodes {
-          eventId
           targetId
-          datetime
           amount
           tax
-          createdBlock {
-            blockId
-            hash
+          createdEvent {
+            ${eventIdentifierFields}
           }
         }
       }

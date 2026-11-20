@@ -270,7 +270,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery(
         {
-          venueId: id.toString(),
+          venueId: id,
         },
         size,
         start

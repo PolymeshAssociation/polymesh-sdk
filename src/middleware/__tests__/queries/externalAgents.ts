@@ -1,42 +1,51 @@
 import BigNumber from 'bignumber.js';
+import { print } from 'graphql';
 
 import {
-  tickerExternalAgentActionsQuery,
-  tickerExternalAgentHistoryQuery,
-  tickerExternalAgentsQuery,
+  assetAgentActionsQuery,
+  assetAgentHistoryQuery,
+  assetAgentQuery,
 } from '~/middleware/queries/externalAgents';
 import { EventIdEnum } from '~/types';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
-describe('tickerExternalAgentsQuery', () => {
+describe('assetAgentQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      assetId: 'SOME_TICKER',
+      identityId: 'someDid',
+    };
+
+    const result = assetAgentQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+
+  it("should filter by the agent's Identity as well as the Asset", () => {
+    const { query } = assetAgentQuery({ assetId: 'SOME_TICKER', identityId: 'someDid' });
+
+    expect(print(query)).toContain('identityId: {equalTo: $identityId}');
+  });
+});
+
+describe('assetAgentHistoryQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       assetId: 'SOME_TICKER',
     };
 
-    const result = tickerExternalAgentsQuery(variables);
+    const result = assetAgentHistoryQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
+    expect(print(result.query)).toContain('orderBy: [CREATED_EVENT_ID_ASC]');
   });
 });
 
-describe('tickerExternalAgentHistoryQuery', () => {
+describe('assetAgentActionsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      assetId: 'SOME_TICKER',
-    };
-
-    const result = tickerExternalAgentHistoryQuery(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('tickerExternalAgentActionsQuery', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    let result = tickerExternalAgentActionsQuery({});
+    let result = assetAgentActionsQuery({});
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({ size: DEFAULT_GQL_PAGE_SIZE, start: 0 });
@@ -50,12 +59,12 @@ describe('tickerExternalAgentActionsQuery', () => {
       start: 0,
     };
 
-    result = tickerExternalAgentActionsQuery(variables);
+    result = assetAgentActionsQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
-    result = tickerExternalAgentActionsQuery(variables, new BigNumber(1), new BigNumber(0));
+    result = assetAgentActionsQuery(variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({

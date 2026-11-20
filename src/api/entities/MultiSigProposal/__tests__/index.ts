@@ -235,11 +235,13 @@ describe('MultiSigProposal class', () => {
                   signerValue: voter,
                 },
                 action,
-                eventIdx: eventIdx.toNumber(),
-                createdBlock: {
-                  blockId: blockNumber.toNumber(),
-                  datetime: blockDate,
-                  hash: blockHash,
+                createdEvent: {
+                  eventIdx: eventIdx.toNumber(),
+                  block: {
+                    blockId: blockNumber.toNumber(),
+                    datetime: blockDate.toISOString(),
+                    hash: blockHash,
+                  },
                 },
               },
             ],
@@ -257,6 +259,40 @@ describe('MultiSigProposal class', () => {
       const result = await proposal.votes();
 
       expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('method: votes, for a seeded vote', () => {
+    it('should report no action for a vote the middleware seeded from chain storage', async () => {
+      dsMockUtils.createApolloQueryMock(
+        multiSigProposalVotesQuery({ proposalId: `${address}/${id.toString()}` }),
+        {
+          multiSigProposalVotes: {
+            nodes: [
+              {
+                signer: { signerType: SignerTypeEnum.Account, signerValue: 'someAddress' },
+                action: null,
+                createdEvent: {
+                  eventIdx: -1,
+                  block: {
+                    blockId: 0,
+                    datetime: new Date('4/14/2020').toISOString(),
+                    hash: 'genesisHash',
+                  },
+                },
+              },
+            ],
+          },
+        }
+      );
+      jest
+        .spyOn(utilsConversionModule, 'signerValueToSigner')
+        .mockReturnValue(new Account({ address: 'someAddress' }, context));
+
+      const [vote] = await proposal.votes();
+
+      expect(vote!.action).toBeNull();
+      expect(vote!.eventIndex).toEqual(new BigNumber(-1));
     });
   });
 
@@ -278,12 +314,14 @@ describe('MultiSigProposal class', () => {
           multiSigProposals: {
             nodes: [
               {
-                creatorAccount: 'creator',
-                eventIdx: eventIdx.toNumber(),
-                createdBlock: {
-                  blockId: blockNumber.toNumber(),
-                  datetime: blockDate,
-                  hash: blockHash,
+                creatorAccountId: 'creator',
+                createdEvent: {
+                  eventIdx: eventIdx.toNumber(),
+                  block: {
+                    blockId: blockNumber.toNumber(),
+                    datetime: blockDate.toISOString(),
+                    hash: blockHash,
+                  },
                 },
               },
             ],

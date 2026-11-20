@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Identity, Namespace, Nft } from '~/internal';
+import { Identity, Namespace } from '~/internal';
 import { nftCollectionHolders } from '~/middleware/queries/assets';
 import { Query } from '~/middleware/types';
 import {
@@ -12,20 +12,18 @@ import {
   ResultSet,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import {
-  calculateNextKey,
-  getAssetIdForMiddleware,
-  getHolderFreezeStatus,
-} from '~/utils/internal';
+import { calculateNextKey, getAssetIdForMiddleware, getHolderFreezeStatus } from '~/utils/internal';
 
 /**
  * Handles all NFT Holders related functionality
  */
 export class AssetHolders extends Namespace<NftCollection> {
   /**
-   * Retrieve all the NFT Holders with their holdings
+   * Retrieve the Identities holding NFTs of this collection, with how many each holds
    *
    * @note uses the middlewareV2
+   * @note supports pagination
+   * @note `identity.getHeldNftsOfCollection` lists the NFTs a holder holds
    */
   public async get(opts: MiddlewarePaginationOptions): Promise<ResultSet<IdentityHeldNfts>> {
     const {
@@ -39,15 +37,15 @@ export class AssetHolders extends Namespace<NftCollection> {
 
     const {
       data: {
-        nftHolders: { totalCount, nodes },
+        assetHolders: { totalCount, nodes },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'nftHolders'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'assetHolders'>>(
       nftCollectionHolders(middlewareAssetId, size, start)
     );
 
-    const data = nodes.map(({ nftIds, identityId }) => ({
-      identity: new Identity({ did: identityId as string }, context),
-      nfts: nftIds.map((id: string) => new Nft({ id: new BigNumber(id), assetId }, context)),
+    const data = nodes.map(({ identityId, nftCount }) => ({
+      identity: new Identity({ did: identityId }, context),
+      nftCount: new BigNumber(nftCount),
     }));
 
     const next = calculateNextKey(new BigNumber(totalCount), nodes.length, start);

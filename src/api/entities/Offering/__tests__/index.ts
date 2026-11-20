@@ -311,8 +311,7 @@ describe('Offering class', () => {
       dsMockUtils.createApolloQueryMock(
         investmentsQuery(
           {
-            stoId: id.toNumber(),
-            offeringAssetId: assetId,
+            stoId: `${assetId}/${id.toString()}`,
           },
           new BigNumber(5),
           new BigNumber(0)
@@ -335,8 +334,7 @@ describe('Offering class', () => {
 
       dsMockUtils.createApolloQueryMock(
         investmentsQuery({
-          stoId: id.toNumber(),
-          offeringAssetId: assetId,
+          stoId: `${assetId}/${id.toString()}`,
         }),
         {
           investments: {

@@ -357,7 +357,8 @@ describe('Authorizations class', () => {
 
       const fakeAuths = authParams.map(({ authId, expiry, issuer, data }) => ({
         id: authId,
-        expiry,
+        // the middleware serialises UTC with no zone marker
+        expiry: expiry ? expiry.toISOString().replace('Z', '') : null,
         type: data.type,
         data: data.value,
         fromId: issuer.did,
@@ -387,7 +388,6 @@ describe('Authorizations class', () => {
       expect(result.next).toEqual(new BigNumber(2));
       expect(result.count).toEqual(new BigNumber(10));
 
-      const address = '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
       const account = entityMockUtils.getAccountInstance({ address: DUMMY_ACCOUNT_ID });
       const accountAuthsNamespace = new Authorizations(account, context);
 
@@ -396,7 +396,7 @@ describe('Authorizations class', () => {
         expiry: null,
         type: AuthorizationType.RotatePrimaryKey,
         data: null,
-        toKey: address,
+        toAccountId: DUMMY_ACCOUNT_ID,
         fromId: did,
       };
       dsMockUtils.createApolloQueryMock(
@@ -404,7 +404,7 @@ describe('Authorizations class', () => {
           {
             type: AuthTypeEnum.RotatePrimaryKey,
             status: AuthorizationStatusEnum.Consumed,
-            toKey: address,
+            toAccountId: DUMMY_ACCOUNT_ID,
           },
           new BigNumber(10),
           new BigNumber(3)

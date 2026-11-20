@@ -566,16 +566,19 @@ describe('Instruction class', () => {
           type: InstructionTypeEnum.SettleOnAffirmation,
           status: InstructionStatusEnum.Created,
           venueId,
-          createdBlock: {
-            datetime: createdAt,
+          createdEvent: {
+            block: {
+              datetime: createdAt.toISOString(),
+            },
           },
-          tradeDate,
-          valueDate,
+          // the middleware serialises UTC with no zone marker
+          tradeDate: tradeDate.toISOString().replace('Z', ''),
+          valueDate: valueDate.toISOString().replace('Z', ''),
           memo,
         };
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: id.toString(),
+            id,
           }),
           {
             instructions: {
@@ -601,7 +604,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: id.toString(),
+            id,
           }),
           {
             instructions: {
@@ -625,7 +628,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: id.toString(),
+            id,
           }),
           {
             instructions: {
@@ -651,7 +654,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: id.toString(),
+            id,
           }),
           {
             instructions: {
@@ -678,7 +681,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: id.toString(),
+            id,
           }),
           {
             instructions: {
@@ -703,7 +706,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: id.toString(),
+            id,
           }),
           {
             instructions: {
@@ -724,7 +727,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: id.toString(),
+            id,
           }),
           {
             instructions: {
@@ -745,7 +748,7 @@ describe('Instruction class', () => {
       });
 
       it('should throw an error if an Instruction is not yet processed by middleware', () => {
-        dsMockUtils.createApolloQueryMock(instructionsQuery({ id: id.toString() }), {
+        dsMockUtils.createApolloQueryMock(instructionsQuery({ id }), {
           instructions: { nodes: [] },
         });
 
@@ -1111,16 +1114,22 @@ describe('Instruction class', () => {
         const start = new BigNumber(0);
         const size = new BigNumber(1);
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({ instructionId: id.toString() }, size, start),
+          instructionAffirmationsQuery({ instructionId: id, isMediator: false }, size, start),
           {
             instructionAffirmations: {
               nodes: [
                 {
-                  identity: did,
+                  identityId: did,
+                  portfolioId: `${did}/1`,
                   status: AffirmStatusEnum.Affirmed,
                 },
+                {
+                  identityId: did,
+                  portfolioId: `${did}/0`,
+                  status: AffirmStatusEnum.Pending,
+                },
               ],
-              totalCount: new BigNumber(1),
+              totalCount: new BigNumber(2),
             },
           }
         );
@@ -1129,15 +1138,22 @@ describe('Instruction class', () => {
           size,
         });
 
-        expect(data).toHaveLength(1);
+        expect(data).toHaveLength(2);
         expect((data[0]!.party as Identity).did).toEqual(did);
+        expect(data[0]!.portfolio).toEqual(expect.objectContaining({ id: new BigNumber(1) }));
         expect(data[0]!.status).toEqual(status);
+        expect((data[1]!.party as Identity).did).toEqual(did);
+        expect(data[1]!.portfolio).toBeInstanceOf(DefaultPortfolio);
+        expect(data[1]!.status).toEqual(AffirmationStatus.Pending);
 
         expect(next).toBeNull();
-        expect(count).toEqual(new BigNumber(1));
+        expect(count).toEqual(new BigNumber(2));
 
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({ instructionId: id.toString() }),
+          instructionAffirmationsQuery({
+            instructionId: id,
+            isMediator: false,
+          }),
           {
             instructionAffirmations: {
               nodes: [],
@@ -1158,12 +1174,13 @@ describe('Instruction class', () => {
         const size = new BigNumber(1);
         const accountAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({ instructionId: id.toString() }, size, start),
+          instructionAffirmationsQuery({ instructionId: id, isMediator: false }, size, start),
           {
             instructionAffirmations: {
               nodes: [
                 {
-                  account: accountAddress,
+                  identityId: 'someDid',
+                  accountId: accountAddress,
                   status: AffirmStatusEnum.Affirmed,
                 },
               ],
@@ -1178,7 +1195,38 @@ describe('Instruction class', () => {
 
         expect(data).toHaveLength(1);
         expect((data[0]!.party as Account).address).toEqual(accountAddress);
+        expect(data[0]!.portfolio).toBeUndefined();
         expect(data[0]!.status).toEqual(status);
+      });
+
+      it('should return a claimed off-chain receipt with its Identity as the party', async () => {
+        const start = new BigNumber(0);
+        const size = new BigNumber(1);
+        dsMockUtils.createApolloQueryMock(
+          instructionAffirmationsQuery({ instructionId: id, isMediator: false }, size, start),
+          {
+            instructionAffirmations: {
+              nodes: [
+                {
+                  // the middleware writes a receipt's row with no Account or portfolio
+                  identityId: did,
+                  accountId: null,
+                  portfolioId: null,
+                  offChainReceiptId: 'someSigner/1',
+                  status: AffirmStatusEnum.Affirmed,
+                },
+              ],
+              totalCount: new BigNumber(1),
+            },
+          }
+        );
+
+        const { data } = await instruction.getAffirmations({ start, size });
+
+        expect(data).toHaveLength(1);
+        expect((data[0]!.party as Identity).did).toEqual(did);
+        expect(data[0]!.portfolio).toBeUndefined();
+        expect(data[0]!.status).toEqual(AffirmationStatus.Affirmed);
       });
     });
   });
@@ -1202,10 +1250,10 @@ describe('Instruction class', () => {
 
         const mockLeg1 = {
           legType: LegTypeEnum.Fungible,
-          from: fromDid,
-          fromPortfolio: new BigNumber(0),
-          to: toDid,
-          toPortfolio: new BigNumber(0),
+          fromPortfolioId: `${fromDid}/${new BigNumber(0)}`,
+          fromId: fromDid,
+          toPortfolioId: `${toDid}/${new BigNumber(0)}`,
+          toId: toDid,
           assetId,
           amount: amount.shiftedBy(6),
           legIndex: new BigNumber(0),
@@ -1213,10 +1261,10 @@ describe('Instruction class', () => {
 
         const mockLeg2 = {
           legType: LegTypeEnum.Fungible,
-          from: fromDid,
-          fromPortfolio: new BigNumber(0),
-          to: toDid,
-          toPortfolio: new BigNumber(0),
+          fromPortfolioId: `${fromDid}/${new BigNumber(0)}`,
+          fromId: fromDid,
+          toPortfolioId: `${toDid}/${new BigNumber(0)}`,
+          toId: toDid,
           assetId: assetId2,
           amount: amount.shiftedBy(6),
           legIndex: new BigNumber(1),
@@ -1224,7 +1272,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           legsQuery({
-            instructionId: id.toString(),
+            instructionId: id,
           }),
           {
             legs: {
@@ -1254,7 +1302,7 @@ describe('Instruction class', () => {
         dsMockUtils.createApolloQueryMock(
           legsQuery(
             {
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(2),
             new BigNumber(2)
@@ -1731,8 +1779,14 @@ describe('Instruction class', () => {
       const eventIdx = new BigNumber(1);
       const blockHash = 'someHash';
       const fakeQueryResult = {
-        updatedBlock: { blockId: blockNumber.toNumber(), hash: blockHash, datetime: blockDate },
-        eventIdx: eventIdx.toNumber(),
+        createdEvent: {
+          eventIdx: eventIdx.toNumber(),
+          block: {
+            blockId: blockNumber.toNumber(),
+            hash: blockHash,
+            datetime: blockDate.toISOString(),
+          },
+        },
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
@@ -1759,7 +1813,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1774,7 +1828,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1789,7 +1843,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1804,7 +1858,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1819,7 +1873,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1845,8 +1899,14 @@ describe('Instruction class', () => {
       const eventIdx = new BigNumber(1);
       const blockHash = 'someHash';
       const fakeQueryResult = {
-        updatedBlock: { blockId: blockNumber.toNumber(), hash: blockHash, datetime: blockDate },
-        eventIdx: eventIdx.toNumber(),
+        createdEvent: {
+          eventIdx: eventIdx.toNumber(),
+          block: {
+            blockId: blockNumber.toNumber(),
+            hash: blockHash,
+            datetime: blockDate.toISOString(),
+          },
+        },
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
@@ -1872,7 +1932,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1887,7 +1947,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1902,7 +1962,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1917,7 +1977,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1932,7 +1992,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1958,8 +2018,14 @@ describe('Instruction class', () => {
       const eventIdx = new BigNumber(1);
       const blockHash = 'someHash';
       const fakeQueryResult = {
-        updatedBlock: { blockId: blockNumber.toNumber(), hash: blockHash, datetime: blockDate },
-        eventIdx: eventIdx.toNumber(),
+        createdEvent: {
+          eventIdx: eventIdx.toNumber(),
+          block: {
+            blockId: blockNumber.toNumber(),
+            hash: blockHash,
+            datetime: blockDate.toISOString(),
+          },
+        },
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
@@ -1985,7 +2051,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2000,7 +2066,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2015,7 +2081,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2030,7 +2096,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2045,7 +2111,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2069,7 +2135,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2084,7 +2150,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2099,7 +2165,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2114,7 +2180,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2129,7 +2195,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2155,8 +2221,14 @@ describe('Instruction class', () => {
       const blockDate = new Date('4/14/2020');
       const eventIdx = new BigNumber(1);
       const fakeQueryResult = {
-        updatedBlock: { blockId: blockNumber.toNumber(), hash: blockHash, datetime: blockDate },
-        eventIdx: eventIdx.toNumber(),
+        createdEvent: {
+          eventIdx: eventIdx.toNumber(),
+          block: {
+            blockId: blockNumber.toNumber(),
+            hash: blockHash,
+            datetime: blockDate.toISOString(),
+          },
+        },
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
@@ -2182,7 +2254,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2197,7 +2269,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2212,7 +2284,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2227,7 +2299,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2242,7 +2314,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2287,7 +2359,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2302,7 +2374,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2317,7 +2389,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2332,7 +2404,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionRejected,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2347,7 +2419,7 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionLocked,
-              instructionId: id.toString(),
+              instructionId: id,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -2456,7 +2528,7 @@ describe('Instruction class', () => {
       it('should return the instruction mediators with affirmation info', async () => {
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
-            id: id.toString(),
+            id,
           }),
           {
             instructions: {
@@ -2471,19 +2543,25 @@ describe('Instruction class', () => {
         const expiry = new Date('2050/01/01');
         dsMockUtils.createApolloQueryMock(
           instructionAffirmationsQuery({
-            instructionId: id.toString(),
+            instructionId: id,
             isMediator: true,
           }),
           {
             instructionAffirmations: {
               nodes: [
                 {
-                  identity: mediatorDid2,
-                  status: AffirmStatusEnum.Affirmed,
-                  expiry: expiry.toISOString(),
+                  identityId: mediatorDid1,
+                  status: AffirmStatusEnum.Pending,
+                  expiry: null,
                 },
                 {
-                  identity: mediatorDid3,
+                  identityId: mediatorDid2,
+                  status: AffirmStatusEnum.Affirmed,
+                  // the middleware serialises UTC with no zone marker
+                  expiry: expiry.toISOString().replace('Z', ''),
+                },
+                {
+                  identityId: mediatorDid3,
                   status: AffirmStatusEnum.Affirmed,
                   expiry: null,
                 },
@@ -2533,7 +2611,7 @@ describe('Instruction class', () => {
       it('should return the affirmation status of offchain legs', async () => {
         dsMockUtils.createApolloQueryMock(
           offChainAffirmationsQuery({
-            instructionId: id.toString(),
+            instructionId: id,
           }),
           {
             instructionAffirmations: {
@@ -2593,7 +2671,7 @@ describe('Instruction class', () => {
       it('should return the affirmation status of given offchain leg', async () => {
         dsMockUtils.createApolloQueryMock(
           legsQuery({
-            instructionId: id.toString(),
+            instructionId: id,
             legIndex: legId.toNumber(),
             legType: LegTypeEnum.OffChain,
           }),
@@ -2620,7 +2698,7 @@ describe('Instruction class', () => {
 
         dsMockUtils.createApolloQueryMock(
           legsQuery({
-            instructionId: id.toString(),
+            instructionId: id,
             legIndex: legId.toNumber(),
             legType: LegTypeEnum.OffChain,
           }),
@@ -2644,7 +2722,7 @@ describe('Instruction class', () => {
       it('should throw an error if no leg is found', () => {
         dsMockUtils.createApolloQueryMock(
           legsQuery({
-            instructionId: id.toString(),
+            instructionId: id,
             legIndex: legId.toNumber(),
             legType: LegTypeEnum.OffChain,
           }),

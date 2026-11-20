@@ -25,7 +25,7 @@ import {
   accountIdToString,
   bigNumberToU64,
   meshProposalStateToProposalStatus,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareEventToEventIdentifier,
   momentToDate,
   signerValueToSigner,
   stringToAccountId,
@@ -222,7 +222,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
     );
 
     return signerVotes.map(signerVote => {
-      const { signer, action, createdBlock, eventIdx } = signerVote;
+      const { signer, action, createdEvent } = signerVote;
 
       const { signerType, signerValue } = signer!;
       return {
@@ -230,8 +230,8 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
           { type: signerType as unknown as SignerType, value: signerValue },
           context
         ),
-        action: action!,
-        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        action: action ?? null,
+        ...middlewareEventToEventIdentifier(createdEvent!),
       };
     });
   }
@@ -272,10 +272,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
   public async createdAt(): Promise<EventIdentifier | null> {
     const proposal = await this.getProposalDetails();
 
-    return optionize(middlewareEventDetailsToEventIdentifier)(
-      proposal?.createdBlock,
-      proposal?.eventIdx
-    );
+    return optionize(middlewareEventToEventIdentifier)(proposal?.createdEvent);
   }
 
   /**
@@ -288,6 +285,6 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
     const { context } = this;
     const proposal = await this.getProposalDetails();
 
-    return optionize(asAccount)(proposal?.creatorAccount, context);
+    return optionize(asAccount)(proposal?.creatorAccountId, context);
   }
 }

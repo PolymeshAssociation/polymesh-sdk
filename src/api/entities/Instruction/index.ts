@@ -86,11 +86,14 @@ import {
   meshNftToNftId,
   meshSettlementTypeToEndCondition,
   middlewareAffirmStatusToAffirmationStatus,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareDateToDate,
+  middlewareEventToEventIdentifier,
   middlewareInstructionStatusToInstructionStatus,
   middlewareInstructionToInstructionEndCondition,
   middlewareLegToLeg,
+  middlewarePortfolioToPortfolio,
   momentToDate,
+  portfolioIdStringToPortfolio,
   stringToBytes,
   tickerToString,
   u32ToBigNumber,
@@ -483,7 +486,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery({
-        id: id.toString(),
+        id,
       })
     );
 
@@ -596,13 +599,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
       const endCondition = middlewareInstructionToInstructionEndCondition(instruction);
 
-      const { status, tradeDate, valueDate, venueId, memo, createdBlock } = instruction;
+      const { status, tradeDate, valueDate, venueId, memo, createdEvent } = instruction;
 
       return {
         status: middlewareInstructionStatusToInstructionStatus(status),
-        createdAt: new Date(createdBlock!.datetime),
-        tradeDate: tradeDate ? new Date(tradeDate) : null,
-        valueDate: valueDate ? new Date(valueDate) : null,
+        createdAt: middlewareDateToDate(createdEvent!.block!.datetime),
+        tradeDate: tradeDate ? middlewareDateToDate(tradeDate) : null,
+        valueDate: valueDate ? middlewareDateToDate(valueDate) : null,
         venue: venueId ? new Venue({ id: new BigNumber(venueId) }, context) : null,
         memo: memo ?? null,
         ...endCondition,
@@ -648,7 +651,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       } = await context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
         instructionAffirmationsQuery(
           {
-            instructionId: id.toString(),
+            instructionId: id,
+            isMediator: false,
           },
           paginationOpts?.size,
           start
@@ -658,16 +662,25 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       const count = new BigNumber(totalCount);
 
       const data = affirmations.map(affirmation => {
-        const { identity, account, status } = affirmation;
+        const { identityId, accountId, portfolioId, status } = affirmation;
 
-        if (account) {
+        if (accountId) {
           return {
-            party: new Account({ address: account }, context),
+            party: new Account({ address: accountId }, context),
             status: middlewareAffirmStatusToAffirmationStatus(status),
           };
         }
+        // a claimed off-chain receipt is affirmed by an Identity, with no Account or portfolio
         return {
-          party: new Identity({ did: identity as string }, context),
+          party: new Identity({ did: identityId }, context),
+          ...(portfolioId
+            ? {
+                portfolio: middlewarePortfolioToPortfolio(
+                  portfolioIdStringToPortfolio(portfolioId),
+                  context
+                ),
+              }
+            : {}),
           status: middlewareAffirmStatusToAffirmationStatus(status),
         };
       });
@@ -706,6 +719,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       }
       return {
         party: accountHolder.owner,
+        portfolio: accountHolder,
         status,
       };
     });
@@ -843,7 +857,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       } = await context.queryMiddleware<Ensured<Query, 'legs'>>(
         legsQuery(
           {
-            instructionId: id.toString(),
+            instructionId: id,
           },
           paginationOpts?.size,
           start
@@ -1015,17 +1029,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       instructionEventsQuery(
         {
           event,
-          instructionId: id.toString(),
+          instructionId: id,
         },
         new BigNumber(1),
         new BigNumber(0)
       )
     );
 
-    return optionize(middlewareEventDetailsToEventIdentifier)(
-      details?.updatedBlock,
-      details?.eventIdx
-    );
+    return optionize(middlewareEventToEventIdentifier)(details?.createdEvent);
   }
 
   /**
@@ -1115,7 +1126,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         this.getInstructionFromMiddleware(),
         context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
           instructionAffirmationsQuery({
-            instructionId: id.toString(),
+            instructionId: id,
             isMediator: true,
           })
         ),
@@ -1128,7 +1139,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           const status = middlewareAffirmStatusToAffirmationStatus(mediatorAffirmation.status);
           return {
             status,
-            expiry: mediatorAffirmation.expiry ? new Date(mediatorAffirmation.expiry) : undefined,
+            expiry: mediatorAffirmation.expiry
+              ? middlewareDateToDate(mediatorAffirmation.expiry)
+              : undefined,
           };
         }
         return { status: AffirmationStatus.Pending };
@@ -1136,7 +1149,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
       return (mediators as string[]).map(mediator => {
         const affirmation = mediatorAffirmations.find(
-          mediatorAffirmation => mediatorAffirmation.identity === mediator
+          mediatorAffirmation => mediatorAffirmation.identityId === mediator
         );
         return {
           identity: new Identity({ did: mediator }, context),
@@ -1190,7 +1203,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       } = await context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
         offChainAffirmationsQuery({
-          instructionId: id.toString(),
+          instructionId: id,
         })
       );
 
@@ -1261,7 +1274,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       } = await context.queryMiddleware<Ensured<Query, 'legs'>>(
         legsQuery({
-          instructionId: id.toString(),
+          instructionId: id,
           legIndex: legId.toNumber(),
           legType: LegTypeEnum.OffChain,
         })

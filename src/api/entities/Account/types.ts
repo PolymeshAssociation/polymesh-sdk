@@ -1,7 +1,14 @@
 import BigNumber from 'bignumber.js';
 
 import { Account, Identity } from '~/internal';
-import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum,
+  EntryDirection,
+  EventIdEnum,
+  ModuleIdEnum,
+  MovementKind,
+  PolyxPool,
+} from '~/middleware/types';
 import { EventIdentifier } from '~/types';
 
 export interface Balance {
@@ -171,30 +178,40 @@ export interface AccountTypeInfo {
   relation: AccountIdentityRelation;
 }
 
+/**
+ * One side of a POLYX balance movement: the change it made to one Account's balance
+ */
 export interface HistoricPolyxTransaction extends EventIdentifier {
   /**
-   * Identity from which the POLYX transaction has been initiated/deducted in case of a transfer.
-   * @note this can be null in cases where some balance are endowed/transferred from treasury
+   * Account whose balance changed
    */
-  fromIdentity: Identity | undefined;
+  account: Account;
   /**
-   * Account from which the POLYX transaction has been initiated/deducted in case of a transfer.
-   * @note this can be null in cases where some balance are endowed/transferred from treasury
+   * Identity of `account` when the movement happened, if it had one
    */
-  fromAccount: Account | undefined;
+  identity: Identity | undefined;
   /**
-   * Identity in which the POLYX amount was deposited.
-   * @note this can be null in case when account balance was burned
+   * Account on the other side of the movement, such as the receiver of a transfer
+   * @note undefined for movements with no other side, such as fees, mints and burns
    */
-  toIdentity: Identity | undefined;
+  counterpartyAccount: Account | undefined;
   /**
-   * Account in which the POLYX amount was deposited.
-   * @note this can be null in case when account balance was burned
+   * Identity of `counterpartyAccount`, if it had one
    */
-  toAccount: Account | undefined;
-
+  counterpartyIdentity: Identity | undefined;
+  /**
+   * amount moved, always positive. `direction` says whether it was added or removed
+   */
   amount: BigNumber;
-  type: BalanceTypeEnum;
+  direction: EntryDirection;
+  /**
+   * what caused the movement
+   */
+  kind: MovementKind;
+  /**
+   * the part of the balance that changed
+   */
+  pool: PolyxPool;
   /**
    * identifier string to help differentiate transfers
    */
@@ -202,7 +219,7 @@ export interface HistoricPolyxTransaction extends EventIdentifier {
   extrinsicIdx: BigNumber | undefined;
 
   callId: CallIdEnum | undefined;
-  moduleId: ModuleIdEnum;
+  moduleId: ModuleIdEnum | undefined;
   eventId: EventIdEnum;
 }
 
