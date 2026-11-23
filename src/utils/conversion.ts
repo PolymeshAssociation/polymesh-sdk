@@ -2443,8 +2443,9 @@ export async function scopeToMiddlewareScope(
 /**
  * @hidden
  *
- * Convert a chain sequence number (an Instruction, Venue or Authorization id) into the id the
- *   middleware stores it under: zero padded to 10 digits, so that ordering by id is numeric
+ * Convert a chain sequence number (an Instruction, Venue or Authorization id, or a block number)
+ *   into the id the middleware stores it under: zero padded to 10 digits, so that ordering by id is
+ *   numeric
  */
 export function bigNumberToMiddlewareSequenceId(id: BigNumber): string {
   return id.toString().padStart(10, '0');

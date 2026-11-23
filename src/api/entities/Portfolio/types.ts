@@ -56,7 +56,8 @@ export interface HistoricSettlement {
   accounts: Account[];
   legs: SettlementLeg[];
   /**
-   * This value is null when depicting portfolio movements
+   * The Instruction that made this settlement. Absent (`undefined`) for a movement between holders
+   *   of one Identity, which no Instruction made
    */
   instruction?: Instruction;
 }
