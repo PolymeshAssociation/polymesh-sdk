@@ -5025,18 +5025,11 @@ describe('toHistoricalSettlements', () => {
           createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
           assetId,
           nftIds: ['1', '3'],
+          fromIdentityId: 'someDid',
           fromPortfolioId: 'someDid/0',
+          toIdentityId: 'someDid',
           toPortfolioId: 'someDid/1',
           address: null,
-        },
-        {
-          // a movement between Accounts has no portfolio on either side
-          createdEvent: { eventIdx: 2, block: { blockId: 11, hash: 'otherHash' } },
-          assetId,
-          amount: '1',
-          fromPortfolioId: null,
-          toPortfolioId: null,
-          address: 'someAddress',
         },
       ] as unknown as AssetTransaction[],
       { identityId: 'someDid' },
@@ -5054,6 +5047,53 @@ describe('toHistoricalSettlements', () => {
         direction: SettlementDirectionEnum.None,
       }),
     ]);
+  });
+
+  it('should list a movement to or from an Account of the Identity, with the Account as its holder', () => {
+    const context = dsMockUtils.getContextInstance();
+    const assetId = '0x12341234123412341234123412341234';
+
+    const result = toHistoricalSettlements(
+      [],
+      [
+        {
+          // `settlement.transfer_funds` between two Accounts of one Identity
+          createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+          assetId,
+          amount: '1000000',
+          fromIdentityId: 'someDid',
+          fromAccountId: 'fromAddress',
+          toIdentityId: 'someDid',
+          toAccountId: 'toAddress',
+          address: 'fromAddress',
+        },
+        {
+          // from a portfolio to an Account of the same Identity
+          createdEvent: { eventIdx: 1, block: { blockId: 11, hash: 'otherHash' } },
+          assetId,
+          amount: '2000000',
+          fromIdentityId: 'someDid',
+          fromPortfolioId: 'someDid/2',
+          toIdentityId: 'someDid',
+          toAccountId: 'toAddress',
+          address: 'signerAddress',
+        },
+      ] as unknown as AssetTransaction[],
+      { identityId: 'someDid' },
+      context
+    );
+
+    expect(result).toHaveLength(2);
+
+    const [betweenAccounts, fromPortfolio] = result.map(({ legs }) => legs[0] as FungibleLeg);
+
+    expect(betweenAccounts!.amount).toEqual(new BigNumber(1));
+    expect((betweenAccounts!.from as Account).address).toBe('fromAddress');
+    expect((betweenAccounts!.to as Account).address).toBe('toAddress');
+    expect((fromPortfolio!.from as NumberedPortfolio).id).toEqual(new BigNumber(2));
+    expect((fromPortfolio!.from as NumberedPortfolio).owner.did).toBe('someDid');
+    expect((fromPortfolio!.to as Account).address).toBe('toAddress');
+    expect(result[1]!.accounts).toEqual([expect.objectContaining({ address: 'signerAddress' })]);
   });
 });
 
@@ -5121,10 +5161,92 @@ describe('toHistoricalSettlements directions', () => {
     ).toEqual([SettlementDirectionEnum.Outgoing, SettlementDirectionEnum.Incoming]);
   });
 
-  it("should give no direction to a move between the Identity's own portfolios", () => {
+  it("should give no direction to another party's leg of the same instruction", () => {
+    expect(directions([leg('other/0', 'third/0')], { identityId: 'me' })).toEqual([
+      SettlementDirectionEnum.None,
+    ]);
+  });
+
+  it("should give no direction to a leg between the Identity's own portfolios", () => {
+    // the chain has rejected such a leg since v6.2, but older instructions have them
     expect(directions([leg('me/0', 'me/1')], { identityId: 'me' })).toEqual([
       SettlementDirectionEnum.None,
     ]);
+  });
+
+  it("should give a portfolio's direction to a leg between it and the Identity's other portfolio", () => {
+    expect(directions([leg('me/0', 'me/1')], { identityId: 'me', portfolio: 0 })).toEqual([
+      SettlementDirectionEnum.Outgoing,
+    ]);
+    expect(directions([leg('me/0', 'me/1')], { identityId: 'me', portfolio: 1 })).toEqual([
+      SettlementDirectionEnum.Incoming,
+    ]);
+  });
+
+  it('should give a direction to an Account leg only in the history of its Identity', () => {
+    const accountLeg = {
+      fromId: 'me',
+      fromAccountId: 'myAddress',
+      toId: 'other',
+      toPortfolioId: 'other/0',
+    };
+
+    expect(directions([accountLeg], { identityId: 'me' })).toEqual([
+      SettlementDirectionEnum.Outgoing,
+    ]);
+    expect(directions([accountLeg], { identityId: 'me', portfolio: 0 })).toEqual([
+      SettlementDirectionEnum.None,
+    ]);
+  });
+
+  describe('of a movement', () => {
+    const movementDirections = (
+      sides: Record<string, unknown>,
+      filter: { identityId: string; portfolio?: number }
+    ): SettlementDirectionEnum[] =>
+      toHistoricalSettlements(
+        [],
+        [
+          {
+            createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+            assetId,
+            amount: '1000000',
+            fromIdentityId: 'me',
+            toIdentityId: 'me',
+            address: null,
+            ...sides,
+          },
+        ] as unknown as AssetTransaction[],
+        filter,
+        context()
+      ).map(({ legs }) => legs[0]!.direction);
+
+    const betweenPortfolios = { fromPortfolioId: 'me/0', toPortfolioId: 'me/1' };
+    const portfolioToAccount = { fromPortfolioId: 'me/1', toAccountId: 'myAddress' };
+    const accountToPortfolio = { fromAccountId: 'myAddress', toPortfolioId: 'me/0' };
+
+    it('should report it from the portfolio whose history it is', () => {
+      expect(movementDirections(betweenPortfolios, { identityId: 'me', portfolio: 0 })).toEqual([
+        SettlementDirectionEnum.Outgoing,
+      ]);
+      expect(movementDirections(betweenPortfolios, { identityId: 'me', portfolio: 1 })).toEqual([
+        SettlementDirectionEnum.Incoming,
+      ]);
+      expect(movementDirections(portfolioToAccount, { identityId: 'me', portfolio: 1 })).toEqual([
+        SettlementDirectionEnum.Outgoing,
+      ]);
+      expect(movementDirections(accountToPortfolio, { identityId: 'me', portfolio: 0 })).toEqual([
+        SettlementDirectionEnum.Incoming,
+      ]);
+    });
+
+    it("should give it no direction in the Identity's history", () => {
+      [betweenPortfolios, portfolioToAccount, accountToPortfolio].forEach(sides =>
+        expect(movementDirections(sides, { identityId: 'me' })).toEqual([
+          SettlementDirectionEnum.None,
+        ])
+      );
+    });
   });
 });
 

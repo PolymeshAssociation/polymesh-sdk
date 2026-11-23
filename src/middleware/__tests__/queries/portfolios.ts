@@ -44,4 +44,12 @@ describe('portfolioMovementsQuery', () => {
     expect(print(query)).toContain('instructionId: {isNull: true}');
     expect(print(query)).toContain('fromPortfolioId: {equalTo: $from}');
   });
+
+  it('should select both kinds of holder on each side, and its Identity', () => {
+    const printed = print(portfolioMovementsQuery({ identityId: 'someDid' }).query);
+
+    ['fromIdentityId', 'fromAccountId', 'toIdentityId', 'toAccountId'].forEach(field =>
+      expect(printed).toContain(field)
+    );
+  });
 });

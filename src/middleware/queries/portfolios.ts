@@ -103,8 +103,12 @@ function buildPortfolioMovementsQuery(args: string, filter: string): DocumentNod
     ) {
       nodes {
         id
+        fromIdentityId
         fromPortfolioId
+        fromAccountId
+        toIdentityId
         toPortfolioId
+        toAccountId
         assetId
         amount
         nftIds

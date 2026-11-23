@@ -4810,6 +4810,22 @@ export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
 /**
  * @hidden
  */
+export function middlewareSideToAssetHolder(
+  portfolioId: string | null | undefined,
+  accountId: string | null | undefined,
+  context: Context
+): AssetHolder {
+  // a side of a leg or a movement is an Account when the middleware names one, and otherwise a
+  // portfolio (`<did>/<number>`)
+  return middlewareAssetHolderToAssetHolder(
+    accountId ? { account: accountId } : portfolioIdStringToPortfolio(portfolioId!),
+    context
+  );
+}
+
+/**
+ * @hidden
+ */
 export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
   const {
     legType,
@@ -4825,30 +4841,20 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
     amount,
   } = leg;
 
-  // a holder is an Account when the leg names one, and otherwise a portfolio (`<did>/<number>`)
-  const toHolder = (
-    portfolioId: string | null | undefined,
-    account: string | null | undefined
-  ): AssetHolder =>
-    middlewareAssetHolderToAssetHolder(
-      account ? { account } : portfolioIdStringToPortfolio(portfolioId!),
-      context
-    );
-
   if (legType === LegTypeEnum.Fungible) {
     return {
       asset: new FungibleAsset({ assetId: getAssetIdFromMiddleware(assetId) }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
-      from: toHolder(fromPortfolioId, fromAccountId),
-      to: toHolder(toPortfolioId, toAccountId),
+      from: middlewareSideToAssetHolder(fromPortfolioId, fromAccountId, context),
+      to: middlewareSideToAssetHolder(toPortfolioId, toAccountId, context),
     };
   }
 
   if (legType === LegTypeEnum.NonFungible) {
     const id = getAssetIdFromMiddleware(assetId);
     return {
-      from: toHolder(fromPortfolioId, fromAccountId),
-      to: toHolder(toPortfolioId, toAccountId),
+      from: middlewareSideToAssetHolder(fromPortfolioId, fromAccountId, context),
+      to: middlewareSideToAssetHolder(toPortfolioId, toAccountId, context),
       nfts: (nftIds as string[]).map(
         nftId => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
       ),
@@ -5412,22 +5418,89 @@ export function toCustomClaimTypeWithIdentity(
 
 /**
  * @hidden
+ *
+ * Whose history a transfer is read for: an Identity's, or one of its portfolios'
+ */
+interface HistoryPerspective {
+  identityId: string;
+  portfolio?: number;
+}
+
+/**
+ * @hidden
+ *
+ * The direction of a leg or a movement, seen from the history it is read for. A portfolio's
+ *   history reports what left or entered that portfolio, even when the other side belongs to the
+ *   same Identity. An Identity's history reports what left or entered the Identity, so a transfer
+ *   between its own holders has none
+ */
+export function middlewareTransferToSettlementDirection(
+  sides: {
+    fromId?: string | null | undefined;
+    fromPortfolioId?: string | null | undefined;
+    toId?: string | null | undefined;
+    toPortfolioId?: string | null | undefined;
+  },
+  { identityId, portfolio }: HistoryPerspective
+): SettlementDirectionEnum {
+  const { fromId, fromPortfolioId, toId, toPortfolioId } = sides;
+
+  // 0 is the default portfolio, so only an absent portfolio means the Identity's history
+  if (portfolio !== undefined) {
+    const portfolioId = portfolioToMiddlewarePortfolioId(identityId, portfolio);
+
+    if (fromPortfolioId === portfolioId) {
+      return SettlementDirectionEnum.Outgoing;
+    }
+    if (toPortfolioId === portfolioId) {
+      return SettlementDirectionEnum.Incoming;
+    }
+    return SettlementDirectionEnum.None;
+  }
+
+  if (fromId === toId) {
+    return SettlementDirectionEnum.None;
+  }
+  if (fromId === identityId) {
+    return SettlementDirectionEnum.Outgoing;
+  }
+  if (toId === identityId) {
+    return SettlementDirectionEnum.Incoming;
+  }
+  return SettlementDirectionEnum.None;
+}
+
+/**
+ * @hidden
+ *
+ * A movement is a transfer between two holders of one Identity that no instruction made, so both
+ *   of its sides are always there. Either side may be an Account
  */
 function portfolioMovementsToHistoricSettlements(
   portfolioMovements: MiddlewareAssetTransaction[],
+  perspective: HistoryPerspective,
   context: Context
 ): HistoricSettlement[] {
-  return portfolioMovements
-    .filter(({ fromPortfolioId, toPortfolioId }) => fromPortfolioId && toPortfolioId)
-    .map(({ createdEvent, fromPortfolioId, toPortfolioId, assetId, amount, nftIds, address }) => {
+  return portfolioMovements.map(
+    ({
+      createdEvent,
+      fromIdentityId,
+      fromPortfolioId,
+      fromAccountId,
+      toIdentityId,
+      toPortfolioId,
+      toAccountId,
+      assetId,
+      amount,
+      nftIds,
+      address,
+    }) => {
       const { blockId, hash } = createdEvent!.block!;
-      const from = middlewarePortfolioToPortfolio(
-        portfolioIdStringToPortfolio(fromPortfolioId!),
-        context
-      );
-      const to = middlewarePortfolioToPortfolio(
-        portfolioIdStringToPortfolio(toPortfolioId!),
-        context
+      const from = middlewareSideToAssetHolder(fromPortfolioId, fromAccountId, context);
+      const to = middlewareSideToAssetHolder(toPortfolioId, toAccountId, context);
+      const direction = middlewareTransferToSettlementDirection(
+        { fromId: fromIdentityId, fromPortfolioId, toId: toIdentityId, toPortfolioId },
+        perspective
       );
       const id = getAssetIdFromMiddleware(assetId);
 
@@ -5437,14 +5510,14 @@ function portfolioMovementsToHistoricSettlements(
             nfts: (nftIds as string[]).map(
               nftId => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
             ),
-            direction: SettlementDirectionEnum.None,
+            direction,
             from,
             to,
           }
         : {
             asset: new FungibleAsset({ assetId: id }, context),
             amount: new BigNumber(amount).shiftedBy(-6),
-            direction: SettlementDirectionEnum.None,
+            direction,
             from,
             to,
           };
@@ -5456,7 +5529,8 @@ function portfolioMovementsToHistoricSettlements(
         accounts: address ? [new Account({ address }, context)] : [],
         legs: [leg],
       };
-    });
+    }
+  );
 }
 
 /**
@@ -5465,37 +5539,10 @@ function portfolioMovementsToHistoricSettlements(
 export function toHistoricalSettlements(
   settlementsResult: MiddlewareLeg[],
   portfolioMovements: MiddlewareAssetTransaction[],
-  filter: {
-    identityId: string;
-    portfolio?: number;
-  },
+  filter: HistoryPerspective,
   context: Context
 ): HistoricSettlement[] {
   let data: HistoricSettlement[] = [];
-
-  const getDirection = (leg: MiddlewareLeg): SettlementDirectionEnum => {
-    const { fromId, fromPortfolioId, toId, toPortfolioId } = leg;
-    const { identityId, portfolio } = filter;
-    const portfolioId = portfolioToMiddlewarePortfolioId(identityId, portfolio);
-
-    // with no portfolio, any of the Identity's portfolios counts; 0 is the default portfolio
-    const isAllPortfolios = portfolio === undefined;
-
-    let result = SettlementDirectionEnum.None;
-
-    if (fromId === toId) {
-      result = SettlementDirectionEnum.None;
-    } else if (fromId === identityId) {
-      if (isAllPortfolios || fromPortfolioId === portfolioId) {
-        result = SettlementDirectionEnum.Outgoing;
-      }
-    } else if (toId === identityId) {
-      if (isAllPortfolios || toPortfolioId === portfolioId) {
-        result = SettlementDirectionEnum.Incoming;
-      }
-    }
-    return result;
-  };
 
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
   settlementsResult.forEach(({ instruction }) => {
@@ -5516,12 +5563,12 @@ export function toHistoricalSettlements(
       instruction: new Instruction({ id: new BigNumber(id) }, context),
       legs: legs.map(leg => ({
         ...middlewareLegToLeg(leg, context),
-        direction: getDirection(leg),
+        direction: middlewareTransferToSettlementDirection(leg, filter),
       })),
     });
   });
 
-  data = [...data, ...portfolioMovementsToHistoricSettlements(portfolioMovements, context)];
+  data = [...data, ...portfolioMovementsToHistoricSettlements(portfolioMovements, filter, context)];
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
   return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
