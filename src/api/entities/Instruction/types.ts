@@ -124,8 +124,20 @@ export type LegStatus =
       uid: BigNumber;
     };
 
+/**
+ * The affirmation of one holder on an Instruction's legs: a portfolio, or an Account
+ */
 export interface InstructionAffirmation {
+  /**
+   * the Account holding the Assets, or the Identity owning `portfolio`. For a claimed off-chain
+   *   receipt, the Identity that claimed it, with no `portfolio`
+   */
   party: Identity | Account;
+  /**
+   * the portfolio holding the Assets, when the holder is a portfolio. An Identity affirms once
+   *   for each of its portfolios on the legs, so it can appear in several entries
+   */
+  portfolio?: DefaultPortfolio | NumberedPortfolio;
   status: AffirmationStatus;
 }
 

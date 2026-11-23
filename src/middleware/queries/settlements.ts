@@ -3,32 +3,40 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import { Context } from '~/internal';
-import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
 import {
-  Instruction,
-  InstructionAffirmation,
+  createArgsAndFilters,
+  eventIdentifierFields,
+  getSizeAndOffset,
+  orderByClause,
+} from '~/middleware/queries/common';
+import {
+  AffirmStatusEnum,
   InstructionAffirmationsOrderBy,
-  InstructionEvent,
+  InstructionEventEnum,
   InstructionEventsOrderBy,
   InstructionsOrderBy,
   InstructionStatusEnum,
-  Leg,
   LegsOrderBy,
+  LegTypeEnum,
 } from '~/middleware/types';
 import { HistoricalInstructionFilters } from '~/types';
-import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
+import { PaginatedQueryArgs } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
-import { asAssetId, asDid } from '~/utils/internal';
+import {
+  bigNumberToMiddlewareSequenceId,
+  portfolioToMiddlewarePortfolioId,
+} from '~/utils/conversion';
+import { asDid, getAssetIdForMiddleware } from '~/utils/internal';
 
 const legAttributes = `
             legIndex
             legType
-            from
-            fromPortfolio
-            fromAccount
-            to
-            toPortfolio
-            toAccount
+            fromId
+            fromPortfolioId
+            fromAccountId
+            toId
+            toPortfolioId
+            toAccountId
             assetId
             ticker
             amount
@@ -37,7 +45,7 @@ const legAttributes = `
             offChainReceipts {
               nodes {
                 uid
-                signer
+                signerId
               }
             }
 `;
@@ -52,36 +60,34 @@ const instructionAttributes = `
           tradeDate
           valueDate
           mediators
-          legs {
+          legs(orderBy: [${LegsOrderBy.LegIndexAsc}]) {
             nodes {
               ${legAttributes}
             }
           }
           memo
-          createdBlock {
-            blockId
-            hash
-            datetime
+          createdEvent {
+            ${eventIdentifierFields}
           }
-          updatedBlock {
-            blockId
-            hash
-            datetime
+          updatedEvent {
+            ${eventIdentifierFields}
           }
 `;
 
 const instructionAffirmationAttributes = `
       id
-      identity
-      account
-      portfolios
+      identityId
+      accountId
+      portfolioId
+      affirmedById
+      signerId
       offChainReceiptId
       offChainReceipt {
         leg {
           id
           legIndex
         }
-        signer
+        signerId
       }
       status
       isAutomaticallyAffirmed
@@ -89,7 +95,52 @@ const instructionAffirmationAttributes = `
       expiry
 `;
 
-type InstructionArgs = 'id' | 'venueId' | 'status';
+/**
+ * The filter keys that hold an Instruction or Venue id
+ */
+const sequenceIdKeys = new Set(['id', 'venueId', 'instructionId']);
+
+/**
+ * @hidden
+ *
+ * An Instruction or Venue id is the chain's sequence number. The builders take it as a number and
+ *   pad it the way the middleware stores it, so a caller cannot pass a form that matches nothing.
+ *   Only the id keys are padded, so another number in the filters is left as it is
+ */
+function withMiddlewareIds(filters: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(filters).map(([key, value]) => [
+      key,
+      sequenceIdKeys.has(key) && BigNumber.isBigNumber(value)
+        ? bigNumberToMiddlewareSequenceId(value)
+        : value,
+    ])
+  );
+}
+
+export interface InstructionsQueryFilters {
+  id?: BigNumber;
+  venueId?: BigNumber;
+  status?: InstructionStatusEnum;
+}
+
+export interface InstructionEventsQueryFilters {
+  instructionId: BigNumber;
+  event?: InstructionEventEnum;
+}
+
+export interface InstructionAffirmationsQueryFilters {
+  instructionId: BigNumber;
+  status?: AffirmStatusEnum;
+  identityId?: string;
+  isMediator?: boolean;
+}
+
+export interface LegsQueryFilters {
+  instructionId: BigNumber;
+  legType?: LegTypeEnum;
+  legIndex?: number;
+}
 
 type InstructionPartiesVariables = Partial<
   // `orderBy` is interpolated into the query, not sent as a variable, like `size` and `start`
@@ -107,12 +158,13 @@ type InstructionPartiesVariables = Partial<
  * Query to get event details about instruction events
  */
 export function instructionEventsQuery(
-  filters: QueryArgs<InstructionEvent, 'event' | 'instructionId'>,
+  filters: InstructionEventsQueryFilters,
   size?: BigNumber,
   start?: BigNumber,
   orderBy?: InstructionEventsOrderBy | InstructionEventsOrderBy[]
-): QueryOptions<PaginatedQueryArgs<QueryArgs<InstructionEvent, 'event' | 'instructionId'>>> {
-  const { args, filter } = createArgsAndFilters(filters, {
+): QueryOptions<PaginatedQueryArgs<Record<string, unknown>>> {
+  const variables = withMiddlewareIds({ ...filters });
+  const { args, filter } = createArgsAndFilters(variables, {
     event: 'InstructionEventEnum',
   });
 
@@ -133,25 +185,17 @@ export function instructionEventsQuery(
         nodes {
           id
           event
-          eventIdx
-          identity
-          account
-          portfolio
+          identityId
+          accountId
+          portfolioId
           offChainReceiptId
           offChainReceipt {
             legId
-            signer
+            signerId
             uid
           }
-          createdBlock {
-            blockId
-            hash
-            datetime
-          }
-          updatedBlock {
-            blockId
-            hash
-            datetime
+          createdEvent {
+            ${eventIdentifierFields}
           }
         }
       }
@@ -160,7 +204,7 @@ export function instructionEventsQuery(
 
   return {
     query,
-    variables: { ...filters, ...getSizeAndOffset(size, start) },
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }
 
@@ -170,12 +214,13 @@ export function instructionEventsQuery(
  * Get a specific instruction within a venue for a specific event
  */
 export function instructionsQuery(
-  filters: QueryArgs<Instruction, InstructionArgs>,
+  filters: InstructionsQueryFilters,
   size?: BigNumber,
   start?: BigNumber,
   orderBy?: InstructionsOrderBy | InstructionsOrderBy[]
-): QueryOptions<PaginatedQueryArgs<QueryArgs<Instruction, InstructionArgs>>> {
-  const { args, filter } = createArgsAndFilters(filters, {
+): QueryOptions<PaginatedQueryArgs<Record<string, unknown>>> {
+  const variables = withMiddlewareIds({ ...filters });
+  const { args, filter } = createArgsAndFilters(variables, {
     status: 'InstructionStatusEnum',
   });
 
@@ -202,11 +247,9 @@ export function instructionsQuery(
 
   return {
     query,
-    variables: { ...filters, ...getSizeAndOffset(size, start) },
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }
-
-type InstructionAffirmationArgs = 'instructionId' | 'status' | 'identity' | 'isMediator';
 
 /**
  * @hidden
@@ -214,19 +257,20 @@ type InstructionAffirmationArgs = 'instructionId' | 'status' | 'identity' | 'isM
  * Get a specific instruction within a venue for a specific event
  */
 export function instructionAffirmationsQuery(
-  filters: QueryArgs<InstructionAffirmation, InstructionAffirmationArgs>,
+  filters: InstructionAffirmationsQueryFilters,
   size?: BigNumber,
   start?: BigNumber,
   orderBy?: InstructionAffirmationsOrderBy | InstructionAffirmationsOrderBy[]
-): QueryOptions<PaginatedQueryArgs<QueryArgs<InstructionAffirmation, InstructionAffirmationArgs>>> {
-  const { args, filter } = createArgsAndFilters(filters, {
+): QueryOptions<PaginatedQueryArgs<Record<string, unknown>>> {
+  const variables = withMiddlewareIds({ ...filters });
+  const { args, filter } = createArgsAndFilters(variables, {
     status: 'AffirmStatusEnum',
     isMediator: 'Boolean',
   });
 
-  // an affirmation's `id` is not time ordered, so it serves only as a tiebreaker
+  // every holder's row is created with the instruction, so `createdEventId` ties and `id` decides
   const ordering = orderByClause(orderBy, [
-    InstructionAffirmationsOrderBy.CreatedBlockIdDesc,
+    InstructionAffirmationsOrderBy.CreatedEventIdDesc,
     InstructionAffirmationsOrderBy.IdDesc,
   ]);
 
@@ -251,7 +295,7 @@ export function instructionAffirmationsQuery(
   return {
     query,
     variables: {
-      ...filters,
+      ...variables,
       ...(size ? { size: size.toNumber() } : {}),
       ...(start ? { start: start.toNumber() } : {}),
     },
@@ -264,9 +308,9 @@ export function instructionAffirmationsQuery(
  * Get a specific instruction within a venue for a specific event
  */
 export function offChainAffirmationsQuery(
-  filters: QueryArgs<InstructionAffirmation, 'instructionId'>
-): QueryOptions<QueryArgs<InstructionAffirmation, 'instructionId'>> {
-  const orderBy = `${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}`;
+  filters: Pick<InstructionAffirmationsQueryFilters, 'instructionId'>
+): QueryOptions<Record<string, unknown>> {
+  const orderBy = `${InstructionAffirmationsOrderBy.CreatedEventIdAsc}`;
 
   const query = gql`
     query InstructionAffirmationsQuery($instructionId: String!) {
@@ -286,7 +330,7 @@ export function offChainAffirmationsQuery(
 
   return {
     query,
-    variables: { ...filters },
+    variables: withMiddlewareIds({ ...filters }),
   };
 }
 
@@ -296,12 +340,13 @@ export function offChainAffirmationsQuery(
  * Get a specific instruction within a venue for a specific event
  */
 export function legsQuery(
-  filters: QueryArgs<Leg, 'instructionId' | 'legType' | 'legIndex'>,
+  filters: LegsQueryFilters,
   size?: BigNumber,
   start?: BigNumber,
   orderBy?: LegsOrderBy | LegsOrderBy[]
-): QueryOptions<PaginatedQueryArgs<QueryArgs<Leg, 'instructionId' | 'legType'>>> {
-  const { args, filter } = createArgsAndFilters(filters, {
+): QueryOptions<PaginatedQueryArgs<Record<string, unknown>>> {
+  const variables = withMiddlewareIds({ ...filters });
+  const { args, filter } = createArgsAndFilters(variables, {
     legType: 'LegTypeEnum',
     legIndex: 'Int',
   });
@@ -329,7 +374,7 @@ export function legsQuery(
   return {
     query,
     variables: {
-      ...filters,
+      ...variables,
       ...(size ? { size: size.toNumber() } : {}),
       ...(start ? { start: start.toNumber() } : {}),
     },
@@ -368,7 +413,7 @@ export const buildHistoricalInstructionsQueryFilter = async (
 
   if (identity) {
     args.push('$identity: String!');
-    instructionPartiesFilter.push('identity: { equalTo: $identity }');
+    instructionPartiesFilter.push('identityId: { equalTo: $identity }');
     variables.identity = asDid(identity);
   }
 
@@ -386,25 +431,25 @@ export const buildHistoricalInstructionsQueryFilter = async (
 
   if (party) {
     args.push('$party: String!');
-    instructionPartiesFilter.push('identity: { equalTo: $party }');
+    instructionPartiesFilter.push('identityId: { equalTo: $party }');
     variables.party = asDid(party);
   }
 
   if (asset) {
     args.push('$asset: String!');
     legsFilter.push('assetId: { equalTo: $asset }');
-    variables.asset = await asAssetId(asset, context);
+    variables.asset = await getAssetIdForMiddleware(asset, context);
   }
 
   if (sender) {
     args.push('$sender: String!');
-    legsFilter.push('from: { equalTo: $sender }');
+    legsFilter.push('fromId: { equalTo: $sender }');
     variables.sender = asDid(sender);
   }
 
   if (receiver) {
     args.push('$receiver: String!');
-    legsFilter.push('to: { equalTo: $receiver }');
+    legsFilter.push('toId: { equalTo: $receiver }');
     variables.receiver = asDid(receiver);
   }
 
@@ -474,7 +519,14 @@ export interface QuerySettlementFilters {
   address?: string | undefined;
 }
 
-type LegArgs = 'from' | 'fromPortfolio' | 'to' | 'toPortfolio' | 'assetId' | 'addresses';
+type LegFilterVariables = {
+  from?: string;
+  to?: string;
+  fromPortfolio?: string;
+  toPortfolio?: string;
+  assetId?: string;
+  addresses?: string[];
+};
 
 /**
  *  @hidden
@@ -485,23 +537,27 @@ function createLegFilters(
 ): {
   args: string;
   filter: string;
-  variables: QueryArgs<Leg, LegArgs>;
+  variables: LegFilterVariables;
 } {
-  const args: string[] = ['$from: String!, $to: String!'];
-  const fromIdFilters = ['from: { equalTo: $from }'];
-  const toIdFilters = ['to: { equalTo: $to }'];
-  const portfolioNumber = portfolioId ? portfolioId.toNumber() : 0;
-  const variables: QueryArgs<Leg, LegArgs> = {
-    from: identityId,
-    to: identityId,
-  };
+  const args: string[] = [];
+  const fromIdFilters: string[] = [];
+  const toIdFilters: string[] = [];
+  const variables: LegFilterVariables = {};
 
-  if (!queryAll) {
-    variables.fromPortfolio = portfolioNumber;
-    variables.toPortfolio = portfolioNumber;
-    args.push('$fromPortfolio: Int, $toPortfolio: Int');
-    fromIdFilters.push('fromPortfolio: { equalTo: $fromPortfolio }');
-    toIdFilters.push('toPortfolio: { equalTo: $toPortfolio }');
+  if (queryAll) {
+    args.push('$from: String!, $to: String!');
+    fromIdFilters.push('fromId: { equalTo: $from }');
+    toIdFilters.push('toId: { equalTo: $to }');
+    variables.from = identityId;
+    variables.to = identityId;
+  } else {
+    const portfolio = portfolioToMiddlewarePortfolioId(identityId, portfolioId);
+
+    args.push('$fromPortfolio: String!, $toPortfolio: String!');
+    fromIdFilters.push('fromPortfolioId: { equalTo: $fromPortfolio }');
+    toIdFilters.push('toPortfolioId: { equalTo: $toPortfolio }');
+    variables.fromPortfolio = portfolio;
+    variables.toPortfolio = portfolio;
   }
 
   if (assetId) {
@@ -514,8 +570,8 @@ function createLegFilters(
 
   if (address) {
     variables.addresses = [address];
-    args.push('$addresses: [String!]!');
-    const addressFilter = 'addresses: { in: $addresses }';
+    args.push('$addresses: JSON!');
+    const addressFilter = 'addresses: { contains: $addresses }';
     toIdFilters.push(addressFilter);
     fromIdFilters.push(addressFilter);
   }
@@ -531,7 +587,7 @@ function createLegFilters(
  *  @hidden
  */
 function buildSettlementsQuery(args: string, filter: string): DocumentNode {
-  const orderBy = `[${LegsOrderBy.CreatedBlockIdAsc}]`;
+  const orderBy = `[${LegsOrderBy.CreatedEventIdAsc}]`;
 
   return gql`
   query SettlementsQuery
@@ -558,7 +614,7 @@ function buildSettlementsQuery(args: string, filter: string): DocumentNode {
  */
 export function settlementsQuery(
   filters: QuerySettlementFilters
-): QueryOptions<QueryArgs<Leg, LegArgs>> {
+): QueryOptions<LegFilterVariables> {
   const { args, filter, variables } = createLegFilters(filters);
   const query = buildSettlementsQuery(args, filter);
 
@@ -575,7 +631,7 @@ export function settlementsQuery(
  */
 export function settlementsForAllPortfoliosQuery(
   filters: Omit<QuerySettlementFilters, 'portfolioId'>
-): QueryOptions<QueryArgs<Leg, LegArgs>> {
+): QueryOptions<LegFilterVariables> {
   const { args, filter, variables } = createLegFilters(filters, true);
   const query = buildSettlementsQuery(args, filter);
 

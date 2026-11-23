@@ -247,7 +247,7 @@ describe('Account class', () => {
             callId: CallIdEnum.RegisterTicker,
             extrinsicIdx: 2,
             specVersionId: 2006,
-            paramsTxt: '[]',
+            args: { ticker: 'TICKER' },
             blockId: blockNumber1.toNumber(),
             address,
             nonce: 1,
@@ -263,7 +263,7 @@ describe('Account class', () => {
             callId: CallIdEnum.RegisterTicker,
             extrinsicIdx: 2,
             specVersionId: 2006,
-            paramsTxt: '[]',
+            args: null,
             blockId: blockNumber2.toNumber(),
             success: 1,
             signedbyAddress: 1,
@@ -281,7 +281,7 @@ describe('Account class', () => {
       dsMockUtils.createApolloQueryMock(
         extrinsicsByArgs(
           {
-            blockId: blockNumber1.toString(),
+            blockId: '0000000001',
             address,
             moduleId,
             callId,
@@ -322,6 +322,8 @@ describe('Account class', () => {
       expect(result.data[1]!.blockHash).toEqual(blockHash2);
       expect(result.data[0]!.blockDate).toEqual(blockDate1);
       expect(result.data[1]!.blockDate).toEqual(blockDate2);
+      expect(result.data[0]!.params).toEqual({ ticker: 'TICKER' });
+      expect(result.data[1]!.params).toBeNull();
       expect(result.data[0]!.address).toEqual(address);
       expect(result.data[1]!.address).toBeUndefined();
       expect(result.data[0]!.nonce).toEqual(new BigNumber(1));
@@ -334,7 +336,7 @@ describe('Account class', () => {
       dsMockUtils.createApolloQueryMock(
         extrinsicsByArgs(
           {
-            blockId: blockNumber1.toString(),
+            blockId: '0000000001',
             address,
             moduleId,
             callId,
@@ -1492,12 +1494,46 @@ describe('Account class', () => {
     });
 
     describe('method: getTransactionHistory', () => {
-      it('should throw a NotSupported error for an Ethereum-derived Account', async () => {
+      it('should read the extrinsics an Ethereum-derived Account signed', async () => {
+        // the indexer records a `revive.eth_transact` under its signer's 0xEE padded address
         const ethAccount = new Account({ address: ethDerivedAddress }, context);
 
-        await expect(ethAccount.getTransactionHistory()).rejects.toThrow(
-          expect.objectContaining({ code: ErrorCode.NotSupported })
+        dsMockUtils.createApolloQueryMock(
+          extrinsicsByArgs(
+            { address: ethDerivedAddress },
+            undefined,
+            undefined,
+            ExtrinsicsOrderBy.IdDesc
+          ),
+          {
+            extrinsics: {
+              totalCount: 1,
+              nodes: [
+                {
+                  blockId: '0000000005',
+                  extrinsicIdx: 0,
+                  address: ethDerivedAddress,
+                  moduleId: ModuleIdEnum.Revive,
+                  callId: CallIdEnum.EthTransact,
+                  args: {},
+                  success: 1,
+                  specVersionId: 8002000,
+                  extrinsicHash: '0xhash',
+                  block: { hash: '0xblockHash', datetime: '2026-01-01T00:00:00' },
+                },
+              ],
+            },
+          }
         );
+
+        const result = await ethAccount.getTransactionHistory();
+
+        expect(result.count).toEqual(new BigNumber(1));
+        expect(result.data[0]).toMatchObject({
+          blockNumber: new BigNumber(5),
+          address: ethDerivedAddress,
+          success: true,
+        });
       });
     });
 

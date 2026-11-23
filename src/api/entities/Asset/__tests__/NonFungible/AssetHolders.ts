@@ -54,24 +54,16 @@ describe('AssetHolder class', () => {
       assetHolders = new AssetHolders(collection, context);
       when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
-      const nftHoldersResponse = {
-        nodes: [
-          {
-            identityId: 'someDid',
-            nftIds: [1],
-          },
-          {
-            identityId: 'anotherDid',
-            nftIds: [2],
-          },
-        ],
-        totalCount: 2,
-      };
-
       dsMockUtils.createApolloQueryMock(
         nftCollectionHolders(assetId, new BigNumber(2), new BigNumber(0)),
         {
-          nftHolders: nftHoldersResponse,
+          assetHolders: {
+            nodes: [
+              { identityId: 'someDid', nftCount: 2 },
+              { identityId: 'anotherDid', nftCount: 1 },
+            ],
+            totalCount: 2,
+          },
         }
       );
     });
@@ -84,23 +76,34 @@ describe('AssetHolder class', () => {
       dsMockUtils.cleanup();
     });
 
-    it('should retrieve all the NFT Holders with NFTs', async () => {
+    it('should retrieve the NFT holders with how many NFTs each holds', async () => {
       const result = await assetHolders.get({ size: new BigNumber(2), start: new BigNumber(0) });
 
       expect(result).toEqual({
-        data: expect.arrayContaining([
-          expect.objectContaining({
+        data: [
+          {
             identity: expect.objectContaining({ did: 'someDid' }),
-            nfts: [expect.objectContaining({ id: new BigNumber(1) })],
-          }),
-          expect.objectContaining({
+            nftCount: new BigNumber(2),
+          },
+          {
             identity: expect.objectContaining({ did: 'anotherDid' }),
-            nfts: [expect.objectContaining({ id: new BigNumber(2) })],
-          }),
-        ]),
+            nftCount: new BigNumber(1),
+          },
+        ],
         next: null,
         count: new BigNumber(2),
       });
+    });
+
+    it('should return an empty page of holders', async () => {
+      dsMockUtils.createApolloQueryMock(
+        nftCollectionHolders(assetId, new BigNumber(2), new BigNumber(10)),
+        { assetHolders: { nodes: [], totalCount: 2 } }
+      );
+
+      const result = await assetHolders.get({ size: new BigNumber(2), start: new BigNumber(10) });
+
+      expect(result).toEqual({ data: [], next: null, count: new BigNumber(2) });
     });
   });
 

@@ -1,6 +1,7 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { isNil } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
@@ -41,7 +42,7 @@ import {
   bigNumberToU64,
   boolToBoolean,
   meshMetadataKeyToMetadataKey,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
   stringToAccountId,
@@ -380,7 +381,7 @@ export class NftCollection extends BaseAsset {
       })
     );
 
-    return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
+    return optionize(middlewareEventToEventIdentifier)(asset?.createdEvent);
   }
 
   /**
@@ -485,6 +486,8 @@ export class NftCollection extends BaseAsset {
     const { context, id } = this;
     const { size, start, orderBy } = opts;
 
+    const middlewareAssetId = await getAssetIdForMiddleware(id, context);
+
     const {
       data: {
         assetTransactions: { nodes, totalCount },
@@ -492,7 +495,7 @@ export class NftCollection extends BaseAsset {
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
-          assetId: id,
+          assetId: middlewareAssetId,
         },
         size,
         start,
@@ -508,13 +511,11 @@ export class NftCollection extends BaseAsset {
       asset,
       nftIds,
       fromPortfolioId,
-      fromAccount: fromAddress,
+      fromAccountId: fromAddress,
       toPortfolioId,
-      toAccount: toAddress,
-      createdBlock,
+      toAccountId: toAddress,
+      createdEvent,
       eventId,
-      eventIdx,
-      extrinsicIdx,
       fundingRound,
       instructionId,
       instructionMemo,
@@ -539,10 +540,14 @@ export class NftCollection extends BaseAsset {
         fundingRound,
         instructionId: instructionId ? new BigNumber(instructionId) : undefined,
         instructionMemo,
+        // an event emitted outside any extrinsic, such as at the start of a block, has none
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extrinsicIndex: new BigNumber(extrinsicIdx!),
+        extrinsicIndex: isNil(createdEvent!.extrinsicIdx)
+          ? null
+          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            new BigNumber(createdEvent!.extrinsicIdx),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        ...middlewareEventToEventIdentifier(createdEvent!),
       });
     }
 

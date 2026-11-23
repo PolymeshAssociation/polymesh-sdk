@@ -34,7 +34,6 @@ import {
 } from '~/internal';
 import {
   instructionAffirmationsQuery,
-  instructionEventsQuery,
   instructionsQuery,
   legsQuery,
   offChainAffirmationsQuery,
@@ -42,7 +41,7 @@ import {
 import {
   Instruction as MiddlewareInstruction,
   InstructionAffirmation as MiddlewareInstructionAffirmation,
-  InstructionEventEnum,
+  InstructionStatusEnum,
   LegTypeEnum,
   Query,
 } from '~/middleware/types';
@@ -52,7 +51,6 @@ import {
   AssetHolder,
   DefaultPortfolio,
   ErrorCode,
-  EventIdentifier,
   ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
   InstructionLockedInfo,
@@ -86,11 +84,14 @@ import {
   meshNftToNftId,
   meshSettlementTypeToEndCondition,
   middlewareAffirmStatusToAffirmationStatus,
-  middlewareEventDetailsToEventIdentifier,
+  middlewareDateToDate,
+  middlewareEventToEventIdentifier,
   middlewareInstructionStatusToInstructionStatus,
   middlewareInstructionToInstructionEndCondition,
   middlewareLegToLeg,
+  middlewarePortfolioToPortfolio,
   momentToDate,
+  portfolioIdStringToPortfolio,
   stringToBytes,
   tickerToString,
   u32ToBigNumber,
@@ -99,7 +100,6 @@ import {
 import {
   calculateNextKey,
   createProcedureMethod,
-  optionize,
   requestMulti,
   requestPaginated,
 } from '~/utils/internal';
@@ -110,6 +110,30 @@ export interface UniqueIdentifiers {
 
 const executedMessage =
   'Instruction has already been executed/rejected and it was purged from chain';
+
+/**
+ * @hidden
+ *
+ * The SDK and middleware statuses of an Instruction the chain no longer has pending
+ */
+const settledStatuses = {
+  [InternalInstructionStatus.Success]: {
+    status: InstructionStatus.Success,
+    middleware: InstructionStatusEnum.Executed,
+  },
+  [InternalInstructionStatus.Failed]: {
+    status: InstructionStatus.Failed,
+    middleware: InstructionStatusEnum.Failed,
+  },
+  [InternalInstructionStatus.Rejected]: {
+    status: InstructionStatus.Rejected,
+    middleware: InstructionStatusEnum.Rejected,
+  },
+  [InternalInstructionStatus.LockedForExecution]: {
+    status: InstructionStatus.LockedForExecution,
+    middleware: InstructionStatusEnum.Locked,
+  },
+} as const;
 
 /**
  * Represents a settlement Instruction to be executed on a certain Venue
@@ -483,7 +507,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery({
-        id: id.toString(),
+        id,
       })
     );
 
@@ -596,13 +620,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
       const endCondition = middlewareInstructionToInstructionEndCondition(instruction);
 
-      const { status, tradeDate, valueDate, venueId, memo, createdBlock } = instruction;
+      const { status, tradeDate, valueDate, venueId, memo, createdEvent } = instruction;
 
       return {
         status: middlewareInstructionStatusToInstructionStatus(status),
-        createdAt: new Date(createdBlock!.datetime),
-        tradeDate: tradeDate ? new Date(tradeDate) : null,
-        valueDate: valueDate ? new Date(valueDate) : null,
+        createdAt: middlewareDateToDate(createdEvent!.block!.datetime),
+        tradeDate: tradeDate ? middlewareDateToDate(tradeDate) : null,
+        valueDate: valueDate ? middlewareDateToDate(valueDate) : null,
         venue: venueId ? new Venue({ id: new BigNumber(venueId) }, context) : null,
         memo: memo ?? null,
         ...endCondition,
@@ -648,7 +672,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       } = await context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
         instructionAffirmationsQuery(
           {
-            instructionId: id.toString(),
+            instructionId: id,
+            isMediator: false,
           },
           paginationOpts?.size,
           start
@@ -658,16 +683,25 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       const count = new BigNumber(totalCount);
 
       const data = affirmations.map(affirmation => {
-        const { identity, account, status } = affirmation;
+        const { identityId, accountId, portfolioId, status } = affirmation;
 
-        if (account) {
+        if (accountId) {
           return {
-            party: new Account({ address: account }, context),
+            party: new Account({ address: accountId }, context),
             status: middlewareAffirmStatusToAffirmationStatus(status),
           };
         }
+        // a claimed off-chain receipt is affirmed by an Identity, with no Account or portfolio
         return {
-          party: new Identity({ did: identity as string }, context),
+          party: new Identity({ did: identityId }, context),
+          ...(portfolioId
+            ? {
+                portfolio: middlewarePortfolioToPortfolio(
+                  portfolioIdStringToPortfolio(portfolioId),
+                  context
+                ),
+              }
+            : {}),
           status: middlewareAffirmStatusToAffirmationStatus(status),
         };
       });
@@ -706,6 +740,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       }
       return {
         party: accountHolder.owner,
+        portfolio: accountHolder,
         status,
       };
     });
@@ -843,7 +878,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       } = await context.queryMiddleware<Ensured<Query, 'legs'>>(
         legsQuery(
           {
-            instructionId: id.toString(),
+            instructionId: id,
           },
           paginationOpts?.size,
           start
@@ -871,67 +906,71 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note uses the middlewareV2
    */
   public async getStatus(): Promise<InstructionStatusResult> {
-    const isPending = await this.isPending();
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+    } = this;
 
-    if (isPending) {
+    // the chain's status decides wherever it has one; the middleware supplies the event
+    const rawStatus = await settlement.instructionStatuses(bigNumberToU64(id, context));
+    const status = meshInstructionStatusToInstructionStatus(rawStatus);
+
+    if (status === InternalInstructionStatus.Pending) {
+      return { status: InstructionStatus.Pending };
+    }
+
+    if (status === InternalInstructionStatus.Unknown && !(await this.exists())) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: "The Instruction doesn't exist",
+      });
+    }
+
+    const { status: middlewareStatus, updatedEvent } = await this.getInstructionFromMiddleware();
+
+    if (status === InternalInstructionStatus.Unknown) {
+      // an instruction settled before the chain kept statuses apart from its pruned details has
+      // none, so the middleware's decides
+      const settled = Object.values(settledStatuses).find(
+        ({ middleware }) => middleware === middlewareStatus
+      );
+
+      if (!settled) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: "It isn't possible to determine the current status of this Instruction",
+          data: { middlewareStatus },
+        });
+      }
+
       return {
-        status: InstructionStatus.Pending,
+        status: settled.status,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        eventIdentifier: middlewareEventToEventIdentifier(updatedEvent!),
       };
     }
 
-    const [
-      executedEventIdentifier,
-      failedEventIdentifier,
-      failedToExecuteIdentifier,
-      rejectedEventIdentifier,
-      lockedEventIdentifier,
-    ] = await Promise.all([
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionExecuted),
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionFailed),
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.FailedToExecuteInstruction), // this is the new event triggered for failed to execute instruction
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionRejected),
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionLocked),
-    ]);
+    const { status: sdkStatus, middleware } = settledStatuses[status];
 
-    if (executedEventIdentifier) {
-      return {
-        status: InstructionStatus.Success,
-        eventIdentifier: executedEventIdentifier,
-      };
+    // every status change sets the row's `updatedEvent`, so a matching status means it is that event
+    if (middlewareStatus !== middleware) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: "The middleware has not yet processed the Instruction's latest status",
+        data: { status, middlewareStatus },
+      });
     }
 
-    if (failedEventIdentifier) {
-      return {
-        status: InstructionStatus.Failed,
-        eventIdentifier: failedEventIdentifier,
-      };
-    }
-
-    if (failedToExecuteIdentifier) {
-      return {
-        status: InstructionStatus.Failed,
-        eventIdentifier: failedToExecuteIdentifier,
-      };
-    }
-
-    if (rejectedEventIdentifier) {
-      return {
-        status: InstructionStatus.Rejected,
-        eventIdentifier: rejectedEventIdentifier,
-      };
-    }
-
-    if (lockedEventIdentifier) {
-      return {
-        status: InstructionStatus.LockedForExecution,
-        eventIdentifier: lockedEventIdentifier,
-      };
-    }
-
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: "It isn't possible to determine the current status of this Instruction",
-    });
+    return {
+      status: sdkStatus,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      eventIdentifier: middlewareEventToEventIdentifier(updatedEvent!),
+    };
   }
 
   /**
@@ -990,43 +1029,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note After unlocking, the mediator must wait for the relock cooldown period (see {@link getRelockStatus}) before locking the instruction again. This gives other parties time to reject the instruction if they wish to back out.
    */
   public unlockForExecution: NoArgsProcedureMethod<Instruction>;
-
-  /**
-   * @hidden
-   * Retrieve Instruction status event from middleware V2
-   */
-  private async getInstructionEventFromMiddleware(
-    event:
-      | InstructionEventEnum.InstructionExecuted
-      | InstructionEventEnum.InstructionFailed
-      | InstructionEventEnum.InstructionRejected
-      | InstructionEventEnum.FailedToExecuteInstruction
-      | InstructionEventEnum.InstructionLocked
-  ): Promise<EventIdentifier | null> {
-    const { id, context } = this;
-
-    const {
-      data: {
-        instructionEvents: {
-          nodes: [details],
-        },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'instructionEvents'>>(
-      instructionEventsQuery(
-        {
-          event,
-          instructionId: id.toString(),
-        },
-        new BigNumber(1),
-        new BigNumber(0)
-      )
-    );
-
-    return optionize(middlewareEventDetailsToEventIdentifier)(
-      details?.updatedBlock,
-      details?.eventIdx
-    );
-  }
 
   /**
    * Return the Instruction's ID
@@ -1115,7 +1117,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         this.getInstructionFromMiddleware(),
         context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
           instructionAffirmationsQuery({
-            instructionId: id.toString(),
+            instructionId: id,
             isMediator: true,
           })
         ),
@@ -1128,7 +1130,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           const status = middlewareAffirmStatusToAffirmationStatus(mediatorAffirmation.status);
           return {
             status,
-            expiry: mediatorAffirmation.expiry ? new Date(mediatorAffirmation.expiry) : undefined,
+            expiry: mediatorAffirmation.expiry
+              ? middlewareDateToDate(mediatorAffirmation.expiry)
+              : undefined,
           };
         }
         return { status: AffirmationStatus.Pending };
@@ -1136,7 +1140,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
       return (mediators as string[]).map(mediator => {
         const affirmation = mediatorAffirmations.find(
-          mediatorAffirmation => mediatorAffirmation.identity === mediator
+          mediatorAffirmation => mediatorAffirmation.identityId === mediator
         );
         return {
           identity: new Identity({ did: mediator }, context),
@@ -1190,7 +1194,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       } = await context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
         offChainAffirmationsQuery({
-          instructionId: id.toString(),
+          instructionId: id,
         })
       );
 
@@ -1261,7 +1265,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       } = await context.queryMiddleware<Ensured<Query, 'legs'>>(
         legsQuery({
-          instructionId: id.toString(),
+          instructionId: id,
           legIndex: legId.toNumber(),
           legType: LegTypeEnum.OffChain,
         })

@@ -36,7 +36,7 @@ import {
   Staking,
 } from '~/internal';
 import { extrinsicsByArgs } from '~/middleware/queries/extrinsics';
-import { ExtrinsicsOrderBy, PolyxTransactionsOrderBy, Query } from '~/middleware/types';
+import { ExtrinsicsOrderBy, PolyxEntriesOrderBy, Query } from '~/middleware/types';
 import {
   AccountBalance,
   AccountCollection,
@@ -68,8 +68,10 @@ import {
   addressToKey,
   assetIdToString,
   balanceToBigNumber,
+  bigNumberToMiddlewareSequenceId,
   extrinsicIdentifierToTxTag,
   meshNftOwnerStatusToNftOwnerStatus,
+  middlewareDateToDate,
   stringToAccountId,
   stringToAssetId,
   stringToHash,
@@ -309,11 +311,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * @param filters.orderBy - ordering of the results. Defaults to `ExtrinsicsOrderBy.IdDesc`, newest first
    *
    * @note uses the middleware v2
-   *
-   * @throws `NotSupported` if this Account is Ethereum-derived: the indexer records a
-   *   `revive.ethTransact` extrinsic with `address: null`, so it cannot attribute any history to
-   *   the Ethereum-derived Account. Returning an empty result set would be indistinguishable from
-   *   "no history" and read as a bug in the caller's code
+   * @note an Ethereum-derived Account's `revive.ethTransact` extrinsics are included: the middleware
+   *   records them under the signer's padded SS58 address
    */
   public async getTransactionHistory(
     filters: MiddlewarePaginationOptions & {
@@ -327,15 +326,6 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const { tag, success, size, start, orderBy = ExtrinsicsOrderBy.IdDesc, blockHash } = filters;
 
     const { context, address } = this;
-
-    if (isEthDerivedAddress(address, context.ss58Format)) {
-      throw new PolymeshError({
-        code: ErrorCode.NotSupported,
-        message:
-          'Transaction history cannot be retrieved for an Ethereum-derived Account. The indexer records these transactions without attributing them to the signing Account',
-        data: { address },
-      });
-    }
 
     let moduleId;
     let callId;
@@ -367,7 +357,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     } = await context.queryMiddleware<Ensured<Query, 'extrinsics'>>(
       extrinsicsByArgs(
         {
-          blockId: blockNumber?.toString(),
+          blockId: blockNumber && bigNumberToMiddlewareSequenceId(blockNumber),
           address,
           moduleId,
           callId,
@@ -390,7 +380,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         nonce,
         moduleId: extrinsicModuleId,
         callId: extrinsicCallId,
-        paramsTxt,
+        args: extrinsicArgs,
         success: txSuccess,
         specVersionId,
         extrinsicHash,
@@ -400,7 +390,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         return {
           blockNumber: new BigNumber(blockId),
           blockHash: hash,
-          blockDate: new Date(`${datetime}Z`),
+          blockDate: middlewareDateToDate(datetime),
           extrinsicIdx: new BigNumber(extrinsicIdx),
           address: signerAddress!,
           nonce: nonce ? new BigNumber(nonce) : null,
@@ -408,7 +398,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
             moduleId: extrinsicModuleId,
             callId: extrinsicCallId,
           }),
-          params: JSON.parse(paramsTxt),
+          params: extrinsicArgs ?? null,
           success: !!txSuccess,
           specVersionId: new BigNumber(specVersionId),
           extrinsicHash: extrinsicHash!,
@@ -674,19 +664,19 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Returns POLYX transactions associated with this account
+   * Returns the changes POLYX movements made to this Account's balance, one entry per movement
    *
    * @param filters.size - page size
    * @param filters.start - page offset
-   * @param filters.orderBy - ordering of the results. Defaults to `PolyxTransactionsOrderBy.IdDesc`, newest first.
-   *   The indexer's `id` is `<block number>/<event index>`, so it orders by block and then by position within
-   *   the block — ordering by block alone leaves transactions sharing a block in no defined order
+   * @param filters.orderBy - ordering of the results. Defaults to `PolyxEntriesOrderBy.IdDesc`, newest first.
+   *   The indexer's `id` is `<block number>/<event index>/<side>`, so it orders by block and then by position
+   *   within the block — ordering by block alone leaves entries sharing a block in no defined order
    *
    * @note uses the middleware
    */
   public getPolyxTransactions(
     filters: MiddlewarePaginationOptions & {
-      orderBy?: PolyxTransactionsOrderBy | PolyxTransactionsOrderBy[];
+      orderBy?: PolyxEntriesOrderBy | PolyxEntriesOrderBy[];
     }
   ): Promise<ResultSet<HistoricPolyxTransaction>> {
     const { context } = this;

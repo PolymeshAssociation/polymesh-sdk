@@ -145,11 +145,15 @@ export interface HolderFreezeStatus extends NftHolderFreezeStatus {
 }
 
 /**
- * Represents the holdings of an NFT holder
+ * An Identity holding NFTs of a collection
  */
 export interface IdentityHeldNfts {
   identity: Identity;
-  nfts: Nft[];
+  /**
+   * how many of the collection's NFTs the Identity holds. `identity.getHeldNftsOfCollection` lists
+   *   them
+   */
+  nftCount: BigNumber;
 }
 
 export interface TransferRestrictionResult {
@@ -212,8 +216,11 @@ export interface BaseHistoricAssetTransaction extends EventIdentifier {
 
   /**
    * Index value of the extrinsic which led to the Asset transaction within the `blockNumber` block
+   *
+   * @note null when no extrinsic made it, such as a settlement executed by the chain at the start
+   *   of a block
    */
-  extrinsicIndex: BigNumber;
+  extrinsicIndex: BigNumber | null;
 
   /**
    * Name of the funding round (if provided while issuing the Asset). This value is present only when the value of `event` is `Issued`
@@ -391,7 +398,11 @@ export interface HistoricAgentOperation {
  */
 export interface HeldNfts {
   collection: NftCollection;
-  nfts: Nft[];
+  /**
+   * how many of the collection's NFTs the Identity holds. `identity.getHeldNftsOfCollection` lists
+   *   them
+   */
+  nftCount: BigNumber;
 }
 
 /**

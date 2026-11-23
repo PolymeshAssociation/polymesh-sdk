@@ -2,7 +2,12 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { createArgsAndFilters, getSizeAndOffset, orderByClause } from '~/middleware/queries/common';
+import {
+  createArgsAndFilters,
+  eventIdentifierFields,
+  getSizeAndOffset,
+  orderByClause,
+} from '~/middleware/queries/common';
 import {
   MultiSigProposal,
   MultiSigProposalsOrderBy,
@@ -19,7 +24,7 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 export function multiSigProposalQuery(
   variables: QueryArgs<MultiSigProposal, 'multisigId' | 'proposalId'>
 ): QueryOptions<QueryArgs<MultiSigProposal, 'multisigId' | 'proposalId'>> {
-  const orderBy = `${MultiSigProposalVotesOrderBy.CreatedBlockIdAsc}, ${MultiSigProposalVotesOrderBy.EventIdxAsc}`;
+  const orderBy = `${MultiSigProposalVotesOrderBy.CreatedEventIdAsc}`;
 
   const query = gql`
     query MultiSigProposalQuery($multisigId: String!, $proposalId: Int!) {
@@ -27,13 +32,10 @@ export function multiSigProposalQuery(
         filter: { multisigId: { equalTo: $multisigId }, proposalId: { equalTo: $proposalId } }
       ) {
         nodes {
-          eventIdx
           creatorId
-          creatorAccount
-          createdBlock {
-            blockId
-            hash
-            datetime
+          creatorAccountId
+          createdEvent {
+            ${eventIdentifierFields}
           }
           votes(orderBy: [${orderBy}]) {
             nodes {
@@ -44,10 +46,8 @@ export function multiSigProposalQuery(
               }
             }
           }
-          updatedBlock {
-            blockId
-            hash
-            datetime
+          updatedEvent {
+            ${eventIdentifierFields}
           }
         }
       }
@@ -68,7 +68,7 @@ export function multiSigProposalQuery(
 export function multiSigProposalVotesQuery(
   variables: QueryArgs<MultiSigProposalVote, 'proposalId'>
 ): QueryOptions<QueryArgs<MultiSigProposalVote, 'proposalId'>> {
-  const orderBy = `${MultiSigProposalVotesOrderBy.CreatedBlockIdAsc}, ${MultiSigProposalVotesOrderBy.EventIdxAsc}`;
+  const orderBy = `${MultiSigProposalVotesOrderBy.CreatedEventIdAsc}`;
 
   const query = gql`
     query MultiSigProposalVotesQuery($proposalId: String!) {
@@ -82,12 +82,9 @@ export function multiSigProposalVotesQuery(
             signerValue
           }
           action
-          eventIdx
-          createdBlockId
-          createdBlock {
-            blockId
-            datetime
-            hash
+          createdEventId
+          createdEvent {
+            ${eventIdentifierFields}
           }
         }
       }

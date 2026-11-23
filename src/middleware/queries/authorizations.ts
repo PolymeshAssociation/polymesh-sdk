@@ -10,7 +10,7 @@ import {
 import { Authorization, AuthorizationsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
-export type AuthorizationArgs = 'fromId' | 'type' | 'status' | 'toId' | 'toKey' | 'expiry';
+export type AuthorizationArgs = 'fromId' | 'type' | 'status' | 'toId' | 'toAccountId' | 'expiry';
 
 /**
  *  @hidden
@@ -22,7 +22,7 @@ function createAuthorizationFilters(variables: QueryArgs<Authorization, Authoriz
 } {
   const args = ['$size: Int, $start: Int'];
   const filters = [];
-  const { fromId, toId, toKey, status, type } = variables;
+  const { fromId, toId, toAccountId, status, type } = variables;
   if (fromId?.length) {
     args.push('$fromId: String!');
     filters.push('fromId: { equalTo: $fromId }');
@@ -31,9 +31,9 @@ function createAuthorizationFilters(variables: QueryArgs<Authorization, Authoriz
     args.push('$toId: String!');
     filters.push('toId: { equalTo: $toId }');
   }
-  if (toKey?.length) {
-    args.push('$toKey: String!');
-    filters.push('toKey: { equalTo: $toKey }');
+  if (toAccountId?.length) {
+    args.push('$toAccountId: String!');
+    filters.push('toAccountId: { equalTo: $toAccountId }');
   }
   if (type) {
     args.push('$type: AuthTypeEnum!');
@@ -82,12 +82,12 @@ export function authorizationsQuery(
           type
           fromId
           toId
-          toKey
+          toAccountId
           data
           expiry
           status
-          createdBlockId
-          updatedBlockId
+          createdEventId
+          updatedEventId
         }
       }
     }

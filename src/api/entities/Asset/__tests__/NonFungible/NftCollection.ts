@@ -227,12 +227,14 @@ describe('NftCollection class', () => {
         assets: {
           nodes: [
             {
-              createdBlock: {
-                blockId: blockNumber.toNumber(),
-                datetime: blockDate,
-                hash: blockHash,
+              createdEvent: {
+                eventIdx: eventIdx.toNumber(),
+                block: {
+                  blockId: blockNumber.toNumber(),
+                  datetime: blockDate.toISOString(),
+                  hash: blockHash,
+                },
               },
-              eventIdx: eventIdx.toNumber(),
             },
           ],
         },
@@ -730,11 +732,14 @@ describe('NftCollection class', () => {
     it('should return the list of the collection transactions', async () => {
       const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
+      const middlewareAssetId = '0x12341234123412341234123412341234';
       const asset = new NftCollection({ assetId }, context);
-      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+      when(getAssetIdForMiddlewareSpy)
+        .calledWith(assetId, context)
+        .mockResolvedValue(middlewareAssetId);
 
       const middlewareAsset = {
-        id: assetId,
+        id: middlewareAssetId,
         ticker: 'SOME_TICKER',
       };
       const transactionResponse = {
@@ -746,12 +751,14 @@ describe('NftCollection class', () => {
             eventId: EventIdEnum.Issued,
             toPortfolioId: 'SOME_DID/0',
             fromPortfolioId: null,
-            extrinsicIdx: 1,
-            eventIdx: 1,
-            createdBlock: {
-              blockId: new BigNumber(123),
-              hash: 'SOME_HASH',
-              datetime: new Date('2022/12/31'),
+            createdEvent: {
+              eventIdx: 1,
+              extrinsicIdx: 1,
+              block: {
+                blockId: new BigNumber(123),
+                hash: 'SOME_HASH',
+                datetime: new Date('2022/12/31').toISOString(),
+              },
             },
           },
           {
@@ -762,19 +769,21 @@ describe('NftCollection class', () => {
             fromPortfolioId: 'SOME_DID/0',
             instructionId: 1,
             instructionMemo: 'some memo',
-            extrinsicIdx: 1,
-            eventIdx: 1,
-            createdBlock: {
-              blockId: new BigNumber(123),
-              hash: 'SOME_HASH',
-              datetime: new Date('2022/12/31'),
+            createdEvent: {
+              eventIdx: 1,
+              extrinsicIdx: null,
+              block: {
+                blockId: new BigNumber(123),
+                hash: 'SOME_HASH',
+                datetime: new Date('2022/12/31').toISOString(),
+              },
             },
           },
         ],
       };
 
       dsMockUtils.createApolloQueryMock(
-        assetTransactionQuery({ assetId }, new BigNumber(3), new BigNumber(0)),
+        assetTransactionQuery({ assetId: middlewareAssetId }, new BigNumber(3), new BigNumber(0)),
         {
           assetTransactions: transactionResponse,
         }
@@ -807,6 +816,9 @@ describe('NftCollection class', () => {
       expect(result.data[1]!.instructionId).toEqual(new BigNumber(1));
       expect(result.data[1]!.instructionMemo).toEqual('some memo');
 
+      expect(result.data[0]!.extrinsicIndex).toEqual(new BigNumber(1));
+      expect(result.data[1]!.extrinsicIndex).toBeNull();
+      expect(result.data[1]!.eventIndex).toEqual(new BigNumber(1));
       expect(result.count).toEqual(transactionResponse.totalCount);
       expect(result.next).toEqual(new BigNumber(2));
     });
