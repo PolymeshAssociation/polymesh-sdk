@@ -321,6 +321,7 @@ describe('Portfolios class', () => {
         nodes: [
           {
             instruction: {
+              id: '0000000001',
               createdEvent: {
                 block: {
                   blockId: blockNumber1.toNumber(),
@@ -333,6 +334,7 @@ describe('Portfolios class', () => {
           },
           {
             instruction: {
+              id: '0000000002',
               createdEvent: {
                 block: {
                   blockId: blockNumber2.toNumber(),
@@ -345,6 +347,7 @@ describe('Portfolios class', () => {
           },
           {
             instruction: {
+              id: '0000000003',
               createdEvent: {
                 block: {
                   blockId: blockNumber2.toNumber(),
@@ -357,6 +360,7 @@ describe('Portfolios class', () => {
           },
           {
             instruction: {
+              id: '0000000004',
               createdEvent: {
                 block: {
                   blockId: blockNumber2.toNumber(),

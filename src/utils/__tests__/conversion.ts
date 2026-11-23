@@ -5095,6 +5095,38 @@ describe('toHistoricalSettlements', () => {
     expect((fromPortfolio!.to as Account).address).toBe('toAddress');
     expect(result[1]!.accounts).toEqual([expect.objectContaining({ address: 'signerAddress' })]);
   });
+
+  it('should list an instruction once when several of its legs match', () => {
+    const context = dsMockUtils.getContextInstance();
+    const assetId = '0x12341234123412341234123412341234';
+    const legs = ['1000000', '2000000'].map(amount => ({
+      legType: LegTypeEnum.Fungible,
+      assetId,
+      amount,
+      fromId: 'someDid',
+      fromPortfolioId: 'someDid/0',
+      toId: 'otherDid',
+      toPortfolioId: 'otherDid/0',
+      addresses: [],
+    }));
+    const instruction = {
+      id: '0000000001',
+      status: InstructionStatusEnum.Executed,
+      createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+      legs: { nodes: legs },
+    };
+
+    // the history query returns one row per matching leg, each carrying the whole instruction
+    const result = toHistoricalSettlements(
+      [{ instruction }, { instruction }] as unknown as MiddlewareLeg[],
+      [],
+      { identityId: 'someDid' },
+      context
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.legs).toHaveLength(2);
+  });
 });
 
 describe('toHistoricalSettlements directions', () => {

@@ -5543,6 +5543,7 @@ export function toHistoricalSettlements(
   context: Context
 ): HistoricSettlement[] {
   let data: HistoricSettlement[] = [];
+  const seenInstructionIds = new Set<string>();
 
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
   settlementsResult.forEach(({ instruction }) => {
@@ -5552,6 +5553,12 @@ export function toHistoricalSettlements(
       status,
       legs: { nodes: legs },
     } = instruction!;
+
+    // the query returns a row per matching leg, and each carries all of its instruction's legs
+    if (seenInstructionIds.has(id)) {
+      return;
+    }
+    seenInstructionIds.add(id);
 
     const { blockId, hash } = createdEvent!.block!;
 
