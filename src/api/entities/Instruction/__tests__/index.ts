@@ -19,14 +19,12 @@ import {
 } from '~/internal';
 import {
   instructionAffirmationsQuery,
-  instructionEventsQuery,
   instructionsQuery,
   legsQuery,
   offChainAffirmationsQuery,
 } from '~/middleware/queries/settlements';
 import {
   AffirmStatusEnum,
-  InstructionEventEnum,
   InstructionStatusEnum,
   InstructionTypeEnum,
   LegTypeEnum,
@@ -1747,693 +1745,128 @@ describe('Instruction class', () => {
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
-    it('should return Pending Instruction status', async () => {
-      const queryResult = dsMockUtils.createMockInstruction({
-        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
-        createdAt: dsMockUtils.createMockOption(),
-        tradeDate: dsMockUtils.createMockOption(),
-        valueDate: dsMockUtils.createMockOption(),
-        settlementType: dsMockUtils.createMockSettlementType(),
-      });
+    const blockNumber = new BigNumber(1234);
+    const blockHash = 'someHash';
+    const blockDate = new Date('2020-04-14T00:00:00Z');
+    const eventIndex = new BigNumber(3);
 
-      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
-        .calledWith(rawId)
-        .mockResolvedValue(queryResult);
-
+    const mockChainStatus = (
+      status: Parameters<typeof dsMockUtils.createMockInstructionStatus>[0]
+    ): void => {
       when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
         .calledWith(rawId)
-        .mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Pending)
-        );
+        .mockResolvedValue(dsMockUtils.createMockInstructionStatus(status));
+    };
+
+    const mockMiddlewareInstruction = (status?: InstructionStatusEnum): void => {
+      dsMockUtils.createApolloQueryMock(instructionsQuery({ id }), {
+        instructions: {
+          nodes: status
+            ? [
+                {
+                  status,
+                  updatedEvent: {
+                    eventIdx: eventIndex.toNumber(),
+                    block: {
+                      blockId: blockNumber.toNumber(),
+                      hash: blockHash,
+                      datetime: blockDate.toISOString(),
+                    },
+                  },
+                },
+              ]
+            : [],
+        },
+      });
+    };
+
+    it('should return Pending from the chain, without reading the middleware', async () => {
+      mockChainStatus('Pending');
 
       const result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Pending,
-      });
+
+      expect(result).toEqual({ status: InstructionStatus.Pending });
     });
 
-    it('should return Executed Instruction status', async () => {
-      const blockNumber = new BigNumber(1234);
-      const blockDate = new Date('4/14/2020');
-      const eventIdx = new BigNumber(1);
-      const blockHash = 'someHash';
-      const fakeQueryResult = {
-        createdEvent: {
-          eventIdx: eventIdx.toNumber(),
-          block: {
-            blockId: blockNumber.toNumber(),
-            hash: blockHash,
-            datetime: blockDate.toISOString(),
-          },
-        },
-      };
-      const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
+    it.each([
+      ['Success', InstructionStatusEnum.Executed, InstructionStatus.Success],
+      ['Failed', InstructionStatusEnum.Failed, InstructionStatus.Failed],
+      ['Rejected', InstructionStatusEnum.Rejected, InstructionStatus.Rejected],
+      ['LockedForExecution', InstructionStatusEnum.Locked, InstructionStatus.LockedForExecution],
+    ] as const)(
+      'should return the chain status %s with the event that set it',
+      async (chainStatus, middlewareStatus, expected) => {
+        mockChainStatus(chainStatus);
+        mockMiddlewareInstruction(middlewareStatus);
 
-      // Should return Pending status
-      const queryResult = dsMockUtils.createMockInstruction({
-        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
-        createdAt: dsMockUtils.createMockOption(),
-        tradeDate: dsMockUtils.createMockOption(),
-        valueDate: dsMockUtils.createMockOption(),
-        settlementType: dsMockUtils.createMockSettlementType(),
+        const result = await instruction.getStatus();
+
+        expect(result).toEqual({
+          status: expected,
+          eventIdentifier: { blockNumber, blockHash, blockDate, eventIndex },
+        });
+      }
+    );
+
+    it('should throw if the Instruction does not exist', async () => {
+      mockChainStatus('Unknown');
+      dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
+        returnValue: dsMockUtils.createMockU64(id),
       });
 
-      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
-        .calledWith(rawId)
-        .mockResolvedValue(queryResult);
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
-        .calledWith(rawId)
-        .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [fakeQueryResult],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionFailed,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionRejected,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionLocked,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-      ]);
-
-      const result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Success,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
+      await expect(instruction.getStatus()).rejects.toThrow("The Instruction doesn't exist");
     });
 
-    it('should return Locked Instruction status', async () => {
-      const blockNumber = new BigNumber(1234);
-      const blockDate = new Date('4/14/2020');
-      const eventIdx = new BigNumber(1);
-      const blockHash = 'someHash';
-      const fakeQueryResult = {
-        createdEvent: {
-          eventIdx: eventIdx.toNumber(),
-          block: {
-            blockId: blockNumber.toNumber(),
-            hash: blockHash,
-            datetime: blockDate.toISOString(),
-          },
-        },
-      };
-      const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
+    it.each([
+      [InstructionStatusEnum.Executed, InstructionStatus.Success],
+      [InstructionStatusEnum.Rejected, InstructionStatus.Rejected],
+    ] as const)(
+      'should take the status of an Instruction the chain pruned before it kept statuses (%s) from the middleware',
+      async (middlewareStatus, expected) => {
+        // instructions settled before the chain split statuses out of their details read `Unknown`
+        mockChainStatus('Unknown');
+        dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
+          returnValue: dsMockUtils.createMockU64(id.plus(1)),
+        });
+        mockMiddlewareInstruction(middlewareStatus);
 
-      const queryResult = dsMockUtils.createMockInstruction({
-        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
-        createdAt: dsMockUtils.createMockOption(),
-        tradeDate: dsMockUtils.createMockOption(),
-        valueDate: dsMockUtils.createMockOption(),
-        settlementType: dsMockUtils.createMockSettlementType(),
+        const result = await instruction.getStatus();
+
+        expect(result).toEqual({
+          status: expected,
+          eventIdentifier: { blockNumber, blockHash, blockDate, eventIndex },
+        });
+      }
+    );
+
+    it('should throw if neither the chain nor the middleware has settled a pruned Instruction', async () => {
+      mockChainStatus('Unknown');
+      dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
+        returnValue: dsMockUtils.createMockU64(id.plus(1)),
       });
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
-        .calledWith(rawId)
-        .mockResolvedValue(queryResult);
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
-        .calledWith(rawId)
-        .mockResolvedValue(dsMockUtils.createMockInstructionStatus('LockedForExecution'));
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionFailed,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionRejected,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionLocked,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [fakeQueryResult],
-            },
-          },
-        },
-      ]);
-
-      const result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.LockedForExecution,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-    });
-
-    it('should return Failed Instruction status', async () => {
-      const blockNumber = new BigNumber(1234);
-      const blockDate = new Date('4/14/2020');
-      const eventIdx = new BigNumber(1);
-      const blockHash = 'someHash';
-      const fakeQueryResult = {
-        createdEvent: {
-          eventIdx: eventIdx.toNumber(),
-          block: {
-            blockId: blockNumber.toNumber(),
-            hash: blockHash,
-            datetime: blockDate.toISOString(),
-          },
-        },
-      };
-      const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
-
-      const queryResult = dsMockUtils.createMockInstruction({
-        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
-        createdAt: dsMockUtils.createMockOption(),
-        tradeDate: dsMockUtils.createMockOption(),
-        valueDate: dsMockUtils.createMockOption(),
-        settlementType: dsMockUtils.createMockSettlementType(),
-      });
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
-        .calledWith(rawId)
-        .mockResolvedValue(queryResult);
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
-        .calledWith(rawId)
-        .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Failed'));
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionFailed,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [fakeQueryResult],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionRejected,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionLocked,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-      ]);
-
-      let result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Failed,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionFailed,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [fakeQueryResult],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionRejected,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionLocked,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-      ]);
-
-      result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Failed,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-    });
-
-    it('should return Rejected Instruction status', async () => {
-      const blockNumber = new BigNumber(1234);
-      const blockHash = 'someHash';
-      const blockDate = new Date('4/14/2020');
-      const eventIdx = new BigNumber(1);
-      const fakeQueryResult = {
-        createdEvent: {
-          eventIdx: eventIdx.toNumber(),
-          block: {
-            blockId: blockNumber.toNumber(),
-            hash: blockHash,
-            datetime: blockDate.toISOString(),
-          },
-        },
-      };
-      const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
-
-      const queryResult = dsMockUtils.createMockInstruction({
-        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockOption(),
-        createdAt: dsMockUtils.createMockOption(),
-        tradeDate: dsMockUtils.createMockOption(),
-        valueDate: dsMockUtils.createMockOption(),
-        settlementType: dsMockUtils.createMockSettlementType(),
-      });
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
-        .calledWith(rawId)
-        .mockResolvedValue(queryResult);
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
-        .calledWith(rawId)
-        .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Rejected'));
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionFailed,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionRejected,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [fakeQueryResult],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionLocked,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-      ]);
-
-      const result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Rejected,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-    });
-
-    it("should throw an error if Instruction status couldn't be determined", async () => {
-      const queryResult = dsMockUtils.createMockInstruction({
-        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
-        createdAt: dsMockUtils.createMockOption(),
-        tradeDate: dsMockUtils.createMockOption(),
-        valueDate: dsMockUtils.createMockOption(),
-        settlementType: dsMockUtils.createMockSettlementType(),
-      });
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
-        .calledWith(rawId)
-        .mockResolvedValue(queryResult);
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
-        .calledWith(rawId)
-        .mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown)
-        );
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionFailed,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionRejected,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            {
-              event: InstructionEventEnum.InstructionLocked,
-              instructionId: id,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-      ]);
+      mockMiddlewareInstruction(InstructionStatusEnum.Created);
 
       await expect(instruction.getStatus()).rejects.toThrow(
         "It isn't possible to determine the current status of this Instruction"
+      );
+    });
+
+    it('should throw if the middleware has not processed the Instruction', async () => {
+      mockChainStatus('Success');
+      mockMiddlewareInstruction();
+
+      await expect(instruction.getStatus()).rejects.toThrow(
+        'Instruction is not yet processed by the middleware'
+      );
+    });
+
+    it("should throw if the middleware has not yet processed the Instruction's latest status", async () => {
+      // the chain has locked an instruction the middleware still has as failed
+      mockChainStatus('LockedForExecution');
+      mockMiddlewareInstruction(InstructionStatusEnum.Failed);
+
+      await expect(instruction.getStatus()).rejects.toThrow(
+        "The middleware has not yet processed the Instruction's latest status"
       );
     });
   });

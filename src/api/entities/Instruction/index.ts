@@ -34,7 +34,6 @@ import {
 } from '~/internal';
 import {
   instructionAffirmationsQuery,
-  instructionEventsQuery,
   instructionsQuery,
   legsQuery,
   offChainAffirmationsQuery,
@@ -42,7 +41,7 @@ import {
 import {
   Instruction as MiddlewareInstruction,
   InstructionAffirmation as MiddlewareInstructionAffirmation,
-  InstructionEventEnum,
+  InstructionStatusEnum,
   LegTypeEnum,
   Query,
 } from '~/middleware/types';
@@ -52,7 +51,6 @@ import {
   AssetHolder,
   DefaultPortfolio,
   ErrorCode,
-  EventIdentifier,
   ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
   InstructionLockedInfo,
@@ -102,7 +100,6 @@ import {
 import {
   calculateNextKey,
   createProcedureMethod,
-  optionize,
   requestMulti,
   requestPaginated,
 } from '~/utils/internal';
@@ -113,6 +110,30 @@ export interface UniqueIdentifiers {
 
 const executedMessage =
   'Instruction has already been executed/rejected and it was purged from chain';
+
+/**
+ * @hidden
+ *
+ * The SDK and middleware statuses of an Instruction the chain no longer has pending
+ */
+const settledStatuses = {
+  [InternalInstructionStatus.Success]: {
+    status: InstructionStatus.Success,
+    middleware: InstructionStatusEnum.Executed,
+  },
+  [InternalInstructionStatus.Failed]: {
+    status: InstructionStatus.Failed,
+    middleware: InstructionStatusEnum.Failed,
+  },
+  [InternalInstructionStatus.Rejected]: {
+    status: InstructionStatus.Rejected,
+    middleware: InstructionStatusEnum.Rejected,
+  },
+  [InternalInstructionStatus.LockedForExecution]: {
+    status: InstructionStatus.LockedForExecution,
+    middleware: InstructionStatusEnum.Locked,
+  },
+} as const;
 
 /**
  * Represents a settlement Instruction to be executed on a certain Venue
@@ -885,67 +906,71 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note uses the middlewareV2
    */
   public async getStatus(): Promise<InstructionStatusResult> {
-    const isPending = await this.isPending();
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+    } = this;
 
-    if (isPending) {
+    // the chain's status decides wherever it has one; the middleware supplies the event
+    const rawStatus = await settlement.instructionStatuses(bigNumberToU64(id, context));
+    const status = meshInstructionStatusToInstructionStatus(rawStatus);
+
+    if (status === InternalInstructionStatus.Pending) {
+      return { status: InstructionStatus.Pending };
+    }
+
+    if (status === InternalInstructionStatus.Unknown && !(await this.exists())) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: "The Instruction doesn't exist",
+      });
+    }
+
+    const { status: middlewareStatus, updatedEvent } = await this.getInstructionFromMiddleware();
+
+    if (status === InternalInstructionStatus.Unknown) {
+      // an instruction settled before the chain kept statuses apart from its pruned details has
+      // none, so the middleware's decides
+      const settled = Object.values(settledStatuses).find(
+        ({ middleware }) => middleware === middlewareStatus
+      );
+
+      if (!settled) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: "It isn't possible to determine the current status of this Instruction",
+          data: { middlewareStatus },
+        });
+      }
+
       return {
-        status: InstructionStatus.Pending,
+        status: settled.status,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        eventIdentifier: middlewareEventToEventIdentifier(updatedEvent!),
       };
     }
 
-    const [
-      executedEventIdentifier,
-      failedEventIdentifier,
-      failedToExecuteIdentifier,
-      rejectedEventIdentifier,
-      lockedEventIdentifier,
-    ] = await Promise.all([
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionExecuted),
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionFailed),
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.FailedToExecuteInstruction), // this is the new event triggered for failed to execute instruction
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionRejected),
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionLocked),
-    ]);
+    const { status: sdkStatus, middleware } = settledStatuses[status];
 
-    if (executedEventIdentifier) {
-      return {
-        status: InstructionStatus.Success,
-        eventIdentifier: executedEventIdentifier,
-      };
+    // every status change sets the row's `updatedEvent`, so a matching status means it is that event
+    if (middlewareStatus !== middleware) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: "The middleware has not yet processed the Instruction's latest status",
+        data: { status, middlewareStatus },
+      });
     }
 
-    if (failedEventIdentifier) {
-      return {
-        status: InstructionStatus.Failed,
-        eventIdentifier: failedEventIdentifier,
-      };
-    }
-
-    if (failedToExecuteIdentifier) {
-      return {
-        status: InstructionStatus.Failed,
-        eventIdentifier: failedToExecuteIdentifier,
-      };
-    }
-
-    if (rejectedEventIdentifier) {
-      return {
-        status: InstructionStatus.Rejected,
-        eventIdentifier: rejectedEventIdentifier,
-      };
-    }
-
-    if (lockedEventIdentifier) {
-      return {
-        status: InstructionStatus.LockedForExecution,
-        eventIdentifier: lockedEventIdentifier,
-      };
-    }
-
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: "It isn't possible to determine the current status of this Instruction",
-    });
+    return {
+      status: sdkStatus,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      eventIdentifier: middlewareEventToEventIdentifier(updatedEvent!),
+    };
   }
 
   /**
@@ -1004,40 +1029,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note After unlocking, the mediator must wait for the relock cooldown period (see {@link getRelockStatus}) before locking the instruction again. This gives other parties time to reject the instruction if they wish to back out.
    */
   public unlockForExecution: NoArgsProcedureMethod<Instruction>;
-
-  /**
-   * @hidden
-   * Retrieve Instruction status event from middleware V2
-   */
-  private async getInstructionEventFromMiddleware(
-    event:
-      | InstructionEventEnum.InstructionExecuted
-      | InstructionEventEnum.InstructionFailed
-      | InstructionEventEnum.InstructionRejected
-      | InstructionEventEnum.FailedToExecuteInstruction
-      | InstructionEventEnum.InstructionLocked
-  ): Promise<EventIdentifier | null> {
-    const { id, context } = this;
-
-    const {
-      data: {
-        instructionEvents: {
-          nodes: [details],
-        },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'instructionEvents'>>(
-      instructionEventsQuery(
-        {
-          event,
-          instructionId: id,
-        },
-        new BigNumber(1),
-        new BigNumber(0)
-      )
-    );
-
-    return optionize(middlewareEventToEventIdentifier)(details?.createdEvent);
-  }
 
   /**
    * Return the Instruction's ID
