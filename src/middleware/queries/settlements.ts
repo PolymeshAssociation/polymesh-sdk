@@ -26,7 +26,7 @@ import {
   bigNumberToMiddlewareSequenceId,
   portfolioToMiddlewarePortfolioId,
 } from '~/utils/conversion';
-import { asAssetId, asDid } from '~/utils/internal';
+import { asDid, getAssetIdForMiddleware } from '~/utils/internal';
 
 const legAttributes = `
             legIndex
@@ -438,7 +438,7 @@ export const buildHistoricalInstructionsQueryFilter = async (
   if (asset) {
     args.push('$asset: String!');
     legsFilter.push('assetId: { equalTo: $asset }');
-    variables.asset = await asAssetId(asset, context);
+    variables.asset = await getAssetIdForMiddleware(asset, context);
   }
 
   if (sender) {

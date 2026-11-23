@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { print } from 'graphql';
+import { when } from 'jest-when';
 
 import { Context } from '~/internal';
 import {
@@ -99,12 +100,15 @@ describe('legsQuery', () => {
 
 describe('buildHistoricalInstructionsQueryFilter', () => {
   let context: Context;
+  let getAssetIdForMiddlewareSpy: jest.SpyInstance;
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    jest.spyOn(utilsInternalModule, 'asAssetId').mockImplementation((a): Promise<string> => {
-      return Promise.resolve(typeof a === 'string' ? a : a.id);
-    });
+    getAssetIdForMiddlewareSpy = jest
+      .spyOn(utilsInternalModule, 'getAssetIdForMiddleware')
+      .mockImplementation((a): Promise<string> => {
+        return Promise.resolve(typeof a === 'string' ? a : a.id);
+      });
   });
 
   afterAll(() => {
@@ -171,14 +175,19 @@ describe('buildHistoricalInstructionsQueryFilter', () => {
     expect(result.filter).toBe('filter: { legs: { some: { assetId: { equalTo: $asset } } } }');
   });
 
-  it('should create the correct graphql filter with asset as Asset object', async () => {
-    const assetId = 'TICKE';
+  it("should filter by the asset in the middleware's hex form, given an Asset object", async () => {
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const mockAsset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    when(getAssetIdForMiddlewareSpy)
+      .calledWith(mockAsset, context)
+      .mockResolvedValue('0x12341234123412341234123412341234');
+
     const result = await buildHistoricalInstructionsQueryFilter({ asset: mockAsset }, context);
 
     expect(result.args).toBe('($start: Int,$size: Int,$asset: String!)');
     expect(result.filter).toBe('filter: { legs: { some: { assetId: { equalTo: $asset } } } }');
-    expect(result.variables.asset).toBe(assetId);
+    // the middleware stores a leg's asset id as hex, not as the SDK's UUID
+    expect(result.variables.asset).toBe('0x12341234123412341234123412341234');
   });
 
   it('should create the correct graphql filter with sender', async () => {
