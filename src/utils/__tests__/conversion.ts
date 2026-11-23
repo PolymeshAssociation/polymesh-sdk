@@ -5421,6 +5421,34 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(resultLeg.from.did).toBe(portfolioDid2);
     expect(resultLeg.to.did).toBe(portfolioDid1);
   });
+
+  it('should read the trade and value dates as UTC Dates, and an absent one as null', () => {
+    const context = dsMockUtils.getContextInstance();
+    const instruction = {
+      id: '1',
+      createdEvent: {
+        block: { blockId: 1, hash: 'someHash', datetime: '2024-03-01T00:00:00' },
+      },
+      status: InstructionStatusEnum.Created,
+      settlementType: InstructionType.SettleOnAffirmation,
+      tradeDate: '2024-03-05T10:00:00',
+      valueDate: null,
+      legs: { nodes: [] },
+    } as unknown as Instruction;
+
+    let result = middlewareInstructionToHistoricInstruction(instruction, context);
+
+    expect(result.tradeDate).toEqual(new Date('2024-03-05T10:00:00Z'));
+    expect(result.valueDate).toBeNull();
+
+    result = middlewareInstructionToHistoricInstruction(
+      { ...instruction, tradeDate: null, valueDate: '2024-03-06T12:30:00' } as Instruction,
+      context
+    );
+
+    expect(result.tradeDate).toBeNull();
+    expect(result.valueDate).toEqual(new Date('2024-03-06T12:30:00Z'));
+  });
 });
 
 describe('portfolioToMiddlewarePortfolioId', () => {
