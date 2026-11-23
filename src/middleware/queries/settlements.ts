@@ -98,7 +98,7 @@ const instructionAffirmationAttributes = `
 /**
  * The filter keys that hold an Instruction or Venue id
  */
-const sequenceIdKeys = ['id', 'venueId', 'instructionId'];
+const sequenceIdKeys = new Set(['id', 'venueId', 'instructionId']);
 
 /**
  * @hidden
@@ -111,7 +111,7 @@ function withMiddlewareIds(filters: Record<string, unknown>): Record<string, unk
   return Object.fromEntries(
     Object.entries(filters).map(([key, value]) => [
       key,
-      sequenceIdKeys.includes(key) && BigNumber.isBigNumber(value)
+      sequenceIdKeys.has(key) && BigNumber.isBigNumber(value)
         ? bigNumberToMiddlewareSequenceId(value)
         : value,
     ])
