@@ -595,10 +595,15 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
-   * Retrieve a list of transactions where this portfolio was involved. Can be filtered using parameters
+   * Retrieve the settlements and movements that sent assets from or to this portfolio. A movement
+   *   is a transfer between holders of the owner, which no instruction made. Each leg's direction
+   *   is seen from this portfolio, so a movement to another of the owner's portfolios or Accounts
+   *   is `Outgoing`
    *
-   * @param filters.account - Account involved in the settlement
+   * @param filters.account - only the settlements and movements this Account signed, such as by
+   *   creating, affirming or executing an instruction. It does not select the Account as a holder
    * @param filters.ticker - ticker involved in the transaction
+   * @param filters.assetId - Asset ID to filter by (overrides ticker if both provided)
    *
    * @note uses the middlewareV2
    */

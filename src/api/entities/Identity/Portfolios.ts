@@ -224,9 +224,13 @@ export class Portfolios extends Namespace<Identity> {
   public delete: ProcedureMethod<{ portfolio: BigNumber | NumberedPortfolio }, void>;
 
   /**
-   * Retrieve a list of transactions where this identity was involved. Can be filtered using parameters
+   * Retrieve the settlements and movements that sent assets from or to any holder of this Identity:
+   *   its portfolios and, from Polymesh 8.0, its Accounts. A movement is a transfer between two of
+   *   its holders, which no instruction made. Each leg's direction is seen from the Identity, so a
+   *   movement has none
    *
-   * @param filters.account - Account involved in the settlement
+   * @param filters.account - only the settlements and movements this Account signed, such as by
+   *   creating, affirming or executing an instruction. It does not select the Account as a holder
    * @param filters.ticker - ticker involved in the transaction
    * @param filters.assetId - Asset ID to filter by (overrides ticker if both provided)
    *
