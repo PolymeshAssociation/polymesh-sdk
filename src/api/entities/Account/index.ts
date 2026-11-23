@@ -68,6 +68,7 @@ import {
   addressToKey,
   assetIdToString,
   balanceToBigNumber,
+  bigNumberToMiddlewareSequenceId,
   extrinsicIdentifierToTxTag,
   meshNftOwnerStatusToNftOwnerStatus,
   middlewareDateToDate,
@@ -368,7 +369,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     } = await context.queryMiddleware<Ensured<Query, 'extrinsics'>>(
       extrinsicsByArgs(
         {
-          blockId: blockNumber?.toString(),
+          blockId: blockNumber && bigNumberToMiddlewareSequenceId(blockNumber),
           address,
           moduleId,
           callId,

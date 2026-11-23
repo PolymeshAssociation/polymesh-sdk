@@ -281,7 +281,7 @@ describe('Account class', () => {
       dsMockUtils.createApolloQueryMock(
         extrinsicsByArgs(
           {
-            blockId: blockNumber1.toString(),
+            blockId: '0000000001',
             address,
             moduleId,
             callId,
@@ -336,7 +336,7 @@ describe('Account class', () => {
       dsMockUtils.createApolloQueryMock(
         extrinsicsByArgs(
           {
-            blockId: blockNumber1.toString(),
+            blockId: '0000000001',
             address,
             moduleId,
             callId,
