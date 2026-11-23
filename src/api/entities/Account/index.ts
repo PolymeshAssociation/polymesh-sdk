@@ -311,11 +311,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * @param filters.orderBy - ordering of the results. Defaults to `ExtrinsicsOrderBy.IdDesc`, newest first
    *
    * @note uses the middleware v2
-   *
-   * @throws `NotSupported` if this Account is Ethereum-derived: the indexer records a
-   *   `revive.ethTransact` extrinsic with `address: null`, so it cannot attribute any history to
-   *   the Ethereum-derived Account. Returning an empty result set would be indistinguishable from
-   *   "no history" and read as a bug in the caller's code
+   * @note an Ethereum-derived Account's `revive.ethTransact` extrinsics are included: the middleware
+   *   records them under the signer's padded SS58 address
    */
   public async getTransactionHistory(
     filters: MiddlewarePaginationOptions & {
@@ -329,15 +326,6 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const { tag, success, size, start, orderBy = ExtrinsicsOrderBy.IdDesc, blockHash } = filters;
 
     const { context, address } = this;
-
-    if (isEthDerivedAddress(address, context.ss58Format)) {
-      throw new PolymeshError({
-        code: ErrorCode.NotSupported,
-        message:
-          'Transaction history cannot be retrieved for an Ethereum-derived Account. The indexer records these transactions without attributing them to the signing Account',
-        data: { address },
-      });
-    }
 
     let moduleId;
     let callId;

@@ -1494,12 +1494,46 @@ describe('Account class', () => {
     });
 
     describe('method: getTransactionHistory', () => {
-      it('should throw a NotSupported error for an Ethereum-derived Account', async () => {
+      it('should read the extrinsics an Ethereum-derived Account signed', async () => {
+        // the indexer records a `revive.eth_transact` under its signer's 0xEE padded address
         const ethAccount = new Account({ address: ethDerivedAddress }, context);
 
-        await expect(ethAccount.getTransactionHistory()).rejects.toThrow(
-          expect.objectContaining({ code: ErrorCode.NotSupported })
+        dsMockUtils.createApolloQueryMock(
+          extrinsicsByArgs(
+            { address: ethDerivedAddress },
+            undefined,
+            undefined,
+            ExtrinsicsOrderBy.IdDesc
+          ),
+          {
+            extrinsics: {
+              totalCount: 1,
+              nodes: [
+                {
+                  blockId: '0000000005',
+                  extrinsicIdx: 0,
+                  address: ethDerivedAddress,
+                  moduleId: ModuleIdEnum.Revive,
+                  callId: CallIdEnum.EthTransact,
+                  args: {},
+                  success: 1,
+                  specVersionId: 8002000,
+                  extrinsicHash: '0xhash',
+                  block: { hash: '0xblockHash', datetime: '2026-01-01T00:00:00' },
+                },
+              ],
+            },
+          }
         );
+
+        const result = await ethAccount.getTransactionHistory();
+
+        expect(result.count).toEqual(new BigNumber(1));
+        expect(result.data[0]).toMatchObject({
+          blockNumber: new BigNumber(5),
+          address: ethDerivedAddress,
+          success: true,
+        });
       });
     });
 
