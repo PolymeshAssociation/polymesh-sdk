@@ -732,11 +732,14 @@ describe('NftCollection class', () => {
     it('should return the list of the collection transactions', async () => {
       const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
+      const middlewareAssetId = '0x12341234123412341234123412341234';
       const asset = new NftCollection({ assetId }, context);
-      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+      when(getAssetIdForMiddlewareSpy)
+        .calledWith(assetId, context)
+        .mockResolvedValue(middlewareAssetId);
 
       const middlewareAsset = {
-        id: assetId,
+        id: middlewareAssetId,
         ticker: 'SOME_TICKER',
       };
       const transactionResponse = {
@@ -780,7 +783,7 @@ describe('NftCollection class', () => {
       };
 
       dsMockUtils.createApolloQueryMock(
-        assetTransactionQuery({ assetId }, new BigNumber(3), new BigNumber(0)),
+        assetTransactionQuery({ assetId: middlewareAssetId }, new BigNumber(3), new BigNumber(0)),
         {
           assetTransactions: transactionResponse,
         }

@@ -486,6 +486,8 @@ export class NftCollection extends BaseAsset {
     const { context, id } = this;
     const { size, start, orderBy } = opts;
 
+    const middlewareAssetId = await getAssetIdForMiddleware(id, context);
+
     const {
       data: {
         assetTransactions: { nodes, totalCount },
@@ -493,7 +495,7 @@ export class NftCollection extends BaseAsset {
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
-          assetId: id,
+          assetId: middlewareAssetId,
         },
         size,
         start,
