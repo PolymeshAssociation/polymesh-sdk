@@ -60,7 +60,7 @@ const instructionAttributes = `
           tradeDate
           valueDate
           mediators
-          legs {
+          legs(orderBy: [${LegsOrderBy.LegIndexAsc}]) {
             nodes {
               ${legAttributes}
             }

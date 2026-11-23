@@ -43,6 +43,13 @@ describe('instructionsQuery', () => {
       start: 2,
     });
   });
+
+  it("should list an instruction's legs in leg index order", () => {
+    // a leg's id is `<instruction>/<leg index>` unpadded, so id order puts leg 10 before leg 2
+    const printed = print(instructionsQuery({ id: new BigNumber(1) }).query);
+
+    expect(printed).toContain('legs(orderBy: [LEG_INDEX_ASC])');
+  });
 });
 
 describe('instructionAffirmationsQuery', () => {
