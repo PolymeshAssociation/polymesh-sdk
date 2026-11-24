@@ -10,7 +10,7 @@ import {
   PolymeshError,
   Venue,
 } from '~/internal';
-import { historicalInstructionsQuery } from '~/middleware/queries/settlements';
+import { historicalInstructionsQuery, withAllLegs } from '~/middleware/queries/settlements';
 import { Query } from '~/middleware/types';
 import {
   AddInstructionWithVenueIdParams,
@@ -143,9 +143,11 @@ export class Settlements {
 
     const {
       data: {
-        instructions: { nodes: instructionsResult, totalCount },
+        instructions: { nodes, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(query);
+
+    const instructionsResult = await withAllLegs(nodes, context);
 
     const data = instructionsResult.map(middlewareInstruction =>
       middlewareInstructionToHistoricInstruction(middlewareInstruction, context)

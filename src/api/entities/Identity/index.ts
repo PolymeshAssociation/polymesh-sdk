@@ -28,7 +28,7 @@ import {
 } from '~/internal';
 import { assetHoldersQuery, heldNftsQuery, nftHoldersQuery } from '~/middleware/queries/assets';
 import { trustingAssetsQuery } from '~/middleware/queries/claims';
-import { historicalInstructionsQuery } from '~/middleware/queries/settlements';
+import { historicalInstructionsQuery, withAllLegs } from '~/middleware/queries/settlements';
 import { AssetHoldersOrderBy, Query } from '~/middleware/types';
 import {
   Asset,
@@ -1158,9 +1158,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const {
       data: {
-        instructions: { nodes: instructionsResult, totalCount },
+        instructions: { nodes, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(query);
+
+    const instructionsResult = await withAllLegs(nodes, context);
 
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, instructionsResult.length, filter?.start);

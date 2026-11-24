@@ -11,6 +11,7 @@ import {
 } from '~/middleware/queries/common';
 import {
   AffirmStatusEnum,
+  Instruction,
   InstructionAffirmationsOrderBy,
   InstructionEventEnum,
   InstructionEventsOrderBy,
@@ -26,7 +27,12 @@ import {
   bigNumberToMiddlewareSequenceId,
   portfolioToMiddlewarePortfolioId,
 } from '~/utils/conversion';
-import { asDid, getAssetIdForMiddleware } from '~/utils/internal';
+import {
+  allInOrder,
+  asDid,
+  getAssetIdForMiddleware,
+  queryAllMiddlewarePages,
+} from '~/utils/internal';
 
 const legAttributes = `
             legIndex
@@ -61,6 +67,7 @@ const instructionAttributes = `
           valueDate
           mediators
           legs(orderBy: [${LegsOrderBy.LegIndexAsc}]) {
+            totalCount
             nodes {
               ${legAttributes}
             }
@@ -379,6 +386,36 @@ export function legsQuery(
       ...(start ? { start: start.toNumber() } : {}),
     },
   };
+}
+
+/**
+ * @hidden
+ *
+ * Give each instruction all of its legs. An instruction can have up to 120 legs (10 fungible,
+ *   100 NFT and 10 off-chain), but the middleware returns at most 100 of them inside an
+ *   instruction, so the legs of an instruction with more are read on their own
+ */
+export function withAllLegs<InstructionNode extends Pick<Instruction, 'id' | 'legs'>>(
+  instructions: InstructionNode[],
+  context: Context
+): Promise<InstructionNode[]> {
+  return allInOrder(
+    instructions.map(async instruction => {
+      const { id, legs } = instruction;
+
+      if (!(legs.totalCount > legs.nodes.length)) {
+        return instruction;
+      }
+
+      const nodes = await queryAllMiddlewarePages(
+        context,
+        (size, start) => legsQuery({ instructionId: new BigNumber(id) }, size, start),
+        'legs'
+      );
+
+      return { ...instruction, legs: { ...legs, nodes } };
+    })
+  );
 }
 
 /**

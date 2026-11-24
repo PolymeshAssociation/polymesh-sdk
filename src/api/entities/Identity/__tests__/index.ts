@@ -1472,7 +1472,7 @@ describe('Identity class', () => {
 
       const instructionsResponse = {
         totalCount: 5,
-        nodes: [{ id: '1' }],
+        nodes: [{ id: '1', legs: { nodes: [], totalCount: 0 } }],
       };
 
       const query = await historicalInstructionsQuery({ identity: identity.did }, context);
@@ -1507,7 +1507,7 @@ describe('Identity class', () => {
       calculateNextSpy = jest.spyOn(utilsInternalModule, 'calculateNextKey');
       const instructionsResponse = {
         totalCount: 5,
-        nodes: [{ id: '1' }],
+        nodes: [{ id: '1', legs: { nodes: [], totalCount: 0 } }],
       };
 
       const query = await historicalInstructionsQuery({ identity: identity.did }, context);

@@ -573,6 +573,7 @@ describe('Instruction class', () => {
           tradeDate: tradeDate.toISOString().replace('Z', ''),
           valueDate: valueDate.toISOString().replace('Z', ''),
           memo,
+          legs: { nodes: [], totalCount: 0 },
         };
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
@@ -1765,6 +1766,7 @@ describe('Instruction class', () => {
             ? [
                 {
                   status,
+                  legs: { nodes: [], totalCount: 0 },
                   updatedEvent: {
                     eventIdx: eventIndex.toNumber(),
                     block: {
@@ -1968,6 +1970,7 @@ describe('Instruction class', () => {
               nodes: [
                 {
                   mediators: [mediatorDid1, mediatorDid2, mediatorDid3],
+                  legs: { nodes: [], totalCount: 0 },
                 },
               ],
             },

@@ -13,6 +13,7 @@ import {
   offChainAffirmationsQuery,
   settlementsForAllPortfoliosQuery,
   settlementsQuery,
+  withAllLegs,
 } from '~/middleware/queries/settlements';
 import { InstructionEventEnum, InstructionStatusEnum, LegTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -353,5 +354,61 @@ describe('settlementsForAllPortfoliosQuery', () => {
       from: 'someDid',
       to: 'someDid',
     });
+  });
+});
+
+describe('withAllLegs', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  const legsUpTo = (count: number): { legIndex: number }[] =>
+    Array.from({ length: count }, (_, legIndex) => ({ legIndex }));
+
+  it('should keep the legs of an instruction that the middleware returned whole', async () => {
+    const instruction = { id: '0000000001', legs: { nodes: legsUpTo(2), totalCount: 2 } };
+
+    const result = await withAllLegs([instruction] as never[], context);
+
+    expect(result).toEqual([instruction]);
+    expect(context.queryMiddleware).not.toHaveBeenCalled();
+  });
+
+  it('should read every leg of an instruction the middleware cut short', async () => {
+    const instructionId = new BigNumber(7);
+    const whole = { id: '0000000001', legs: { nodes: legsUpTo(1), totalCount: 1 } };
+    const cut = { id: '0000000007', legs: { nodes: legsUpTo(100), totalCount: 120 } };
+
+    dsMockUtils.createApolloMultipleQueriesMock([
+      {
+        query: legsQuery({ instructionId }, new BigNumber(100), new BigNumber(0)),
+        returnData: { legs: { nodes: legsUpTo(100), totalCount: 120 } },
+      },
+      {
+        query: legsQuery({ instructionId }, new BigNumber(100), new BigNumber(100)),
+        returnData: {
+          legs: { nodes: legsUpTo(120).slice(100), totalCount: 120 },
+        },
+      },
+    ]);
+
+    const result = await withAllLegs([whole, cut] as never[], context);
+
+    expect(result[0]).toBe(whole);
+    expect(result[1]).toEqual({ ...cut, legs: { nodes: legsUpTo(120), totalCount: 120 } });
   });
 });

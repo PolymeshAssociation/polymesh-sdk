@@ -197,7 +197,7 @@ describe('Settlements Class', () => {
 
       const instructionsResponse = {
         totalCount: 5,
-        nodes: [{ id: '1' }],
+        nodes: [{ id: '1', legs: { nodes: [], totalCount: 0 } }],
       };
 
       dsMockUtils.createApolloQueryMock(await historicalInstructionsQuery({}, context), {
