@@ -21,6 +21,8 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * @hidden
  *
  * Get the event in which an Identity became an agent of an Asset
+ *
+ * @note an Identity is an agent of an Asset once, so this is one row, so the read needs no paging
  */
 export function assetAgentQuery(
   variables: Required<QueryArgs<AssetAgent, 'assetId' | 'identityId'>>

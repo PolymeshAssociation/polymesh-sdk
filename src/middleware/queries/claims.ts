@@ -184,6 +184,8 @@ export interface TrustedClaimIssuerVariables {
  * @hidden
  *
  * Get an trusted claim issuer event for an asset and an issuer
+ *
+ * @note an issuer is trusted once per Asset, so this is one row, so the read needs no paging
  */
 export function trustedClaimIssuerQuery(
   variables: TrustedClaimIssuerVariables

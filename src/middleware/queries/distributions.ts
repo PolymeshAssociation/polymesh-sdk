@@ -15,6 +15,8 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * @hidden
  *
  * Get distribution details for a CAId
+ *
+ * @note a distribution is one row, so the read needs no paging
  */
 export function distributionQuery(
   variables: QueryArgs<Distribution, 'assetId' | 'localId'>

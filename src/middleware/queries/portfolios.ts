@@ -12,6 +12,8 @@ import { portfolioToMiddlewarePortfolioId } from '~/utils/conversion';
  * @hidden
  *
  * Get portfolio details for a given DID and portfolio number
+ *
+ * @note a portfolio is one row, so the read needs no paging
  */
 export function portfolioQuery(
   variables: QueryArgs<Portfolio, 'identityId' | 'number'>

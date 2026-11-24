@@ -1115,6 +1115,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       ] = await Promise.all([
         this.getInstructionFromMiddleware(),
+        // an instruction has at most 4 mediators, so their affirmations fit in one page
         context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
           instructionAffirmationsQuery({
             instructionId: id,

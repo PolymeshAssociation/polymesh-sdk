@@ -317,6 +317,8 @@ export function instructionAffirmationsQuery(
 export function offChainAffirmationsQuery(
   filters: Pick<InstructionAffirmationsQueryFilters, 'instructionId'>
 ): QueryOptions<Record<string, unknown>> {
+  // a receipt affirms one off-chain leg and an instruction has at most 10, so the receipts fit in
+  // one middleware page
   const orderBy = `${InstructionAffirmationsOrderBy.CreatedEventIdAsc}`;
 
   const query = gql`
