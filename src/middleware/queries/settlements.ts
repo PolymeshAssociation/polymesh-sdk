@@ -407,13 +407,13 @@ export const buildHistoricalInstructionsQueryFilter = async (
 
   const args = ['$start: Int', '$size: Int'];
   const baseFilter = [];
-  const instructionPartiesFilter = [];
+  const partyFilters: string[] = [];
   const legsFilter = [];
   const variables: InstructionPartiesVariables = {};
 
   if (identity) {
     args.push('$identity: String!');
-    instructionPartiesFilter.push('identityId: { equalTo: $identity }');
+    partyFilters.push('parties: { some: { identityId: { equalTo: $identity } } }');
     variables.identity = asDid(identity);
   }
 
@@ -431,7 +431,7 @@ export const buildHistoricalInstructionsQueryFilter = async (
 
   if (party) {
     args.push('$party: String!');
-    instructionPartiesFilter.push('identityId: { equalTo: $party }');
+    partyFilters.push('parties: { some: { identityId: { equalTo: $party } } }');
     variables.party = asDid(party);
   }
 
@@ -457,8 +457,11 @@ export const buildHistoricalInstructionsQueryFilter = async (
     baseFilter.push(`legs: { some: { ${legsFilter.join(', ')} } }`);
   }
 
-  if (instructionPartiesFilter.length) {
-    baseFilter.push(`parties: { some: { ${instructionPartiesFilter.join(', ')} } }`);
+  // an input object can name a field only once, so a second party is its own clause
+  if (partyFilters.length === 1) {
+    baseFilter.push(partyFilters[0]);
+  } else if (partyFilters.length) {
+    baseFilter.push(`and: [${partyFilters.map(partyFilter => `{ ${partyFilter} }`).join(', ')}]`);
   }
 
   return {

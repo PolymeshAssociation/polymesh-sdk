@@ -122,6 +122,18 @@ describe('buildHistoricalInstructionsQueryFilter', () => {
     dsMockUtils.cleanup();
   });
 
+  it('should give the identity and the party a clause each, since a filter names a field once', async () => {
+    const result = await buildHistoricalInstructionsQueryFilter(
+      { identity: 'someDid', party: 'otherDid' },
+      context
+    );
+
+    expect(result.filter).toBe(
+      'filter: { and: [{ parties: { some: { identityId: { equalTo: $identity } } } }, { parties: { some: { identityId: { equalTo: $party } } } }] }'
+    );
+    expect(result.variables).toMatchObject({ identity: 'someDid', party: 'otherDid' });
+  });
+
   it('should create the correct graphql filter with identity', async () => {
     const result = await buildHistoricalInstructionsQueryFilter({ identity: 'someDid' }, context);
 
