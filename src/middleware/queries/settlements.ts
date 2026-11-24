@@ -405,7 +405,7 @@ export function withAllLegs<InstructionNode extends Pick<Instruction, 'id' | 'le
     instructions.map(async instruction => {
       const { id, legs } = instruction;
 
-      if (!(legs.totalCount > legs.nodes.length)) {
+      if (legs.totalCount <= legs.nodes.length) {
         return instruction;
       }
 
@@ -500,7 +500,8 @@ export const buildHistoricalInstructionsQueryFilter = async (
   if (partyFilters.length === 1) {
     baseFilter.push(partyFilters[0]);
   } else if (partyFilters.length) {
-    baseFilter.push(`and: [${partyFilters.map(partyFilter => `{ ${partyFilter} }`).join(', ')}]`);
+    const clauses = partyFilters.map(partyFilter => '{ ' + partyFilter + ' }');
+    baseFilter.push(`and: [${clauses.join(', ')}]`);
   }
 
   return {
