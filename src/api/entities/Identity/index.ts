@@ -585,6 +585,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @param opts.collection - the NFT collection, or its Asset ID or ticker
    *
+   * @throws if the Asset ID or ticker names an Asset that is not an NFT collection
+   *
    * @note uses the middlewareV2
    * @note supports pagination
    */
@@ -596,6 +598,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const middlewareAssetId = await getAssetIdForMiddleware(collection, context);
     const assetId = getAssetIdFromMiddleware(middlewareAssetId);
+
+    // an Asset ID or ticker can name a fungible Asset, which would read as holding no NFTs
+    if (!(collection instanceof NftCollection)) {
+      const isCollection = await new NftCollection({ assetId }, context).exists();
+
+      if (!isCollection) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The Asset is not an NFT collection',
+          data: { assetId },
+        });
+      }
+    }
 
     const {
       data: {
