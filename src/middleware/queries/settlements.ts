@@ -579,7 +579,7 @@ function createLegFilters(
   filter: string;
   variables: LegFilterVariables;
 } {
-  const args: string[] = [];
+  const args: string[] = ['$size: Int, $start: Int'];
   const fromIdFilters: string[] = [];
   const toIdFilters: string[] = [];
   const variables: LegFilterVariables = {};
@@ -618,7 +618,8 @@ function createLegFilters(
 
   return {
     args: `(${args.join()})`,
-    filter: `filter: { or: [{ ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`,
+    // an instruction is in a holder's history when any of its legs moves the holder's assets
+    filter: `filter: { legs: { some: { or: [{ ${fromIdFilters.join()} }, { ${toIdFilters.join()} }] } } }`,
     variables,
   };
 }
@@ -627,20 +628,22 @@ function createLegFilters(
  *  @hidden
  */
 function buildSettlementsQuery(args: string, filter: string): DocumentNode {
-  const orderBy = `[${LegsOrderBy.CreatedEventIdAsc}]`;
+  // an event creates one instruction, so the instructions are in a total order
+  const orderBy = `[${InstructionsOrderBy.CreatedEventIdAsc}]`;
 
   return gql`
   query SettlementsQuery
     ${args}
    {
-    legs(
+    instructions(
       ${filter}
       orderBy: ${orderBy}
+      first: $size
+      offset: $start
     ) {
+      totalCount
       nodes {
-        instruction {
-          ${instructionAttributes}
-        }
+        ${instructionAttributes}
       }
     }
   }
@@ -650,33 +653,37 @@ function buildSettlementsQuery(args: string, filter: string): DocumentNode {
 /**
  * @hidden
  *
- * Get Settlements where a Portfolio is involved
+ * Get the Instructions with a leg that moves a Portfolio's assets
  */
 export function settlementsQuery(
-  filters: QuerySettlementFilters
-): QueryOptions<LegFilterVariables> {
+  filters: QuerySettlementFilters,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<LegFilterVariables>> {
   const { args, filter, variables } = createLegFilters(filters);
   const query = buildSettlementsQuery(args, filter);
 
   return {
     query,
-    variables,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }
 
 /**
  * @hidden
  *
- * Get Settlements for all Portfolios
+ * Get the Instructions with a leg that moves an Identity's assets, from any of its holders
  */
 export function settlementsForAllPortfoliosQuery(
-  filters: Omit<QuerySettlementFilters, 'portfolioId'>
-): QueryOptions<LegFilterVariables> {
+  filters: Omit<QuerySettlementFilters, 'portfolioId'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<LegFilterVariables>> {
   const { args, filter, variables } = createLegFilters(filters, true);
   const query = buildSettlementsQuery(args, filter);
 
   return {
     query,
-    variables,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }

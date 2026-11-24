@@ -5,6 +5,7 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
+import { getSettlementHistory } from '~/api/entities/common/settlementHistory';
 import {
   HistoricSettlement,
   PortfolioBalance,
@@ -25,17 +26,17 @@ import {
 } from '~/internal';
 import { portfolioMovementsQuery } from '~/middleware/queries/portfolios';
 import { settlementsQuery } from '~/middleware/queries/settlements';
-import { Query } from '~/middleware/types';
 import {
   Asset,
   ErrorCode,
+  MiddlewarePaginationOptions,
   MoveFundsParams,
   NoArgsProcedureMethod,
   PaginationOptions,
   ProcedureMethod,
   ResultSet,
 } from '~/types';
-import { Ensured, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import {
   assetIdToString,
   assetToMeshAssetId,
@@ -44,7 +45,6 @@ import {
   identityIdToString,
   portfolioIdToMeshPortfolioId,
   stringToAssetId,
-  toHistoricalSettlements,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -595,32 +595,36 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
-   * Retrieve the settlements and movements that sent assets from or to this portfolio. A movement
-   *   is a transfer between holders of the owner, which no instruction made. Each leg's direction
-   *   is seen from this portfolio, so a movement to another of the owner's portfolios or Accounts
-   *   is `Outgoing`
+   * Retrieve, oldest first, the settlements and transfers that sent assets from or to this
+   *   portfolio: the instructions with a leg that moves its assets, and the transfers no instruction
+   *   made. Those are movements between holders of the owner, and transfers between Identities such
+   *   as a controller transfer or a distribution payout. Each leg's direction is seen from this
+   *   portfolio, so a movement to another of the owner's portfolios or Accounts is `Outgoing`
    *
-   * @param filters.account - only the settlements and movements this Account signed, such as by
+   * @param filters.account - only the settlements and transfers this Account signed, such as by
    *   creating, affirming or executing an instruction. It does not select the Account as a holder
    * @param filters.ticker - ticker involved in the transaction
    * @param filters.assetId - Asset ID to filter by (overrides ticker if both provided)
+   * @param filters.size - page size
+   * @param filters.start - page offset
    *
    * @note uses the middlewareV2
+   * @note supports pagination. A later page takes more middleware requests than an earlier one
    */
   public async getTransactionHistory(
-    filters: {
+    filters: MiddlewarePaginationOptions & {
       account?: string;
       ticker?: string;
       assetId?: string;
     } = {}
-  ): Promise<HistoricSettlement[]> {
+  ): Promise<ResultSet<HistoricSettlement>> {
     const {
       context,
       owner: { did: identityId },
       _id: portfolioId,
     } = this;
 
-    const { account, ticker, assetId } = filters;
+    const { account, ticker, assetId, size, start } = filters;
 
     let middlewareAssetId;
     const assetIdValue = assetId ?? ticker;
@@ -629,37 +633,27 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       middlewareAssetId = await getAssetIdForMiddleware(assetIdValue, context);
     }
 
-    const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
-      settlementsQuery({
-        identityId,
-        portfolioId,
-        address: account,
-        assetId: middlewareAssetId,
-      })
-    );
+    const queryFilters = {
+      identityId,
+      portfolioId,
+      address: account,
+      assetId: middlewareAssetId,
+    };
 
-    const portfolioMovementsPromise = context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
-      portfolioMovementsQuery({
-        identityId,
-        portfolioId,
-        address: account,
-        assetId: middlewareAssetId,
-      })
-    );
-
-    const [
-      {
-        data: {
-          legs: { nodes: settlements },
+    const [history, exists] = await Promise.all([
+      getSettlementHistory(
+        context,
+        {
+          instructions: (pageSize, pageStart) =>
+            settlementsQuery(queryFilters, pageSize, pageStart),
+          transfers: (pageSize, pageStart) =>
+            portfolioMovementsQuery(queryFilters, pageSize, pageStart),
         },
-      },
-      {
-        data: {
-          assetTransactions: { nodes: portfolioMovements },
-        },
-      },
-      exists,
-    ] = await Promise.all([settlementsPromise, portfolioMovementsPromise, this.exists()]);
+        { identityId, portfolio: new BigNumber(portfolioId || 0).toNumber() },
+        { size, start }
+      ),
+      this.exists(),
+    ]);
 
     if (!exists) {
       throw new PolymeshError({
@@ -668,15 +662,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       });
     }
 
-    return toHistoricalSettlements(
-      settlements,
-      portfolioMovements,
-      {
-        identityId,
-        portfolio: new BigNumber(portfolioId || 0).toNumber(),
-      },
-      context
-    );
+    return history;
   }
 
   /**

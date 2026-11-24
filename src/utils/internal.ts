@@ -273,18 +273,20 @@ type MiddlewareNode<Key extends keyof Query> = NonNullable<Query[Key]> extends C
 /**
  * @hidden
  *
- * Read every row of a middleware connection. The middleware returns at most
- *   `MAX_MIDDLEWARE_PAGE_SIZE` rows a request, so a read that needs all of them takes several
- *   pages. `buildQuery` must order the rows totally, or pages can overlap and skip rows
+ * Read the first `limit` rows of a middleware connection, or all of them if `limit` is left out,
+ *   with the connection's `totalCount`. The middleware returns at most `MAX_MIDDLEWARE_PAGE_SIZE`
+ *   rows a request, so this can take several. `buildQuery` must order the rows totally, or pages
+ *   can overlap and skip rows
  */
-export async function queryAllMiddlewarePages<Key extends keyof Query>(
+export async function queryMiddlewarePages<Key extends keyof Query>(
   context: Context,
   buildQuery: (
     size: BigNumber,
     start: BigNumber
   ) => QueryOptions<OperationVariables, Partial<Query>>,
-  connectionKey: Key
-): Promise<MiddlewareNode<Key>[]> {
+  connectionKey: Key,
+  limit?: BigNumber
+): Promise<{ nodes: MiddlewareNode<Key>[]; totalCount: number }> {
   const size = MAX_MIDDLEWARE_PAGE_SIZE;
 
   const readPage = async (start: BigNumber): Promise<Connection<MiddlewareNode<Key>>> => {
@@ -297,14 +299,37 @@ export async function queryAllMiddlewarePages<Key extends keyof Query>(
 
   const { nodes, totalCount } = await readPage(new BigNumber(0));
 
+  const end = limit ? BigNumber.min(limit, totalCount) : new BigNumber(totalCount);
+
   const starts: BigNumber[] = [];
-  for (let start = size; start.lt(totalCount); start = start.plus(size)) {
+  for (let start = size; start.lt(end); start = start.plus(size)) {
     starts.push(start);
   }
 
   const pages = await allInOrder(starts.map(readPage));
 
-  return [...nodes, ...pages.flatMap(page => page.nodes)];
+  return {
+    nodes: [...nodes, ...pages.flatMap(page => page.nodes)].slice(0, end.toNumber()),
+    totalCount,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Read every row of a middleware connection. See `queryMiddlewarePages`
+ */
+export async function queryAllMiddlewarePages<Key extends keyof Query>(
+  context: Context,
+  buildQuery: (
+    size: BigNumber,
+    start: BigNumber
+  ) => QueryOptions<OperationVariables, Partial<Query>>,
+  connectionKey: Key
+): Promise<MiddlewareNode<Key>[]> {
+  const { nodes } = await queryMiddlewarePages(context, buildQuery, connectionKey);
+
+  return nodes;
 }
 
 /**

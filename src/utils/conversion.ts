@@ -5460,7 +5460,7 @@ export function toCustomClaimTypeWithIdentity(
  *
  * Whose history a transfer is read for: an Identity's, or one of its portfolios'
  */
-interface HistoryPerspective {
+export interface HistoryPerspective {
   identityId: string;
   portfolio?: number;
 }
@@ -5512,112 +5512,98 @@ export function middlewareTransferToSettlementDirection(
 /**
  * @hidden
  *
- * A movement is a transfer between two holders of one Identity that no instruction made, so both
- *   of its sides are always there. Either side may be an Account
+ * A transfer no instruction made: a movement between two holders of one Identity, or a transfer
+ *   between Identities such as a controller transfer or a distribution payout. Both of its sides
+ *   are there, and either may be an Account
  */
-function portfolioMovementsToHistoricSettlements(
-  portfolioMovements: MiddlewareAssetTransaction[],
+export function middlewareTransferToHistoricSettlement(
+  transfer: MiddlewareAssetTransaction,
   perspective: HistoryPerspective,
   context: Context
-): HistoricSettlement[] {
-  return portfolioMovements.map(
-    ({
-      createdEvent,
-      fromIdentityId,
-      fromPortfolioId,
-      fromAccountId,
-      toIdentityId,
-      toPortfolioId,
-      toAccountId,
-      assetId,
-      amount,
-      nftIds,
-      address,
-    }) => {
-      const { blockId, hash } = createdEvent!.block!;
-      const from = middlewareSideToAssetHolder(fromPortfolioId, fromAccountId, context);
-      const to = middlewareSideToAssetHolder(toPortfolioId, toAccountId, context);
-      const direction = middlewareTransferToSettlementDirection(
-        { fromId: fromIdentityId, fromPortfolioId, toId: toIdentityId, toPortfolioId },
-        perspective
-      );
-      const id = getAssetIdFromMiddleware(assetId);
+): HistoricSettlement {
+  const {
+    createdEvent,
+    fromIdentityId,
+    fromPortfolioId,
+    fromAccountId,
+    toIdentityId,
+    toPortfolioId,
+    toAccountId,
+    assetId,
+    amount,
+    nftIds,
+    address,
+  } = transfer;
 
-      const leg: SettlementLeg = nftIds
-        ? {
-            asset: new NftCollection({ assetId: id }, context),
-            nfts: (nftIds as string[]).map(
-              nftId => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
-            ),
-            direction,
-            from,
-            to,
-          }
-        : {
-            asset: new FungibleAsset({ assetId: id }, context),
-            amount: new BigNumber(amount).shiftedBy(-6),
-            direction,
-            from,
-            to,
-          };
-
-      return {
-        blockNumber: new BigNumber(blockId),
-        blockHash: hash,
-        status: InstructionStatusEnum.Executed,
-        accounts: address ? [new Account({ address }, context)] : [],
-        legs: [leg],
-      };
-    }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const { blockId, hash } = createdEvent!.block!;
+  const from = middlewareSideToAssetHolder(fromPortfolioId, fromAccountId, context);
+  const to = middlewareSideToAssetHolder(toPortfolioId, toAccountId, context);
+  const direction = middlewareTransferToSettlementDirection(
+    { fromId: fromIdentityId, fromPortfolioId, toId: toIdentityId, toPortfolioId },
+    perspective
   );
+  const id = getAssetIdFromMiddleware(assetId);
+
+  const leg: SettlementLeg = nftIds
+    ? {
+        asset: new NftCollection({ assetId: id }, context),
+        nfts: (nftIds as string[]).map(
+          nftId => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
+        ),
+        direction,
+        from,
+        to,
+      }
+    : {
+        asset: new FungibleAsset({ assetId: id }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        direction,
+        from,
+        to,
+      };
+
+  return {
+    blockNumber: new BigNumber(blockId),
+    blockHash: hash,
+    status: InstructionStatusEnum.Executed,
+    accounts: address ? [new Account({ address }, context)] : [],
+    legs: [leg],
+  };
 }
 
 /**
  * @hidden
+ *
+ * An instruction with a leg that moves the assets of the history it is read for
  */
-export function toHistoricalSettlements(
-  settlementsResult: MiddlewareLeg[],
-  portfolioMovements: MiddlewareAssetTransaction[],
-  filter: HistoryPerspective,
+export function middlewareInstructionToHistoricSettlement(
+  instruction: MiddlewareInstruction,
+  perspective: HistoryPerspective,
   context: Context
-): HistoricSettlement[] {
-  let data: HistoricSettlement[] = [];
-  const seenInstructionIds = new Set<string>();
+): HistoricSettlement {
+  const {
+    id,
+    createdEvent,
+    status,
+    legs: { nodes: legs },
+  } = instruction;
 
-  /* eslint-disable @typescript-eslint/no-non-null-assertion */
-  settlementsResult.forEach(({ instruction }) => {
-    const {
-      id,
-      createdEvent,
-      status,
-      legs: { nodes: legs },
-    } = instruction!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const { blockId, hash } = createdEvent!.block!;
 
-    // the query returns a row per matching leg, and each carries all of its instruction's legs
-    if (seenInstructionIds.has(id)) {
-      return;
-    }
-    seenInstructionIds.add(id);
-
-    const { blockId, hash } = createdEvent!.block!;
-
-    data.push({
-      blockNumber: new BigNumber(blockId),
-      blockHash: hash,
-      status,
-      accounts: legs[0]!.addresses.map((address: string) => new Account({ address }, context)),
-      instruction: new Instruction({ id: new BigNumber(id) }, context),
-      legs: legs.map(leg => ({
-        ...middlewareLegToLeg(leg, context),
-        direction: middlewareTransferToSettlementDirection(leg, filter),
-      })),
-    });
-  });
-
-  data = [...data, ...portfolioMovementsToHistoricSettlements(portfolioMovements, filter, context)];
-  /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-  return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
+  return {
+    blockNumber: new BigNumber(blockId),
+    blockHash: hash,
+    status,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    accounts: legs[0]!.addresses.map((address: string) => new Account({ address }, context)),
+    instruction: new Instruction({ id: new BigNumber(id) }, context),
+    legs: legs.map(leg => ({
+      ...middlewareLegToLeg(leg, context),
+      direction: middlewareTransferToSettlementDirection(leg, perspective),
+    })),
+  };
 }
 
 /**

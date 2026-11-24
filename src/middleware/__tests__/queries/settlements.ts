@@ -331,9 +331,17 @@ describe('settlementsQuery', () => {
       assetId: '0x12341234123412341234123412341234',
       fromPortfolio: 'someDid/1',
       toPortfolio: 'someDid/1',
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     });
     expect(print(result.query)).toContain('addresses: {contains: $addresses}');
     expect(print(result.query)).toContain('fromPortfolioId: {equalTo: $fromPortfolio}');
+    expect(print(result.query)).toContain('legs: {some: {or:');
+    expect(print(result.query)).toContain('instructions(');
+
+    expect(settlementsQuery(variables, new BigNumber(10), new BigNumber(20)).variables).toEqual(
+      expect.objectContaining({ size: 10, start: 20 })
+    );
   });
 });
 
@@ -353,7 +361,10 @@ describe('settlementsForAllPortfoliosQuery', () => {
       assetId: '0x12341234123412341234123412341234',
       from: 'someDid',
       to: 'someDid',
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     });
+    expect(print(result.query)).toContain('fromId: {equalTo: $from}');
   });
 });
 
