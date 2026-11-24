@@ -129,6 +129,8 @@ export class Claims {
   /**
    * Edit claims associated to Identities (only the expiry date can be modified)
    *
+   * @note a claim can only be edited by the Identity that issued it
+   *
    * @note required roles:
    *   - DID Registrar: if there is at least one CDD claim in the arguments
    */

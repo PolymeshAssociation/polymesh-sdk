@@ -312,6 +312,7 @@ import {
   meshAssetHolderToAssetHolder,
   meshBallotDetailsToCorporateBallotDetails,
   meshClaimToClaim,
+  meshClaimToClaimKeys,
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
@@ -4909,6 +4910,96 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
       const result = claimTypeToMeshClaimType(customClaim, context);
       expect(result).toEqual(mockCustomClaim);
     });
+  });
+});
+
+describe('meshClaimToClaimKeys', () => {
+  let context: Mocked<Context>;
+  let target: PolymeshPrimitivesIdentityId;
+  let issuer: PolymeshPrimitivesIdentityId;
+  let scope: PolymeshPrimitivesIdentityClaimScope;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    target = dsMockUtils.createMockIdentityId('targetDid');
+    issuer = dsMockUtils.createMockIdentityId('issuerDid');
+    scope = dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId('someDid') });
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    context.createType.mockImplementation(
+      (_type, value) => value as unknown as ReturnType<typeof context.createType>
+    );
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should key a CDD claim by its type with no scope', () => {
+    const claim = dsMockUtils.createMockClaim({
+      CustomerDueDiligence: dsMockUtils.createMockCddId('cddId'),
+    });
+
+    expect(meshClaimToClaimKeys(target, claim, issuer, context)).toEqual([
+      { target, claimType: 'CustomerDueDiligence' },
+      { issuer, scope: null },
+    ]);
+    expect(context.createType).toHaveBeenCalledWith('PalletIdentityClaim1stKey', {
+      target,
+      claimType: 'CustomerDueDiligence',
+    });
+    expect(context.createType).toHaveBeenCalledWith('PalletIdentityClaim2ndKey', {
+      issuer,
+      scope: null,
+    });
+  });
+
+  it('should key a Jurisdiction claim by its scope', () => {
+    const claim = dsMockUtils.createMockClaim({
+      Jurisdiction: [dsMockUtils.createMockCountryCode(CountryCode.Ca), scope],
+    });
+
+    expect(meshClaimToClaimKeys(target, claim, issuer, context)).toEqual([
+      { target, claimType: 'Jurisdiction' },
+      { issuer, scope },
+    ]);
+  });
+
+  it('should key a custom claim by its custom type and its scope, if any', () => {
+    const customClaimTypeId = dsMockUtils.createMockU32(new BigNumber(1));
+
+    let claim = dsMockUtils.createMockClaim({
+      Custom: [customClaimTypeId, dsMockUtils.createMockOption(scope)],
+    });
+
+    expect(meshClaimToClaimKeys(target, claim, issuer, context)).toEqual([
+      { target, claimType: { Custom: customClaimTypeId } },
+      { issuer, scope },
+    ]);
+
+    claim = dsMockUtils.createMockClaim({
+      Custom: [customClaimTypeId, dsMockUtils.createMockOption()],
+    });
+
+    expect(meshClaimToClaimKeys(target, claim, issuer, context)).toEqual([
+      { target, claimType: { Custom: customClaimTypeId } },
+      { issuer, scope: null },
+    ]);
+  });
+
+  it('should key any other claim by its scope', () => {
+    const claim = dsMockUtils.createMockClaim({ BuyLockup: scope });
+
+    expect(meshClaimToClaimKeys(target, claim, issuer, context)).toEqual([
+      { target, claimType: 'BuyLockup' },
+      { issuer, scope },
+    ]);
   });
 });
 

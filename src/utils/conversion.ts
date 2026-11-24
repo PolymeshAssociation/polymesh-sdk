@@ -23,6 +23,8 @@ import {
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
+  PalletIdentityClaim1stKey,
+  PalletIdentityClaim2ndKey,
   PalletStakingActiveEraInfo,
   PalletStakingNominations,
   PalletStakingStakingLedger,
@@ -2387,6 +2389,42 @@ export async function claimToMeshClaim(
   return context.createType('PolymeshPrimitivesIdentityClaimClaim', {
     [claim.type]: value,
   }) as unknown as PolymeshPrimitivesIdentityClaimClaim;
+}
+
+/**
+ * @hidden
+ *
+ * The keys `identity.claims` stores a claim under, when `issuer` issued it to `target`
+ */
+export function meshClaimToClaimKeys(
+  target: PolymeshPrimitivesIdentityId,
+  claim: PolymeshPrimitivesIdentityClaimClaim,
+  issuer: PolymeshPrimitivesIdentityId,
+  context: Context
+): [PalletIdentityClaim1stKey, PalletIdentityClaim2ndKey] {
+  let claimType: string | { Custom: u32 } = claim.type;
+  let scope: PolymeshPrimitivesIdentityClaimScope | null;
+
+  if (claim.isCustomerDueDiligence) {
+    scope = null;
+  } else if (claim.isJurisdiction) {
+    [, scope] = claim.asJurisdiction;
+  } else if (claim.isCustom) {
+    const [customClaimTypeId, optScope] = claim.asCustom;
+
+    claimType = { Custom: customClaimTypeId };
+    scope = optScope.unwrapOr(null);
+  } else {
+    // every other claim is its scope alone
+    scope = (claim as unknown as Record<string, PolymeshPrimitivesIdentityClaimScope>)[
+      `as${claim.type}`
+    ]!;
+  }
+
+  return [
+    context.createType('PalletIdentityClaim1stKey', { target, claimType }),
+    context.createType('PalletIdentityClaim2ndKey', { issuer, scope }),
+  ];
 }
 
 /**
