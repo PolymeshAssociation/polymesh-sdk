@@ -52,16 +52,23 @@ export function assetAgentQuery(
  * Get the agent history of an Asset
  */
 export function assetAgentHistoryQuery(
-  variables: QueryArgs<AssetAgentHistory, 'assetId'>
-): QueryOptions<QueryArgs<AssetAgentHistory, 'assetId'>> {
-  const orderBy = `${AssetAgentHistoriesOrderBy.CreatedEventIdAsc}`;
+  variables: QueryArgs<AssetAgentHistory, 'assetId'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetAgentHistory, 'assetId'>>> {
+  // one event can change several agents. `id` is `<block>/<event index>/<did>`, zero padded, so it
+  // breaks the tie and keeps the order total
+  const orderBy = `${AssetAgentHistoriesOrderBy.CreatedEventIdAsc}, ${AssetAgentHistoriesOrderBy.IdAsc}`;
 
   const query = gql`
-    query AssetAgentHistoryQuery($assetId: String!) {
+    query AssetAgentHistoryQuery($assetId: String!, $size: Int, $start: Int) {
       assetAgentHistories(
         filter: { assetId: { equalTo: $assetId } }
         orderBy: [${orderBy}]
+        first: $size
+        offset: $start
       ) {
+        totalCount
         nodes {
           identityId
           createdEvent {
@@ -74,7 +81,7 @@ export function assetAgentHistoryQuery(
 
   return {
     query,
-    variables,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }
 

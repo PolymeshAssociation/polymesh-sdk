@@ -217,14 +217,20 @@ export function trustedClaimIssuerQuery(
  * Get an trusted claim issuer event for an asset and an issuer
  */
 export function trustingAssetsQuery(
-  variables: Pick<TrustedClaimIssuerVariables, 'issuer'>
-): QueryOptions<Pick<TrustedClaimIssuerVariables, 'issuer'>> {
+  variables: Pick<TrustedClaimIssuerVariables, 'issuer'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<Pick<TrustedClaimIssuerVariables, 'issuer'>>> {
+  // an issuer is trusted once per Asset, so the Asset orders the rows totally
   const query = gql`
-    query TrustedClaimIssuerQuery($issuer: String!) {
+    query TrustedClaimIssuerQuery($issuer: String!, $size: Int, $start: Int) {
       trustedClaimIssuers(
         filter: { issuerId: { equalTo: $issuer } },
         orderBy: [${TrustedClaimIssuersOrderBy.AssetIdAsc}]
+        first: $size
+        offset: $start
       ) {
+        totalCount
         nodes {
           asset {
             id
@@ -238,7 +244,7 @@ export function trustingAssetsQuery(
 
   return {
     query,
-    variables,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }
 

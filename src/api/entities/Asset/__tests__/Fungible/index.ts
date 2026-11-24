@@ -823,9 +823,7 @@ describe('Fungible class', () => {
       const datetime = '2020-10-10';
 
       dsMockUtils.createApolloQueryMock(
-        assetAgentHistoryQuery({
-          assetId,
-        }),
+        assetAgentHistoryQuery({ assetId }, new BigNumber(100), new BigNumber(0)),
         {
           assetAgentHistories: {
             nodes: [
@@ -841,6 +839,7 @@ describe('Fungible class', () => {
                 },
               },
             ],
+            totalCount: 1,
           },
         }
       );
@@ -858,12 +857,11 @@ describe('Fungible class', () => {
       });
 
       dsMockUtils.createApolloQueryMock(
-        assetAgentHistoryQuery({
-          assetId,
-        }),
+        assetAgentHistoryQuery({ assetId }, new BigNumber(100), new BigNumber(0)),
         {
           assetAgentHistories: {
             nodes: [],
+            totalCount: 0,
           },
         }
       );

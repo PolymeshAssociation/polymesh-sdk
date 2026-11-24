@@ -48,6 +48,10 @@ export const DEFAULT_GQL_PAGE_SIZE = 25;
  * Limit to the page size used when fetching large amounts of data from the chain (same goes for `.multi` calls)
  */
 export const MAX_PAGE_SIZE = new BigNumber(1000);
+/**
+ * Most rows the middleware returns for a connection, top level or nested, whatever `first` asks for
+ */
+export const MAX_MIDDLEWARE_PAGE_SIZE = new BigNumber(100);
 
 /**
  * The number of blocks a transaction is valid for by default

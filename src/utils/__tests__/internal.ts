@@ -1,3 +1,4 @@
+import { OperationVariables, QueryOptions } from '@apollo/client/core';
 import { Bytes, u32 } from '@polkadot/types';
 import { AccountId, DigestItem, EventRecord, Moment } from '@polkadot/types/interfaces';
 import {
@@ -9,6 +10,7 @@ import {
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import gql from 'graphql-tag';
 import { when } from 'jest-when';
 import { noop } from 'lodash';
 
@@ -142,6 +144,7 @@ import {
   optionize,
   padString,
   prepareStorageForCustomType,
+  queryAllMiddlewarePages,
   removePadding,
   requestAtBlock,
   requestMulti,
@@ -227,6 +230,77 @@ describe('allInOrder', () => {
     const slow = new Promise<never>((_resolve, reject) => setImmediate(() => reject(first)));
 
     return expect(allInOrder([slow, Promise.reject(second)])).rejects.toBe(first);
+  });
+});
+
+describe('queryAllMiddlewarePages', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  const buildQuery = (size: BigNumber, start: BigNumber): QueryOptions<OperationVariables> => ({
+    query: gql`
+      query TestQuery($size: Int, $start: Int) {
+        assetHolders(first: $size, offset: $start) {
+          totalCount
+          nodes {
+            identityId
+          }
+        }
+      }
+    `,
+    variables: { size: size.toNumber(), start: start.toNumber() },
+  });
+
+  const page = (from: number, to: number, totalCount: number): unknown => ({
+    assetHolders: {
+      nodes: Array.from({ length: to - from }, (_, i) => ({ identityId: `${from + i}` })),
+      totalCount,
+    },
+  });
+
+  it('should read every page, in order', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.createApolloMultipleQueriesMock([
+      { query: buildQuery(new BigNumber(100), new BigNumber(0)), returnData: page(0, 100, 250) },
+      {
+        query: buildQuery(new BigNumber(100), new BigNumber(100)),
+        returnData: page(100, 200, 250),
+      },
+      {
+        query: buildQuery(new BigNumber(100), new BigNumber(200)),
+        returnData: page(200, 250, 250),
+      },
+    ]);
+
+    const result = await queryAllMiddlewarePages(context, buildQuery, 'assetHolders');
+
+    expect(result.map(({ identityId }) => identityId)).toEqual(
+      Array.from({ length: 250 }, (_, i) => `${i}`)
+    );
+  });
+
+  it('should read once when one page holds every row', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.createApolloQueryMock(
+      buildQuery(new BigNumber(100), new BigNumber(0)),
+      page(0, 100, 100)
+    );
+
+    const result = await queryAllMiddlewarePages(context, buildQuery, 'assetHolders');
+
+    expect(result).toHaveLength(100);
+    expect(context.queryMiddleware).toHaveBeenCalledTimes(1);
   });
 });
 

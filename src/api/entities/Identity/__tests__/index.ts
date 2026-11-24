@@ -549,13 +549,17 @@ describe('Identity class', () => {
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
-      dsMockUtils.createApolloQueryMock(trustingAssetsQuery({ issuer: did }), {
-        trustedClaimIssuers: {
-          nodes: assetIds.map((assetId, i) => ({
-            asset: { id: assetId, isNftCollection: i === 1 },
-          })),
-        },
-      });
+      dsMockUtils.createApolloQueryMock(
+        trustingAssetsQuery({ issuer: did }, new BigNumber(100), new BigNumber(0)),
+        {
+          trustedClaimIssuers: {
+            nodes: assetIds.map((assetId, i) => ({
+              asset: { id: assetId, isNftCollection: i === 1 },
+            })),
+            totalCount: assetIds.length,
+          },
+        }
+      );
 
       assetIds.forEach(assetId =>
         when(getAssetIdFromMiddlewareSpy).calledWith(assetId).mockReturnValue(assetId)

@@ -160,18 +160,23 @@ describe('Claims Class', () => {
             cddId,
           },
         ],
+        totalCount: 2,
       };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createApolloQueryMock(
-        claimsQuery({
-          dids: [targetDid],
-          trustedClaimIssuers: [issuerDid],
-          claimTypes: [ClaimTypeEnum.CustomerDueDiligence],
-          includeExpired: false,
-          scope: undefined,
-        }),
+        claimsQuery(
+          {
+            dids: [targetDid],
+            trustedClaimIssuers: [issuerDid],
+            claimTypes: [ClaimTypeEnum.CustomerDueDiligence],
+            includeExpired: false,
+            scope: undefined,
+          },
+          new BigNumber(100),
+          new BigNumber(0)
+        ),
         {
           claims: claimsQueryResponse,
         }
@@ -206,10 +211,14 @@ describe('Claims Class', () => {
           },
         },
         {
-          query: claimsQuery({
-            dids: [targetDid],
-            includeExpired: true,
-          }),
+          query: claimsQuery(
+            {
+              dids: [targetDid],
+              includeExpired: true,
+            },
+            new BigNumber(100),
+            new BigNumber(0)
+          ),
           returnData: {
             claims: claimsQueryResponse,
           },
@@ -291,18 +300,23 @@ describe('Claims Class', () => {
             },
           },
         ],
+        totalCount: 2,
       };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createApolloQueryMock(
-        claimsQuery({
-          dids: [targetDid],
-          scope: { type: 'Asset', value: '0x12341234123412341234123412341234' },
-          trustedClaimIssuers: [issuerDid],
-          claimTypes: [ClaimTypeEnum.Accredited],
-          includeExpired: false,
-        }),
+        claimsQuery(
+          {
+            dids: [targetDid],
+            scope: { type: 'Asset', value: '0x12341234123412341234123412341234' },
+            trustedClaimIssuers: [issuerDid],
+            claimTypes: [ClaimTypeEnum.Accredited],
+            includeExpired: false,
+          },
+          new BigNumber(100),
+          new BigNumber(0)
+        ),
         {
           claims: claimsQueryResponse,
         }
@@ -709,6 +723,7 @@ describe('Claims Class', () => {
             type: ClaimTypeEnum.CustomerDueDiligence,
           },
         ],
+        totalCount: 1,
       };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
@@ -718,12 +733,16 @@ describe('Claims Class', () => {
         .mockReturnValue(fakeClaims);
 
       dsMockUtils.createApolloQueryMock(
-        claimsQuery({
-          dids: [did],
-          scope,
-          trustedClaimIssuers: [issuerDid],
-          includeExpired: false,
-        }),
+        claimsQuery(
+          {
+            dids: [did],
+            scope,
+            trustedClaimIssuers: [issuerDid],
+            includeExpired: false,
+          },
+          new BigNumber(100),
+          new BigNumber(0)
+        ),
         {
           claims: claimsQueryResponse,
         }
@@ -763,11 +782,15 @@ describe('Claims Class', () => {
           },
         },
         {
-          query: claimsQuery({
-            dids: ['someDid'],
-            trustedClaimIssuers: [issuerDid],
-            includeExpired: true,
-          }),
+          query: claimsQuery(
+            {
+              dids: ['someDid'],
+              trustedClaimIssuers: [issuerDid],
+              includeExpired: true,
+            },
+            new BigNumber(100),
+            new BigNumber(0)
+          ),
           returnData: {
             claims: claimsQueryResponse,
           },

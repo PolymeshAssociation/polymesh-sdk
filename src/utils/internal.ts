@@ -1,3 +1,4 @@
+import { OperationVariables, QueryOptions } from '@apollo/client/core';
 import {
   ApiDecoration,
   AugmentedEvent,
@@ -44,7 +45,7 @@ import {
   PolymeshError,
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries/common';
-import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
+import { Claim as MiddlewareClaim, ClaimTypeEnum, Connection, Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   Asset,
@@ -108,6 +109,7 @@ import {
   BABE_ENGINE_ID,
   CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
   MAX_META_LENGTH,
+  MAX_MIDDLEWARE_PAGE_SIZE,
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
@@ -255,6 +257,54 @@ export async function allInOrder<T>(promises: Promise<T>[]): Promise<T[]> {
   const settled = await settleAll(promises);
 
   return settled.map(unwrapSettled);
+}
+
+/**
+ * @hidden
+ *
+ * The node type of a middleware connection
+ */
+type MiddlewareNode<Key extends keyof Query> = NonNullable<Query[Key]> extends Connection<
+  infer Node
+>
+  ? Node
+  : never;
+
+/**
+ * @hidden
+ *
+ * Read every row of a middleware connection. The middleware returns at most
+ *   `MAX_MIDDLEWARE_PAGE_SIZE` rows a request, so a read that needs all of them takes several
+ *   pages. `buildQuery` must order the rows totally, or pages can overlap and skip rows
+ */
+export async function queryAllMiddlewarePages<Key extends keyof Query>(
+  context: Context,
+  buildQuery: (
+    size: BigNumber,
+    start: BigNumber
+  ) => QueryOptions<OperationVariables, Partial<Query>>,
+  connectionKey: Key
+): Promise<MiddlewareNode<Key>[]> {
+  const size = MAX_MIDDLEWARE_PAGE_SIZE;
+
+  const readPage = async (start: BigNumber): Promise<Connection<MiddlewareNode<Key>>> => {
+    const { data } = await context.queryMiddleware<Ensured<Query, Key>>(
+      buildQuery(size, start) as QueryOptions<OperationVariables, Ensured<Query, Key>>
+    );
+
+    return data[connectionKey] as unknown as Connection<MiddlewareNode<Key>>;
+  };
+
+  const { nodes, totalCount } = await readPage(new BigNumber(0));
+
+  const starts: BigNumber[] = [];
+  for (let start = size; start.lt(totalCount); start = start.plus(size)) {
+    starts.push(start);
+  }
+
+  const pages = await allInOrder(starts.map(readPage));
+
+  return [...nodes, ...pages.flatMap(page => page.nodes)];
 }
 
 /**

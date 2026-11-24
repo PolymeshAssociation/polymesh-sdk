@@ -47,7 +47,12 @@ import {
   toIdentityWithClaimsArray,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, getDid } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getDid,
+  queryAllMiddlewarePages,
+} from '~/utils/internal';
 
 /**
  * Handles all Claims related functionality
@@ -241,15 +246,12 @@ export class Claims {
     targetIssuers.sort((a, b) => a.localeCompare(b));
     targetIssuers = targetIssuers.slice(start.toNumber(), size.plus(start).toNumber());
 
-    const {
-      data: {
-        claims: { nodes },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
-      claimsQuery({
-        dids: targetIssuers,
-        ...filters,
-      })
+    // a page of targets can hold any number of claims
+    const nodes = await queryAllMiddlewarePages(
+      context,
+      (claimsSize, claimsStart) =>
+        claimsQuery({ dids: targetIssuers, ...filters }, claimsSize, claimsStart),
+      'claims'
     );
 
     const data = toIdentityWithClaimsArray(nodes, context, 'targetId');
@@ -472,15 +474,12 @@ export class Claims {
       claimIssuers.sort((a, b) => a.localeCompare(b));
       claimIssuers = claimIssuers.slice(start.toNumber(), size.plus(start).toNumber());
 
-      const {
-        data: {
-          claims: { nodes },
-        },
-      } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
-        claimsQuery({
-          trustedClaimIssuers: claimIssuers,
-          ...filters,
-        })
+      // a page of issuers can hold any number of claims
+      const nodes = await queryAllMiddlewarePages(
+        context,
+        (claimsSize, claimsStart) =>
+          claimsQuery({ trustedClaimIssuers: claimIssuers, ...filters }, claimsSize, claimsStart),
+        'claims'
       );
 
       const data = toIdentityWithClaimsArray(nodes, context, 'issuerId');

@@ -90,6 +90,7 @@ import {
   getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   getSecondaryAccountPermissions,
+  queryAllMiddlewarePages,
   requestPaginated,
 } from '~/utils/internal';
 
@@ -664,12 +665,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getTrustingAssets(): Promise<(FungibleAsset | NftCollection)[]> {
     const { context, did } = this;
 
-    const {
-      data: {
-        trustedClaimIssuers: { nodes },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'trustedClaimIssuers'>>(
-      trustingAssetsQuery({ issuer: did })
+    const nodes = await queryAllMiddlewarePages(
+      context,
+      (size, start) => trustingAssetsQuery({ issuer: did }, size, start),
+      'trustedClaimIssuers'
     );
 
     return nodes.map(({ asset }) => {
