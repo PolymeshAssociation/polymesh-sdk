@@ -808,6 +808,13 @@ const defaultContextOptions: ContextOptions = {
         counterpartyIdentity: undefined,
         counterpartyAccount: undefined,
         memo: undefined,
+        movementId: '0000000123/0000000000',
+        holdReason: undefined,
+        balanceAfter: {
+          free: new BigNumber(10),
+          reserved: new BigNumber(0),
+          frozen: new BigNumber(0),
+        },
       },
     ],
     next: new BigNumber(1),

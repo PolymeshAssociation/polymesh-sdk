@@ -25,6 +25,7 @@ export {
   EntryDirection,
   EventIdEnum,
   ExtrinsicsOrderBy,
+  HoldReason,
   InstructionStatusEnum,
   ModuleIdEnum,
   MovementKind,

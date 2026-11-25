@@ -5,6 +5,7 @@ import {
   CallIdEnum,
   EntryDirection,
   EventIdEnum,
+  HoldReason,
   ModuleIdEnum,
   MovementKind,
   PolyxPool,
@@ -216,6 +217,22 @@ export interface HistoricPolyxTransaction extends EventIdentifier {
    * identifier string to help differentiate transfers
    */
   memo: string | undefined;
+  /**
+   * shared by the entries of one movement, so the other side of a transfer can be found
+   */
+  movementId: string;
+  /**
+   * why the amount was held or released, for a movement that holds or releases part of the balance
+   */
+  holdReason: HoldReason | undefined;
+  /**
+   * the Account's balance right after this entry, so a balance over time needs no adding up
+   */
+  balanceAfter: {
+    free: BigNumber;
+    reserved: BigNumber;
+    frozen: BigNumber;
+  };
   extrinsicIdx: BigNumber | undefined;
 
   callId: CallIdEnum | undefined;
