@@ -562,11 +562,20 @@ export interface QuerySettlementFilters {
   address?: string | undefined;
 }
 
+/**
+ * @hidden
+ *
+ * Whose history is read: a portfolio's, an Identity's across its holders, or an Account holder's
+ */
+export type HistoryHolderKind = 'portfolio' | 'identity' | 'account';
+
 type LegFilterVariables = {
   from?: string;
   to?: string;
   fromPortfolio?: string;
   toPortfolio?: string;
+  fromAccount?: string;
+  toAccount?: string;
   assetId?: string;
   addresses?: string[];
 };
@@ -575,8 +584,14 @@ type LegFilterVariables = {
  *  @hidden
  */
 function createLegFilters(
-  { identityId, portfolioId, assetId, address }: QuerySettlementFilters,
-  queryAll?: boolean
+  {
+    identityId,
+    portfolioId,
+    accountId,
+    assetId,
+    address,
+  }: Partial<QuerySettlementFilters> & { accountId?: string },
+  holderKind: HistoryHolderKind = 'portfolio'
 ): {
   args: string;
   filter: string;
@@ -587,14 +602,25 @@ function createLegFilters(
   const toIdFilters: string[] = [];
   const variables: LegFilterVariables = {};
 
-  if (queryAll) {
+  if (holderKind === 'identity') {
     args.push('$from: String!, $to: String!');
     fromIdFilters.push('fromId: { equalTo: $from }');
     toIdFilters.push('toId: { equalTo: $to }');
-    variables.from = identityId;
-    variables.to = identityId;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    variables.from = identityId!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    variables.to = identityId!;
+  } else if (holderKind === 'account') {
+    args.push('$fromAccount: String!, $toAccount: String!');
+    fromIdFilters.push('fromAccountId: { equalTo: $fromAccount }');
+    toIdFilters.push('toAccountId: { equalTo: $toAccount }');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    variables.fromAccount = accountId!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    variables.toAccount = accountId!;
   } else {
-    const portfolio = portfolioToMiddlewarePortfolioId(identityId, portfolioId);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const portfolio = portfolioToMiddlewarePortfolioId(identityId!, portfolioId);
 
     args.push('$fromPortfolio: String!, $toPortfolio: String!');
     fromIdFilters.push('fromPortfolioId: { equalTo: $fromPortfolio }');
@@ -682,7 +708,26 @@ export function settlementsForAllPortfoliosQuery(
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<LegFilterVariables>> {
-  const { args, filter, variables } = createLegFilters(filters, true);
+  const { args, filter, variables } = createLegFilters(filters, 'identity');
+  const query = buildSettlementsQuery(args, filter);
+
+  return {
+    query,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the Instructions with a leg that moves an Account holder's assets
+ */
+export function accountSettlementsQuery(
+  filters: { accountId: string; assetId?: string | undefined },
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<LegFilterVariables>> {
+  const { args, filter, variables } = createLegFilters(filters, 'account');
   const query = buildSettlementsQuery(args, filter);
 
   return {

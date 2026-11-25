@@ -5488,12 +5488,12 @@ export function toCustomClaimTypeWithIdentity(
 /**
  * @hidden
  *
- * Whose history a transfer is read for: an Identity's, or one of its portfolios'
+ * Whose history a transfer is read for: an Identity's, one of its portfolios', or an Account
+ *   holder's
  */
-export interface HistoryPerspective {
-  identityId: string;
-  portfolio?: number;
-}
+export type HistoryPerspective =
+  | { identityId: string; portfolio?: number; account?: undefined }
+  | { account: string; identityId?: undefined; portfolio?: undefined };
 
 /**
  * @hidden
@@ -5507,12 +5507,27 @@ export function middlewareTransferToSettlementDirection(
   sides: {
     fromId?: string | null | undefined;
     fromPortfolioId?: string | null | undefined;
+    fromAccountId?: string | null | undefined;
     toId?: string | null | undefined;
     toPortfolioId?: string | null | undefined;
+    toAccountId?: string | null | undefined;
   },
-  { identityId, portfolio }: HistoryPerspective
+  perspective: HistoryPerspective
 ): SettlementDirectionEnum {
-  const { fromId, fromPortfolioId, toId, toPortfolioId } = sides;
+  const { fromId, fromPortfolioId, fromAccountId, toId, toPortfolioId, toAccountId } = sides;
+
+  // an Account's history reports what left or entered that Account
+  if (perspective.account !== undefined) {
+    if (fromAccountId === perspective.account) {
+      return SettlementDirectionEnum.Outgoing;
+    }
+    if (toAccountId === perspective.account) {
+      return SettlementDirectionEnum.Incoming;
+    }
+    return SettlementDirectionEnum.None;
+  }
+
+  const { identityId, portfolio } = perspective;
 
   // 0 is the default portfolio, so only an absent portfolio means the Identity's history
   if (portfolio !== undefined) {
@@ -5629,7 +5644,14 @@ export function middlewareTransferToHistoricSettlement(
   const from = middlewareSideToAssetHolder(fromPortfolioId, fromAccountId, context);
   const to = middlewareSideToAssetHolder(toPortfolioId, toAccountId, context);
   const direction = middlewareTransferToSettlementDirection(
-    { fromId: fromIdentityId, fromPortfolioId, toId: toIdentityId, toPortfolioId },
+    {
+      fromId: fromIdentityId,
+      fromPortfolioId,
+      fromAccountId,
+      toId: toIdentityId,
+      toPortfolioId,
+      toAccountId,
+    },
     perspective
   );
   const id = getAssetIdFromMiddleware(assetId);

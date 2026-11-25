@@ -5480,6 +5480,20 @@ describe('settlement history directions', () => {
     ]);
   });
 
+  it("should report an Account's legs from its side in the Account's history", () => {
+    const accountLegs = [
+      { fromId: 'me', fromAccountId: 'myAddress', toId: 'other', toPortfolioId: 'other/0' },
+      { fromId: 'other', fromPortfolioId: 'other/0', toId: 'me', toAccountId: 'myAddress' },
+      { fromId: 'me', fromPortfolioId: 'me/0', toId: 'other', toPortfolioId: 'other/0' },
+    ];
+
+    expect(directions(accountLegs, { account: 'myAddress' } as never)).toEqual([
+      SettlementDirectionEnum.Outgoing,
+      SettlementDirectionEnum.Incoming,
+      SettlementDirectionEnum.None,
+    ]);
+  });
+
   describe('of a movement', () => {
     const movementDirections = (
       sides: Record<string, unknown>,
@@ -5515,6 +5529,15 @@ describe('settlement history directions', () => {
       ]);
       expect(movementDirections(accountToPortfolio, { identityId: 'me', portfolio: 0 })).toEqual([
         SettlementDirectionEnum.Incoming,
+      ]);
+    });
+
+    it("should report it from the Account's side in the Account's history", () => {
+      expect(movementDirections(portfolioToAccount, { account: 'myAddress' } as never)).toEqual([
+        SettlementDirectionEnum.Incoming,
+      ]);
+      expect(movementDirections(accountToPortfolio, { account: 'myAddress' } as never)).toEqual([
+        SettlementDirectionEnum.Outgoing,
       ]);
     });
 

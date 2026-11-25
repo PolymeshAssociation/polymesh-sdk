@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import { eventIdentifierFields, getSizeAndOffset } from '~/middleware/queries/common';
-import { QuerySettlementFilters } from '~/middleware/queries/settlements';
+import { HistoryHolderKind, QuerySettlementFilters } from '~/middleware/queries/settlements';
 import { AssetTransactionsOrderBy, Portfolio } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 import { portfolioToMiddlewarePortfolioId } from '~/utils/conversion';
@@ -47,8 +47,14 @@ type PortfolioMovementVariables = {
  *  @hidden
  */
 function createPortfolioMovementFilters(
-  { identityId, portfolioId, assetId, address }: QuerySettlementFilters,
-  queryAll?: boolean
+  {
+    identityId,
+    portfolioId,
+    accountId,
+    assetId,
+    address,
+  }: Partial<QuerySettlementFilters> & { accountId?: string },
+  holderKind: HistoryHolderKind = 'portfolio'
 ): {
   args: string;
   filter: string;
@@ -56,13 +62,24 @@ function createPortfolioMovementFilters(
 } {
   const args: string[] = ['$from: String!, $to: String!, $size: Int, $start: Int'];
 
-  const fromIdFilters = queryAll
-    ? ['fromIdentityId: { equalTo: $from }']
-    : ['fromPortfolioId: { equalTo: $from }'];
-  const toIdFilters = queryAll
-    ? ['toIdentityId: { equalTo: $to }']
-    : ['toPortfolioId: { equalTo: $to }'];
-  const id = queryAll ? identityId : portfolioToMiddlewarePortfolioId(identityId, portfolioId);
+  const columns: Record<HistoryHolderKind, [string, string]> = {
+    portfolio: ['fromPortfolioId', 'toPortfolioId'],
+    identity: ['fromIdentityId', 'toIdentityId'],
+    account: ['fromAccountId', 'toAccountId'],
+  };
+  const [fromColumn, toColumn] = columns[holderKind];
+
+  const fromIdFilters = [`${fromColumn}: { equalTo: $from }`];
+  const toIdFilters = [`${toColumn}: { equalTo: $to }`];
+  const ids: Record<HistoryHolderKind, () => string> = {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    portfolio: () => portfolioToMiddlewarePortfolioId(identityId!, portfolioId),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    identity: () => identityId!,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    account: () => accountId!,
+  };
+  const id = ids[holderKind]();
   const variables: PortfolioMovementVariables = { from: id, to: id };
 
   if (assetId) {
@@ -165,7 +182,26 @@ export function portfoliosMovementsQuery(
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<PortfolioMovementVariables>> {
-  const { args, filter, variables } = createPortfolioMovementFilters(filters, true);
+  const { args, filter, variables } = createPortfolioMovementFilters(filters, 'identity');
+  const query = buildPortfolioMovementsQuery(args, filter);
+
+  return {
+    query,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the transfers no instruction made, into or out of an Account holder
+ */
+export function accountTransfersQuery(
+  filters: { accountId: string; assetId?: string | undefined },
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<PortfolioMovementVariables>> {
+  const { args, filter, variables } = createPortfolioMovementFilters(filters, 'account');
   const query = buildPortfolioMovementsQuery(args, filter);
 
   return {

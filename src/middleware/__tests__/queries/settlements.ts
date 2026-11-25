@@ -4,6 +4,7 @@ import { when } from 'jest-when';
 
 import { Context } from '~/internal';
 import {
+  accountSettlementsQuery,
   buildHistoricalInstructionsQueryFilter,
   historicalInstructionsQuery,
   instructionAffirmationsQuery,
@@ -421,5 +422,25 @@ describe('withAllLegs', () => {
 
     expect(result[0]).toBe(whole);
     expect(result[1]).toEqual({ ...cut, legs: { nodes: legsUpTo(120), totalCount: 120 } });
+  });
+});
+
+describe('accountSettlementsQuery', () => {
+  it('should match an Account holder on either side of a leg', () => {
+    const result = accountSettlementsQuery(
+      { accountId: 'someAddress', assetId: '0x1234' },
+      new BigNumber(10),
+      new BigNumber(0)
+    );
+
+    expect(result.variables).toEqual({
+      fromAccount: 'someAddress',
+      toAccount: 'someAddress',
+      assetId: '0x1234',
+      size: 10,
+      start: 0,
+    });
+    expect(print(result.query)).toContain('fromAccountId: {equalTo: $fromAccount}');
+    expect(print(result.query)).toContain('toAccountId: {equalTo: $toAccount}');
   });
 });
