@@ -3,7 +3,6 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import {
-  createArgsAndFilters,
   eventIdentifierFields,
   getSizeAndOffset,
   orderByClause,
@@ -13,7 +12,6 @@ import {
   Asset,
   AssetHolder,
   AssetHoldersOrderBy,
-  AssetTransaction,
   AssetTransactionsOrderBy,
   NftsOrderBy,
 } from '~/middleware/types';
@@ -212,28 +210,65 @@ export function heldNftsQuery(
   };
 }
 
+export interface AssetTransactionFilters {
+  assetId: string;
+  /**
+   * a holder on either side, by the middleware column it is stored under
+   */
+  holder?: { portfolioId: string } | { accountId: string } | undefined;
+  /**
+   * an Identity on either side
+   */
+  identityId?: string | undefined;
+}
+
 /**
  * @hidden
  *
- * Get the balance history for an Asset
+ * Get the transactions of an Asset, optionally only those with a given holder or Identity on
+ *   either side
  */
 export function assetTransactionQuery(
-  filters: QueryArgs<AssetTransaction, 'assetId'>,
+  { assetId, holder, identityId }: AssetTransactionFilters,
   size?: BigNumber,
   start?: BigNumber,
   orderBy?: AssetTransactionsOrderBy | AssetTransactionsOrderBy[]
-): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
-  const { args, filter } = createArgsAndFilters(filters, {});
+): QueryOptions<PaginatedQueryArgs<Record<string, unknown>>> {
+  const args = ['$assetId: String!', '$size: Int', '$start: Int'];
+  const variables: Record<string, unknown> = { assetId };
+  const sideFilters: string[] = [];
+
+  if (holder) {
+    const [column, value] =
+      'portfolioId' in holder
+        ? ['PortfolioId', holder.portfolioId]
+        : ['AccountId', holder.accountId];
+
+    args.push('$holder: String!');
+    variables.holder = value;
+    sideFilters.push(
+      `{ or: [{ from${column}: { equalTo: $holder } }, { to${column}: { equalTo: $holder } }] }`
+    );
+  }
+
+  if (identityId) {
+    args.push('$identityId: String!');
+    variables.identityId = identityId;
+    sideFilters.push(
+      '{ or: [{ fromIdentityId: { equalTo: $identityId } }, { toIdentityId: { equalTo: $identityId } }] }'
+    );
+  }
+
+  // each side condition is an `or`, and an input object can name `or` only once
+  const sides = sideFilters.length ? `, and: [${sideFilters.join(', ')}]` : '';
 
   // `id` is `<block>/<event index>`, zero padded: block order, and unique
   const ordering = orderByClause(orderBy, [AssetTransactionsOrderBy.IdAsc]);
 
   const query = gql`
-    query AssetTransactionQuery
-      ${args}
-     {
+    query AssetTransactionQuery(${args.join(', ')}) {
       assetTransactions(
-        ${filter}
+        filter: { assetId: { equalTo: $assetId }${sides} }
         first: $size
         offset: $start
         orderBy:  [${ordering}]
@@ -252,6 +287,8 @@ export function assetTransactionQuery(
           toPortfolioId
           toAccountId
           toIdentityId
+          isInternalTransfer
+          memo
           eventId
           fundingRound
           instructionId
@@ -267,7 +304,7 @@ export function assetTransactionQuery(
 
   return {
     query,
-    variables: { ...filters, ...getSizeAndOffset(size, start) },
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }
 

@@ -112,6 +112,7 @@ import {
   Claim as MiddlewareClaim,
   ClaimTypeEnum,
   CustomClaimType as MiddlewareCustomClaimType,
+  EventIdEnum,
   Instruction,
   InstructionStatusEnum,
   Leg as MiddlewareLeg,
@@ -227,6 +228,7 @@ import {
   assetHolderIdToMeshAssetHolder,
   assetHolderLikeToAssetHolder,
   assetHolderLikeToAssetHolderId,
+  assetHolderLikeToMiddlewareHolder,
   assetHolderToAssetHolderKind,
   assetIdentifierToSecurityIdentifier,
   assetIdToString,
@@ -338,6 +340,7 @@ import {
   metadataValueToMeshMetadataValue,
   middlewareAgentGroupDataToPermissionGroup,
   middlewareAssetHolderToAssetHolder,
+  middlewareAssetTransactionToHistoricTransaction,
   middlewareAuthorizationDataToAuthorization,
   middlewareClaimToClaimData,
   middlewareDateToDate,
@@ -5103,6 +5106,128 @@ describe('middlewareLegToLeg', () => {
       })
     );
     expect(leg.amount).toEqual(new BigNumber(1));
+  });
+});
+
+describe('assetHolderLikeToMiddlewareHolder', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should give an Account its address and a portfolio its middleware id', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    expect(
+      assetHolderLikeToMiddlewareHolder(
+        entityMockUtils.getAccountInstance({ address: 'addr' }),
+        context
+      )
+    ).toEqual({ accountId: 'addr' });
+    expect(
+      assetHolderLikeToMiddlewareHolder({ identity: 'someDid', id: new BigNumber(2) }, context)
+    ).toEqual({ portfolioId: 'someDid/2' });
+    expect(assetHolderLikeToMiddlewareHolder('0x1234', context)).toEqual({
+      portfolioId: '0x1234/0',
+    });
+  });
+});
+
+describe('middlewareAssetTransactionToHistoricTransaction', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  const createdEvent = {
+    eventIdx: 2,
+    extrinsicIdx: 1,
+    block: { blockId: 10, hash: 'someHash', datetime: '2024-01-01T00:00:00' },
+  };
+
+  it('should read both sides, their Identities and whether they are one', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const result = middlewareAssetTransactionToHistoricTransaction(
+      {
+        fromPortfolioId: 'someDid/1',
+        fromIdentityId: 'someDid',
+        toAccountId: 'someAddress',
+        toIdentityId: 'someDid',
+        isInternalTransfer: true,
+        memo: 'rebalance',
+        eventId: EventIdEnum.FundsMovedBetweenPortfolios,
+        createdEvent,
+      } as unknown as AssetTransaction,
+      context
+    );
+
+    expect((result.from as NumberedPortfolio).id).toEqual(new BigNumber(1));
+    expect(result.fromAccount).toBeNull();
+    expect(result.fromIdentity!.did).toBe('someDid');
+    expect(result.to).toBeNull();
+    expect(result.toAccount!.address).toBe('someAddress');
+    expect(result.toIdentity!.did).toBe('someDid');
+    expect(result.isInternalTransfer).toBe(true);
+    expect(result.memo).toBe('rebalance');
+    expect(result.instructionId).toBeUndefined();
+    expect(result.extrinsicIndex).toEqual(new BigNumber(1));
+    expect(result.blockNumber).toEqual(new BigNumber(10));
+  });
+
+  it('should leave the missing side of an issuance null', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const result = middlewareAssetTransactionToHistoricTransaction(
+      {
+        toPortfolioId: 'someDid/0',
+        toIdentityId: 'someDid',
+        isInternalTransfer: null,
+        memo: null,
+        eventId: EventIdEnum.Issued,
+        fundingRound: 'seed',
+        instructionId: null,
+        createdEvent: { ...createdEvent, extrinsicIdx: null },
+      } as unknown as AssetTransaction,
+      context
+    );
+
+    expect(result.from).toBeNull();
+    expect(result.fromIdentity).toBeNull();
+    expect(result.isInternalTransfer).toBeNull();
+    expect(result.memo).toBeUndefined();
+    expect(result.fundingRound).toBe('seed');
+    expect(result.extrinsicIndex).toBeNull();
+  });
+
+  it('should read the instruction that made a transfer', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const result = middlewareAssetTransactionToHistoricTransaction(
+      {
+        fromPortfolioId: 'someDid/0',
+        fromIdentityId: 'someDid',
+        toPortfolioId: 'otherDid/0',
+        toIdentityId: 'otherDid',
+        isInternalTransfer: false,
+        eventId: EventIdEnum.Transfer,
+        instructionId: '0000000007',
+        instructionMemo: 'trade',
+        createdEvent,
+      } as unknown as AssetTransaction,
+      context
+    );
+
+    expect(result.isInternalTransfer).toBe(false);
+    expect(result.instructionId).toEqual(new BigNumber(7));
+    expect(result.instructionMemo).toBe('trade');
   });
 });
 

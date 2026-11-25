@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { groupBy, isNil, map } from 'lodash';
+import { groupBy, map } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { FungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
@@ -25,6 +25,7 @@ import { AssetTransactionsOrderBy, Query } from '~/middleware/types';
 import {
   ApproveAllowanceParams,
   AssetAllowance,
+  AssetHolderLike,
   ControllerTransferParams,
   EventIdentifier,
   FrozenTokensParams,
@@ -39,18 +40,19 @@ import { Ensured } from '~/types/utils';
 import { UNLIMITED_ALLOWANCE } from '~/utils/constants';
 import {
   accountIdToString,
+  assetHolderLikeToMiddlewareHolder,
   assetIdToString,
   assetToMeshAssetId,
   balanceToBigNumber,
+  middlewareAssetTransactionToHistoricTransaction,
   middlewareEventToEventIdentifier,
-  middlewarePortfolioToPortfolio,
-  portfolioIdStringToPortfolio,
   stringToAccountId,
   u128ToBigNumber,
 } from '~/utils/conversion';
 import { assetIdToPrecompileAddress } from '~/utils/eth';
 import {
   asAccount,
+  asDid,
   calculateNextKey,
   createProcedureMethod,
   getAssetIdForMiddleware,
@@ -275,21 +277,27 @@ export class FungibleAsset extends BaseAsset {
   }
 
   /**
-   * Retrieve this Asset's transaction History
+   * Retrieve this Asset's transaction history
+   *
+   * @param opts.holder - only the transactions with this portfolio or Account on either side
+   * @param opts.identity - only the transactions with this Identity on either side, whichever of
+   *   its holders it was
    * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
    *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
    *   that paging cannot repeat or skip a row
    *
-   *
    * @note uses the middlewareV2
+   * @note supports pagination
    */
   public async getTransactionHistory(
     opts: MiddlewarePaginationOptions & {
+      holder?: AssetHolderLike;
+      identity?: string | Identity;
       orderBy?: AssetTransactionsOrderBy | AssetTransactionsOrderBy[];
     }
   ): Promise<ResultSet<HistoricAssetTransaction>> {
     const { context, id } = this;
-    const { size, start, orderBy } = opts;
+    const { size, start, orderBy, holder, identity } = opts;
 
     const middlewareAssetId = await getAssetIdForMiddleware(id, context);
 
@@ -301,6 +309,8 @@ export class FungibleAsset extends BaseAsset {
       assetTransactionQuery(
         {
           assetId: middlewareAssetId,
+          holder: holder ? assetHolderLikeToMiddlewareHolder(holder, context) : undefined,
+          identityId: identity ? asDid(identity) : undefined,
         },
         size,
         start,
@@ -308,51 +318,13 @@ export class FungibleAsset extends BaseAsset {
       )
     );
 
-    const data: HistoricAssetTransaction[] = [];
-
-    const getAccount = (address: string): Account => new Account({ address }, context);
-
-    for (const {
-      asset,
-      amount,
-      fromPortfolioId,
-      fromAccountId: fromAddress,
-      toPortfolioId,
-      toAccountId: toAddress,
-      createdEvent,
-      eventId,
-      fundingRound,
-      instructionId,
-      instructionMemo,
-    } of nodes) {
-      const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
-      const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
-      const fromAccount = optionize(getAccount)(fromAddress);
-      const toAccount = optionize(getAccount)(toAddress);
-
-      const assetId = getAssetIdFromMiddleware(asset!.id);
-
-      data.push({
-        asset: new FungibleAsset({ assetId }, context),
-        amount: new BigNumber(amount).shiftedBy(-6),
-        event: eventId,
-        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
-        fromAccount,
-        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
-        toAccount,
-        fundingRound,
-        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
-        instructionMemo,
-        // an event emitted outside any extrinsic, such as at the start of a block, has none
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extrinsicIndex: isNil(createdEvent!.extrinsicIdx)
-          ? null
-          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            new BigNumber(createdEvent!.extrinsicIdx),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...middlewareEventToEventIdentifier(createdEvent!),
-      });
-    }
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const data: HistoricAssetTransaction[] = nodes.map(node => ({
+      ...middlewareAssetTransactionToHistoricTransaction(node, context),
+      asset: new FungibleAsset({ assetId: getAssetIdFromMiddleware(node.asset!.id) }, context),
+      amount: new BigNumber(node.amount).shiftedBy(-6),
+    }));
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, data.length, start);

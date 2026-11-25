@@ -204,6 +204,7 @@ import {
   AssetStat,
   Authorization,
   AuthorizationType,
+  BaseHistoricAssetTransaction,
   Claim,
   ClaimBalanceStatInput,
   ClaimCountRestrictionValue,
@@ -4839,6 +4840,27 @@ export function portfolioToMiddlewarePortfolioId(
 
 /**
  * @hidden
+ *
+ * The middleware column a holder is stored under: a portfolio by `<did>/<number>`, an Account by
+ *   its address
+ */
+export function assetHolderLikeToMiddlewareHolder(
+  value: AssetHolderLike,
+  context: Context
+): { portfolioId: string } | { accountId: string } {
+  const holder = assetHolderLikeToAssetHolder(value, context);
+
+  if (holder instanceof Account) {
+    return { accountId: holder.address };
+  }
+
+  const { did, number } = portfolioToPortfolioId(holder);
+
+  return { portfolioId: portfolioToMiddlewarePortfolioId(did, number) };
+}
+
+/**
+ * @hidden
  */
 export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
   const [identityId, number] = id.split('/');
@@ -5515,6 +5537,64 @@ export function middlewareTransferToSettlementDirection(
     return SettlementDirectionEnum.Incoming;
   }
   return SettlementDirectionEnum.None;
+}
+
+/**
+ * @hidden
+ *
+ * The fields an Asset's transaction has whether the Asset is fungible or an NFT collection
+ */
+export function middlewareAssetTransactionToHistoricTransaction(
+  transaction: MiddlewareAssetTransaction,
+  context: Context
+): BaseHistoricAssetTransaction {
+  const {
+    fromPortfolioId,
+    fromAccountId,
+    fromIdentityId,
+    toPortfolioId,
+    toAccountId,
+    toIdentityId,
+    isInternalTransfer,
+    memo,
+    createdEvent,
+    eventId,
+    fundingRound,
+    instructionId,
+    instructionMemo,
+  } = transaction;
+
+  const toPortfolio = (
+    id: string | null | undefined
+  ): DefaultPortfolio | NumberedPortfolio | null =>
+    id ? middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(id), context) : null;
+  const toAccount = (address: string | null | undefined): Account | null =>
+    address ? new Account({ address }, context) : null;
+  const toIdentity = (did: string | null | undefined): Identity | null =>
+    did ? new Identity({ did }, context) : null;
+
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  return {
+    event: eventId,
+    from: toPortfolio(fromPortfolioId),
+    fromAccount: toAccount(fromAccountId),
+    fromIdentity: toIdentity(fromIdentityId),
+    to: toPortfolio(toPortfolioId),
+    toAccount: toAccount(toAccountId),
+    toIdentity: toIdentity(toIdentityId),
+    isInternalTransfer: isInternalTransfer ?? null,
+    memo: memo ?? undefined,
+    fundingRound,
+    instructionId: instructionId ? new BigNumber(instructionId) : undefined,
+    instructionMemo,
+    // an event emitted outside any extrinsic, such as at the start of a block, has none
+    extrinsicIndex:
+      createdEvent!.extrinsicIdx === null || createdEvent!.extrinsicIdx === undefined
+        ? null
+        : new BigNumber(createdEvent!.extrinsicIdx),
+    ...middlewareEventToEventIdentifier(createdEvent!),
+  };
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }
 
 /**

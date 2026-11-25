@@ -210,6 +210,28 @@ export interface BaseHistoricAssetTransaction extends EventIdentifier {
   toAccount: Account | null;
 
   /**
+   * Identity of the sender when the transaction happened. Null for an issuance
+   */
+  fromIdentity: Identity | null;
+
+  /**
+   * Identity of the receiver when the transaction happened. Null for a redemption
+   */
+  toIdentity: Identity | null;
+
+  /**
+   * Whether both sides belong to one Identity, as in a portfolio movement. Null for an issuance or
+   *   a redemption, which have one side only
+   */
+  isInternalTransfer: boolean | null;
+
+  /**
+   * Memo of a portfolio movement or of a `settlement.transferFunds` call. The memo of an executed
+   *   instruction is `instructionMemo`
+   */
+  memo: string | undefined;
+
+  /**
    * Event identifying the type of transaction
    */
   event: EventIdEnum;

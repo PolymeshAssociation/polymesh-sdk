@@ -1,14 +1,13 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { isNil } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
 import {
-  Account,
   Context,
+  Identity,
   issueNft,
   Nft,
   nftControllerTransfer,
@@ -20,6 +19,7 @@ import { AssetTransactionsOrderBy, Query } from '~/middleware/types';
 import {
   AccountLike,
   AssetDetails,
+  AssetHolderLike,
   BatchIssueNftParams,
   CollectionKey,
   ErrorCode,
@@ -38,19 +38,20 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  assetHolderLikeToMiddlewareHolder,
   assetToMeshAssetId,
   bigNumberToU64,
   boolToBoolean,
   meshMetadataKeyToMetadataKey,
+  middlewareAssetTransactionToHistoricTransaction,
   middlewareEventToEventIdentifier,
-  middlewarePortfolioToPortfolio,
-  portfolioIdStringToPortfolio,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { assetIdToPrecompileAddress } from '~/utils/eth';
 import {
   asAccount,
+  asDid,
   asOptionalApi,
   calculateNextKey,
   createProcedureMethod,
@@ -471,20 +472,26 @@ export class NftCollection extends BaseAsset {
 
   /**
    * Retrieve this Collection's transaction history
+   *
+   * @param opts.holder - only the transactions with this portfolio or Account on either side
+   * @param opts.identity - only the transactions with this Identity on either side, whichever of
+   *   its holders it was
    * @param opts.orderBy - how to order the results: one key, or several to decide the rows a
    *   single key leaves tied. The read's own unique key is appended to whatever is passed, so
    *   that paging cannot repeat or skip a row
    *
-   *
    * @note uses the middlewareV2
+   * @note supports pagination
    */
   public async getTransactionHistory(
     opts: MiddlewarePaginationOptions & {
+      holder?: AssetHolderLike;
+      identity?: string | Identity;
       orderBy?: AssetTransactionsOrderBy | AssetTransactionsOrderBy[];
     }
   ): Promise<ResultSet<HistoricNftTransaction>> {
     const { context, id } = this;
-    const { size, start, orderBy } = opts;
+    const { size, start, orderBy, holder, identity } = opts;
 
     const middlewareAssetId = await getAssetIdForMiddleware(id, context);
 
@@ -496,6 +503,8 @@ export class NftCollection extends BaseAsset {
       assetTransactionQuery(
         {
           assetId: middlewareAssetId,
+          holder: holder ? assetHolderLikeToMiddlewareHolder(holder, context) : undefined,
+          identityId: identity ? asDid(identity) : undefined,
         },
         size,
         start,
@@ -503,61 +512,27 @@ export class NftCollection extends BaseAsset {
       )
     );
 
-    const data: HistoricNftTransaction[] = [];
-
-    const getAccount = (address: string): Account => new Account({ address }, context);
-
-    for (const {
-      asset,
-      nftIds,
-      fromPortfolioId,
-      fromAccountId: fromAddress,
-      toPortfolioId,
-      toAccountId: toAddress,
-      createdEvent,
-      eventId,
-      fundingRound,
-      instructionId,
-      instructionMemo,
-    } of nodes) {
-      const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
-      const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
-      const fromAccount = optionize(getAccount)(fromAddress);
-      const toAccount = optionize(getAccount)(toAddress);
-
-      const assetId = getAssetIdFromMiddleware(asset!.id);
-      const collection = new NftCollection({ assetId }, context);
-      data.push({
-        asset: collection,
-        nfts: nftIds.map(
-          (nftId: string) => new Nft({ assetId, id: new BigNumber(nftId) }, context)
-        ),
-        event: eventId,
-        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
-        toAccount,
-        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
-        fromAccount,
-        fundingRound,
-        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
-        instructionMemo,
-        // an event emitted outside any extrinsic, such as at the start of a block, has none
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extrinsicIndex: isNil(createdEvent!.extrinsicIdx)
-          ? null
-          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            new BigNumber(createdEvent!.extrinsicIdx),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...middlewareEventToEventIdentifier(createdEvent!),
-      });
-    }
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const data: HistoricNftTransaction[] = nodes.map(node => ({
+      ...middlewareAssetTransactionToHistoricTransaction(node, context),
+      asset: new NftCollection({ assetId: getAssetIdFromMiddleware(node.asset!.id) }, context),
+      nfts: (node.nftIds as string[]).map(
+        nftId =>
+          new Nft(
+            { assetId: getAssetIdFromMiddleware(node.asset!.id), id: new BigNumber(nftId) },
+            context
+          )
+      ),
+    }));
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
-      count,
       next,
+      count,
     };
   }
 }
