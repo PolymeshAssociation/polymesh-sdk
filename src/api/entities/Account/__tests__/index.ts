@@ -976,12 +976,17 @@ describe('Account class', () => {
         )
       );
 
+      // an Asset ID wins over a ticker
+      await account.getAssetTransactions({ assetId: '0x5678', ticker: 'TICKER' });
+
+      expect(getAssetIdForMiddlewareSpy).toHaveBeenLastCalledWith('0x5678', context);
+
       result = await account.getAssetTransactions();
 
       expect(result).toBe(fakeResult);
-      expect(getAssetIdForMiddlewareSpy).toHaveBeenCalledTimes(1);
+      expect(getAssetIdForMiddlewareSpy).toHaveBeenCalledTimes(2);
       expect(
-        getSettlementHistorySpy.mock.calls[1]![1].instructions(new BigNumber(100), new BigNumber(0))
+        getSettlementHistorySpy.mock.calls[2]![1].instructions(new BigNumber(100), new BigNumber(0))
       ).toEqual(
         accountSettlementsQuery({ accountId: address }, new BigNumber(100), new BigNumber(0))
       );
