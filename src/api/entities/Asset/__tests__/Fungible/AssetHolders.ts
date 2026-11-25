@@ -5,10 +5,13 @@ import {
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { print } from 'graphql';
 import { when } from 'jest-when';
 
 import { AssetHolders } from '~/api/entities/Asset/Fungible/AssetHolders';
 import { Context, Namespace } from '~/internal';
+import { holdingsQuery } from '~/middleware/queries/assets';
+import { HolderKind, HoldingsOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { IdentityBalance } from '~/types';
@@ -148,6 +151,113 @@ describe('AssetHolder class', () => {
 
       expect(result.data).toEqual(expectedHolders);
       expect(result.next).toBe('someKey');
+    });
+  });
+
+  describe('method: getHoldings', () => {
+    const holderAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    let getAssetIdForMiddlewareSpy: jest.SpyInstance;
+
+    afterEach(() => {
+      getAssetIdForMiddlewareSpy.mockRestore();
+    });
+
+    it('should list each portfolio and Account holder with its balance and frozen part', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+      getAssetIdForMiddlewareSpy = jest
+        .spyOn(utilsInternalModule, 'getAssetIdForMiddleware')
+        .mockResolvedValue(assetId);
+
+      dsMockUtils.createApolloQueryMock(
+        holdingsQuery({ assetId }, new BigNumber(2), new BigNumber(0)),
+        {
+          holdings: {
+            totalCount: 3,
+            nodes: [
+              {
+                holderKind: HolderKind.Portfolio,
+                portfolioId: 'someDid/2',
+                accountId: null,
+                identityId: 'someDid',
+                amount: '5000000',
+                frozen: '1000000',
+                frozenSince: null,
+              },
+              {
+                holderKind: HolderKind.Account,
+                portfolioId: null,
+                accountId: holderAddress,
+                identityId: null,
+                amount: '0',
+                frozen: '0',
+                // the middleware serialises UTC with no zone marker
+                frozenSince: '2024-01-02T03:04:05',
+              },
+            ],
+          },
+        }
+      );
+
+      const assetHolders = new AssetHolders(asset, context);
+      const result = await assetHolders.getHoldings({
+        size: new BigNumber(2),
+        start: new BigNumber(0),
+      });
+
+      const [portfolioHolding, accountHolding] = result.data;
+      expect(portfolioHolding!.holder).toEqual(
+        expect.objectContaining({
+          id: new BigNumber(2),
+          owner: expect.objectContaining({ did: 'someDid' }),
+        })
+      );
+      expect(portfolioHolding!.identity).toEqual(expect.objectContaining({ did: 'someDid' }));
+      expect(portfolioHolding!.amount).toEqual(new BigNumber(5));
+      expect(portfolioHolding!.frozen).toEqual(new BigNumber(1));
+      expect(portfolioHolding!.frozenSince).toBeNull();
+
+      expect(accountHolding!.holder).toEqual(expect.objectContaining({ address: holderAddress }));
+      expect(accountHolding!.identity).toBeUndefined();
+      expect(accountHolding!.amount).toEqual(new BigNumber(0));
+      expect(accountHolding!.frozenSince).toEqual(new Date('2024-01-02T03:04:05Z'));
+
+      expect(result.count).toEqual(new BigNumber(3));
+      expect(result.next).toEqual(new BigNumber(2));
+    });
+
+    it('should order by the largest balance first unless told otherwise', async () => {
+      const context = dsMockUtils.getContextInstance();
+      getAssetIdForMiddlewareSpy = jest
+        .spyOn(utilsInternalModule, 'getAssetIdForMiddleware')
+        .mockResolvedValue(assetId);
+
+      dsMockUtils.createApolloQueryMock(
+        holdingsQuery({ assetId }, undefined, undefined, HoldingsOrderBy.IdentityIdAsc),
+        { holdings: { totalCount: 0, nodes: [] } }
+      );
+
+      const assetHolders = new AssetHolders(
+        entityMockUtils.getFungibleAssetInstance({ assetId }),
+        context
+      );
+      const result = await assetHolders.getHoldings({ orderBy: HoldingsOrderBy.IdentityIdAsc });
+
+      expect(result).toEqual({ data: [], next: null, count: new BigNumber(0) });
+
+      dsMockUtils.createApolloQueryMock(holdingsQuery({ assetId }), {
+        holdings: { totalCount: 0, nodes: [] },
+      });
+
+      await expect(assetHolders.getHoldings()).resolves.toEqual({
+        data: [],
+        next: null,
+        count: new BigNumber(0),
+      });
+      expect(print(holdingsQuery({ assetId }).query)).toContain('orderBy: [AMOUNT_DESC, ID_ASC]');
+      expect(
+        print(holdingsQuery({ assetId }, undefined, undefined, HoldingsOrderBy.IdentityIdAsc).query)
+      ).toContain('orderBy: [IDENTITY_ID_ASC, ID_ASC]');
     });
   });
 

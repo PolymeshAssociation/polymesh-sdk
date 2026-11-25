@@ -145,6 +145,28 @@ export interface HolderFreezeStatus extends NftHolderFreezeStatus {
 }
 
 /**
+ * A portfolio or an Account holding a fungible Asset
+ */
+export interface AssetHolding {
+  holder: Account | DefaultPortfolio | NumberedPortfolio;
+  /**
+   * the holder's Identity. Absent for an Account with no known Identity
+   */
+  identity: Identity | undefined;
+  amount: BigNumber;
+  /**
+   * the part of `amount` the Asset's agents froze. It can exceed `amount`, since an agent can set
+   *   it above what the holder holds
+   */
+  frozen: BigNumber;
+  /**
+   * when the Asset's agents froze this holder against all transfers of the Asset, or null while it
+   *   is not frozen
+   */
+  frozenSince: Date | null;
+}
+
+/**
  * An Identity holding NFTs of a collection
  */
 export interface IdentityHeldNfts {

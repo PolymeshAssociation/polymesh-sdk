@@ -13,6 +13,7 @@ import {
   AssetHolder,
   AssetHoldersOrderBy,
   AssetTransactionsOrderBy,
+  HoldingsOrderBy,
   NftsOrderBy,
 } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
@@ -342,5 +343,56 @@ export function nftCollectionHolders(
   return {
     query,
     variables: { ...getSizeAndOffset(size, start), assetId },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the portfolios and Accounts that hold a fungible Asset, each with its balance and frozen part
+ */
+export function holdingsQuery(
+  filters: { assetId: string },
+  size?: BigNumber,
+  start?: BigNumber,
+  orderBy?: HoldingsOrderBy | HoldingsOrderBy[]
+): QueryOptions<PaginatedQueryArgs<{ assetId: string }>> {
+  // `id` is `<asset id>/<portfolio id or address>`, unique per holder of the Asset
+  const ordering = orderByClause(orderBy ?? [HoldingsOrderBy.AmountDesc], [HoldingsOrderBy.IdAsc]);
+
+  // a holding row is kept once its holder has sent everything, so a holder that holds nothing and
+  // has nothing frozen is left out here, where `totalCount` still describes the page's set
+  const query = gql`
+    query HoldingsQuery($assetId: String!, $size: Int, $start: Int) {
+      holdings(
+        filter: {
+          assetId: { equalTo: $assetId }
+          or: [
+            { amount: { greaterThan: "0" } }
+            { frozen: { greaterThan: "0" } }
+            { frozenSince: { isNull: false } }
+          ]
+        }
+        first: $size
+        offset: $start
+        orderBy: [${ordering}]
+      ) {
+        totalCount
+        nodes {
+          holderKind
+          portfolioId
+          accountId
+          identityId
+          amount
+          frozen
+          frozenSince
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }

@@ -1,15 +1,32 @@
 import BigNumber from 'bignumber.js';
 
-import { FungibleAsset, Identity, Namespace } from '~/internal';
+import { Account, FungibleAsset, Identity, Namespace } from '~/internal';
+import { holdingsQuery } from '~/middleware/queries/assets';
+import { HolderKind, HoldingsOrderBy, Query } from '~/middleware/types';
 import {
   AssetHolderLike,
+  AssetHolding,
   HolderFreezeStatus,
   IdentityBalance,
+  MiddlewarePaginationOptions,
   PaginationOptions,
   ResultSet,
 } from '~/types';
-import { assetToMeshAssetId, balanceToBigNumber, identityIdToString } from '~/utils/conversion';
-import { getHolderFreezeStatus, requestPaginated } from '~/utils/internal';
+import { Ensured } from '~/types/utils';
+import {
+  assetToMeshAssetId,
+  balanceToBigNumber,
+  identityIdToString,
+  middlewareDateToDate,
+  middlewarePortfolioToPortfolio,
+  portfolioIdStringToPortfolio,
+} from '~/utils/conversion';
+import {
+  calculateNextKey,
+  getAssetIdForMiddleware,
+  getHolderFreezeStatus,
+  requestPaginated,
+} from '~/utils/internal';
 
 /**
  * Handles all Asset Holders related functionality
@@ -45,6 +62,62 @@ export class AssetHolders extends Namespace<FungibleAsset> {
     return {
       data,
       next,
+    };
+  }
+
+  /**
+   * Retrieve, a page at a time, each portfolio and Account that holds this Asset, with its balance
+   *   and the part of it that is frozen. `get` gives each Identity's total instead
+   *
+   * @param opts.orderBy - how to order the results. Defaults to the largest balance first. The
+   *   read's own unique key is appended to whatever is passed, so paging cannot repeat or skip a row
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination
+   * @note a holder that holds nothing and has nothing frozen is left out
+   */
+  public async getHoldings(
+    opts: MiddlewarePaginationOptions & {
+      orderBy?: HoldingsOrderBy | HoldingsOrderBy[];
+    } = {}
+  ): Promise<ResultSet<AssetHolding>> {
+    const { context, parent } = this;
+    const { size, start, orderBy } = opts;
+
+    const assetId = await getAssetIdForMiddleware(parent, context);
+
+    const {
+      data: {
+        holdings: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'holdings'>>(
+      holdingsQuery({ assetId }, size, start, orderBy)
+    );
+
+    const data = nodes.map(
+      ({ holderKind, portfolioId, accountId, identityId, amount, frozen, frozenSince }) => ({
+        holder:
+          holderKind === HolderKind.Account
+            ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              new Account({ address: accountId! }, context)
+            : middlewarePortfolioToPortfolio(
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                portfolioIdStringToPortfolio(portfolioId!),
+                context
+              ),
+        identity: identityId ? new Identity({ did: identityId }, context) : undefined,
+        amount: new BigNumber(amount).shiftedBy(-6),
+        frozen: new BigNumber(frozen).shiftedBy(-6),
+        frozenSince: frozenSince ? middlewareDateToDate(frozenSince) : null,
+      })
+    );
+
+    const count = new BigNumber(totalCount);
+
+    return {
+      data,
+      next: calculateNextKey(count, data.length, start),
+      count,
     };
   }
 
