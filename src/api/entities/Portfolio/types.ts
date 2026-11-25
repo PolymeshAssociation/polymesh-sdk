@@ -60,4 +60,9 @@ export interface HistoricSettlement {
    *   of one Identity, which no Instruction made
    */
   instruction?: Instruction;
+  /**
+   * The memo of the Instruction, or of a transfer no Instruction made, such as a portfolio movement
+   *   or a `settlement.transferFunds` call. Absent when it had none
+   */
+  memo?: string;
 }

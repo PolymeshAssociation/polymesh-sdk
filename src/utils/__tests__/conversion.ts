@@ -5158,6 +5158,7 @@ describe('middlewareTransferToHistoricSettlement', () => {
           toIdentityId: 'someDid',
           toAccountId: 'toAddress',
           address: 'fromAddress',
+          memo: 'rebalance',
         },
         {
           // from a portfolio to an Account of the same Identity
@@ -5186,6 +5187,8 @@ describe('middlewareTransferToHistoricSettlement', () => {
     expect((fromPortfolio!.from as NumberedPortfolio).owner.did).toBe('someDid');
     expect((fromPortfolio!.to as Account).address).toBe('toAddress');
     expect(result[1]!.accounts).toEqual([expect.objectContaining({ address: 'signerAddress' })]);
+    expect(result[0]!.memo).toBe('rebalance');
+    expect(result[1]!.memo).toBeUndefined();
   });
 
   it('should list a transfer between Identities with its direction', () => {
@@ -5232,6 +5235,7 @@ describe('middlewareInstructionToHistoricSettlement', () => {
       {
         id: '0000000001',
         status: InstructionStatusEnum.Executed,
+        memo: 'Investor Distribution',
         createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
         legs: { nodes: legs, totalCount: 2 },
       } as unknown as Instruction,
@@ -5242,6 +5246,7 @@ describe('middlewareInstructionToHistoricSettlement', () => {
     expect(result.blockNumber).toEqual(new BigNumber(10));
     expect(result.blockHash).toBe('someHash');
     expect(result.status).toBe(InstructionStatusEnum.Executed);
+    expect(result.memo).toBe('Investor Distribution');
     expect(result.instruction!.id).toEqual(new BigNumber(1));
     expect(result.accounts).toEqual([expect.objectContaining({ address: 'someAddress' })]);
     expect(result.legs.map(leg => [(leg as FungibleLeg).amount, leg.direction])).toEqual([

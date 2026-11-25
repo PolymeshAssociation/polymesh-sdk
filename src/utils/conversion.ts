@@ -5541,6 +5541,7 @@ export function middlewareTransferToHistoricSettlement(
     amount,
     nftIds,
     address,
+    memo,
   } = transfer;
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -5577,6 +5578,7 @@ export function middlewareTransferToHistoricSettlement(
     status: InstructionStatusEnum.Executed,
     accounts: address ? [new Account({ address }, context)] : [],
     legs: [leg],
+    ...(memo ? { memo } : {}),
   };
 }
 
@@ -5594,6 +5596,7 @@ export function middlewareInstructionToHistoricSettlement(
     id,
     createdEvent,
     status,
+    memo,
     legs: { nodes: legs },
   } = instruction;
 
@@ -5611,6 +5614,7 @@ export function middlewareInstructionToHistoricSettlement(
       ...middlewareLegToLeg(leg, context),
       direction: middlewareTransferToSettlementDirection(leg, perspective),
     })),
+    ...(memo ? { memo } : {}),
   };
 }
 
