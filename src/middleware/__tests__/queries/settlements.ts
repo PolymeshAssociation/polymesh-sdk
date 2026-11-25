@@ -19,6 +19,7 @@ import {
 import { InstructionEventEnum, InstructionStatusEnum, LegTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
+import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('instructionsQuery', () => {
@@ -134,6 +135,67 @@ describe('buildHistoricalInstructionsQueryFilter', () => {
       'filter: { and: [{ parties: { some: { identityId: { equalTo: $identity } } } }, { parties: { some: { identityId: { equalTo: $party } } } }] }'
     );
     expect(result.variables).toMatchObject({ identity: 'someDid', party: 'otherDid' });
+  });
+
+  it('should match a sending and a receiving holder on the same leg', async () => {
+    const senderHolder = { identity: 'someDid', id: new BigNumber(2) };
+    const receiverHolder = 'someAddress';
+    const toMiddlewareHolderSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderLikeToMiddlewareHolder'
+    );
+    when(toMiddlewareHolderSpy)
+      .calledWith(senderHolder, context)
+      .mockReturnValue({ portfolioId: 'someDid/2' });
+    when(toMiddlewareHolderSpy)
+      .calledWith(receiverHolder, context)
+      .mockReturnValue({ accountId: 'someAddress' });
+
+    const result = await buildHistoricalInstructionsQueryFilter(
+      { sender: 'someDid', senderHolder, receiverHolder },
+      context
+    );
+
+    expect(result.filter).toBe(
+      'filter: { legs: { some: { fromId: { equalTo: $sender }, fromPortfolioId: { equalTo: $senderHolder }, toAccountId: { equalTo: $receiverHolder } } } }'
+    );
+    expect(result.args).toContain('$senderHolder: String!');
+    expect(result.args).toContain('$receiverHolder: String!');
+    expect(result.variables).toMatchObject({
+      sender: 'someDid',
+      senderHolder: 'someDid/2',
+      receiverHolder: 'someAddress',
+    });
+
+    toMiddlewareHolderSpy.mockRestore();
+  });
+
+  it('should match a sending Account and a receiving portfolio', async () => {
+    const toMiddlewareHolderSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderLikeToMiddlewareHolder'
+    );
+    when(toMiddlewareHolderSpy)
+      .calledWith('someAddress', context)
+      .mockReturnValue({ accountId: 'someAddress' });
+    when(toMiddlewareHolderSpy)
+      .calledWith('otherDid', context)
+      .mockReturnValue({ portfolioId: 'otherDid/0' });
+
+    const result = await buildHistoricalInstructionsQueryFilter(
+      { senderHolder: 'someAddress', receiverHolder: 'otherDid' },
+      context
+    );
+
+    expect(result.filter).toBe(
+      'filter: { legs: { some: { fromAccountId: { equalTo: $senderHolder }, toPortfolioId: { equalTo: $receiverHolder } } } }'
+    );
+    expect(result.variables).toMatchObject({
+      senderHolder: 'someAddress',
+      receiverHolder: 'otherDid/0',
+    });
+
+    toMiddlewareHolderSpy.mockRestore();
   });
 
   it('should create the correct graphql filter with identity', async () => {

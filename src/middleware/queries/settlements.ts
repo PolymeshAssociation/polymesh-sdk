@@ -20,10 +20,11 @@ import {
   LegsOrderBy,
   LegTypeEnum,
 } from '~/middleware/types';
-import { HistoricalInstructionFilters } from '~/types';
+import { AssetHolderLike, HistoricalInstructionFilters } from '~/types';
 import { PaginatedQueryArgs } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
+  assetHolderLikeToMiddlewareHolder,
   bigNumberToMiddlewareSequenceId,
   portfolioToMiddlewarePortfolioId,
 } from '~/utils/conversion';
@@ -438,6 +439,8 @@ export const buildHistoricalInstructionsQueryFilter = async (
     status,
     sender,
     receiver,
+    senderHolder,
+    receiverHolder,
     mediator,
     party,
     size = new BigNumber(DEFAULT_GQL_PAGE_SIZE),
@@ -491,6 +494,26 @@ export const buildHistoricalInstructionsQueryFilter = async (
     legsFilter.push('toId: { equalTo: $receiver }');
     variables.receiver = asDid(receiver);
   }
+
+  const holderFilters: ['from' | 'to', AssetHolderLike | undefined][] = [
+    ['from', senderHolder],
+    ['to', receiverHolder],
+  ];
+  holderFilters.forEach(([side, holder]) => {
+    if (!holder) {
+      return;
+    }
+    const middlewareHolder = assetHolderLikeToMiddlewareHolder(holder, context);
+    const [column, value] =
+      'portfolioId' in middlewareHolder
+        ? ['PortfolioId', middlewareHolder.portfolioId]
+        : ['AccountId', middlewareHolder.accountId];
+    const variable = side === 'from' ? 'senderHolder' : 'receiverHolder';
+
+    args.push(`$${variable}: String!`);
+    legsFilter.push(`${side}${column}: { equalTo: $${variable} }`);
+    variables[variable] = value;
+  });
 
   if (legsFilter.length) {
     baseFilter.push(`legs: { some: { ${legsFilter.join(', ')} } }`);
