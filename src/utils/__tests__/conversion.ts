@@ -350,6 +350,7 @@ import {
   middlewarePortfolioToPortfolio,
   middlewareProposalStateToProposalStatus,
   middlewareScopeToScope,
+  middlewareSideToAssetHolder,
   middlewareTransferToHistoricSettlement,
   moduleAddressToString,
   momentToDate,
@@ -12142,6 +12143,51 @@ describe('portfolioIdStringToPortfolio', () => {
 
     expect(result.identityId).toBe('12345');
     expect(result.number).toBeNaN();
+  });
+});
+
+describe('middlewareSideToAssetHolder', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should read an Account side, and otherwise a portfolio side', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const account = middlewareSideToAssetHolder(
+      null,
+      '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+      context
+    );
+    expect(account).toEqual(
+      expect.objectContaining({ address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY' })
+    );
+
+    const portfolio = middlewareSideToAssetHolder('someDid/1', null, context);
+    expect(portfolio).toEqual(
+      expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) })
+    );
+  });
+
+  it('should throw when a side has neither a portfolio nor an Account', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => middlewareSideToAssetHolder(null, null, context)).toThrow(
+      new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The middleware returned a transfer side with neither a portfolio nor an Account',
+      })
+    );
   });
 });
 

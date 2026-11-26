@@ -4856,10 +4856,18 @@ export function middlewareSideToAssetHolder(
 ): AssetHolder {
   // a side of a leg or a movement is an Account when the middleware names one, and otherwise a
   // portfolio (`<did>/<number>`)
-  return middlewareAssetHolderToAssetHolder(
-    accountId ? { account: accountId } : portfolioIdStringToPortfolio(portfolioId!),
-    context
-  );
+  if (accountId) {
+    return middlewareAssetHolderToAssetHolder({ account: accountId }, context);
+  }
+
+  if (!portfolioId) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The middleware returned a transfer side with neither a portfolio nor an Account',
+    });
+  }
+
+  return middlewareAssetHolderToAssetHolder(portfolioIdStringToPortfolio(portfolioId), context);
 }
 
 /**
