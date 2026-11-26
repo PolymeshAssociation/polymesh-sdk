@@ -274,9 +274,12 @@ type MiddlewareNode<Key extends keyof Query> = NonNullable<Query[Key]> extends C
  * @hidden
  *
  * Read the first `limit` rows of a middleware connection, or all of them if `limit` is left out,
- *   with the connection's `totalCount`. The middleware returns at most `MAX_MIDDLEWARE_PAGE_SIZE`
- *   rows a request, so this can take several. `buildQuery` must order the rows totally, or pages
- *   can overlap and skip rows
+ *   with the connection's `totalCount`. The indexer caps the rows it returns a request at its
+ *   `--query-limit` (100 by default, configurable, none with `--unsafe`) and does not report that
+ *   cap, so each request starts where the rows read so far end. `buildQuery` must order the rows
+ *   totally, or pages can overlap and skip rows
+ *
+ * @throws if the middleware returns no rows before the end it reported
  */
 export async function queryMiddlewarePages<Key extends keyof Query>(
   context: Context,
@@ -287,29 +290,37 @@ export async function queryMiddlewarePages<Key extends keyof Query>(
   connectionKey: Key,
   limit?: BigNumber
 ): Promise<{ nodes: MiddlewareNode<Key>[]; totalCount: number }> {
-  const size = MAX_MIDDLEWARE_PAGE_SIZE;
+  const size = limit ? BigNumber.min(limit, MAX_MIDDLEWARE_PAGE_SIZE) : MAX_MIDDLEWARE_PAGE_SIZE;
 
-  const readPage = async (start: BigNumber): Promise<Connection<MiddlewareNode<Key>>> => {
+  const nodes: MiddlewareNode<Key>[] = [];
+  let totalCount = 0;
+  let end = new BigNumber(Infinity);
+
+  while (end.gt(nodes.length)) {
     const { data } = await context.queryMiddleware<Ensured<Query, Key>>(
-      buildQuery(size, start) as QueryOptions<OperationVariables, Ensured<Query, Key>>
+      buildQuery(size, new BigNumber(nodes.length)) as QueryOptions<
+        OperationVariables,
+        Ensured<Query, Key>
+      >
     );
+    const page = data[connectionKey] as unknown as Connection<MiddlewareNode<Key>>;
 
-    return data[connectionKey] as unknown as Connection<MiddlewareNode<Key>>;
-  };
+    totalCount = page.totalCount;
+    end = limit ? BigNumber.min(limit, totalCount) : new BigNumber(totalCount);
 
-  const { nodes, totalCount } = await readPage(new BigNumber(0));
+    if (!page.nodes.length && end.gt(nodes.length)) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The middleware returned fewer rows than it reported',
+        data: { expected: end, received: nodes.length },
+      });
+    }
 
-  const end = limit ? BigNumber.min(limit, totalCount) : new BigNumber(totalCount);
-
-  const starts: BigNumber[] = [];
-  for (let start = size; start.lt(end); start = start.plus(size)) {
-    starts.push(start);
+    nodes.push(...page.nodes);
   }
 
-  const pages = await allInOrder(starts.map(readPage));
-
   return {
-    nodes: [...nodes, ...pages.flatMap(page => page.nodes)].slice(0, end.toNumber()),
+    nodes: nodes.slice(0, end.toNumber()),
     totalCount,
   };
 }

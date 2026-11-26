@@ -145,6 +145,7 @@ import {
   padString,
   prepareStorageForCustomType,
   queryAllMiddlewarePages,
+  queryMiddlewarePages,
   removePadding,
   requestAtBlock,
   requestMulti,
@@ -300,6 +301,94 @@ describe('queryAllMiddlewarePages', () => {
     const result = await queryAllMiddlewarePages(context, buildQuery, 'assetHolders');
 
     expect(result).toHaveLength(100);
+    expect(context.queryMiddleware).toHaveBeenCalledTimes(1);
+  });
+
+  it('should read every row when the indexer returns fewer rows a request than asked for', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.createApolloMultipleQueriesMock([
+      { query: buildQuery(new BigNumber(100), new BigNumber(0)), returnData: page(0, 50, 120) },
+      {
+        query: buildQuery(new BigNumber(100), new BigNumber(50)),
+        returnData: page(50, 100, 120),
+      },
+      {
+        query: buildQuery(new BigNumber(100), new BigNumber(100)),
+        returnData: page(100, 120, 120),
+      },
+    ]);
+
+    const result = await queryAllMiddlewarePages(context, buildQuery, 'assetHolders');
+
+    expect(result.map(({ identityId }) => identityId)).toEqual(
+      Array.from({ length: 120 }, (_, i) => `${i}`)
+    );
+  });
+
+  it('should throw when a page comes back empty before the reported end', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.createApolloMultipleQueriesMock([
+      { query: buildQuery(new BigNumber(100), new BigNumber(0)), returnData: page(0, 100, 150) },
+      {
+        query: buildQuery(new BigNumber(100), new BigNumber(100)),
+        returnData: page(100, 100, 150),
+      },
+    ]);
+
+    return expect(queryAllMiddlewarePages(context, buildQuery, 'assetHolders')).rejects.toThrow(
+      'The middleware returned fewer rows than it reported'
+    );
+  });
+});
+
+describe('queryMiddlewarePages', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  const buildQuery = (size: BigNumber, start: BigNumber): QueryOptions<OperationVariables> => ({
+    query: gql`
+      query TestQuery($size: Int, $start: Int) {
+        assetHolders(first: $size, offset: $start) {
+          totalCount
+          nodes {
+            identityId
+          }
+        }
+      }
+    `,
+    variables: { size: size.toNumber(), start: start.toNumber() },
+  });
+
+  it('should ask for no more rows than the limit, and return the total count', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.createApolloQueryMock(buildQuery(new BigNumber(25), new BigNumber(0)), {
+      assetHolders: {
+        nodes: Array.from({ length: 25 }, (_, i) => ({ identityId: `${i}` })),
+        totalCount: 300,
+      },
+    });
+
+    const result = await queryMiddlewarePages(
+      context,
+      buildQuery,
+      'assetHolders',
+      new BigNumber(25)
+    );
+
+    expect(result.nodes).toHaveLength(25);
+    expect(result.totalCount).toBe(300);
     expect(context.queryMiddleware).toHaveBeenCalledTimes(1);
   });
 });

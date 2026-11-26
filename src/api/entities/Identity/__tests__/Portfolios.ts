@@ -379,7 +379,7 @@ describe('Portfolios class', () => {
               address: account,
               assetId: '0x12341234123412341234123412341234',
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -393,7 +393,7 @@ describe('Portfolios class', () => {
               address: account,
               assetId: '0x12341234123412341234123412341234',
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -447,7 +447,7 @@ describe('Portfolios class', () => {
               identityId: did,
               assetId: '0x12341234123412341234123412341234',
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -463,7 +463,7 @@ describe('Portfolios class', () => {
               identityId: did,
               assetId: '0x12341234123412341234123412341234',
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -516,7 +516,7 @@ describe('Portfolios class', () => {
             {
               identityId: did,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -531,7 +531,7 @@ describe('Portfolios class', () => {
             {
               identityId: did,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {

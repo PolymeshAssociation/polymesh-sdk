@@ -931,7 +931,7 @@ describe('Portfolio class', () => {
               address: account,
               assetId: middlewareAssetId,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -946,7 +946,7 @@ describe('Portfolio class', () => {
               address: account,
               assetId: middlewareAssetId,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -998,7 +998,7 @@ describe('Portfolio class', () => {
               identityId: did,
               assetId: middlewareAssetId,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -1014,7 +1014,7 @@ describe('Portfolio class', () => {
               identityId: did,
               assetId: middlewareAssetId,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -1143,7 +1143,7 @@ describe('Portfolio class', () => {
               address: account,
               assetId: middlewareAssetId,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -1158,7 +1158,7 @@ describe('Portfolio class', () => {
               address: account,
               assetId: middlewareAssetId,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -1210,7 +1210,7 @@ describe('Portfolio class', () => {
               identityId: did,
               assetId: middlewareAssetId,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -1226,7 +1226,7 @@ describe('Portfolio class', () => {
               identityId: did,
               assetId: middlewareAssetId,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -1286,7 +1286,7 @@ describe('Portfolio class', () => {
               identityId: did,
               portfolioId: id,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {
@@ -1302,7 +1302,7 @@ describe('Portfolio class', () => {
               identityId: did,
               portfolioId: id,
             },
-            new BigNumber(100),
+            new BigNumber(25),
             new BigNumber(0)
           ),
           returnData: {

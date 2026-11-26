@@ -49,7 +49,8 @@ export const DEFAULT_GQL_PAGE_SIZE = 25;
  */
 export const MAX_PAGE_SIZE = new BigNumber(1000);
 /**
- * Most rows the middleware returns for a connection, top level or nested, whatever `first` asks for
+ * Rows to ask the middleware for in one request. The indexer may return fewer: it caps each
+ * connection, top level or nested, at its `--query-limit` (100 by default) and does not report that cap
  */
 export const MAX_MIDDLEWARE_PAGE_SIZE = new BigNumber(100);
 
