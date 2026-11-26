@@ -108,6 +108,22 @@ describe('Claims Class', () => {
       jest.useRealTimers();
     });
 
+    it('should return an empty page without reading claims when the page has no target', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+
+      let result = await claims.getIdentitiesWithClaims({ targets: [] });
+
+      expect(result).toEqual({ data: [], next: null, count: new BigNumber(0) });
+
+      result = await claims.getIdentitiesWithClaims({
+        targets: ['someTargetDid'],
+        start: new BigNumber(1),
+      });
+
+      expect(result).toEqual({ data: [], next: null, count: new BigNumber(1) });
+      expect(context.queryMiddleware).not.toHaveBeenCalled();
+    });
+
     it('should return a list2 of Identities with claims associated to them', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
@@ -683,6 +699,18 @@ describe('Claims Class', () => {
     afterAll(() => {
       jest.useRealTimers();
       jest.restoreAllMocks();
+    });
+
+    it('should return an empty page without reading claims when the page has no issuer', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+
+      const result = await claims.getTargetingClaims({
+        target: 'someDid',
+        trustedClaimIssuers: [],
+      });
+
+      expect(result).toEqual({ data: [], next: null, count: new BigNumber(0) });
+      expect(context.queryMiddleware).not.toHaveBeenCalled();
     });
 
     it('should return a list of claims issued with an Identity as target', async () => {

@@ -246,7 +246,12 @@ export class Claims {
     targetIssuers.sort((a, b) => a.localeCompare(b));
     targetIssuers = targetIssuers.slice(start.toNumber(), size.plus(start).toNumber());
 
-    // a page of targets can hold any number of claims
+    // a page of targets can hold any number of claims. An empty page must not be queried: with no
+    // `dids`, claimsQuery drops the target filter and would read every claim
+    if (!targetIssuers.length) {
+      return { data: [], next: null, count };
+    }
+
     const nodes = await queryAllMiddlewarePages(
       context,
       (claimsSize, claimsStart) =>
@@ -474,7 +479,12 @@ export class Claims {
       claimIssuers.sort((a, b) => a.localeCompare(b));
       claimIssuers = claimIssuers.slice(start.toNumber(), size.plus(start).toNumber());
 
-      // a page of issuers can hold any number of claims
+      // a page of issuers can hold any number of claims. An empty page must not be queried: with no
+      // issuers, claimsQuery drops the issuer filter and would read every issuer's claims
+      if (!claimIssuers.length) {
+        return { data: [], next: null, count };
+      }
+
       const nodes = await queryAllMiddlewarePages(
         context,
         (claimsSize, claimsStart) =>
