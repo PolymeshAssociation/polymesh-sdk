@@ -22,6 +22,7 @@ import {
   TxTags,
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
+import * as utilsConstantsModule from '~/utils/constants';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -248,6 +249,27 @@ describe('modifyClaims procedure', () => {
     expect(target).toBe(rawSomeDid);
     expect(claim).toBe(rawBuyLockupClaim);
     expect(claimIssuer).toBe(rawIssuerDid);
+
+    // a `.multi` read takes at most MAX_PAGE_SIZE keys
+    const maxPageSize = jest.replaceProperty(
+      utilsConstantsModule,
+      'MAX_PAGE_SIZE',
+      new BigNumber(2)
+    );
+    claimsQueryMock.multi.mockClear();
+    claimsQueryMock.multi
+      .mockResolvedValueOnce([issuedClaim(), issuedClaim()])
+      .mockResolvedValueOnce([issuedClaim()]);
+
+    result = await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
+
+    expect(claimsQueryMock.multi).toHaveBeenCalledTimes(2);
+    expect(claimsQueryMock.multi).toHaveBeenNthCalledWith(1, [
+      [rawSomeDid, rawCddClaim],
+      [rawOtherDid, rawCddClaim],
+    ]);
+    expect(claimsQueryMock.multi).toHaveBeenNthCalledWith(2, [[rawSomeDid, rawBuyLockupClaim]]);
+    maxPageSize.restore();
     expect(result).toEqual({
       transactions: rawAddClaimItems.map(item => ({
         transaction: addClaimTransaction,

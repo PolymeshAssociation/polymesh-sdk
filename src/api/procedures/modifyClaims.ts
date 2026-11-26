@@ -3,6 +3,7 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
+import { chunk } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
@@ -19,7 +20,7 @@ import {
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { DEFAULT_CDD_ID } from '~/utils/constants';
+import { DEFAULT_CDD_ID, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   claimToMeshClaim,
   dateToMoment,
@@ -53,7 +54,12 @@ const findClaimsNotIssuedBySigner = async (
     meshClaimToClaimKeys(rawTarget, rawClaim, rawSignerDid, context)
   );
 
-  const issuedClaims = await identity.claims.multi(keys);
+  // a `.multi` read takes at most MAX_PAGE_SIZE keys
+  const issuedClaims = (
+    await Promise.all(
+      chunk(keys, MAX_PAGE_SIZE.toNumber()).map(keyChunk => identity.claims.multi(keyChunk))
+    )
+  ).flat();
 
   return claims.filter((_, index) => issuedClaims[index]!.isNone).map(({ claim }) => claim);
 };
