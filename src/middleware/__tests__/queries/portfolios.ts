@@ -53,8 +53,13 @@ describe('portfolioMovementsQuery', () => {
 
     expect(printed).not.toContain('isInternalTransfer');
     expect(printed).toContain('instructionId: {isNull: true}');
-    expect(printed).toContain('fromIdentityId: {isNull: false}');
-    expect(printed).toContain('toIdentityId: {isNull: false}');
+    expect(printed).toContain(
+      'or: [{fromPortfolioId: {isNull: false}}, {fromAccountId: {isNull: false}}]'
+    );
+    expect(printed).toContain(
+      'or: [{toPortfolioId: {isNull: false}}, {toAccountId: {isNull: false}}]'
+    );
+    expect(printed).not.toContain('IdentityId: {isNull: false}');
     expect(printed).toContain('fromPortfolioId: {equalTo: $from}');
     expect(printed).toContain('totalCount');
   });

@@ -87,9 +87,11 @@ function createPortfolioMovementFilters(
      * transfers no instruction made: movements between one Identity's holders, and transfers
      * between Identities such as a controller transfer or a distribution payout. A settlement is read
      * through its instruction's legs instead. An issuance or a redemption has one side only, so it
-     * is not a transfer between holders
+     * is not a transfer between holders. A side is tested for a holder (a portfolio or an Account),
+     * not for an Identity: an Account side keeps no Identity when the middleware doesn't know it.
+     * A filter can't hold two `or` keys, so the second sits inside the `and`
      */
-    filter: `filter: { instructionId: { isNull: true }, fromIdentityId: { isNull: false }, toIdentityId: { isNull: false }, or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`,
+    filter: `filter: { instructionId: { isNull: true }, or: [ { fromPortfolioId: { isNull: false } }, { fromAccountId: { isNull: false } } ], and: [ { or: [ { toPortfolioId: { isNull: false } }, { toAccountId: { isNull: false } } ] }, { or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] } ] }`,
     variables,
   };
 }
