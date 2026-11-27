@@ -312,6 +312,7 @@ import {
   meshAssetHolderToAssetHolder,
   meshBallotDetailsToCorporateBallotDetails,
   meshClaimToClaim,
+  meshClaimToClaimKeys,
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
@@ -342,12 +343,15 @@ import {
   middlewareDateToDate,
   middlewareEventToEventIdentifier,
   middlewareInstructionToHistoricInstruction,
+  middlewareInstructionToHistoricSettlement,
   middlewareLegToLeg,
   middlewarePermissionsDataToPermissions,
   middlewarePortfolioDataToPortfolio,
   middlewarePortfolioToPortfolio,
   middlewareProposalStateToProposalStatus,
   middlewareScopeToScope,
+  middlewareSideToAssetHolder,
+  middlewareTransferToHistoricSettlement,
   moduleAddressToString,
   momentToDate,
   nameToAssetName,
@@ -412,7 +416,6 @@ import {
   tickerToDid,
   tickerToString,
   toCustomClaimTypeWithIdentity,
-  toHistoricalSettlements,
   toIdentityWithClaimsArray,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
@@ -4912,6 +4915,96 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
   });
 });
 
+describe('meshClaimToClaimKeys', () => {
+  let context: Mocked<Context>;
+  let target: PolymeshPrimitivesIdentityId;
+  let issuer: PolymeshPrimitivesIdentityId;
+  let scope: PolymeshPrimitivesIdentityClaimScope;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    target = dsMockUtils.createMockIdentityId('targetDid');
+    issuer = dsMockUtils.createMockIdentityId('issuerDid');
+    scope = dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId('someDid') });
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    context.createType.mockImplementation(
+      (_type, value) => value as unknown as ReturnType<typeof context.createType>
+    );
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should key a CDD claim by its type with no scope', () => {
+    const claim = dsMockUtils.createMockClaim({
+      CustomerDueDiligence: dsMockUtils.createMockCddId('cddId'),
+    });
+
+    expect(meshClaimToClaimKeys(target, claim, issuer, context)).toEqual([
+      { target, claimType: 'CustomerDueDiligence' },
+      { issuer, scope: null },
+    ]);
+    expect(context.createType).toHaveBeenCalledWith('PalletIdentityClaim1stKey', {
+      target,
+      claimType: 'CustomerDueDiligence',
+    });
+    expect(context.createType).toHaveBeenCalledWith('PalletIdentityClaim2ndKey', {
+      issuer,
+      scope: null,
+    });
+  });
+
+  it('should key a Jurisdiction claim by its scope', () => {
+    const claim = dsMockUtils.createMockClaim({
+      Jurisdiction: [dsMockUtils.createMockCountryCode(CountryCode.Ca), scope],
+    });
+
+    expect(meshClaimToClaimKeys(target, claim, issuer, context)).toEqual([
+      { target, claimType: 'Jurisdiction' },
+      { issuer, scope },
+    ]);
+  });
+
+  it('should key a custom claim by its custom type and its scope, if any', () => {
+    const customClaimTypeId = dsMockUtils.createMockU32(new BigNumber(1));
+
+    let claim = dsMockUtils.createMockClaim({
+      Custom: [customClaimTypeId, dsMockUtils.createMockOption(scope)],
+    });
+
+    expect(meshClaimToClaimKeys(target, claim, issuer, context)).toEqual([
+      { target, claimType: { Custom: customClaimTypeId } },
+      { issuer, scope },
+    ]);
+
+    claim = dsMockUtils.createMockClaim({
+      Custom: [customClaimTypeId, dsMockUtils.createMockOption()],
+    });
+
+    expect(meshClaimToClaimKeys(target, claim, issuer, context)).toEqual([
+      { target, claimType: { Custom: customClaimTypeId } },
+      { issuer, scope: null },
+    ]);
+  });
+
+  it('should key any other claim by its scope', () => {
+    const claim = dsMockUtils.createMockClaim({ BuyLockup: scope });
+
+    expect(meshClaimToClaimKeys(target, claim, issuer, context)).toEqual([
+      { target, claimType: 'BuyLockup' },
+      { issuer, scope },
+    ]);
+  });
+});
+
 describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   let context: Context;
   beforeAll(() => {
@@ -5013,13 +5106,12 @@ describe('middlewareLegToLeg', () => {
   });
 });
 
-describe('toHistoricalSettlements', () => {
+describe('middlewareTransferToHistoricSettlement', () => {
   it('should list an NFT movement between portfolios as an NFT leg', () => {
     const context = dsMockUtils.getContextInstance();
     const assetId = '0x12341234123412341234123412341234';
 
-    const [settlement] = toHistoricalSettlements(
-      [],
+    const [settlement] = (
       [
         {
           createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
@@ -5031,12 +5123,13 @@ describe('toHistoricalSettlements', () => {
           toPortfolioId: 'someDid/1',
           address: null,
         },
-      ] as unknown as AssetTransaction[],
-      { identityId: 'someDid' },
-      context
+      ] as unknown as AssetTransaction[]
+    ).map(transfer =>
+      middlewareTransferToHistoricSettlement(transfer, { identityId: 'someDid' }, context)
     );
 
     expect(settlement!.blockNumber).toEqual(new BigNumber(10));
+    expect(settlement!.instruction).toBeUndefined();
     expect(settlement!.accounts).toEqual([]);
     expect(settlement!.legs).toEqual([
       expect.objectContaining({
@@ -5053,8 +5146,7 @@ describe('toHistoricalSettlements', () => {
     const context = dsMockUtils.getContextInstance();
     const assetId = '0x12341234123412341234123412341234';
 
-    const result = toHistoricalSettlements(
-      [],
+    const result = (
       [
         {
           // `settlement.transfer_funds` between two Accounts of one Identity
@@ -5078,9 +5170,9 @@ describe('toHistoricalSettlements', () => {
           toAccountId: 'toAddress',
           address: 'signerAddress',
         },
-      ] as unknown as AssetTransaction[],
-      { identityId: 'someDid' },
-      context
+      ] as unknown as AssetTransaction[]
+    ).map(transfer =>
+      middlewareTransferToHistoricSettlement(transfer, { identityId: 'someDid' }, context)
     );
 
     expect(result).toHaveLength(2);
@@ -5096,7 +5188,33 @@ describe('toHistoricalSettlements', () => {
     expect(result[1]!.accounts).toEqual([expect.objectContaining({ address: 'signerAddress' })]);
   });
 
-  it('should list an instruction once when several of its legs match', () => {
+  it('should list a transfer between Identities with its direction', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    // a controller transfer, which no instruction makes
+    const transfer = {
+      createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+      assetId: '0x12341234123412341234123412341234',
+      amount: '1000000',
+      fromIdentityId: 'holderDid',
+      fromPortfolioId: 'holderDid/0',
+      toIdentityId: 'agentDid',
+      toPortfolioId: 'agentDid/0',
+      address: 'agentAddress',
+    } as unknown as AssetTransaction;
+
+    const direction = (perspective: { identityId: string; portfolio?: number }): unknown =>
+      middlewareTransferToHistoricSettlement(transfer, perspective, context).legs[0]!.direction;
+
+    expect(direction({ identityId: 'holderDid' })).toBe(SettlementDirectionEnum.Outgoing);
+    expect(direction({ identityId: 'agentDid', portfolio: 0 })).toBe(
+      SettlementDirectionEnum.Incoming
+    );
+  });
+});
+
+describe('middlewareInstructionToHistoricSettlement', () => {
+  it('should list every leg of the instruction, with its status and signers', () => {
     const context = dsMockUtils.getContextInstance();
     const assetId = '0x12341234123412341234123412341234';
     const legs = ['1000000', '2000000'].map(amount => ({
@@ -5107,58 +5225,59 @@ describe('toHistoricalSettlements', () => {
       fromPortfolioId: 'someDid/0',
       toId: 'otherDid',
       toPortfolioId: 'otherDid/0',
-      addresses: [],
+      addresses: ['someAddress'],
     }));
-    const instruction = {
-      id: '0000000001',
-      status: InstructionStatusEnum.Executed,
-      createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
-      legs: { nodes: legs },
-    };
 
-    // the history query returns one row per matching leg, each carrying the whole instruction
-    const result = toHistoricalSettlements(
-      [{ instruction }, { instruction }] as unknown as MiddlewareLeg[],
-      [],
+    const result = middlewareInstructionToHistoricSettlement(
+      {
+        id: '0000000001',
+        status: InstructionStatusEnum.Executed,
+        createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+        legs: { nodes: legs, totalCount: 2 },
+      } as unknown as Instruction,
       { identityId: 'someDid' },
       context
     );
 
-    expect(result).toHaveLength(1);
-    expect(result[0]!.legs).toHaveLength(2);
+    expect(result.blockNumber).toEqual(new BigNumber(10));
+    expect(result.blockHash).toBe('someHash');
+    expect(result.status).toBe(InstructionStatusEnum.Executed);
+    expect(result.instruction!.id).toEqual(new BigNumber(1));
+    expect(result.accounts).toEqual([expect.objectContaining({ address: 'someAddress' })]);
+    expect(result.legs.map(leg => [(leg as FungibleLeg).amount, leg.direction])).toEqual([
+      [new BigNumber(1), SettlementDirectionEnum.Outgoing],
+      [new BigNumber(2), SettlementDirectionEnum.Outgoing],
+    ]);
   });
 });
 
-describe('toHistoricalSettlements directions', () => {
+describe('settlement history directions', () => {
   const context = (): ReturnType<typeof dsMockUtils.getContextInstance> =>
     dsMockUtils.getContextInstance();
   const assetId = '0x12341234123412341234123412341234';
 
-  const settlement = (legs: Record<string, unknown>[]): MiddlewareLeg[] =>
-    [
-      {
-        instruction: {
-          id: '0000000001',
-          status: InstructionStatusEnum.Executed,
-          createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
-          legs: {
-            nodes: legs.map(leg => ({
-              legType: LegTypeEnum.Fungible,
-              assetId,
-              amount: '1000000',
-              addresses: [],
-              ...leg,
-            })),
-          },
-        },
+  const settlement = (legs: Record<string, unknown>[]): Instruction =>
+    ({
+      id: '0000000001',
+      status: InstructionStatusEnum.Executed,
+      createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+      legs: {
+        nodes: legs.map(leg => ({
+          legType: LegTypeEnum.Fungible,
+          assetId,
+          amount: '1000000',
+          addresses: [],
+          ...leg,
+        })),
+        totalCount: legs.length,
       },
-    ] as unknown as MiddlewareLeg[];
+    } as unknown as Instruction);
 
   const directions = (
     legs: Record<string, unknown>[],
     filter: { identityId: string; portfolio?: number }
   ): SettlementDirectionEnum[] =>
-    toHistoricalSettlements(settlement(legs), [], filter, context())[0]!.legs.map(
+    middlewareInstructionToHistoricSettlement(settlement(legs), filter, context()).legs.map(
       ({ direction }) => direction
     );
 
@@ -5236,22 +5355,19 @@ describe('toHistoricalSettlements directions', () => {
       sides: Record<string, unknown>,
       filter: { identityId: string; portfolio?: number }
     ): SettlementDirectionEnum[] =>
-      toHistoricalSettlements(
-        [],
-        [
-          {
-            createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
-            assetId,
-            amount: '1000000',
-            fromIdentityId: 'me',
-            toIdentityId: 'me',
-            address: null,
-            ...sides,
-          },
-        ] as unknown as AssetTransaction[],
+      middlewareTransferToHistoricSettlement(
+        {
+          createdEvent: { eventIdx: 1, block: { blockId: 10, hash: 'someHash' } },
+          assetId,
+          amount: '1000000',
+          fromIdentityId: 'me',
+          toIdentityId: 'me',
+          address: null,
+          ...sides,
+        } as unknown as AssetTransaction,
         filter,
         context()
-      ).map(({ legs }) => legs[0]!.direction);
+      ).legs.map(({ direction }) => direction);
 
     const betweenPortfolios = { fromPortfolioId: 'me/0', toPortfolioId: 'me/1' };
     const portfolioToAccount = { fromPortfolioId: 'me/1', toAccountId: 'myAddress' };
@@ -12027,6 +12143,51 @@ describe('portfolioIdStringToPortfolio', () => {
 
     expect(result.identityId).toBe('12345');
     expect(result.number).toBeNaN();
+  });
+});
+
+describe('middlewareSideToAssetHolder', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should read an Account side, and otherwise a portfolio side', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const account = middlewareSideToAssetHolder(
+      null,
+      '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+      context
+    );
+    expect(account).toEqual(
+      expect.objectContaining({ address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY' })
+    );
+
+    const portfolio = middlewareSideToAssetHolder('someDid/1', null, context);
+    expect(portfolio).toEqual(
+      expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) })
+    );
+  });
+
+  it('should throw when a side has neither a portfolio nor an Account', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => middlewareSideToAssetHolder(null, null, context)).toThrow(
+      new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The middleware returned a transfer side with neither a portfolio nor an Account',
+      })
+    );
   });
 });
 

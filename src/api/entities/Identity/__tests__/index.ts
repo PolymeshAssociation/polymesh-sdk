@@ -549,13 +549,17 @@ describe('Identity class', () => {
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
-      dsMockUtils.createApolloQueryMock(trustingAssetsQuery({ issuer: did }), {
-        trustedClaimIssuers: {
-          nodes: assetIds.map((assetId, i) => ({
-            asset: { id: assetId, isNftCollection: i === 1 },
-          })),
-        },
-      });
+      dsMockUtils.createApolloQueryMock(
+        trustingAssetsQuery({ issuer: did }, new BigNumber(100), new BigNumber(0)),
+        {
+          trustedClaimIssuers: {
+            nodes: assetIds.map((assetId, i) => ({
+              asset: { id: assetId, isNftCollection: i === 1 },
+            })),
+            totalCount: assetIds.length,
+          },
+        }
+      );
 
       assetIds.forEach(assetId =>
         when(getAssetIdFromMiddlewareSpy).calledWith(assetId).mockReturnValue(assetId)
@@ -821,6 +825,39 @@ describe('Identity class', () => {
       ]);
       expect(result.count).toEqual(new BigNumber(5));
       expect(result.next).toEqual(new BigNumber(2));
+    });
+
+    it('should not check that an NftCollection is a collection', async () => {
+      const identity = new Identity({ did }, context);
+      const collection = entityMockUtils.getNftCollectionInstance({ assetId, exists: false });
+
+      when(getAssetIdForMiddlewareSpy).calledWith(collection, context).mockResolvedValue(assetId);
+      when(getAssetIdFromMiddlewareSpy).calledWith(assetId).mockReturnValue(assetId);
+
+      dsMockUtils.createApolloQueryMock(heldNftsQuery({ identityId: did, assetId }), {
+        nfts: {
+          nodes: [{ nftId: '1' }],
+          totalCount: 1,
+        },
+      });
+
+      const result = await identity.getHeldNftsOfCollection({ collection });
+
+      expect(collection.exists).not.toHaveBeenCalled();
+      expect(result.data).toEqual([expect.objectContaining({ id: new BigNumber(1) })]);
+      expect(result.count).toEqual(new BigNumber(1));
+    });
+
+    it('should throw if the Asset ID names an Asset that is not an NFT collection', () => {
+      const identity = new Identity({ did }, context);
+
+      entityMockUtils.configureMocks({ nftCollectionOptions: { exists: false } });
+      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+      when(getAssetIdFromMiddlewareSpy).calledWith(assetId).mockReturnValue(assetId);
+
+      return expect(identity.getHeldNftsOfCollection({ collection: assetId })).rejects.toThrow(
+        'The Asset is not an NFT collection'
+      );
     });
   });
 
@@ -1435,7 +1472,7 @@ describe('Identity class', () => {
 
       const instructionsResponse = {
         totalCount: 5,
-        nodes: [{ id: '1' }],
+        nodes: [{ id: '1', legs: { nodes: [], totalCount: 0 } }],
       };
 
       const query = await historicalInstructionsQuery({ identity: identity.did }, context);
@@ -1470,7 +1507,7 @@ describe('Identity class', () => {
       calculateNextSpy = jest.spyOn(utilsInternalModule, 'calculateNextKey');
       const instructionsResponse = {
         totalCount: 5,
-        nodes: [{ id: '1' }],
+        nodes: [{ id: '1', legs: { nodes: [], totalCount: 0 } }],
       };
 
       const query = await historicalInstructionsQuery({ identity: identity.did }, context);

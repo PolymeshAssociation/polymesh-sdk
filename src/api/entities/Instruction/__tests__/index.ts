@@ -573,6 +573,7 @@ describe('Instruction class', () => {
           tradeDate: tradeDate.toISOString().replace('Z', ''),
           valueDate: valueDate.toISOString().replace('Z', ''),
           memo,
+          legs: { nodes: [], totalCount: 0 },
         };
         dsMockUtils.createApolloQueryMock(
           instructionsQuery({
@@ -1765,6 +1766,7 @@ describe('Instruction class', () => {
             ? [
                 {
                   status,
+                  legs: { nodes: [], totalCount: 0 },
                   updatedEvent: {
                     eventIdx: eventIndex.toNumber(),
                     block: {
@@ -1878,6 +1880,10 @@ describe('Instruction class', () => {
   });
 
   describe('method: getInvolvedPortfolios', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
     it('should return the portfolios in the instruction where the given DID is the custodian', async () => {
       dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
       const fromDid = 'fromDid';
@@ -1950,6 +1956,68 @@ describe('Instruction class', () => {
       const result = await instruction.getInvolvedPortfolios({ did: 'someDid' });
       expect(result).toEqual([portfolio]);
     });
+
+    it('should read every leg from the middleware when the first read returns fewer than the count', async () => {
+      const account = entityMockUtils.getAccountInstance();
+      const portfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: 'someDid',
+        isCustodiedBy: true,
+        exists: true,
+      });
+      const amount = new BigNumber(1);
+      const asset = entityMockUtils.getFungibleAssetInstance({ assetId: 'SOME_ASSET' });
+      const accountLeg = { from: account, to: account, amount, asset };
+
+      jest.spyOn(instruction, 'getLegs').mockResolvedValue({
+        data: Array(100).fill(accountLeg),
+        next: new BigNumber(100),
+        count: new BigNumber(120),
+      });
+
+      const legNodes = Array.from({ length: 120 }, (_, legIndex) => ({ legIndex }));
+      const queryAllSpy = jest
+        .spyOn(utilsInternalModule, 'queryAllMiddlewarePages')
+        .mockResolvedValue(legNodes as never);
+      jest
+        .spyOn(utilsConversionModule, 'middlewareLegToLeg')
+        .mockImplementation(leg =>
+          (leg as unknown as { legIndex: number }).legIndex === 119
+            ? { from: account, to: portfolio, amount, asset }
+            : accountLeg
+        );
+
+      const result = await instruction.getInvolvedPortfolios({ did: 'someDid' });
+
+      expect(result).toEqual([portfolio]);
+      expect(queryAllSpy).toHaveBeenCalledWith(context, expect.any(Function), 'legs');
+
+      const buildQuery = queryAllSpy.mock.calls[0]![1];
+      expect(buildQuery(new BigNumber(100), new BigNumber(100))).toEqual(
+        legsQuery({ instructionId: id }, new BigNumber(100), new BigNumber(100))
+      );
+    });
+
+    it('should not read the legs again when the first read returns all of them', async () => {
+      const portfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: 'someDid',
+        isCustodiedBy: true,
+        exists: true,
+      });
+      const amount = new BigNumber(1);
+      const asset = entityMockUtils.getFungibleAssetInstance({ assetId: 'SOME_ASSET' });
+
+      jest.spyOn(instruction, 'getLegs').mockResolvedValue({
+        data: [{ from: portfolio, to: portfolio, amount, asset }],
+        next: null,
+        count: new BigNumber(1),
+      });
+      const queryAllSpy = jest.spyOn(utilsInternalModule, 'queryAllMiddlewarePages');
+
+      const result = await instruction.getInvolvedPortfolios({ did: 'someDid' });
+
+      expect(result).toEqual([portfolio, portfolio]);
+      expect(queryAllSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('method: getMediators', () => {
@@ -1968,6 +2036,7 @@ describe('Instruction class', () => {
               nodes: [
                 {
                   mediators: [mediatorDid1, mediatorDid2, mediatorDid3],
+                  legs: { nodes: [], totalCount: 0 },
                 },
               ],
             },

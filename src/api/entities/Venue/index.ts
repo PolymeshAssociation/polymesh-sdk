@@ -12,7 +12,7 @@ import {
   PolymeshError,
   updateVenueSigners,
 } from '~/internal';
-import { instructionsQuery } from '~/middleware/queries/settlements';
+import { instructionsQuery, withAllLegs } from '~/middleware/queries/settlements';
 import { Query } from '~/middleware/types';
 import {
   AddInstructionParams,
@@ -265,7 +265,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     const {
       data: {
-        instructions: { nodes: instructionsResult, totalCount },
+        instructions: { nodes, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery(
@@ -276,6 +276,8 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
         start
       )
     );
+
+    const instructionsResult = await withAllLegs(nodes, context);
 
     const data = instructionsResult.map(middlewareInstruction =>
       middlewareInstructionToHistoricInstruction(middlewareInstruction, context)

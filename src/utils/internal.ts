@@ -1,3 +1,4 @@
+import { OperationVariables, QueryOptions } from '@apollo/client/core';
 import {
   ApiDecoration,
   AugmentedEvent,
@@ -44,7 +45,7 @@ import {
   PolymeshError,
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries/common';
-import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
+import { Claim as MiddlewareClaim, ClaimTypeEnum, Connection, Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   Asset,
@@ -108,6 +109,7 @@ import {
   BABE_ENGINE_ID,
   CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
   MAX_META_LENGTH,
+  MAX_MIDDLEWARE_PAGE_SIZE,
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
@@ -255,6 +257,93 @@ export async function allInOrder<T>(promises: Promise<T>[]): Promise<T[]> {
   const settled = await settleAll(promises);
 
   return settled.map(unwrapSettled);
+}
+
+/**
+ * @hidden
+ *
+ * The node type of a middleware connection
+ */
+type MiddlewareNode<Key extends keyof Query> = NonNullable<Query[Key]> extends Connection<
+  infer Node
+>
+  ? Node
+  : never;
+
+/**
+ * @hidden
+ *
+ * Read the first `limit` rows of a middleware connection, or all of them if `limit` is left out,
+ *   with the connection's `totalCount`. The indexer caps the rows it returns a request at its
+ *   `--query-limit` (100 by default, configurable, none with `--unsafe`) and does not report that
+ *   cap, so each request starts where the rows read so far end. `buildQuery` must order the rows
+ *   totally, or pages can overlap and skip rows
+ *
+ * @throws if the middleware returns no rows before the end it reported
+ */
+export async function queryMiddlewarePages<Key extends keyof Query>(
+  context: Context,
+  buildQuery: (
+    size: BigNumber,
+    start: BigNumber
+  ) => QueryOptions<OperationVariables, Partial<Query>>,
+  connectionKey: Key,
+  limit?: BigNumber
+): Promise<{ nodes: MiddlewareNode<Key>[]; totalCount: number }> {
+  const size = limit ? BigNumber.min(limit, MAX_MIDDLEWARE_PAGE_SIZE) : MAX_MIDDLEWARE_PAGE_SIZE;
+
+  const readPage = async (start: BigNumber): Promise<Connection<MiddlewareNode<Key>>> => {
+    const { data } = await context.queryMiddleware<Ensured<Query, Key>>(
+      buildQuery(size, start) as QueryOptions<OperationVariables, Ensured<Query, Key>>
+    );
+
+    return data[connectionKey] as unknown as Connection<MiddlewareNode<Key>>;
+  };
+
+  const nodes: MiddlewareNode<Key>[] = [];
+  let totalCount = 0;
+  let end = new BigNumber(Infinity);
+
+  while (end.gt(nodes.length)) {
+    // each request starts where the rows read so far end, so the requests can't run in parallel
+    const page = await readPage(new BigNumber(nodes.length)); // NOSONAR
+
+    totalCount = page.totalCount;
+    end = limit ? BigNumber.min(limit, totalCount) : new BigNumber(totalCount);
+
+    if (!page.nodes.length && end.gt(nodes.length)) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The middleware returned fewer rows than it reported',
+        data: { expected: end, received: nodes.length },
+      });
+    }
+
+    nodes.push(...page.nodes);
+  }
+
+  return {
+    nodes: nodes.slice(0, end.toNumber()),
+    totalCount,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Read every row of a middleware connection. See `queryMiddlewarePages`
+ */
+export async function queryAllMiddlewarePages<Key extends keyof Query>(
+  context: Context,
+  buildQuery: (
+    size: BigNumber,
+    start: BigNumber
+  ) => QueryOptions<OperationVariables, Partial<Query>>,
+  connectionKey: Key
+): Promise<MiddlewareNode<Key>[]> {
+  const { nodes } = await queryMiddlewarePages(context, buildQuery, connectionKey);
+
+  return nodes;
 }
 
 /**

@@ -893,58 +893,66 @@ describe('Portfolio class', () => {
       const settlementsResponse = {
         nodes: [
           {
-            instruction: {
-              createdEvent: {
-                block: {
-                  blockId: blockNumber1.toNumber(),
-                  hash: blockHash1,
-                },
+            createdEvent: {
+              eventIdx: 0,
+              block: {
+                blockId: blockNumber1.toNumber(),
+                hash: blockHash1,
               },
-              id: '1',
-              status: InstructionStatusEnum.Executed,
-              legs: { nodes: legs1 },
             },
+            id: '1',
+            status: InstructionStatusEnum.Executed,
+            legs: { nodes: legs1, totalCount: legs1.length },
           },
           {
-            instruction: {
-              createdEvent: {
-                block: {
-                  blockId: blockNumber2.toNumber(),
-                  hash: blockHash2,
-                },
+            createdEvent: {
+              eventIdx: 0,
+              block: {
+                blockId: blockNumber2.toNumber(),
+                hash: blockHash2,
               },
-              id: '2',
-              status: InstructionStatusEnum.Executed,
-              legs: { nodes: legs2 },
             },
+            id: '2',
+            status: InstructionStatusEnum.Executed,
+            legs: { nodes: legs2, totalCount: legs2.length },
           },
         ],
+        totalCount: 2,
       };
 
       const middlewareAssetId = '0x12341234123412341234123412341234';
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery({
-            identityId: did,
-            portfolioId: id,
-            address: account,
-            assetId: middlewareAssetId,
-          }),
+          query: settlementsQuery(
+            {
+              identityId: did,
+              portfolioId: id,
+              address: account,
+              assetId: middlewareAssetId,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
-            legs: settlementsResponse,
+            instructions: settlementsResponse,
           },
         },
         {
-          query: portfolioMovementsQuery({
-            identityId: did,
-            portfolioId: id,
-            address: account,
-            assetId: middlewareAssetId,
-          }),
+          query: portfolioMovementsQuery(
+            {
+              identityId: did,
+              portfolioId: id,
+              address: account,
+              assetId: middlewareAssetId,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
             assetTransactions: {
               nodes: [],
+              totalCount: 0,
             },
           },
         },
@@ -960,45 +968,61 @@ describe('Portfolio class', () => {
         assetId: middlewareAssetId,
       });
 
-      expect(result[0]!.blockNumber).toEqual(blockNumber1);
-      expect(result[1]!.blockNumber).toEqual(blockNumber2);
-      expect(result[0]!.blockHash).toBe(blockHash1);
-      expect(result[1]!.blockHash).toBe(blockHash2);
-      expect((result[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId1);
-      expect((result[1]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
-      expect((result[0]!.legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
-      expect((result[1]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(((result[0]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(portfolioDid1);
-      expect(((result[0]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toBe(portfolioDid2);
-      expect((result[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(((result[1]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(portfolioDid2);
-      expect((result[1]!.legs[0]!.from as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(((result[1]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toEqual(
+      expect(result.data[0]!.blockNumber).toEqual(blockNumber1);
+      expect(result.data[1]!.blockNumber).toEqual(blockNumber2);
+      expect(result.data[0]!.blockHash).toBe(blockHash1);
+      expect(result.data[1]!.blockHash).toBe(blockHash2);
+      expect((result.data[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId1);
+      expect((result.data[1]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
+      expect((result.data[0]!.legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
+      expect((result.data[1]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect(((result.data[0]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(
+        portfolioDid1
+      );
+      expect(((result.data[0]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toBe(
+        portfolioDid2
+      );
+      expect((result.data[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(((result.data[1]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(
+        portfolioDid2
+      );
+      expect((result.data[1]!.legs[0]!.from as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(((result.data[1]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toEqual(
         portfolioDid1
       );
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery({
-            identityId: did,
-            assetId: middlewareAssetId,
-          }),
+          query: settlementsQuery(
+            {
+              identityId: did,
+              assetId: middlewareAssetId,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
-            legs: {
+            instructions: {
               nodes: [],
+              totalCount: 0,
             },
           },
         },
         {
-          query: portfolioMovementsQuery({
-            identityId: did,
-            assetId: middlewareAssetId,
-          }),
+          query: portfolioMovementsQuery(
+            {
+              identityId: did,
+              assetId: middlewareAssetId,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
             assetTransactions: {
               nodes: [
                 {
                   createdEvent: {
+                    eventIdx: 0,
                     block: {
                       blockId: blockNumber1.toNumber(),
                       hash: 'someHash',
@@ -1011,6 +1035,7 @@ describe('Portfolio class', () => {
                   toPortfolioId: `${portfolioDid1}/${portfolioNumber2}`,
                 },
               ],
+              totalCount: 1,
             },
           },
         },
@@ -1025,13 +1050,17 @@ describe('Portfolio class', () => {
         ticker: 'SOME_TICKER',
       });
 
-      expect(result[0]!.blockNumber).toEqual(blockNumber1);
-      expect(result[0]!.blockHash).toBe(blockHash1);
-      expect((result[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
-      expect((result[0]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(((result[0]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(portfolioDid1);
-      expect(((result[0]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toBe(portfolioDid1);
-      expect((result[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(result.data[0]!.blockNumber).toEqual(blockNumber1);
+      expect(result.data[0]!.blockHash).toBe(blockHash1);
+      expect((result.data[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
+      expect((result.data[0]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect(((result.data[0]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(
+        portfolioDid1
+      );
+      expect(((result.data[0]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toBe(
+        portfolioDid1
+      );
+      expect((result.data[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
     });
 
     it('should return a list of transactions when portfolioId is not provided', async () => {
@@ -1076,58 +1105,66 @@ describe('Portfolio class', () => {
       const settlementsResponse = {
         nodes: [
           {
-            instruction: {
-              createdEvent: {
-                block: {
-                  blockId: blockNumber1.toNumber(),
-                  hash: blockHash1,
-                },
+            createdEvent: {
+              eventIdx: 0,
+              block: {
+                blockId: blockNumber1.toNumber(),
+                hash: blockHash1,
               },
-              id: '1',
-              status: InstructionStatusEnum.Executed,
-              legs: { nodes: legs1 },
             },
+            id: '1',
+            status: InstructionStatusEnum.Executed,
+            legs: { nodes: legs1, totalCount: legs1.length },
           },
           {
-            instruction: {
-              createdEvent: {
-                block: {
-                  blockId: blockNumber2.toNumber(),
-                  hash: blockHash2,
-                },
+            createdEvent: {
+              eventIdx: 0,
+              block: {
+                blockId: blockNumber2.toNumber(),
+                hash: blockHash2,
               },
-              id: '2',
-              status: InstructionStatusEnum.Executed,
-              legs: { nodes: legs2 },
             },
+            id: '2',
+            status: InstructionStatusEnum.Executed,
+            legs: { nodes: legs2, totalCount: legs2.length },
           },
         ],
+        totalCount: 2,
       };
 
       const middlewareAssetId = '0x12341234123412341234123412341234';
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery({
-            identityId: did,
-            portfolioId: undefined,
-            address: account,
-            assetId: middlewareAssetId,
-          }),
+          query: settlementsQuery(
+            {
+              identityId: did,
+              portfolioId: undefined,
+              address: account,
+              assetId: middlewareAssetId,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
-            legs: settlementsResponse,
+            instructions: settlementsResponse,
           },
         },
         {
-          query: portfolioMovementsQuery({
-            identityId: did,
-            portfolioId: undefined,
-            address: account,
-            assetId: middlewareAssetId,
-          }),
+          query: portfolioMovementsQuery(
+            {
+              identityId: did,
+              portfolioId: undefined,
+              address: account,
+              assetId: middlewareAssetId,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
             assetTransactions: {
               nodes: [],
+              totalCount: 0,
             },
           },
         },
@@ -1143,45 +1180,61 @@ describe('Portfolio class', () => {
         assetId: middlewareAssetId,
       });
 
-      expect(result[0]!.blockNumber).toEqual(blockNumber1);
-      expect(result[1]!.blockNumber).toEqual(blockNumber2);
-      expect(result[0]!.blockHash).toBe(blockHash1);
-      expect(result[1]!.blockHash).toBe(blockHash2);
-      expect((result[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId1);
-      expect((result[1]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
-      expect((result[0]!.legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
-      expect((result[1]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(((result[0]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(portfolioDid1);
-      expect(((result[0]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toBe(portfolioDid2);
-      expect((result[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(((result[1]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(portfolioDid2);
-      expect((result[1]!.legs[0]!.from as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(((result[1]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toEqual(
+      expect(result.data[0]!.blockNumber).toEqual(blockNumber1);
+      expect(result.data[1]!.blockNumber).toEqual(blockNumber2);
+      expect(result.data[0]!.blockHash).toBe(blockHash1);
+      expect(result.data[1]!.blockHash).toBe(blockHash2);
+      expect((result.data[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId1);
+      expect((result.data[1]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
+      expect((result.data[0]!.legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
+      expect((result.data[1]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect(((result.data[0]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(
+        portfolioDid1
+      );
+      expect(((result.data[0]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toBe(
+        portfolioDid2
+      );
+      expect((result.data[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(((result.data[1]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(
+        portfolioDid2
+      );
+      expect((result.data[1]!.legs[0]!.from as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(((result.data[1]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toEqual(
         portfolioDid1
       );
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery({
-            identityId: did,
-            assetId: middlewareAssetId,
-          }),
+          query: settlementsQuery(
+            {
+              identityId: did,
+              assetId: middlewareAssetId,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
-            legs: {
+            instructions: {
               nodes: [],
+              totalCount: 0,
             },
           },
         },
         {
-          query: portfolioMovementsQuery({
-            identityId: did,
-            assetId: middlewareAssetId,
-          }),
+          query: portfolioMovementsQuery(
+            {
+              identityId: did,
+              assetId: middlewareAssetId,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
             assetTransactions: {
               nodes: [
                 {
                   createdEvent: {
+                    eventIdx: 0,
                     block: {
                       blockId: blockNumber1.toNumber(),
                       hash: 'someHash',
@@ -1194,6 +1247,7 @@ describe('Portfolio class', () => {
                   toPortfolioId: `${portfolioDid1}/${portfolioNumber2}`,
                 },
               ],
+              totalCount: 1,
             },
           },
         },
@@ -1208,13 +1262,17 @@ describe('Portfolio class', () => {
         ticker: 'SOME_TICKER',
       });
 
-      expect(result[0]!.blockNumber).toEqual(blockNumber1);
-      expect(result[0]!.blockHash).toBe(blockHash1);
-      expect((result[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
-      expect((result[0]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(((result[0]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(portfolioDid1);
-      expect(((result[0]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toBe(portfolioDid1);
-      expect((result[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(result.data[0]!.blockNumber).toEqual(blockNumber1);
+      expect(result.data[0]!.blockHash).toBe(blockHash1);
+      expect((result.data[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
+      expect((result.data[0]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect(((result.data[0]!.legs[0] as FungibleLeg).from as Portfolio).owner.did).toBe(
+        portfolioDid1
+      );
+      expect(((result.data[0]!.legs[0] as FungibleLeg).to as Portfolio).owner.did).toBe(
+        portfolioDid1
+      );
+      expect((result.data[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
     });
 
     it('should throw an error if the portfolio does not exist', () => {
@@ -1223,24 +1281,34 @@ describe('Portfolio class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery({
-            identityId: did,
-            portfolioId: id,
-          }),
+          query: settlementsQuery(
+            {
+              identityId: did,
+              portfolioId: id,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
-            legs: {
+            instructions: {
               nodes: [],
+              totalCount: 0,
             },
           },
         },
         {
-          query: portfolioMovementsQuery({
-            identityId: did,
-            portfolioId: id,
-          }),
+          query: portfolioMovementsQuery(
+            {
+              identityId: did,
+              portfolioId: id,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
             assetTransactions: {
               nodes: [],
+              totalCount: 0,
             },
           },
         },

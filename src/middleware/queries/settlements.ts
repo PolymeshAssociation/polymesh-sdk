@@ -11,6 +11,7 @@ import {
 } from '~/middleware/queries/common';
 import {
   AffirmStatusEnum,
+  Instruction,
   InstructionAffirmationsOrderBy,
   InstructionEventEnum,
   InstructionEventsOrderBy,
@@ -26,7 +27,12 @@ import {
   bigNumberToMiddlewareSequenceId,
   portfolioToMiddlewarePortfolioId,
 } from '~/utils/conversion';
-import { asDid, getAssetIdForMiddleware } from '~/utils/internal';
+import {
+  allInOrder,
+  asDid,
+  getAssetIdForMiddleware,
+  queryAllMiddlewarePages,
+} from '~/utils/internal';
 
 const legAttributes = `
             legIndex
@@ -61,6 +67,7 @@ const instructionAttributes = `
           valueDate
           mediators
           legs(orderBy: [${LegsOrderBy.LegIndexAsc}]) {
+            totalCount
             nodes {
               ${legAttributes}
             }
@@ -310,6 +317,8 @@ export function instructionAffirmationsQuery(
 export function offChainAffirmationsQuery(
   filters: Pick<InstructionAffirmationsQueryFilters, 'instructionId'>
 ): QueryOptions<Record<string, unknown>> {
+  // a receipt affirms one off-chain leg and an instruction has at most 10, so the receipts fit in
+  // one middleware page
   const orderBy = `${InstructionAffirmationsOrderBy.CreatedEventIdAsc}`;
 
   const query = gql`
@@ -384,6 +393,36 @@ export function legsQuery(
 /**
  * @hidden
  *
+ * Give each instruction all of its legs. An instruction can have up to 120 legs (10 fungible,
+ *   100 NFT and 10 off-chain), but the middleware returns at most 100 of them inside an
+ *   instruction, so the legs of an instruction with more are read on their own
+ */
+export function withAllLegs<InstructionNode extends Pick<Instruction, 'id' | 'legs'>>(
+  instructions: InstructionNode[],
+  context: Context
+): Promise<InstructionNode[]> {
+  return allInOrder(
+    instructions.map(async instruction => {
+      const { id, legs } = instruction;
+
+      if (legs.totalCount <= legs.nodes.length) {
+        return instruction;
+      }
+
+      const nodes = await queryAllMiddlewarePages(
+        context,
+        (size, start) => legsQuery({ instructionId: new BigNumber(id) }, size, start),
+        'legs'
+      );
+
+      return { ...instruction, legs: { ...legs, nodes } };
+    })
+  );
+}
+
+/**
+ * @hidden
+ *
  */
 export const buildHistoricalInstructionsQueryFilter = async (
   filters: HistoricalInstructionFilters,
@@ -407,13 +446,13 @@ export const buildHistoricalInstructionsQueryFilter = async (
 
   const args = ['$start: Int', '$size: Int'];
   const baseFilter = [];
-  const instructionPartiesFilter = [];
+  const partyFilters: string[] = [];
   const legsFilter = [];
   const variables: InstructionPartiesVariables = {};
 
   if (identity) {
     args.push('$identity: String!');
-    instructionPartiesFilter.push('identityId: { equalTo: $identity }');
+    partyFilters.push('parties: { some: { identityId: { equalTo: $identity } } }');
     variables.identity = asDid(identity);
   }
 
@@ -431,7 +470,7 @@ export const buildHistoricalInstructionsQueryFilter = async (
 
   if (party) {
     args.push('$party: String!');
-    instructionPartiesFilter.push('identityId: { equalTo: $party }');
+    partyFilters.push('parties: { some: { identityId: { equalTo: $party } } }');
     variables.party = asDid(party);
   }
 
@@ -457,8 +496,12 @@ export const buildHistoricalInstructionsQueryFilter = async (
     baseFilter.push(`legs: { some: { ${legsFilter.join(', ')} } }`);
   }
 
-  if (instructionPartiesFilter.length) {
-    baseFilter.push(`parties: { some: { ${instructionPartiesFilter.join(', ')} } }`);
+  // an input object can name a field only once, so a second party is its own clause
+  if (partyFilters.length === 1) {
+    baseFilter.push(partyFilters[0]);
+  } else if (partyFilters.length) {
+    const clauses = partyFilters.map(partyFilter => '{ ' + partyFilter + ' }');
+    baseFilter.push(`and: [${clauses.join(', ')}]`);
   }
 
   return {
@@ -539,7 +582,7 @@ function createLegFilters(
   filter: string;
   variables: LegFilterVariables;
 } {
-  const args: string[] = [];
+  const args: string[] = ['$size: Int, $start: Int'];
   const fromIdFilters: string[] = [];
   const toIdFilters: string[] = [];
   const variables: LegFilterVariables = {};
@@ -578,7 +621,8 @@ function createLegFilters(
 
   return {
     args: `(${args.join()})`,
-    filter: `filter: { or: [{ ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`,
+    // an instruction is in a holder's history when any of its legs moves the holder's assets
+    filter: `filter: { legs: { some: { or: [{ ${fromIdFilters.join()} }, { ${toIdFilters.join()} }] } } }`,
     variables,
   };
 }
@@ -587,20 +631,22 @@ function createLegFilters(
  *  @hidden
  */
 function buildSettlementsQuery(args: string, filter: string): DocumentNode {
-  const orderBy = `[${LegsOrderBy.CreatedEventIdAsc}]`;
+  // an event creates one instruction, so the instructions are in a total order
+  const orderBy = `[${InstructionsOrderBy.CreatedEventIdAsc}]`;
 
   return gql`
   query SettlementsQuery
     ${args}
    {
-    legs(
+    instructions(
       ${filter}
       orderBy: ${orderBy}
+      first: $size
+      offset: $start
     ) {
+      totalCount
       nodes {
-        instruction {
-          ${instructionAttributes}
-        }
+        ${instructionAttributes}
       }
     }
   }
@@ -610,33 +656,37 @@ function buildSettlementsQuery(args: string, filter: string): DocumentNode {
 /**
  * @hidden
  *
- * Get Settlements where a Portfolio is involved
+ * Get the Instructions with a leg that moves a Portfolio's assets
  */
 export function settlementsQuery(
-  filters: QuerySettlementFilters
-): QueryOptions<LegFilterVariables> {
+  filters: QuerySettlementFilters,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<LegFilterVariables>> {
   const { args, filter, variables } = createLegFilters(filters);
   const query = buildSettlementsQuery(args, filter);
 
   return {
     query,
-    variables,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }
 
 /**
  * @hidden
  *
- * Get Settlements for all Portfolios
+ * Get the Instructions with a leg that moves an Identity's assets, from any of its holders
  */
 export function settlementsForAllPortfoliosQuery(
-  filters: Omit<QuerySettlementFilters, 'portfolioId'>
-): QueryOptions<LegFilterVariables> {
+  filters: Omit<QuerySettlementFilters, 'portfolioId'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<LegFilterVariables>> {
   const { args, filter, variables } = createLegFilters(filters, true);
   const query = buildSettlementsQuery(args, filter);
 
   return {
     query,
-    variables,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }

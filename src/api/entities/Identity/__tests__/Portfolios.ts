@@ -320,80 +320,86 @@ describe('Portfolios class', () => {
       const settlementsResponse = {
         nodes: [
           {
-            instruction: {
-              id: '0000000001',
-              createdEvent: {
-                block: {
-                  blockId: blockNumber1.toNumber(),
-                  hash: blockHash1,
-                },
+            id: '0000000001',
+            createdEvent: {
+              eventIdx: 0,
+              block: {
+                blockId: blockNumber1.toNumber(),
+                hash: blockHash1,
               },
-              status: InstructionStatusEnum.Executed,
-              legs: { nodes: legs1 },
             },
+            status: InstructionStatusEnum.Executed,
+            legs: { nodes: legs1, totalCount: legs1.length },
           },
           {
-            instruction: {
-              id: '0000000002',
-              createdEvent: {
-                block: {
-                  blockId: blockNumber2.toNumber(),
-                  hash: blockHash2,
-                },
+            id: '0000000002',
+            createdEvent: {
+              eventIdx: 0,
+              block: {
+                blockId: blockNumber2.toNumber(),
+                hash: blockHash2,
               },
-              status: InstructionStatusEnum.Executed,
-              legs: { nodes: legs2 },
             },
+            status: InstructionStatusEnum.Executed,
+            legs: { nodes: legs2, totalCount: legs2.length },
           },
           {
-            instruction: {
-              id: '0000000003',
-              createdEvent: {
-                block: {
-                  blockId: blockNumber2.toNumber(),
-                  hash: blockHash3,
-                },
+            id: '0000000003',
+            createdEvent: {
+              eventIdx: 0,
+              block: {
+                blockId: blockNumber2.toNumber(),
+                hash: blockHash3,
               },
-              status: InstructionStatusEnum.Executed,
-              legs: { nodes: legs3 },
             },
+            status: InstructionStatusEnum.Executed,
+            legs: { nodes: legs3, totalCount: legs3.length },
           },
           {
-            instruction: {
-              id: '0000000004',
-              createdEvent: {
-                block: {
-                  blockId: blockNumber2.toNumber(),
-                  hash: blockHash3,
-                },
+            id: '0000000004',
+            createdEvent: {
+              eventIdx: 0,
+              block: {
+                blockId: blockNumber2.toNumber(),
+                hash: blockHash3,
               },
-              status: InstructionStatusEnum.Executed,
-              legs: { nodes: legs4 },
             },
+            status: InstructionStatusEnum.Executed,
+            legs: { nodes: legs4, totalCount: legs4.length },
           },
         ],
+        totalCount: 4,
       };
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsForAllPortfoliosQuery({
-            identityId: did,
-            address: account,
-            assetId: '0x12341234123412341234123412341234',
-          }),
+          query: settlementsForAllPortfoliosQuery(
+            {
+              identityId: did,
+              address: account,
+              assetId: '0x12341234123412341234123412341234',
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
-            legs: settlementsResponse,
+            instructions: settlementsResponse,
           },
         },
         {
-          query: portfoliosMovementsQuery({
-            identityId: did,
-            address: account,
-            assetId: '0x12341234123412341234123412341234',
-          }),
+          query: portfoliosMovementsQuery(
+            {
+              identityId: did,
+              address: account,
+              assetId: '0x12341234123412341234123412341234',
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
             assetTransactions: {
               nodes: [],
+              totalCount: 0,
             },
           },
         },
@@ -409,53 +415,63 @@ describe('Portfolios class', () => {
         assetId: '0x12341234123412341234123412341234',
       });
 
-      expect(result[0]!.blockNumber).toEqual(blockNumber1);
-      expect(result[1]!.blockNumber).toEqual(blockNumber2);
-      expect(result[0]!.blockHash).toBe(blockHash1);
-      expect(result[1]!.blockHash).toBe(blockHash2);
-      expect((result[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId1);
-      expect((result[1]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
-      expect((result[0]!.legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
-      expect((result[1]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(((result[0]!.legs[0] as FungibleLeg).from as DefaultPortfolio).owner.did).toBe(
+      expect(result.data[0]!.blockNumber).toEqual(blockNumber1);
+      expect(result.data[1]!.blockNumber).toEqual(blockNumber2);
+      expect(result.data[0]!.blockHash).toBe(blockHash1);
+      expect(result.data[1]!.blockHash).toBe(blockHash2);
+      expect((result.data[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId1);
+      expect((result.data[1]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
+      expect((result.data[0]!.legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
+      expect((result.data[1]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect(((result.data[0]!.legs[0] as FungibleLeg).from as DefaultPortfolio).owner.did).toBe(
         portfolioDid1
       );
-      expect(((result[0]!.legs[0] as FungibleLeg).to as NumberedPortfolio).owner.did).toBe(
+      expect(((result.data[0]!.legs[0] as FungibleLeg).to as NumberedPortfolio).owner.did).toBe(
         portfolioDid2
       );
-      expect((result[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(((result[1]!.legs[0] as FungibleLeg).from as NumberedPortfolio).owner.did).toBe(
+      expect((result.data[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(((result.data[1]!.legs[0] as FungibleLeg).from as NumberedPortfolio).owner.did).toBe(
         portfolioDid2
       );
-      expect((result[1]!.legs[0]!.from as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(((result[1]!.legs[0] as FungibleLeg).to as DefaultPortfolio).owner.did).toBe(
+      expect((result.data[1]!.legs[0]!.from as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(((result.data[1]!.legs[0] as FungibleLeg).to as DefaultPortfolio).owner.did).toBe(
         portfolioDid1
       );
-      expect(result[2]!.legs[0]!.direction).toEqual(SettlementDirectionEnum.None);
-      expect(result[3]!.legs[0]!.direction).toEqual(SettlementDirectionEnum.None);
+      expect(result.data[2]!.legs[0]!.direction).toEqual(SettlementDirectionEnum.None);
+      expect(result.data[3]!.legs[0]!.direction).toEqual(SettlementDirectionEnum.None);
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsForAllPortfoliosQuery({
-            identityId: did,
-            assetId: '0x12341234123412341234123412341234',
-          }),
+          query: settlementsForAllPortfoliosQuery(
+            {
+              identityId: did,
+              assetId: '0x12341234123412341234123412341234',
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
-            legs: {
+            instructions: {
               nodes: [],
+              totalCount: 0,
             },
           },
         },
         {
-          query: portfoliosMovementsQuery({
-            identityId: did,
-            assetId: '0x12341234123412341234123412341234',
-          }),
+          query: portfoliosMovementsQuery(
+            {
+              identityId: did,
+              assetId: '0x12341234123412341234123412341234',
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
             assetTransactions: {
               nodes: [
                 {
                   createdEvent: {
+                    eventIdx: 0,
                     block: {
                       blockId: blockNumber1.toNumber(),
                       hash: 'someHash',
@@ -468,6 +484,7 @@ describe('Portfolios class', () => {
                   toPortfolioId: `${portfolioDid1}/${portfolioNumber2}`,
                 },
               ],
+              totalCount: 1,
             },
           },
         },
@@ -481,36 +498,46 @@ describe('Portfolios class', () => {
         ticker: 'SOME_TICKER',
       });
 
-      expect(result[0]!.blockNumber).toEqual(blockNumber1);
-      expect(result[0]!.blockHash).toBe(blockHash1);
-      expect((result[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
-      expect((result[0]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(((result[0]!.legs[0] as FungibleLeg).from as DefaultPortfolio).owner.did).toBe(
+      expect(result.data[0]!.blockNumber).toEqual(blockNumber1);
+      expect(result.data[0]!.blockHash).toBe(blockHash1);
+      expect((result.data[0]!.legs[0] as FungibleLeg).asset.id).toBe(assetId2);
+      expect((result.data[0]!.legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect(((result.data[0]!.legs[0] as FungibleLeg).from as DefaultPortfolio).owner.did).toBe(
         portfolioDid1
       );
-      expect(((result[0]!.legs[0] as FungibleLeg).to as NumberedPortfolio).owner.did).toBe(
+      expect(((result.data[0]!.legs[0] as FungibleLeg).to as NumberedPortfolio).owner.did).toBe(
         portfolioDid1
       );
-      expect((result[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect((result.data[0]!.legs[0]!.to as NumberedPortfolio).id).toEqual(portfolioId2);
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsForAllPortfoliosQuery({
-            identityId: did,
-          }),
+          query: settlementsForAllPortfoliosQuery(
+            {
+              identityId: did,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
-            legs: {
+            instructions: {
               nodes: [],
+              totalCount: 0,
             },
           },
         },
         {
-          query: portfoliosMovementsQuery({
-            identityId: did,
-          }),
+          query: portfoliosMovementsQuery(
+            {
+              identityId: did,
+            },
+            new BigNumber(25),
+            new BigNumber(0)
+          ),
           returnData: {
             assetTransactions: {
               nodes: [],
+              totalCount: 0,
             },
           },
         },

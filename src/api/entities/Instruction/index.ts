@@ -100,6 +100,7 @@ import {
 import {
   calculateNextKey,
   createProcedureMethod,
+  queryAllMiddlewarePages,
   requestMulti,
   requestPaginated,
 } from '~/utils/internal';
@@ -1044,8 +1045,21 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     did: string;
   }): Promise<(DefaultPortfolio | NumberedPortfolio)[]> {
     const { did } = args;
+    const { id, context } = this;
 
-    const { data: legs } = await this.getLegs();
+    const { data: firstLegs, count } = await this.getLegs();
+    let legs = firstLegs;
+
+    // the middleware returns at most its `--query-limit` legs a request (100 by default), but an
+    // instruction can have up to 120 (10 fungible, 10 off-chain, 100 NFT). The chain read is never short
+    if (count?.gt(legs.length)) {
+      const nodes = await queryAllMiddlewarePages(
+        context,
+        (size, start) => legsQuery({ instructionId: id }, size, start),
+        'legs'
+      );
+      legs = nodes.map(leg => middlewareLegToLeg(leg, context));
+    }
 
     const getPortfoliosFromLeg = async (
       leg: Leg
@@ -1115,6 +1129,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       ] = await Promise.all([
         this.getInstructionFromMiddleware(),
+        // an instruction has at most 4 mediators, so their affirmations fit in one page
         context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
           instructionAffirmationsQuery({
             instructionId: id,

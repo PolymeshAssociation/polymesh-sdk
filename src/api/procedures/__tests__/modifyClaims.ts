@@ -4,13 +4,12 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
+import { Codec } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { getAuthorization, prepareModifyClaims } from '~/api/procedures/modifyClaims';
 import { Context, Identity } from '~/internal';
-import { claimsQuery } from '~/middleware/queries/claims';
-import { Claim as MiddlewareClaim, ClaimTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -23,6 +22,7 @@ import {
   TxTags,
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
+import * as utilsConstantsModule from '~/utils/constants';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -47,7 +47,6 @@ describe('modifyClaims procedure', () => {
   let buyLockupClaim: Claim;
   let expiry: Date;
   let args: ModifyClaimsParams;
-  let otherIssuerClaims: Partial<MiddlewareClaim>[];
 
   let rawCddClaim: PolymeshPrimitivesIdentityClaimClaim;
   let rawBuyLockupClaim: PolymeshPrimitivesIdentityClaimClaim;
@@ -57,9 +56,13 @@ describe('modifyClaims procedure', () => {
   let rawExpiry: Moment;
 
   let issuer: Identity;
-  let otherIssuerDid: string;
+  let rawIssuerDid: PolymeshPrimitivesIdentityId;
+  let meshClaimToClaimKeysSpy: jest.SpyInstance;
 
-  const includeExpired = true;
+  const signerDid = 'signerDid';
+
+  const issuedClaim = (): Option<Codec> =>
+    dsMockUtils.createMockOption(dsMockUtils.createMockIdentityClaim());
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -71,6 +74,7 @@ describe('modifyClaims procedure', () => {
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
+    meshClaimToClaimKeysSpy = jest.spyOn(utilsConversionModule, 'meshClaimToClaimKeys');
 
     someDid = 'someDid';
     otherDid = 'otherDid';
@@ -115,21 +119,11 @@ describe('modifyClaims procedure', () => {
     rawSomeDid = dsMockUtils.createMockIdentityId(someDid);
     rawOtherDid = dsMockUtils.createMockIdentityId(otherDid);
     rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
-
-    otherIssuerDid = 'otherSignerDid';
-
-    otherIssuerClaims = [
-      {
-        targetId: otherDid,
-        issuerId: otherIssuerDid,
-        type: cddClaim.type as unknown as ClaimTypeEnum,
-        cddId,
-      },
-    ];
   });
 
   beforeEach(async () => {
-    mockContext = dsMockUtils.getContextInstance();
+    // the signer is an issuer apart from the targets
+    mockContext = dsMockUtils.getContextInstance({ did: signerDid });
     addClaimTransaction = dsMockUtils.createTxMock('identity', 'addClaim');
     revokeClaimTransaction = dsMockUtils.createTxMock('identity', 'revokeClaim');
     when(claimToMeshClaimSpy).calledWith(cddClaim, mockContext).mockResolvedValue(rawCddClaim);
@@ -145,6 +139,9 @@ describe('modifyClaims procedure', () => {
     when(identityIdToStringSpy).calledWith(rawOtherDid).mockReturnValue(otherDid);
 
     issuer = await mockContext.getSigningIdentity();
+    rawIssuerDid = dsMockUtils.createMockIdentityId(issuer.did);
+    when(stringToIdentityIdSpy).calledWith(issuer.did, mockContext).mockReturnValue(rawIssuerDid);
+    meshClaimToClaimKeysSpy.mockImplementation((target, claim) => [target, claim]);
   });
 
   afterEach(() => {
@@ -178,6 +175,7 @@ describe('modifyClaims procedure', () => {
   it('should return a batch of add claim transactions spec', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
+        did: signerDid,
         issuedClaims: {
           data: [
             {
@@ -235,28 +233,43 @@ describe('modifyClaims procedure', () => {
 
     jest.clearAllMocks();
 
-    dsMockUtils.createApolloQueryMock(
-      claimsQuery({
-        dids: [someDid, otherDid],
-        trustedClaimIssuers: [issuer.did],
-        includeExpired,
-      }),
-      {
-        claims: {
-          nodes: [
-            {
-              targetId: otherDid,
-              issuer,
-              issuerId: issuer.did,
-              type: ClaimTypeEnum.NoType,
-            },
-          ],
-        },
-      }
-    );
+    const claimsQueryMock = dsMockUtils.createQueryMock('identity', 'claims', {
+      multi: [issuedClaim(), issuedClaim(), issuedClaim()],
+    });
 
     result = await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
 
+    expect(claimsQueryMock.multi).toHaveBeenCalledWith([
+      [rawSomeDid, rawCddClaim],
+      [rawOtherDid, rawCddClaim],
+      [rawSomeDid, rawBuyLockupClaim],
+    ]);
+    // each claim is looked up as issued by the signer
+    const [target, claim, claimIssuer] = meshClaimToClaimKeysSpy.mock.calls[2];
+    expect(target).toBe(rawSomeDid);
+    expect(claim).toBe(rawBuyLockupClaim);
+    expect(claimIssuer).toBe(rawIssuerDid);
+
+    // a `.multi` read takes at most MAX_PAGE_SIZE keys
+    const maxPageSize = jest.replaceProperty(
+      utilsConstantsModule,
+      'MAX_PAGE_SIZE',
+      new BigNumber(2)
+    );
+    claimsQueryMock.multi.mockClear();
+    claimsQueryMock.multi
+      .mockResolvedValueOnce([issuedClaim(), issuedClaim()])
+      .mockResolvedValueOnce([issuedClaim()]);
+
+    result = await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
+
+    expect(claimsQueryMock.multi).toHaveBeenCalledTimes(2);
+    expect(claimsQueryMock.multi).toHaveBeenNthCalledWith(1, [
+      [rawSomeDid, rawCddClaim],
+      [rawOtherDid, rawCddClaim],
+    ]);
+    expect(claimsQueryMock.multi).toHaveBeenNthCalledWith(2, [[rawSomeDid, rawBuyLockupClaim]]);
+    maxPageSize.restore();
     expect(result).toEqual({
       transactions: rawAddClaimItems.map(item => ({
         transaction: addClaimTransaction,
@@ -267,6 +280,7 @@ describe('modifyClaims procedure', () => {
 
     dsMockUtils.configureMocks({
       contextOptions: {
+        did: signerDid,
         issuedClaims: {
           data: [
             {
@@ -310,6 +324,7 @@ describe('modifyClaims procedure', () => {
     const otherId = 'otherId';
     dsMockUtils.configureMocks({
       contextOptions: {
+        did: signerDid,
         issuedClaims: {
           data: [
             {
@@ -327,28 +342,6 @@ describe('modifyClaims procedure', () => {
       },
     });
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getSigningIdentity();
-
-    dsMockUtils.createApolloQueryMock(
-      claimsQuery({
-        trustedClaimIssuers: [did],
-        dids: [someDid, otherDid],
-        includeExpired,
-      }),
-      {
-        claims: {
-          nodes: [
-            {
-              targetId: otherDid,
-              issuer,
-              issuerId: issuer.did,
-              type: ClaimTypeEnum.NoType,
-            },
-            ...otherIssuerClaims,
-          ],
-        },
-      }
-    );
 
     let error;
 
@@ -389,72 +382,34 @@ describe('modifyClaims procedure', () => {
   it("should throw an error if any of the claims that will be modified weren't issued by the signing Identity", async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
 
-    dsMockUtils.createApolloQueryMock(
-      claimsQuery({
-        trustedClaimIssuers: [issuer.did],
-        dids: [someDid, otherDid],
-        includeExpired,
-      }),
-      {
-        claims: {
-          nodes: [],
-        },
-      }
-    );
-
-    dsMockUtils.createApolloQueryMock(
-      claimsQuery({
-        dids: [someDid, otherDid],
-        trustedClaimIssuers: [issuer.did],
-        includeExpired,
-      }),
-      {
-        claims: {
-          nodes: [
-            {
-              targetId: otherDid,
-              issuer,
-              issuerId: issuer.did,
-              type: ClaimTypeEnum.NoType,
-            },
-            ...otherIssuerClaims,
-          ],
-        },
-      }
-    );
+    // the claim on `otherDid` is not stored under the signing Identity
+    dsMockUtils.createQueryMock('identity', 'claims', {
+      multi: [issuedClaim(), dsMockUtils.createMockOption(), issuedClaim()],
+    });
 
     await expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit })
     ).rejects.toThrow("Attempt to edit claims that weren't issued by the signing Identity");
 
-    return expect(
-      prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
-    ).rejects.toThrow("Attempt to revoke claims that weren't issued by the signing Identity");
+    let error;
+
+    try {
+      await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe(
+      "Attempt to revoke claims that weren't issued by the signing Identity"
+    );
+    expect(error.data).toEqual({ claimsNotIssuedBySigner: [cddClaim] });
   });
 
   it('should return a batch of revoke claim transactions spec', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getSigningIdentity();
-
-    dsMockUtils.createApolloQueryMock(
-      claimsQuery({
-        trustedClaimIssuers: [did],
-        dids: [someDid, otherDid],
-        includeExpired,
-      }),
-      {
-        claims: {
-          nodes: [
-            {
-              targetId: otherDid,
-              issuer,
-              issuerId: issuer.did,
-              type: ClaimTypeEnum.NoType,
-            },
-          ],
-        },
-      }
-    );
+    dsMockUtils.createQueryMock('identity', 'claims', {
+      multi: [issuedClaim(), issuedClaim(), issuedClaim()],
+    });
 
     balanceToBigNumberSpy.mockReturnValue(new BigNumber(0));
 

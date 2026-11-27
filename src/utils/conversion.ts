@@ -23,6 +23,8 @@ import {
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
+  PalletIdentityClaim1stKey,
+  PalletIdentityClaim2ndKey,
   PalletStakingActiveEraInfo,
   PalletStakingNominations,
   PalletStakingStakingLedger,
@@ -2387,6 +2389,42 @@ export async function claimToMeshClaim(
   return context.createType('PolymeshPrimitivesIdentityClaimClaim', {
     [claim.type]: value,
   }) as unknown as PolymeshPrimitivesIdentityClaimClaim;
+}
+
+/**
+ * @hidden
+ *
+ * The keys `identity.claims` stores a claim under, when `issuer` issued it to `target`
+ */
+export function meshClaimToClaimKeys(
+  target: PolymeshPrimitivesIdentityId,
+  claim: PolymeshPrimitivesIdentityClaimClaim,
+  issuer: PolymeshPrimitivesIdentityId,
+  context: Context
+): [PalletIdentityClaim1stKey, PalletIdentityClaim2ndKey] {
+  let claimType: string | { Custom: u32 } = claim.type;
+  let scope: PolymeshPrimitivesIdentityClaimScope | null;
+
+  if (claim.isCustomerDueDiligence) {
+    scope = null;
+  } else if (claim.isJurisdiction) {
+    [, scope] = claim.asJurisdiction;
+  } else if (claim.isCustom) {
+    const [customClaimTypeId, optScope] = claim.asCustom;
+
+    claimType = { Custom: customClaimTypeId };
+    scope = optScope.unwrapOr(null);
+  } else {
+    // every other claim is its scope alone
+    scope = (claim as unknown as Record<string, PolymeshPrimitivesIdentityClaimScope>)[
+      `as${claim.type}`
+    ]!;
+  }
+
+  return [
+    context.createType('PalletIdentityClaim1stKey', { target, claimType }),
+    context.createType('PalletIdentityClaim2ndKey', { issuer, scope }),
+  ];
 }
 
 /**
@@ -4818,10 +4856,18 @@ export function middlewareSideToAssetHolder(
 ): AssetHolder {
   // a side of a leg or a movement is an Account when the middleware names one, and otherwise a
   // portfolio (`<did>/<number>`)
-  return middlewareAssetHolderToAssetHolder(
-    accountId ? { account: accountId } : portfolioIdStringToPortfolio(portfolioId!),
-    context
-  );
+  if (accountId) {
+    return middlewareAssetHolderToAssetHolder({ account: accountId }, context);
+  }
+
+  if (!portfolioId) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The middleware returned a transfer side with neither a portfolio nor an Account',
+    });
+  }
+
+  return middlewareAssetHolderToAssetHolder(portfolioIdStringToPortfolio(portfolioId), context);
 }
 
 /**
@@ -5422,7 +5468,7 @@ export function toCustomClaimTypeWithIdentity(
  *
  * Whose history a transfer is read for: an Identity's, or one of its portfolios'
  */
-interface HistoryPerspective {
+export interface HistoryPerspective {
   identityId: string;
   portfolio?: number;
 }
@@ -5474,112 +5520,98 @@ export function middlewareTransferToSettlementDirection(
 /**
  * @hidden
  *
- * A movement is a transfer between two holders of one Identity that no instruction made, so both
- *   of its sides are always there. Either side may be an Account
+ * A transfer no instruction made: a movement between two holders of one Identity, or a transfer
+ *   between Identities such as a controller transfer or a distribution payout. Both of its sides
+ *   are there, and either may be an Account
  */
-function portfolioMovementsToHistoricSettlements(
-  portfolioMovements: MiddlewareAssetTransaction[],
+export function middlewareTransferToHistoricSettlement(
+  transfer: MiddlewareAssetTransaction,
   perspective: HistoryPerspective,
   context: Context
-): HistoricSettlement[] {
-  return portfolioMovements.map(
-    ({
-      createdEvent,
-      fromIdentityId,
-      fromPortfolioId,
-      fromAccountId,
-      toIdentityId,
-      toPortfolioId,
-      toAccountId,
-      assetId,
-      amount,
-      nftIds,
-      address,
-    }) => {
-      const { blockId, hash } = createdEvent!.block!;
-      const from = middlewareSideToAssetHolder(fromPortfolioId, fromAccountId, context);
-      const to = middlewareSideToAssetHolder(toPortfolioId, toAccountId, context);
-      const direction = middlewareTransferToSettlementDirection(
-        { fromId: fromIdentityId, fromPortfolioId, toId: toIdentityId, toPortfolioId },
-        perspective
-      );
-      const id = getAssetIdFromMiddleware(assetId);
+): HistoricSettlement {
+  const {
+    createdEvent,
+    fromIdentityId,
+    fromPortfolioId,
+    fromAccountId,
+    toIdentityId,
+    toPortfolioId,
+    toAccountId,
+    assetId,
+    amount,
+    nftIds,
+    address,
+  } = transfer;
 
-      const leg: SettlementLeg = nftIds
-        ? {
-            asset: new NftCollection({ assetId: id }, context),
-            nfts: (nftIds as string[]).map(
-              nftId => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
-            ),
-            direction,
-            from,
-            to,
-          }
-        : {
-            asset: new FungibleAsset({ assetId: id }, context),
-            amount: new BigNumber(amount).shiftedBy(-6),
-            direction,
-            from,
-            to,
-          };
-
-      return {
-        blockNumber: new BigNumber(blockId),
-        blockHash: hash,
-        status: InstructionStatusEnum.Executed,
-        accounts: address ? [new Account({ address }, context)] : [],
-        legs: [leg],
-      };
-    }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const { blockId, hash } = createdEvent!.block!;
+  const from = middlewareSideToAssetHolder(fromPortfolioId, fromAccountId, context);
+  const to = middlewareSideToAssetHolder(toPortfolioId, toAccountId, context);
+  const direction = middlewareTransferToSettlementDirection(
+    { fromId: fromIdentityId, fromPortfolioId, toId: toIdentityId, toPortfolioId },
+    perspective
   );
+  const id = getAssetIdFromMiddleware(assetId);
+
+  const leg: SettlementLeg = nftIds
+    ? {
+        asset: new NftCollection({ assetId: id }, context),
+        nfts: (nftIds as string[]).map(
+          nftId => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
+        ),
+        direction,
+        from,
+        to,
+      }
+    : {
+        asset: new FungibleAsset({ assetId: id }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        direction,
+        from,
+        to,
+      };
+
+  return {
+    blockNumber: new BigNumber(blockId),
+    blockHash: hash,
+    status: InstructionStatusEnum.Executed,
+    accounts: address ? [new Account({ address }, context)] : [],
+    legs: [leg],
+  };
 }
 
 /**
  * @hidden
+ *
+ * An instruction with a leg that moves the assets of the history it is read for
  */
-export function toHistoricalSettlements(
-  settlementsResult: MiddlewareLeg[],
-  portfolioMovements: MiddlewareAssetTransaction[],
-  filter: HistoryPerspective,
+export function middlewareInstructionToHistoricSettlement(
+  instruction: MiddlewareInstruction,
+  perspective: HistoryPerspective,
   context: Context
-): HistoricSettlement[] {
-  let data: HistoricSettlement[] = [];
-  const seenInstructionIds = new Set<string>();
+): HistoricSettlement {
+  const {
+    id,
+    createdEvent,
+    status,
+    legs: { nodes: legs },
+  } = instruction;
 
-  /* eslint-disable @typescript-eslint/no-non-null-assertion */
-  settlementsResult.forEach(({ instruction }) => {
-    const {
-      id,
-      createdEvent,
-      status,
-      legs: { nodes: legs },
-    } = instruction!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const { blockId, hash } = createdEvent!.block!;
 
-    // the query returns a row per matching leg, and each carries all of its instruction's legs
-    if (seenInstructionIds.has(id)) {
-      return;
-    }
-    seenInstructionIds.add(id);
-
-    const { blockId, hash } = createdEvent!.block!;
-
-    data.push({
-      blockNumber: new BigNumber(blockId),
-      blockHash: hash,
-      status,
-      accounts: legs[0]!.addresses.map((address: string) => new Account({ address }, context)),
-      instruction: new Instruction({ id: new BigNumber(id) }, context),
-      legs: legs.map(leg => ({
-        ...middlewareLegToLeg(leg, context),
-        direction: middlewareTransferToSettlementDirection(leg, filter),
-      })),
-    });
-  });
-
-  data = [...data, ...portfolioMovementsToHistoricSettlements(portfolioMovements, filter, context)];
-  /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-  return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
+  return {
+    blockNumber: new BigNumber(blockId),
+    blockHash: hash,
+    status,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    accounts: legs[0]!.addresses.map((address: string) => new Account({ address }, context)),
+    instruction: new Instruction({ id: new BigNumber(id) }, context),
+    legs: legs.map(leg => ({
+      ...middlewareLegToLeg(leg, context),
+      direction: middlewareTransferToSettlementDirection(leg, perspective),
+    })),
+  };
 }
 
 /**

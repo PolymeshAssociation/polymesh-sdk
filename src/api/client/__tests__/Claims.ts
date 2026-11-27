@@ -108,6 +108,22 @@ describe('Claims Class', () => {
       jest.useRealTimers();
     });
 
+    it('should return an empty page without reading claims when the page has no target', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+
+      let result = await claims.getIdentitiesWithClaims({ targets: [] });
+
+      expect(result).toEqual({ data: [], next: null, count: new BigNumber(0) });
+
+      result = await claims.getIdentitiesWithClaims({
+        targets: ['someTargetDid'],
+        start: new BigNumber(1),
+      });
+
+      expect(result).toEqual({ data: [], next: null, count: new BigNumber(1) });
+      expect(context.queryMiddleware).not.toHaveBeenCalled();
+    });
+
     it('should return a list2 of Identities with claims associated to them', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
@@ -160,18 +176,23 @@ describe('Claims Class', () => {
             cddId,
           },
         ],
+        totalCount: 2,
       };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createApolloQueryMock(
-        claimsQuery({
-          dids: [targetDid],
-          trustedClaimIssuers: [issuerDid],
-          claimTypes: [ClaimTypeEnum.CustomerDueDiligence],
-          includeExpired: false,
-          scope: undefined,
-        }),
+        claimsQuery(
+          {
+            dids: [targetDid],
+            trustedClaimIssuers: [issuerDid],
+            claimTypes: [ClaimTypeEnum.CustomerDueDiligence],
+            includeExpired: false,
+            scope: undefined,
+          },
+          new BigNumber(100),
+          new BigNumber(0)
+        ),
         {
           claims: claimsQueryResponse,
         }
@@ -206,10 +227,14 @@ describe('Claims Class', () => {
           },
         },
         {
-          query: claimsQuery({
-            dids: [targetDid],
-            includeExpired: true,
-          }),
+          query: claimsQuery(
+            {
+              dids: [targetDid],
+              includeExpired: true,
+            },
+            new BigNumber(100),
+            new BigNumber(0)
+          ),
           returnData: {
             claims: claimsQueryResponse,
           },
@@ -291,18 +316,23 @@ describe('Claims Class', () => {
             },
           },
         ],
+        totalCount: 2,
       };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createApolloQueryMock(
-        claimsQuery({
-          dids: [targetDid],
-          scope: { type: 'Asset', value: '0x12341234123412341234123412341234' },
-          trustedClaimIssuers: [issuerDid],
-          claimTypes: [ClaimTypeEnum.Accredited],
-          includeExpired: false,
-        }),
+        claimsQuery(
+          {
+            dids: [targetDid],
+            scope: { type: 'Asset', value: '0x12341234123412341234123412341234' },
+            trustedClaimIssuers: [issuerDid],
+            claimTypes: [ClaimTypeEnum.Accredited],
+            includeExpired: false,
+          },
+          new BigNumber(100),
+          new BigNumber(0)
+        ),
         {
           claims: claimsQueryResponse,
         }
@@ -671,6 +701,18 @@ describe('Claims Class', () => {
       jest.restoreAllMocks();
     });
 
+    it('should return an empty page without reading claims when the page has no issuer', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+
+      const result = await claims.getTargetingClaims({
+        target: 'someDid',
+        trustedClaimIssuers: [],
+      });
+
+      expect(result).toEqual({ data: [], next: null, count: new BigNumber(0) });
+      expect(context.queryMiddleware).not.toHaveBeenCalled();
+    });
+
     it('should return a list of claims issued with an Identity as target', async () => {
       const did = 'someDid';
       const issuerDid = 'someIssuerDid';
@@ -709,6 +751,7 @@ describe('Claims Class', () => {
             type: ClaimTypeEnum.CustomerDueDiligence,
           },
         ],
+        totalCount: 1,
       };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
@@ -718,12 +761,16 @@ describe('Claims Class', () => {
         .mockReturnValue(fakeClaims);
 
       dsMockUtils.createApolloQueryMock(
-        claimsQuery({
-          dids: [did],
-          scope,
-          trustedClaimIssuers: [issuerDid],
-          includeExpired: false,
-        }),
+        claimsQuery(
+          {
+            dids: [did],
+            scope,
+            trustedClaimIssuers: [issuerDid],
+            includeExpired: false,
+          },
+          new BigNumber(100),
+          new BigNumber(0)
+        ),
         {
           claims: claimsQueryResponse,
         }
@@ -763,11 +810,15 @@ describe('Claims Class', () => {
           },
         },
         {
-          query: claimsQuery({
-            dids: ['someDid'],
-            trustedClaimIssuers: [issuerDid],
-            includeExpired: true,
-          }),
+          query: claimsQuery(
+            {
+              dids: ['someDid'],
+              trustedClaimIssuers: [issuerDid],
+              includeExpired: true,
+            },
+            new BigNumber(100),
+            new BigNumber(0)
+          ),
           returnData: {
             claims: claimsQueryResponse,
           },

@@ -35,11 +35,16 @@ describe('assetAgentHistoryQuery', () => {
       assetId: 'SOME_TICKER',
     };
 
-    const result = assetAgentHistoryQuery(variables);
+    let result = assetAgentHistoryQuery(variables);
 
     expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-    expect(print(result.query)).toContain('orderBy: [CREATED_EVENT_ID_ASC]');
+    expect(result.variables).toEqual({ ...variables, size: DEFAULT_GQL_PAGE_SIZE, start: 0 });
+    expect(print(result.query)).toContain('orderBy: [CREATED_EVENT_ID_ASC, ID_ASC]');
+    expect(print(result.query)).toContain('totalCount');
+
+    result = assetAgentHistoryQuery(variables, new BigNumber(100), new BigNumber(200));
+
+    expect(result.variables).toEqual({ ...variables, size: 100, start: 200 });
   });
 });
 

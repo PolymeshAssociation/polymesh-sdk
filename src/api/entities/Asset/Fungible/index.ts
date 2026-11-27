@@ -56,6 +56,7 @@ import {
   getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   optionize,
+  queryAllMiddlewarePages,
   requestPaginated,
 } from '~/utils/internal';
 
@@ -256,14 +257,10 @@ export class FungibleAsset extends BaseAsset {
 
     const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
 
-    const {
-      data: {
-        assetAgentHistories: { nodes },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'assetAgentHistories'>>(
-      assetAgentHistoryQuery({
-        assetId: middlewareAssetId,
-      })
+    const nodes = await queryAllMiddlewarePages(
+      context,
+      (size, start) => assetAgentHistoryQuery({ assetId: middlewareAssetId }, size, start),
+      'assetAgentHistories'
     );
 
     const groupedData = groupBy(nodes, 'identityId');

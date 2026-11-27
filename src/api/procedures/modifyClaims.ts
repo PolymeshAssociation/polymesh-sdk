@@ -3,11 +3,9 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
-import { groupBy } from 'lodash';
+import { chunk } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { claimsQuery } from '~/middleware/queries/claims';
-import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
   CddClaim,
   Claim,
@@ -21,34 +19,49 @@ import {
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { Ensured, tuple } from '~/types/utils';
-import { DEFAULT_CDD_ID } from '~/utils/constants';
+import { tuple } from '~/types/utils';
+import { DEFAULT_CDD_ID, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   claimToMeshClaim,
   dateToMoment,
+  meshClaimToClaimKeys,
   signerToString,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { areSameClaims, asIdentity, assembleBatchTransactions } from '~/utils/internal';
+import { asIdentity, assembleBatchTransactions } from '~/utils/internal';
 
-const findClaimsByOtherIssuers = (
+/**
+ * @hidden
+ *
+ * Return the claims the signing Identity has not issued to their targets. Each is looked up on
+ * chain under the keys it is stored by, so a claim by another issuer, or no claim at all, is missing
+ */
+const findClaimsNotIssuedBySigner = async (
   claims: ClaimTarget[],
-  claimsByDid: Record<string, MiddlewareClaim[]>,
-  signerDid: string
-): Claim[] => {
-  return claims.reduce<Claim[]>((prev, { target, claim }) => {
-    const targetClaims = claimsByDid[signerToString(target)] ?? [];
+  modifyClaimArgs: [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityClaimClaim, unknown][],
+  context: Context
+): Promise<Claim[]> => {
+  const {
+    polymeshApi: {
+      query: { identity },
+    },
+  } = context;
 
-    const claimIssuedByOtherDids = targetClaims.some(
-      targetClaim => areSameClaims(claim, targetClaim) && targetClaim.issuerId !== signerDid
-    );
+  const { did: signerDid } = await context.getSigningIdentity();
+  const rawSignerDid = stringToIdentityId(signerDid, context);
 
-    if (claimIssuedByOtherDids) {
-      return [...prev, claim];
-    }
+  const keys = modifyClaimArgs.map(([rawTarget, rawClaim]) =>
+    meshClaimToClaimKeys(rawTarget, rawClaim, rawSignerDid, context)
+  );
 
-    return prev;
-  }, []);
+  // a `.multi` read takes at most MAX_PAGE_SIZE keys
+  const issuedClaims = (
+    await Promise.all(
+      chunk(keys, MAX_PAGE_SIZE.toNumber()).map(keyChunk => identity.claims.multi(keyChunk))
+    )
+  ).flat();
+
+  return claims.filter((_, index) => issuedClaims[index]!.isNone).map(({ claim }) => claim);
 };
 
 /**
@@ -143,10 +156,7 @@ export async function prepareModifyClaims(
 
   allTargets = [...new Set(allTargets)];
 
-  const [nonExistentDids, middlewareAvailable] = await Promise.all([
-    context.getInvalidDids(allTargets),
-    context.isMiddlewareAvailable(),
-  ]);
+  const nonExistentDids = await context.getInvalidDids(allTargets);
 
   if (nonExistentDids.length) {
     throw new PolymeshError({
@@ -158,36 +168,20 @@ export async function prepareModifyClaims(
     });
   }
 
-  const shouldValidateWithMiddleware = operation !== ClaimOperation.Add && middlewareAvailable;
-
-  // skip validation if the middleware is unavailable
-  if (shouldValidateWithMiddleware) {
-    const { did: currentDid } = await context.getSigningIdentity();
-
-    const result = await context.queryMiddleware<Ensured<Query, 'claims'>>(
-      claimsQuery({
-        dids: allTargets,
-        trustedClaimIssuers: [currentDid],
-        includeExpired: true,
-      })
+  // only the issuer of a claim can edit or revoke it
+  if (operation !== ClaimOperation.Add) {
+    const claimsNotIssuedBySigner = await findClaimsNotIssuedBySigner(
+      claims,
+      modifyClaimArgs,
+      context
     );
 
-    const {
-      data: {
-        claims: { nodes: claimsData },
-      },
-    } = result;
-
-    const claimsByDid = groupBy(claimsData, 'targetId');
-
-    const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid, currentDid);
-
-    if (claimsByOtherIssuers.length) {
+    if (claimsNotIssuedBySigner.length) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the signing Identity`,
         data: {
-          claimsByOtherIssuers,
+          claimsNotIssuedBySigner,
         },
       });
     }

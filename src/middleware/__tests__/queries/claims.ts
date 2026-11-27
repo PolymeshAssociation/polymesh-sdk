@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { print } from 'graphql';
 
 import {
   claimsGroupingQuery,
@@ -94,10 +95,15 @@ describe('trustingAssetsQuery', () => {
       issuer: 'someDid',
     };
 
-    const result = trustingAssetsQuery(variables);
+    let result = trustingAssetsQuery(variables);
 
     expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.variables).toEqual({ ...variables, size: DEFAULT_GQL_PAGE_SIZE, start: 0 });
+    expect(print(result.query)).toContain('totalCount');
+
+    result = trustingAssetsQuery(variables, new BigNumber(100), new BigNumber(200));
+
+    expect(result.variables).toEqual({ ...variables, size: 100, start: 200 });
   });
 });
 

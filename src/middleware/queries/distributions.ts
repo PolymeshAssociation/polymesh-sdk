@@ -15,6 +15,8 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * @hidden
  *
  * Get distribution details for a CAId
+ *
+ * @note a distribution is one row, so the read needs no paging
  */
 export function distributionQuery(
   variables: QueryArgs<Distribution, 'assetId' | 'localId'>
@@ -45,8 +47,12 @@ export function distributionPaymentsQuery(
   size?: BigNumber,
   start?: BigNumber,
   orderBy?: DistributionPaymentsOrderBy | DistributionPaymentsOrderBy[]
-): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
-  const { args, filter } = createArgsAndFilters(filters, {});
+): QueryOptions<
+  PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId' | 'reclaimed'>>
+> {
+  // a reclaim is stored as a payment to the agent who took back what remained, but it pays no holder
+  const paymentFilters = { ...filters, reclaimed: false };
+  const { args, filter } = createArgsAndFilters(paymentFilters, { reclaimed: 'Boolean' });
 
   // `id` is `<block>/<event index>`, zero padded: chronological, and unique
   const ordering = orderByClause(orderBy, [DistributionPaymentsOrderBy.IdAsc]);
@@ -76,6 +82,6 @@ export function distributionPaymentsQuery(
 
   return {
     query,
-    variables: { ...filters, ...getSizeAndOffset(size, start) },
+    variables: { ...paymentFilters, ...getSizeAndOffset(size, start) },
   };
 }

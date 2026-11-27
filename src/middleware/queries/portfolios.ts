@@ -1,16 +1,19 @@
 import { DocumentNode, QueryOptions } from '@apollo/client/core';
+import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { eventIdentifierFields } from '~/middleware/queries/common';
+import { eventIdentifierFields, getSizeAndOffset } from '~/middleware/queries/common';
 import { QuerySettlementFilters } from '~/middleware/queries/settlements';
 import { AssetTransactionsOrderBy, Portfolio } from '~/middleware/types';
-import { QueryArgs } from '~/types/utils';
+import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 import { portfolioToMiddlewarePortfolioId } from '~/utils/conversion';
 
 /**
  * @hidden
  *
  * Get portfolio details for a given DID and portfolio number
+ *
+ * @note a portfolio is one row, so the read needs no paging
  */
 export function portfolioQuery(
   variables: QueryArgs<Portfolio, 'identityId' | 'number'>
@@ -51,7 +54,7 @@ function createPortfolioMovementFilters(
   filter: string;
   variables: PortfolioMovementVariables;
 } {
-  const args: string[] = ['$from: String!, $to: String!'];
+  const args: string[] = ['$from: String!, $to: String!, $size: Int, $start: Int'];
 
   const fromIdFilters = queryAll
     ? ['fromIdentityId: { equalTo: $from }']
@@ -80,9 +83,15 @@ function createPortfolioMovementFilters(
 
   return {
     args: `(${args.join()})`,
-    // a settlement between one Identity's holders is also an internal transfer, but it is read
-    // through its instruction's legs, so only movements outside an instruction are kept
-    filter: `filter: { isInternalTransfer: { equalTo: true }, instructionId: { isNull: true }, or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`,
+    /*
+     * transfers no instruction made: movements between one Identity's holders, and transfers
+     * between Identities such as a controller transfer or a distribution payout. A settlement is read
+     * through its instruction's legs instead. An issuance or a redemption has one side only, so it
+     * is not a transfer between holders. A side is tested for a holder (a portfolio or an Account),
+     * not for an Identity: an Account side keeps no Identity when the middleware doesn't know it.
+     * A filter can't hold two `or` keys, so the second sits inside the `and`
+     */
+    filter: `filter: { instructionId: { isNull: true }, or: [ { fromPortfolioId: { isNull: false } }, { fromAccountId: { isNull: false } } ], and: [ { or: [ { toPortfolioId: { isNull: false } }, { toAccountId: { isNull: false } } ] }, { or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] } ] }`,
     variables,
   };
 }
@@ -91,6 +100,7 @@ function createPortfolioMovementFilters(
  * @hidden
  */
 function buildPortfolioMovementsQuery(args: string, filter: string): DocumentNode {
+  // an event makes one transfer, so the transfers are in a total order
   const orderBy = `${AssetTransactionsOrderBy.CreatedEventIdAsc}`;
 
   return gql`
@@ -100,7 +110,10 @@ function buildPortfolioMovementsQuery(args: string, filter: string): DocumentNod
     assetTransactions(
       ${filter}
       orderBy: [${orderBy}]
+      first: $size
+      offset: $start
     ) {
+      totalCount
       nodes {
         id
         fromIdentityId
@@ -126,33 +139,37 @@ function buildPortfolioMovementsQuery(args: string, filter: string): DocumentNod
 /**
  * @hidden
  *
- * Get the movements between portfolios of one Identity where a Portfolio is involved
+ * Get the transfers no instruction made, into or out of a Portfolio
  */
 export function portfolioMovementsQuery(
-  filters: QuerySettlementFilters
-): QueryOptions<PortfolioMovementVariables> {
+  filters: QuerySettlementFilters,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<PortfolioMovementVariables>> {
   const { args, filter, variables } = createPortfolioMovementFilters(filters);
   const query = buildPortfolioMovementsQuery(args, filter);
 
   return {
     query,
-    variables,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }
 
 /**
  * @hidden
  *
- * Get the movements between portfolios of an Identity
+ * Get the transfers no instruction made, into or out of any of an Identity's holders
  */
 export function portfoliosMovementsQuery(
-  filters: Omit<QuerySettlementFilters, 'portfolioId'>
-): QueryOptions<PortfolioMovementVariables> {
+  filters: Omit<QuerySettlementFilters, 'portfolioId'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<PortfolioMovementVariables>> {
   const { args, filter, variables } = createPortfolioMovementFilters(filters, true);
   const query = buildPortfolioMovementsQuery(args, filter);
 
   return {
     query,
-    variables,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }

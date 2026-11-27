@@ -16,6 +16,8 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * @hidden
  *
  * Get a transaction by hash
+ *
+ * @note a hash names one extrinsic, so the read needs no paging
  */
 export function extrinsicByHash(
   variables: QueryArgs<Extrinsic, 'extrinsicHash'>

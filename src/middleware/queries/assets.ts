@@ -23,6 +23,8 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * @hidden
  *
  * Get Asset details for a given ticker
+ *
+ * @note an Asset is one row, so the read needs no paging
  */
 export function assetQuery(
   variables: QueryArgs<Asset, 'id'>

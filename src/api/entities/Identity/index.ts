@@ -28,7 +28,7 @@ import {
 } from '~/internal';
 import { assetHoldersQuery, heldNftsQuery, nftHoldersQuery } from '~/middleware/queries/assets';
 import { trustingAssetsQuery } from '~/middleware/queries/claims';
-import { historicalInstructionsQuery } from '~/middleware/queries/settlements';
+import { historicalInstructionsQuery, withAllLegs } from '~/middleware/queries/settlements';
 import { AssetHoldersOrderBy, Query } from '~/middleware/types';
 import {
   Asset,
@@ -90,6 +90,7 @@ import {
   getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   getSecondaryAccountPermissions,
+  queryAllMiddlewarePages,
   requestPaginated,
 } from '~/utils/internal';
 
@@ -585,6 +586,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @param opts.collection - the NFT collection, or its Asset ID or ticker
    *
+   * @throws if the Asset ID or ticker names an Asset that is not an NFT collection
+   *
    * @note uses the middlewareV2
    * @note supports pagination
    */
@@ -596,6 +599,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const middlewareAssetId = await getAssetIdForMiddleware(collection, context);
     const assetId = getAssetIdFromMiddleware(middlewareAssetId);
+
+    // an Asset ID or ticker can name a fungible Asset, which would read as holding no NFTs
+    if (!(collection instanceof NftCollection)) {
+      const isCollection = await new NftCollection({ assetId }, context).exists();
+
+      if (!isCollection) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The Asset is not an NFT collection',
+          data: { assetId },
+        });
+      }
+    }
 
     const {
       data: {
@@ -649,12 +665,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getTrustingAssets(): Promise<(FungibleAsset | NftCollection)[]> {
     const { context, did } = this;
 
-    const {
-      data: {
-        trustedClaimIssuers: { nodes },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'trustedClaimIssuers'>>(
-      trustingAssetsQuery({ issuer: did })
+    const nodes = await queryAllMiddlewarePages(
+      context,
+      (size, start) => trustingAssetsQuery({ issuer: did }, size, start),
+      'trustedClaimIssuers'
     );
 
     return nodes.map(({ asset }) => {
@@ -1144,9 +1158,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const {
       data: {
-        instructions: { nodes: instructionsResult, totalCount },
+        instructions: { nodes, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(query);
+
+    const instructionsResult = await withAllLegs(nodes, context);
 
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, instructionsResult.length, filter?.start);

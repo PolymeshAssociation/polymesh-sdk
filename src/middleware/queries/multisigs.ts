@@ -20,6 +20,8 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * @hidden
  *
  * Get MultiSig proposal details for a given MultiSig address and portfolio ID
+ *
+ * @note a proposal is one row, so the read needs no paging
  */
 export function multiSigProposalQuery(
   variables: QueryArgs<MultiSigProposal, 'multisigId' | 'proposalId'>
@@ -68,6 +70,8 @@ export function multiSigProposalQuery(
 export function multiSigProposalVotesQuery(
   variables: QueryArgs<MultiSigProposalVote, 'proposalId'>
 ): QueryOptions<QueryArgs<MultiSigProposalVote, 'proposalId'>> {
+  // a signer votes once on a proposal and a MultiSig has at most 50 signers, so the votes fit in
+  // one middleware page
   const orderBy = `${MultiSigProposalVotesOrderBy.CreatedEventIdAsc}`;
 
   const query = gql`

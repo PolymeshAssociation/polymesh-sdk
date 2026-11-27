@@ -170,7 +170,7 @@ describe('Venue class', () => {
 
       const instructionsResponse = {
         totalCount: 5,
-        nodes: ['instructions'],
+        nodes: [{ id: '1', legs: { nodes: [], totalCount: 0 } }],
       };
 
       dsMockUtils.createApolloQueryMock(

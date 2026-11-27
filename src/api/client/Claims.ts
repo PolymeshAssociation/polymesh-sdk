@@ -47,7 +47,12 @@ import {
   toIdentityWithClaimsArray,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, getDid } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getDid,
+  queryAllMiddlewarePages,
+} from '~/utils/internal';
 
 /**
  * Handles all Claims related functionality
@@ -128,6 +133,8 @@ export class Claims {
 
   /**
    * Edit claims associated to Identities (only the expiry date can be modified)
+   *
+   * @note a claim can only be edited by the Identity that issued it
    *
    * @note required roles:
    *   - DID Registrar: if there is at least one CDD claim in the arguments
@@ -239,15 +246,17 @@ export class Claims {
     targetIssuers.sort((a, b) => a.localeCompare(b));
     targetIssuers = targetIssuers.slice(start.toNumber(), size.plus(start).toNumber());
 
-    const {
-      data: {
-        claims: { nodes },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
-      claimsQuery({
-        dids: targetIssuers,
-        ...filters,
-      })
+    // a page of targets can hold any number of claims. An empty page must not be queried: with no
+    // `dids`, claimsQuery drops the target filter and would read every claim
+    if (!targetIssuers.length) {
+      return { data: [], next: null, count };
+    }
+
+    const nodes = await queryAllMiddlewarePages(
+      context,
+      (claimsSize, claimsStart) =>
+        claimsQuery({ dids: targetIssuers, ...filters }, claimsSize, claimsStart),
+      'claims'
     );
 
     const data = toIdentityWithClaimsArray(nodes, context, 'targetId');
@@ -470,15 +479,17 @@ export class Claims {
       claimIssuers.sort((a, b) => a.localeCompare(b));
       claimIssuers = claimIssuers.slice(start.toNumber(), size.plus(start).toNumber());
 
-      const {
-        data: {
-          claims: { nodes },
-        },
-      } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
-        claimsQuery({
-          trustedClaimIssuers: claimIssuers,
-          ...filters,
-        })
+      // a page of issuers can hold any number of claims. An empty page must not be queried: with no
+      // issuers, claimsQuery drops the issuer filter and would read every issuer's claims
+      if (!claimIssuers.length) {
+        return { data: [], next: null, count };
+      }
+
+      const nodes = await queryAllMiddlewarePages(
+        context,
+        (claimsSize, claimsStart) =>
+          claimsQuery({ trustedClaimIssuers: claimIssuers, ...filters }, claimsSize, claimsStart),
+        'claims'
       );
 
       const data = toIdentityWithClaimsArray(nodes, context, 'issuerId');
