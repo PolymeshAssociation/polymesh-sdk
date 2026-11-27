@@ -292,18 +292,21 @@ export async function queryMiddlewarePages<Key extends keyof Query>(
 ): Promise<{ nodes: MiddlewareNode<Key>[]; totalCount: number }> {
   const size = limit ? BigNumber.min(limit, MAX_MIDDLEWARE_PAGE_SIZE) : MAX_MIDDLEWARE_PAGE_SIZE;
 
+  const readPage = async (start: BigNumber): Promise<Connection<MiddlewareNode<Key>>> => {
+    const { data } = await context.queryMiddleware<Ensured<Query, Key>>(
+      buildQuery(size, start) as QueryOptions<OperationVariables, Ensured<Query, Key>>
+    );
+
+    return data[connectionKey] as unknown as Connection<MiddlewareNode<Key>>;
+  };
+
   const nodes: MiddlewareNode<Key>[] = [];
   let totalCount = 0;
   let end = new BigNumber(Infinity);
 
   while (end.gt(nodes.length)) {
-    const { data } = await context.queryMiddleware<Ensured<Query, Key>>(
-      buildQuery(size, new BigNumber(nodes.length)) as QueryOptions<
-        OperationVariables,
-        Ensured<Query, Key>
-      >
-    );
-    const page = data[connectionKey] as unknown as Connection<MiddlewareNode<Key>>;
+    // each request starts where the rows read so far end, so the requests can't run in parallel
+    const page = await readPage(new BigNumber(nodes.length)); // NOSONAR
 
     totalCount = page.totalCount;
     end = limit ? BigNumber.min(limit, totalCount) : new BigNumber(totalCount);
