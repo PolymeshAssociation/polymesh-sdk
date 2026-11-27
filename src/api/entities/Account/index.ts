@@ -21,6 +21,7 @@ import {
   EvmAddressType,
   HistoricPolyxTransaction,
 } from '~/api/entities/Account/types';
+import { getSettlementHistory } from '~/api/entities/common/settlementHistory';
 import { Subsidies } from '~/api/entities/Subsidies';
 import {
   Authorizations,
@@ -36,6 +37,8 @@ import {
   Staking,
 } from '~/internal';
 import { extrinsicsByArgs } from '~/middleware/queries/extrinsics';
+import { accountTransfersQuery } from '~/middleware/queries/portfolios';
+import { accountSettlementsQuery } from '~/middleware/queries/settlements';
 import { ExtrinsicsOrderBy, PolyxEntriesOrderBy, Query } from '~/middleware/types';
 import {
   AccountBalance,
@@ -45,6 +48,7 @@ import {
   CheckPermissionsResult,
   ErrorCode,
   ExtrinsicData,
+  HistoricSettlement,
   MiddlewarePaginationOptions,
   MultiSigTx,
   NftOperatorApproval,
@@ -95,6 +99,7 @@ import {
   assertAddressValid,
   balanceEntriesByAssetId,
   calculateNextKey,
+  getAssetIdForMiddleware,
   getIdentityFromKeyRecord,
   getSecondaryAccountPermissions,
   requestMulti,
@@ -685,6 +690,51 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       accounts: [this],
       ...filters,
     });
+  }
+
+  /**
+   * Retrieve, oldest first, the settlements and transfers that sent assets from or to this Account
+   *   as a holder: the instructions with a leg that moves its assets, and the transfers no
+   *   instruction made, such as a `settlement.transferFunds` between holders of its Identity. Each
+   *   leg's direction is seen from this Account
+   *
+   * @param filters.ticker - ticker involved in the transaction
+   * @param filters.assetId - Asset ID to filter by (overrides ticker if both provided)
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination. A later page takes more middleware requests than an earlier one
+   * @note this is the Account as a holder of assets. `getTransactionHistory` lists the extrinsics
+   *   it signed
+   */
+  public async getAssetTransactions(
+    filters: MiddlewarePaginationOptions & {
+      ticker?: string;
+      assetId?: string;
+    } = {}
+  ): Promise<ResultSet<HistoricSettlement>> {
+    const { context, address } = this;
+    const { ticker, assetId, size, start } = filters;
+
+    const assetIdValue = assetId ?? ticker;
+    const middlewareAssetId = assetIdValue
+      ? await getAssetIdForMiddleware(assetIdValue, context)
+      : undefined;
+
+    const queryFilters = { accountId: address, assetId: middlewareAssetId };
+
+    return getSettlementHistory(
+      context,
+      {
+        instructions: (pageSize, pageStart) =>
+          accountSettlementsQuery(queryFilters, pageSize, pageStart),
+        transfers: (pageSize, pageStart) =>
+          accountTransfersQuery(queryFilters, pageSize, pageStart),
+      },
+      { account: address },
+      { size, start }
+    );
   }
 
   /**

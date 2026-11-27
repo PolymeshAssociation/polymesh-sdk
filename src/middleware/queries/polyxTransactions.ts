@@ -93,6 +93,11 @@ export function polyxTransactionsQuery(
           amountAbs
           kind
           direction
+          movementId
+          holdReason
+          freeAfter
+          reservedAfter
+          frozenAfter
           memo
           moduleId
           callId

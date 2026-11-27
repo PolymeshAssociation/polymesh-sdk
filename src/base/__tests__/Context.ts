@@ -17,6 +17,7 @@ import {
   ClaimTypeEnum,
   EntryDirection,
   EventIdEnum,
+  HoldReason,
   ModuleIdEnum,
   MovementKind,
   PolyxEntriesOrderBy,
@@ -2513,6 +2514,13 @@ describe('Context class', () => {
           counterpartyAccount: undefined,
           counterpartyIdentity: undefined,
           memo: 'someMemo',
+          movementId: '0000000123/0000000000',
+          holdReason: undefined,
+          balanceAfter: {
+            free: new BigNumber(997000).shiftedBy(-6),
+            reserved: new BigNumber(0),
+            frozen: new BigNumber(0),
+          },
         }),
         expect.objectContaining({
           callId: undefined,
@@ -2532,6 +2540,13 @@ describe('Context class', () => {
           counterpartyAccount: expect.objectContaining({ address: 'otherAddress' }),
           counterpartyIdentity: expect.objectContaining({ did: 'otherDid' }),
           memo: undefined,
+          movementId: '0000000124/0000000001',
+          holdReason: HoldReason.Staking,
+          balanceAfter: {
+            free: new BigNumber(1000000).shiftedBy(-6),
+            reserved: new BigNumber(876023429).shiftedBy(-6),
+            frozen: new BigNumber(500).shiftedBy(-6),
+          },
         }),
       ];
       const transactionsQueryResponse = {
@@ -2561,6 +2576,11 @@ describe('Context class', () => {
             counterpartyAddress: null,
             counterpartyIdentityId: null,
             memo: 'someMemo',
+            movementId: '0000000123/0000000000',
+            holdReason: null,
+            freeAfter: '997000',
+            reservedAfter: '0',
+            frozenAfter: '0',
           },
           {
             // an entry with no extrinsic, such as one made by a block hook, has no module or call
@@ -2585,6 +2605,11 @@ describe('Context class', () => {
             counterpartyAddress: 'otherAddress',
             counterpartyIdentityId: 'otherDid',
             memo: null,
+            movementId: '0000000124/0000000001',
+            holdReason: HoldReason.Staking,
+            freeAfter: '1000000',
+            reservedAfter: '876023429',
+            frozenAfter: '500',
           },
         ],
       };

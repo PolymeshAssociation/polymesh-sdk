@@ -204,6 +204,7 @@ import {
   AssetStat,
   Authorization,
   AuthorizationType,
+  BaseHistoricAssetTransaction,
   Claim,
   ClaimBalanceStatInput,
   ClaimCountRestrictionValue,
@@ -4839,6 +4840,27 @@ export function portfolioToMiddlewarePortfolioId(
 
 /**
  * @hidden
+ *
+ * The middleware column a holder is stored under: a portfolio by `<did>/<number>`, an Account by
+ *   its address
+ */
+export function assetHolderLikeToMiddlewareHolder(
+  value: AssetHolderLike,
+  context: Context
+): { portfolioId: string } | { accountId: string } {
+  const holder = assetHolderLikeToAssetHolder(value, context);
+
+  if (holder instanceof Account) {
+    return { accountId: holder.address };
+  }
+
+  const { did, number } = portfolioToPortfolioId(holder);
+
+  return { portfolioId: portfolioToMiddlewarePortfolioId(did, number) };
+}
+
+/**
+ * @hidden
  */
 export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
   const [identityId, number] = id.split('/');
@@ -5466,12 +5488,12 @@ export function toCustomClaimTypeWithIdentity(
 /**
  * @hidden
  *
- * Whose history a transfer is read for: an Identity's, or one of its portfolios'
+ * Whose history a transfer is read for: an Identity's, one of its portfolios', or an Account
+ *   holder's
  */
-export interface HistoryPerspective {
-  identityId: string;
-  portfolio?: number;
-}
+export type HistoryPerspective =
+  | { identityId: string; portfolio?: number; account?: undefined }
+  | { account: string; identityId?: undefined; portfolio?: undefined };
 
 /**
  * @hidden
@@ -5485,12 +5507,27 @@ export function middlewareTransferToSettlementDirection(
   sides: {
     fromId?: string | null | undefined;
     fromPortfolioId?: string | null | undefined;
+    fromAccountId?: string | null | undefined;
     toId?: string | null | undefined;
     toPortfolioId?: string | null | undefined;
+    toAccountId?: string | null | undefined;
   },
-  { identityId, portfolio }: HistoryPerspective
+  perspective: HistoryPerspective
 ): SettlementDirectionEnum {
-  const { fromId, fromPortfolioId, toId, toPortfolioId } = sides;
+  const { fromId, fromPortfolioId, fromAccountId, toId, toPortfolioId, toAccountId } = sides;
+
+  // an Account's history reports what left or entered that Account
+  if (perspective.account !== undefined) {
+    if (fromAccountId === perspective.account) {
+      return SettlementDirectionEnum.Outgoing;
+    }
+    if (toAccountId === perspective.account) {
+      return SettlementDirectionEnum.Incoming;
+    }
+    return SettlementDirectionEnum.None;
+  }
+
+  const { identityId, portfolio } = perspective;
 
   // 0 is the default portfolio, so only an absent portfolio means the Identity's history
   if (portfolio !== undefined) {
@@ -5520,6 +5557,64 @@ export function middlewareTransferToSettlementDirection(
 /**
  * @hidden
  *
+ * The fields an Asset's transaction has whether the Asset is fungible or an NFT collection
+ */
+export function middlewareAssetTransactionToHistoricTransaction(
+  transaction: MiddlewareAssetTransaction,
+  context: Context
+): BaseHistoricAssetTransaction {
+  const {
+    fromPortfolioId,
+    fromAccountId,
+    fromIdentityId,
+    toPortfolioId,
+    toAccountId,
+    toIdentityId,
+    isInternalTransfer,
+    memo,
+    createdEvent,
+    eventId,
+    fundingRound,
+    instructionId,
+    instructionMemo,
+  } = transaction;
+
+  const toPortfolio = (
+    id: string | null | undefined
+  ): DefaultPortfolio | NumberedPortfolio | null =>
+    id ? middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(id), context) : null;
+  const toAccount = (address: string | null | undefined): Account | null =>
+    address ? new Account({ address }, context) : null;
+  const toIdentity = (did: string | null | undefined): Identity | null =>
+    did ? new Identity({ did }, context) : null;
+
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  return {
+    event: eventId,
+    from: toPortfolio(fromPortfolioId),
+    fromAccount: toAccount(fromAccountId),
+    fromIdentity: toIdentity(fromIdentityId),
+    to: toPortfolio(toPortfolioId),
+    toAccount: toAccount(toAccountId),
+    toIdentity: toIdentity(toIdentityId),
+    isInternalTransfer: isInternalTransfer ?? null,
+    memo: memo ?? undefined,
+    fundingRound,
+    instructionId: instructionId ? new BigNumber(instructionId) : undefined,
+    instructionMemo,
+    // an event emitted outside any extrinsic, such as at the start of a block, has none
+    extrinsicIndex:
+      createdEvent!.extrinsicIdx === null || createdEvent!.extrinsicIdx === undefined
+        ? null
+        : new BigNumber(createdEvent!.extrinsicIdx),
+    ...middlewareEventToEventIdentifier(createdEvent!),
+  };
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
+}
+
+/**
+ * @hidden
+ *
  * A transfer no instruction made: a movement between two holders of one Identity, or a transfer
  *   between Identities such as a controller transfer or a distribution payout. Both of its sides
  *   are there, and either may be an Account
@@ -5541,6 +5636,7 @@ export function middlewareTransferToHistoricSettlement(
     amount,
     nftIds,
     address,
+    memo,
   } = transfer;
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -5548,7 +5644,14 @@ export function middlewareTransferToHistoricSettlement(
   const from = middlewareSideToAssetHolder(fromPortfolioId, fromAccountId, context);
   const to = middlewareSideToAssetHolder(toPortfolioId, toAccountId, context);
   const direction = middlewareTransferToSettlementDirection(
-    { fromId: fromIdentityId, fromPortfolioId, toId: toIdentityId, toPortfolioId },
+    {
+      fromId: fromIdentityId,
+      fromPortfolioId,
+      fromAccountId,
+      toId: toIdentityId,
+      toPortfolioId,
+      toAccountId,
+    },
     perspective
   );
   const id = getAssetIdFromMiddleware(assetId);
@@ -5577,6 +5680,7 @@ export function middlewareTransferToHistoricSettlement(
     status: InstructionStatusEnum.Executed,
     accounts: address ? [new Account({ address }, context)] : [],
     legs: [leg],
+    ...(memo ? { memo } : {}),
   };
 }
 
@@ -5594,6 +5698,7 @@ export function middlewareInstructionToHistoricSettlement(
     id,
     createdEvent,
     status,
+    memo,
     legs: { nodes: legs },
   } = instruction;
 
@@ -5611,6 +5716,7 @@ export function middlewareInstructionToHistoricSettlement(
       ...middlewareLegToLeg(leg, context),
       direction: middlewareTransferToSettlementDirection(leg, perspective),
     })),
+    ...(memo ? { memo } : {}),
   };
 }
 

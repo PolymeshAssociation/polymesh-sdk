@@ -985,6 +985,32 @@ describe('Fungible class', () => {
       expect(result.count).toEqual(transactionResponse.totalCount);
       expect(result.next).toEqual(new BigNumber(3));
     });
+
+    it('should read only the transactions of a holder and an Identity', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ assetId }, context);
+      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+
+      dsMockUtils.createApolloQueryMock(
+        assetTransactionQuery(
+          { assetId, holder: { accountId: 'someAddress' }, identityId: 'someDid' },
+          new BigNumber(25),
+          new BigNumber(0)
+        ),
+        { assetTransactions: { totalCount: 0, nodes: [] } }
+      );
+
+      const result = await asset.getTransactionHistory({
+        holder: entityMockUtils.getAccountInstance({ address: 'someAddress' }),
+        identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+        size: new BigNumber(25),
+        start: new BigNumber(0),
+      });
+
+      expect(result.data).toEqual([]);
+      expect(result.count).toEqual(new BigNumber(0));
+    });
   });
 
   describe('method: exists', () => {

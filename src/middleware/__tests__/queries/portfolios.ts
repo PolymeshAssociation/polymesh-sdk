@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import { print } from 'graphql';
 
 import {
+  accountTransfersQuery,
   portfolioMovementsQuery,
   portfolioQuery,
   portfoliosMovementsQuery,
@@ -85,5 +86,20 @@ describe('portfoliosMovementsQuery', () => {
     ['fromIdentityId', 'fromAccountId', 'toIdentityId', 'toAccountId'].forEach(field =>
       expect(printed).toContain(field)
     );
+  });
+});
+
+describe('accountTransfersQuery', () => {
+  it('should match an Account holder on either side', () => {
+    const result = accountTransfersQuery({ accountId: 'someAddress' });
+
+    expect(result.variables).toEqual({
+      from: 'someAddress',
+      to: 'someAddress',
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
+    });
+    expect(print(result.query)).toContain('fromAccountId: {equalTo: $from}');
+    expect(print(result.query)).toContain('toAccountId: {equalTo: $to}');
   });
 });

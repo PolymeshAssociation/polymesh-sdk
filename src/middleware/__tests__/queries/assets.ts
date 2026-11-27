@@ -75,31 +75,71 @@ describe('nftHoldersQuery', () => {
 
 describe('assetTransactionQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
-    const variables = {
+    let result = assetTransactionQuery({ assetId: 'SOME_TICKER' });
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
       assetId: 'SOME_TICKER',
       size: DEFAULT_GQL_PAGE_SIZE,
       start: 0,
-    };
-
-    let result = assetTransactionQuery(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    });
 
     const printed = print(result.query);
     expect(printed).toContain('fromAccountId');
     expect(printed).toContain('toAccountId');
+    expect(printed).toContain('isInternalTransfer');
+    expect(printed).toContain('memo');
     expect(printed).toContain('createdEvent {');
     expect(printed).toContain('extrinsicIdx');
+    expect(printed).not.toContain('and:');
 
-    result = assetTransactionQuery(variables, new BigNumber(1), new BigNumber(0));
+    result = assetTransactionQuery({ assetId: 'SOME_TICKER' }, new BigNumber(1), new BigNumber(0));
 
-    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({ assetId: 'SOME_TICKER', size: 1, start: 0 });
+  });
+
+  it('should match a portfolio or an Account holder on either side', () => {
+    let result = assetTransactionQuery({
+      assetId: 'SOME_TICKER',
+      holder: { portfolioId: 'someDid/1' },
+    });
+
+    expect(result.variables).toEqual(expect.objectContaining({ holder: 'someDid/1' }));
+    expect(print(result.query)).toContain(
+      'and: [{or: [{fromPortfolioId: {equalTo: $holder}}, {toPortfolioId: {equalTo: $holder}}]}]'
+    );
+
+    result = assetTransactionQuery({
+      assetId: 'SOME_TICKER',
+      holder: { accountId: 'someAddress' },
+    });
+
+    expect(result.variables).toEqual(expect.objectContaining({ holder: 'someAddress' }));
+    expect(print(result.query)).toContain(
+      '{or: [{fromAccountId: {equalTo: $holder}}, {toAccountId: {equalTo: $holder}}]}'
+    );
+  });
+
+  it('should match an Identity on either side, together with a holder', () => {
+    const result = assetTransactionQuery({
+      assetId: 'SOME_TICKER',
+      holder: { portfolioId: 'someDid/0' },
+      identityId: 'someDid',
+    });
+
     expect(result.variables).toEqual({
-      ...variables,
-      size: 1,
+      assetId: 'SOME_TICKER',
+      holder: 'someDid/0',
+      identityId: 'someDid',
+      size: DEFAULT_GQL_PAGE_SIZE,
       start: 0,
     });
+
+    const printed = print(result.query);
+    expect(printed).toContain('$identityId: String!');
+    expect(printed).toContain(
+      '{or: [{fromIdentityId: {equalTo: $identityId}}, {toIdentityId: {equalTo: $identityId}}]}]'
+    );
   });
 });
 

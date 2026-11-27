@@ -9,8 +9,11 @@ import {
   EvmAddressType,
   HistoricPolyxTransaction,
 } from '~/api/entities/Account/types';
+import * as settlementHistoryModule from '~/api/entities/common/settlementHistory';
 import { Account, Context, Entity, PolymeshError } from '~/internal';
 import { extrinsicsByArgs } from '~/middleware/queries/extrinsics';
+import { accountTransfersQuery } from '~/middleware/queries/portfolios';
+import { accountSettlementsQuery } from '~/middleware/queries/settlements';
 import { CallIdEnum, ExtrinsicsOrderBy, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
@@ -24,6 +27,7 @@ import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   ErrorCode,
+  HistoricSettlement,
   ModuleName,
   MultiSigTx,
   NftOwnerStatus,
@@ -930,6 +934,65 @@ describe('Account class', () => {
       const result = await account.getPolyxTransactions({});
 
       expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('method: getAssetTransactions', () => {
+    it("should read the Account holder's settlements and transfers, seen from the Account", async () => {
+      const fakeResult = 'someHistory' as unknown as ResultSet<HistoricSettlement>;
+      const getSettlementHistorySpy = jest
+        .spyOn(settlementHistoryModule, 'getSettlementHistory')
+        .mockResolvedValue(fakeResult);
+      const getAssetIdForMiddlewareSpy = jest
+        .spyOn(utilsInternalModule, 'getAssetIdForMiddleware')
+        .mockResolvedValue('0x1234');
+
+      account = new Account({ address }, context);
+
+      let result = await account.getAssetTransactions({
+        ticker: 'TICKER',
+        size: new BigNumber(10),
+        start: new BigNumber(20),
+      });
+
+      expect(result).toBe(fakeResult);
+      expect(getAssetIdForMiddlewareSpy).toHaveBeenCalledWith('TICKER', context);
+
+      const [, queries, perspective, opts] = getSettlementHistorySpy.mock.calls[0]!;
+      expect(perspective).toEqual({ account: address });
+      expect(opts).toEqual({ size: new BigNumber(10), start: new BigNumber(20) });
+      expect(queries.instructions(new BigNumber(100), new BigNumber(0))).toEqual(
+        accountSettlementsQuery(
+          { accountId: address, assetId: '0x1234' },
+          new BigNumber(100),
+          new BigNumber(0)
+        )
+      );
+      expect(queries.transfers(new BigNumber(100), new BigNumber(0))).toEqual(
+        accountTransfersQuery(
+          { accountId: address, assetId: '0x1234' },
+          new BigNumber(100),
+          new BigNumber(0)
+        )
+      );
+
+      // an Asset ID wins over a ticker
+      await account.getAssetTransactions({ assetId: '0x5678', ticker: 'TICKER' });
+
+      expect(getAssetIdForMiddlewareSpy).toHaveBeenLastCalledWith('0x5678', context);
+
+      result = await account.getAssetTransactions();
+
+      expect(result).toBe(fakeResult);
+      expect(getAssetIdForMiddlewareSpy).toHaveBeenCalledTimes(2);
+      expect(
+        getSettlementHistorySpy.mock.calls[2]![1].instructions(new BigNumber(100), new BigNumber(0))
+      ).toEqual(
+        accountSettlementsQuery({ accountId: address }, new BigNumber(100), new BigNumber(0))
+      );
+
+      getSettlementHistorySpy.mockRestore();
+      getAssetIdForMiddlewareSpy.mockRestore();
     });
   });
 

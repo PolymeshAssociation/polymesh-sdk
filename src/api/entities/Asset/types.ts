@@ -145,6 +145,28 @@ export interface HolderFreezeStatus extends NftHolderFreezeStatus {
 }
 
 /**
+ * A portfolio or an Account holding a fungible Asset
+ */
+export interface AssetHolding {
+  holder: Account | DefaultPortfolio | NumberedPortfolio;
+  /**
+   * the holder's Identity. Absent for an Account with no known Identity
+   */
+  identity: Identity | undefined;
+  amount: BigNumber;
+  /**
+   * the part of `amount` the Asset's agents froze. It can exceed `amount`, since an agent can set
+   *   it above what the holder holds
+   */
+  frozen: BigNumber;
+  /**
+   * when the Asset's agents froze this holder against all transfers of the Asset, or null while it
+   *   is not frozen
+   */
+  frozenSince: Date | null;
+}
+
+/**
  * An Identity holding NFTs of a collection
  */
 export interface IdentityHeldNfts {
@@ -208,6 +230,28 @@ export interface BaseHistoricAssetTransaction extends EventIdentifier {
    * Destination account involved in this transcation. This value will be null when the `event` value is `Redeemed` or when the destination asset holder is a Portfolio
    */
   toAccount: Account | null;
+
+  /**
+   * Identity of the sender when the transaction happened. Null for an issuance
+   */
+  fromIdentity: Identity | null;
+
+  /**
+   * Identity of the receiver when the transaction happened. Null for a redemption
+   */
+  toIdentity: Identity | null;
+
+  /**
+   * Whether both sides belong to one Identity, as in a portfolio movement. Null for an issuance or
+   *   a redemption, which have one side only
+   */
+  isInternalTransfer: boolean | null;
+
+  /**
+   * Memo of a portfolio movement or of a `settlement.transferFunds` call. The memo of an executed
+   *   instruction is `instructionMemo`
+   */
+  memo: string | undefined;
 
   /**
    * Event identifying the type of transaction

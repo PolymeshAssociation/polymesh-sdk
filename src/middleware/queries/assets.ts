@@ -3,7 +3,6 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import {
-  createArgsAndFilters,
   eventIdentifierFields,
   getSizeAndOffset,
   orderByClause,
@@ -13,8 +12,8 @@ import {
   Asset,
   AssetHolder,
   AssetHoldersOrderBy,
-  AssetTransaction,
   AssetTransactionsOrderBy,
+  HoldingsOrderBy,
   NftsOrderBy,
 } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
@@ -212,28 +211,65 @@ export function heldNftsQuery(
   };
 }
 
+export interface AssetTransactionFilters {
+  assetId: string;
+  /**
+   * a holder on either side, by the middleware column it is stored under
+   */
+  holder?: { portfolioId: string } | { accountId: string } | undefined;
+  /**
+   * an Identity on either side
+   */
+  identityId?: string | undefined;
+}
+
 /**
  * @hidden
  *
- * Get the balance history for an Asset
+ * Get the transactions of an Asset, optionally only those with a given holder or Identity on
+ *   either side
  */
 export function assetTransactionQuery(
-  filters: QueryArgs<AssetTransaction, 'assetId'>,
+  { assetId, holder, identityId }: AssetTransactionFilters,
   size?: BigNumber,
   start?: BigNumber,
   orderBy?: AssetTransactionsOrderBy | AssetTransactionsOrderBy[]
-): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
-  const { args, filter } = createArgsAndFilters(filters, {});
+): QueryOptions<PaginatedQueryArgs<Record<string, unknown>>> {
+  const args = ['$assetId: String!', '$size: Int', '$start: Int'];
+  const variables: Record<string, unknown> = { assetId };
+  const sideFilters: string[] = [];
+
+  if (holder) {
+    const [column, value] =
+      'portfolioId' in holder
+        ? ['PortfolioId', holder.portfolioId]
+        : ['AccountId', holder.accountId];
+
+    args.push('$holder: String!');
+    variables.holder = value;
+    sideFilters.push(
+      `{ or: [{ from${column}: { equalTo: $holder } }, { to${column}: { equalTo: $holder } }] }`
+    );
+  }
+
+  if (identityId) {
+    args.push('$identityId: String!');
+    variables.identityId = identityId;
+    sideFilters.push(
+      '{ or: [{ fromIdentityId: { equalTo: $identityId } }, { toIdentityId: { equalTo: $identityId } }] }'
+    );
+  }
+
+  // each side condition is an `or`, and an input object can name `or` only once
+  const sides = sideFilters.length ? `, and: [${sideFilters.join(', ')}]` : '';
 
   // `id` is `<block>/<event index>`, zero padded: block order, and unique
   const ordering = orderByClause(orderBy, [AssetTransactionsOrderBy.IdAsc]);
 
   const query = gql`
-    query AssetTransactionQuery
-      ${args}
-     {
+    query AssetTransactionQuery(${args.join(', ')}) {
       assetTransactions(
-        ${filter}
+        filter: { assetId: { equalTo: $assetId }${sides} }
         first: $size
         offset: $start
         orderBy:  [${ordering}]
@@ -252,6 +288,8 @@ export function assetTransactionQuery(
           toPortfolioId
           toAccountId
           toIdentityId
+          isInternalTransfer
+          memo
           eventId
           fundingRound
           instructionId
@@ -267,7 +305,7 @@ export function assetTransactionQuery(
 
   return {
     query,
-    variables: { ...filters, ...getSizeAndOffset(size, start) },
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }
 
@@ -305,5 +343,56 @@ export function nftCollectionHolders(
   return {
     query,
     variables: { ...getSizeAndOffset(size, start), assetId },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the portfolios and Accounts that hold a fungible Asset, each with its balance and frozen part
+ */
+export function holdingsQuery(
+  filters: { assetId: string },
+  size?: BigNumber,
+  start?: BigNumber,
+  orderBy?: HoldingsOrderBy | HoldingsOrderBy[]
+): QueryOptions<PaginatedQueryArgs<{ assetId: string }>> {
+  // `id` is `<asset id>/<portfolio id or address>`, unique per holder of the Asset
+  const ordering = orderByClause(orderBy ?? [HoldingsOrderBy.AmountDesc], [HoldingsOrderBy.IdAsc]);
+
+  // a holding row is kept once its holder has sent everything, so a holder that holds nothing and
+  // has nothing frozen is left out here, where `totalCount` still describes the page's set
+  const query = gql`
+    query HoldingsQuery($assetId: String!, $size: Int, $start: Int) {
+      holdings(
+        filter: {
+          assetId: { equalTo: $assetId }
+          or: [
+            { amount: { greaterThan: "0" } }
+            { frozen: { greaterThan: "0" } }
+            { frozenSince: { isNull: false } }
+          ]
+        }
+        first: $size
+        offset: $start
+        orderBy: [${ordering}]
+      ) {
+        totalCount
+        nodes {
+          holderKind
+          portfolioId
+          accountId
+          identityId
+          amount
+          frozen
+          frozenSince
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }

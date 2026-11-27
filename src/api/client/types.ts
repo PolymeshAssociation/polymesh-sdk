@@ -6,6 +6,7 @@ import { InstructionsOrderBy } from '~/middleware/types';
 import {
   Account,
   Asset,
+  AssetHolderLike,
   Identity,
   InstructionStatusEnum,
   MiddlewarePaginationOptions,
@@ -280,6 +281,16 @@ export interface HistoricalInstructionFilters extends MiddlewarePaginationOption
    * The receiver did to filter by
    */
   receiver?: string | Identity;
+  /**
+   * The portfolio or Account that sends a leg. Matched on the same leg as `sender`, `receiver`,
+   *   `receiverHolder` and `asset`
+   */
+  senderHolder?: AssetHolderLike;
+  /**
+   * The portfolio or Account that receives a leg. Matched on the same leg as `sender`, `receiver`,
+   *   `senderHolder` and `asset`
+   */
+  receiverHolder?: AssetHolderLike;
   /**
    * The mediator did to filter by
    */
